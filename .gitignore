@@ -1,5 +1,7 @@
 ## R package files to ignore
 *.Rproj
+*.Rproj.user
+*.Rhistory
 
 ## Cpp files to ignore
 # Compiled Object files
@@ -30,4 +32,4 @@
 *.exe
 *.out
 *.app
-.Rproj.user
+
