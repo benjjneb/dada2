@@ -1,4 +1,5 @@
 ## R package files to ignore
+*.Rproj
 
 ## Cpp files to ignore
 # Compiled Object files
