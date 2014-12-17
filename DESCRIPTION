@@ -1,0 +1,13 @@
+Package: dada
+Type: Package
+Title: DADA Algorithm for Amplicon Sequence Denoising
+Version: 0.1.1
+Author: Ben Callahan, Paul McMurdie, Susan Holmes
+Maintainer: Bioconductor Package Maintainer
+ <maintainer@bioconductor.org>
+Description: This is a package.
+License: LGPL-3
+LazyLoad: yes
+Depends: BiocGenerics (>= 0.11.3), Biostrings (>=2.33.14)
+Imports: Biobase, methods
+biocViews: Microbiome, Sequencing
