@@ -1,8 +1,8 @@
 Plot kmer dist vs. align dist
 ========================================================
 
-```{r}
-foo = read.csv("/Users/benj/Desktop/DADAC/kmer.csv")
+```{r, eval=FALSE}
+foo = read.csv("inst/data/kmer.csv")
 colnames(foo) <- c("Kmer", "Align")
 ggplot(data=foo, aes(x=Kmer, y=Align)) + geom_point(alpha=0.05)
 ```

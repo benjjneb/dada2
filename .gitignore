@@ -33,3 +33,4 @@
 *.out
 *.app
 
+.Rproj.user

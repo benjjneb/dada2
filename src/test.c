@@ -1,6 +1,6 @@
 #include "dada.h"
 
-#define TEST_FILE "group_0-27.uniques"
+#define TEST_FILE "../inst/data/group_0-27.uniques"
 //#define TEST_FILE "A0014B0276_L_noN.uniques"
 //#define TEST_FILE "5seq_1000read.unique"
 //#define TEST_FILE "test.uniques2"
