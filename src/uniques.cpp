@@ -1,4 +1,7 @@
+#include <Rcpp.h>
 #include "dada.h"
+using namespace Rcpp;
+// [[Rcpp::interfaces(cpp)]]
 
 /* 
  methods for "Uniques" objects.
@@ -8,19 +11,7 @@
  object as its input.
  */
 
-typedef struct {
-  char *seq; /* A unique sequence, stored in 1-based index form. */
-  int length; /* The length of the sequence. */
-  int reads; /* The number of reads. */
-} Unique;
-
-struct _Uniques { /* Uniques object. */
-  Unique *unique; /* Pointer to array of Unique objects. */
-  int nseqs; /* Total number of Unique objects */
-};
-
-
-/* 
+/*
  uniques_from_file:
  Create Uniques object from .uniques file. This is a file
  in which each line has an integer followed by a tab followed
@@ -28,7 +19,7 @@ struct _Uniques { /* Uniques object. */
  a sequence. There is no restriction here on which characters
  are allowed. Input char *f points to a string with the filename
 */
-Uniques *uniques_from_file(char *f) {
+Uniques *uniques_from_file(const char *f) {
   FILE *fp;
   Uniques *uniques = (Uniques *) malloc( sizeof(Uniques) );
   int i;

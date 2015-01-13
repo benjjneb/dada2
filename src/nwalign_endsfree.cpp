@@ -1,6 +1,11 @@
+#include <Rcpp.h>
 #include <string.h>
 #include <stdlib.h>
 #include "dada.h"
+
+using namespace Rcpp;
+// [[Rcpp::interfaces(cpp)]]
+
 
 char *al2str(char **al);
 char **str2al(char *str);
@@ -269,7 +274,7 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], int gap_p, int b
 char *al2str(char **al) {
   char *str;
   
-  str = calloc(strlen(al[0]) + strlen(al[1]) + 1, sizeof(char));
+  str = (char *) calloc(strlen(al[0]) + strlen(al[1]) + 1, sizeof(char));
   strcpy(str, al[0]);
   strcat(str, al[1]);
   
@@ -336,11 +341,11 @@ Sub *al2subs(char **al) {
   }
   
   /* create Sub obect and initialize memory */
-  Sub *sub = malloc(sizeof(Sub)); /* create a Sub struct */
-  sub->pos = malloc(strlen(al[0]) * sizeof(int));
-  sub->nt0 = malloc(strlen(al[0]));
-  sub->nt1 = malloc(strlen(al[0]));
-  sub->key = malloc(KEY_BUFSIZE);
+  Sub *sub = (Sub *) malloc(sizeof(Sub)); /* create a Sub struct */
+  sub->pos = (int *) malloc(strlen(al[0]) * sizeof(int));
+  sub->nt0 = (char *) malloc(strlen(al[0]));
+  sub->nt1 = (char *) malloc(strlen(al[0]));
+  sub->key = (char *) malloc(KEY_BUFSIZE);
   sub->nsubs=0;
   
   /* traverse the alignment and record substitutions while building the hash key*/

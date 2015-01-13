@@ -69,5 +69,5 @@ dereplicateReads <- function(dnaSet) {
          nReads=nReads, row.names=NULL))
 }
 
-setMethod(tables, "XStringSet", .stringset_tables)
+#setMethod(tables, "XStringSet", .stringset_tables)
 

@@ -1,6 +1,10 @@
 Plot kmer dist vs. align dist
 ========================================================
 
+```{r init}
+library(ggplot2)
+```
+
 ```{r, eval=FALSE}
 foo = read.csv("inst/data/kmer.csv")
 colnames(foo) <- c("Kmer", "Align")

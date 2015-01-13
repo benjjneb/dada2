@@ -1,3 +1,6 @@
+#ifndef _DADA_H_
+#define _DADA_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +24,7 @@
 #define KDIST_CUTOFF 0.5
 
 /* objects */
-typedef int bool;
+// typedef int bool;  // [C++]: has builtin bool type
 #define TRUE  1
 #define FALSE 0
 
@@ -96,12 +99,23 @@ typedef struct { // This is the full cluster object, B.
   Raw **raw;
   Bi **bi;
 } B;
-typedef struct _Uniques Uniques; /* uniques object */
-typedef struct _T T; /* error model object */
+
+// These structures hold unique sequences and their associated abundances.
+typedef struct {
+  char *seq; /* A unique sequence, stored in 1-based index form. */
+  int length; /* The length of the sequence. */
+  int reads; /* The number of reads. */
+} Unique;
+
+typedef struct { /* Uniques object. */
+  Unique *unique; /* Pointer to array of Unique objects. */
+  int nseqs; /* Total number of Unique objects */
+} Uniques;
+
 
 /* methods implemented in uniques.c */
 
-Uniques *uniques_from_file(char *f);
+Uniques *uniques_from_file(const char *f);
 //uniques *uniques_from_fasta(char *f); TO BE WRITTEN
 int uniques_nseqs(Uniques *uniques);
 int uniques_reads(Uniques *uniques, int n);
@@ -144,6 +158,7 @@ void b_print(B *b);
 void align_print(char **al);
 void b_dump(B *b, char *fn);
 void err_print(double err[4][4]);
+void test_fun(int i);
 
 /* nwalign.c */
 char **nwalign_endsfree(char *s1, char *s2, double s[4][4], int gap_p, int band);
@@ -154,3 +169,6 @@ Sub *al2subs(char **al);
 int *get_kmer(char *seq, int k);
 char **raw_align(Raw *raw1, Raw *raw2, double s[4][4], int gap_p, bool shroud);
 
+int timesTwo(int x);
+
+#endif

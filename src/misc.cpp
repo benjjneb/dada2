@@ -1,4 +1,8 @@
+#include <Rcpp.h>
 #include "dada.h"
+using namespace Rcpp;
+// [[Rcpp::interfaces(cpp)]]
+ 
 
 void err_print(double err[4][4]) {
   for(int i=0;i<4;i++) {
@@ -160,7 +164,7 @@ void ntcpy(char *oseq, char *iseq) {
 
 /* Convenience function for diagnostic output. */
 char *ntstr(char *iseq) {
-  char *foo = malloc(strlen(iseq)+1);
+  char *foo = (char *) malloc(strlen(iseq)+1);
   ntcpy(foo, iseq);
   return foo;
 }

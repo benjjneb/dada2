@@ -1,4 +1,4 @@
-Package: dadaR
+Package: dadac
 Type: Package
 Title: DADA Algorithm for Amplicon Sequence Denoising
 Version: 0.1.3
@@ -8,6 +8,7 @@ Maintainer: Bioconductor Package Maintainer
 Description: This is a package.
 License: LGPL-3
 LazyLoad: yes
-Depends: BiocGenerics (>= 0.11.3), Biostrings (>=2.33.14), Rcpp (>=0.11.3)
-Imports: Biobase, methods
+Depends: BiocGenerics (>= 0.10.0), Biostrings (>= 2.32.1), Rcpp (>= 0.11.2)
+Imports: Biobase, methods, Rcpp (>= 0.11.2)
 biocViews: Microbiome, Sequencing
+LinkingTo: Rcpp

@@ -1,3 +1,9 @@
+#include <Rcpp.h>
+#include <gsl/gsl_cdf.h>
+#include "dada.h"
+using namespace Rcpp;
+// [[Rcpp::interfaces(cpp)]]
+
 /*
  methods for "B" objects.
  The "B" object is the partition of a DNA data set into
@@ -6,7 +12,7 @@
  which is updated after the covergence of "B".
  */
 
-#include "dada.h"
+//#include "dada.h"
 
 /*
  Define a buffer size (in bytes) for substitution hash keys.
@@ -44,12 +50,31 @@ double get_self(char *seq, double err[4][4]);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 Sub *al2subs(char **al);
 
+// HACK NATIVE IMPLEMENTATION OF POISSON CDF TO AVOID GSL DEPENDENCY
+int factorial(int n)
+{
+  return (n == 1 || n == 0) ? 1 : factorial(n - 1) * n;
+}
+
+double bjc_cdf_poisson(int k, double mu) {
+  double cdf = 0.0;
+  
+  if(k>10) { k = 10; }  // HACK HARD CUTOFF TO COMPILE
+  
+  if(mu > DBL_MIN) {
+    for(int i=0;i<=k;i++) {
+      cdf += (pow(mu, i)/factorial(i));
+    }
+  }  
+  return cdf;
+}
+
 /*
  raw_new:
  The constructor for the Raw object.
  */
 Raw *raw_new(char *seq, int reads) {
-  Raw *raw = malloc(sizeof(Raw));
+  Raw *raw = (Raw *) malloc(sizeof(Raw));
   raw->seq = (char *) malloc(strlen(seq)+1);
   strcpy(raw->seq, seq);
   raw->kmer = get_kmer(seq, KMER_SIZE);
@@ -62,9 +87,9 @@ Raw *raw_new(char *seq, int reads) {
  The constructor for the Fam object.
  */
 Fam *fam_new() {
-  Fam *fam = malloc(sizeof(Fam));
+  Fam *fam = (Fam *) malloc(sizeof(Fam));
   fam->seq = (char *) malloc(SEQLEN);
-  fam->raw = malloc(RAWBUF * sizeof(Raw *));
+  fam->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *));
   fam->maxraw = RAWBUF;
   fam->nraw = 0;
   fam->reads = 0;
@@ -91,7 +116,7 @@ int fam_add_raw(Fam *fam, Raw *raw) {
 //  if(VERBOSE) { printf("\tfam_add_raw - enter (%i, %i)\n", fam->nraw, fam->maxraw); }
   if(fam->nraw >= fam->maxraw) {    // Extend Raw* buffer
 //    if(VERBOSE) { printf("\tEXTENDING FAM RAW BUFFER\n"); }
-    fam->raw = realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *));
+    fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *));
     fam->maxraw+=RAWBUF;
   }
 //  else if(VERBOSE) { printf("\tno extension FAM RAW BUFFER\n"); }
@@ -223,13 +248,13 @@ void bi_add_raw(Bi *bi, Raw *raw) {
  The constructor for the Bi object.
  */
 Bi *bi_new(int totraw) {
-  Bi *bi = malloc(sizeof(Bi));
+  Bi *bi = (Bi *) malloc(sizeof(Bi));
   bi->seq = (char *) malloc(SEQLEN);
-  bi->fam = malloc(FAMBUF * sizeof(Fam *));
+  bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *));
   bi->maxfam = FAMBUF;
-  bi->sub = malloc(totraw * sizeof(Sub *));
-  bi->lambda = malloc(totraw * sizeof(double));
-  bi->e = malloc(totraw * sizeof(double));
+  bi->sub = (Sub **) malloc(totraw * sizeof(Sub *));
+  bi->lambda = (double *) malloc(totraw * sizeof(double));
+  bi->e = (double *) malloc(totraw * sizeof(double));
   bi->sm = sm_new(HASHOCC);
   bi->update_lambda = TRUE;
   bi->update_fam = TRUE;
@@ -260,7 +285,7 @@ void bi_free(Bi *bi) {
 int bi_add_fam(Bi *bi, Fam *fam) {
   if(bi->nfam >= bi->maxfam) {    // Extend Fam* buffer
     if(VERBOSE) { printf("\tEXTENDING BI FAM BUFFER\n"); }
-    bi->fam = realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *));
+    bi->fam = (Fam **) realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *));
     bi->maxfam+=FAMBUF;
   }
 //  else if(VERBOSE) { printf("\tno extension BI FAM BUFFER\n"); }
@@ -294,17 +319,17 @@ B *b_new(Uniques *uniques, double err[4][4], int gap_pen) {
   int i, j, index;
   char *seq;
   
-  B *b = malloc(sizeof(B));
-  b->bi = malloc(CLUSTBUF * sizeof(Bi *));
+  B *b = (B *) malloc(sizeof(B));
+  b->bi = (Bi **) malloc(CLUSTBUF * sizeof(Bi *));
   b->maxclust = CLUSTBUF;
   b->nclust = 0;
   b->reads = 0;
   b->nraw = uniques_nseqs(uniques);
   b->gap_pen = gap_pen;
-  seq = malloc(SEQLEN);
+  seq = (char *) malloc(SEQLEN);
   
   // Allocate the list of raws and then create them all.
-  b->raw = malloc(b->nraw * sizeof(Raw *));
+  b->raw = (Raw **) malloc(b->nraw * sizeof(Raw *));
   for (index = 0; index < b->nraw; index++) {
     uniques_sequence(uniques, index, (char *) seq);
     b->raw[index] = raw_new(seq, uniques_reads(uniques, index));
@@ -370,7 +395,7 @@ void b_free(B *b) {
  */
 int b_add_bi(B *b, Bi *bi) {
   if(b->nclust >= b->maxclust) {    // Extend Bi* buffer
-    b->bi = realloc(b->bi, (b->maxclust+CLUSTBUF) * sizeof(Bi *));
+    b->bi = (Bi **) realloc(b->bi, (b->maxclust+CLUSTBUF) * sizeof(Bi *));
     b->maxclust+=CLUSTBUF;
   }
   b->bi[b->nclust] = bi;
@@ -458,7 +483,7 @@ void bi_fam_update(Bi *bi, double score[4][4]) {
   bi_census(bi);
   
   // Make list of pointers to the raws
-  Raw **raws = malloc(bi->nraw * sizeof(Raw *));
+  Raw **raws = (Raw **) malloc(bi->nraw * sizeof(Raw *));
   r_c=0;
   for(f=0;f<bi->nfam;f++) {
     for(r=0;r<bi->fam[f]->nraw;r++) {
@@ -623,7 +648,9 @@ void b_p_update(B *b) {
         }
         
         // Calculate pval from poisson cdf.
+        // THE CURRENT HACK!!!!!!!!!!!!!!!!!!!!!
         pval = 1 - gsl_cdf_poisson_P(reads-1, mu);  // THIS MUST EQUAL ZERO WHEN MU=DBL_MIN ... DOES IT?
+//        pval = 1 - bjc_cdf_poisson(reads-1, mu);
         pval = pval/norm;
         // IF PVAL SMALL, BETTER APPROX WITH FIRST TERM IN PDF?
         
