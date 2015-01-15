@@ -27,6 +27,7 @@
 #' \code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
 #'
 #' @export
+#' @import ShortRead 
 #'
 #' @examples 
 #' # Test that chunk-size, `n`, does not affect the result.
@@ -37,7 +38,7 @@
 #' all.equal(test1, test2[names(test1)])
 #' all.equal(test1, test3[names(test1)])
 dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
-  require("ShortRead")
+  # require("ShortRead")
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
   }
