@@ -1,10 +1,25 @@
-#' Removes duplicate sequences from DNAStringSet object.
+################################################################################
+#' Custom interface to \code{\link{FastqStreamer}} 
+#' for dereplicating amplicon sequences from a file,
+#' while controlling peak memory requirement to support large files.
+#' Also relies heavily on the \code{\link[ShortRead]{tables}} method.
 #'
-#' Borrowed from hiReadsProcessor package in BioC.
-#' Given a DNAStringSet object, the function dereplicates reads and 
-#' adds counts=X to the definition line to indicate replication. 
-#'
-#' @param dnaSet DNAStringSet object to dereplicate. 
+#' @param fl (Required). Character.
+#'  The file path to the fastq or fastq.gz file.
+#'  Actually, any file format supported by \code{\link{FastqStreamer}}.
+#' 
+#' @param n (Optional). A \code{numeric(1)} indicating
+#'  the maximum number of records (reads) to parse and dereplicate
+#'  at any one time. This controls the peak memory requirement
+#'  so that large fastq files are supported.
+#'  Defaults is \code{1e6}, one-million reads.
+#'  See \code{\link{FastqStreamer}} for details on this parameter,
+#'  which is passed on.
+#' 
+#' @param verbose (Optional). A \code{logical(1)} indicating
+#'  whether to throw any standard R \code{\link{message}}s 
+#'  on the intermittent and final status of the dereplication.
+#'  Default is \code{FALSE}, no messages.
 #'
 #' @return DNAStringSet object with names describing frequency of repeat.
 #'
@@ -12,62 +27,57 @@
 #' \code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
 #'
 #' @export
+#' @import ShortRead 
 #'
 #' @examples 
-#' dnaSet <- c("CCTGAATCCTGGCAATGTCATCATC", "ATCCTGGCAATGTCATCATCAATGG", 
-#' "ATCAGTTGTCAACGGCTAATACGCG", "ATCAATGGCGATTGCCGCGTCTGCA", 
-#' "CCGCGTCTGCAATGTGAGGGCCTAA", "GAAGGATGCCAGTTGAAGTTCACAC", 
-#' "CCTGAATCCTGGCAATGTCATCATC", "ATCCTGGCAATGTCATCATCAATGG", 
-#' "ATCAGTTGTCAACGGCTAATACGCG", "ATCAATGGCGATTGCCGCGTCTGCA", 
-#' "CCGCGTCTGCAATGTGAGGGCCTAA", "GAAGGATGCCAGTTGAAGTTCACAC") 
-#' dereplicateReads(dnaSet)
-dereplicateReads <- function(dnaSet) {
-  if(!is(dnaSet,"DNAStringSet")) {
-    dnaSet <- DNAStringSet(dnaSet)
+#' # Test that chunk-size, `n`, does not affect the result.
+#' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
+#' test1 = dereplicateFastqReads(testFile, verbose = TRUE)
+#' test2 = dereplicateFastqReads(testFile, 35, TRUE)
+#' test3 = dereplicateFastqReads(testFile, 100, TRUE)
+#' all.equal(test1, test2[names(test1)])
+#' all.equal(test1, test3[names(test1)])
+dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
+  # require("ShortRead")
+  if(verbose){
+    message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
   }
-  if(is.null(names(dnaSet))) {
-    message("No names attribute found in dnaSet object...", 
-            "using artifically generated names")
-    names(dnaSet) <- paste("read", 1:length(dnaSet), sep="-")
+  ## iterating over an entire file using fastq streaming
+  f <- FastqStreamer(fl, n = n)
+  # `yield` is the method for returning the next chunk from the stream.
+  # Use `fq` as the "current chunk"
+  suppressWarnings(fq <- yield(f))
+  # Calculate the dereplicated counts for the first chunk
+  derepCounts = tables(fq, n = Inf)$top
+  # This loop will stop if/when the end of the file is already reached.
+  # If end is already reached, this loop is skipped altogether.
+  while( length(suppressWarnings(fq <- yield(f))) ){
+    # A little loop protection
+    idrep = alreadySeen = NULL
+    # Dot represents one turn inside the chunking loop.
+    if(verbose){
+      message(".", appendLF = FALSE)
+    }
+    idrep <- tables(fq, n = Inf)$top
+    # identify sequences already present in `derepCounts`
+    alreadySeen = names(idrep) %in% names(derepCounts)
+    # Sum these values, if any
+    if(any(alreadySeen)){
+      sqnms = names(idrep)[alreadySeen]
+      derepCounts[sqnms] <- derepCounts[sqnms] + idrep[sqnms]
+    }
+    # Concatenate the remainder to `derepCounts`, if any
+    if(!all(alreadySeen)){
+      derepCounts <- c(derepCounts, idrep[!alreadySeen])
+    }
   }
-  dnaSet <- dnaSet[order(dnaSet)]
-  counts <- BiocGenerics::table(dnaSet)
-  dnaSet <- unique(dnaSet)
-  names(dnaSet) <- paste0(names(dnaSet), 
-                          "counts=", 
-                          as.integer(counts[names(counts)[names(dnaSet)]]))
-  return(dnaSet)
+  if(verbose){
+    message("Encountered ",
+            length(derepCounts),
+            " unique sequences from ",
+            sum(derepCounts),
+            " total sequences read.")
+  }
+  return(derepCounts)
 }
-
-# Alternative
-# Borrowed from ShortRead package in BioC.
-## tables
-.stringset_tables <- function(x, n=50, ...) {
-  if (length(x) == 0) {
-    return(list(top=integer(0),
-                distribution=data.frame(
-                  nOccurrences=integer(0),
-                  nReads=integer(0))))
-  }
-  ## FIXME: two sorts
-  srt <- srsort(x)
-  r <- srrank(x)
-  t <- tabulate(r)
-  o <- order(t, decreasing=TRUE)
-  ## n most common sequences
-  n <- min(n, sum(t!=0))              # remove duplicates
-  top <- head(t[o], n)
-  names(top) <- as.character(head(srt[o], n))
-  ## overall frequency -- equivalent of table(table(sread))
-  tt <- tabulate(t)
-  nOccurrences <- seq_along(tt)[tt!=0]
-  nReads <- tt[tt!=0]
-  ## results
-  list(top=top,
-       distribution=data.frame(
-         nOccurrences=nOccurrences,
-         nReads=nReads, row.names=NULL))
-}
-
-#setMethod(tables, "XStringSet", .stringset_tables)
-
+################################################################################

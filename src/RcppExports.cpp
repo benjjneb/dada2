@@ -8,15 +8,15 @@
 
 using namespace Rcpp;
 
-// cpp_dada
-double cpp_dada(std::string filename);
-RcppExport SEXP dadac_cpp_dada(SEXP filenameSEXP) {
+// dada_from_file
+int dada_from_file(std::string filename);
+RcppExport SEXP dadac_dada_from_file(SEXP filenameSEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
         Rcpp::RNGScope __rngScope;
         Rcpp::traits::input_parameter< std::string >::type filename(filenameSEXP );
-        double __result = cpp_dada(filename);
+        int __result = dada_from_file(filename);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);

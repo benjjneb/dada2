@@ -12,15 +12,6 @@ using namespace Rcpp;
  which is updated after the covergence of "B".
  */
 
-//#include "dada.h"
-
-/*
- Define a buffer size (in bytes) for substitution hash keys.
- Note: could rewrite al2subs using snprintf calls and dynamically
- expand the buffer as needed. Given that we do return unused memory,
- should be safe for now to just give very large amount of memory.
- */
-
 #define RAWBUF 50
 #define FAMBUF 50
 #define CLUSTBUF 50
@@ -50,7 +41,7 @@ double get_self(char *seq, double err[4][4]);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 Sub *al2subs(char **al);
 
-// HACK NATIVE IMPLEMENTATION OF POISSON CDF TO AVOID GSL DEPENDENCY
+// HACK IMPLEMENTATION OF POISSON CDF TO AVOID GSL DEPENDENCY
 int factorial(int n)
 {
   return (n == 1 || n == 0) ? 1 : factorial(n - 1) * n;
@@ -438,7 +429,7 @@ void b_reads_update(B *b) {
  NOT YET IMPLEMENTED.
 */
 void b_lambda_update(B *b, bool use_kmers) {
-  int i, j, f, r, index;
+  int i, index;
   double lambda;
   char **al; // stores alignments
   Sub *sub; // stores Sub structs
@@ -473,8 +464,7 @@ void b_lambda_update(B *b, bool use_kmers) {
   Currently completely destructive of old fams.
    */
 void bi_fam_update(Bi *bi, double score[4][4]) {
-  int foo, index, i, f, r, result, r_c;
-  char **al;
+  int foo, f, r, result, r_c;
   Sub *sub;
   char buf[10];
   
@@ -503,6 +493,7 @@ void bi_fam_update(Bi *bi, double score[4][4]) {
   // Construct hash from raw->sub->key to new fam index.
   // Make fams, that contain all raws with the same substitution pattern.
   for(r_c=0;r_c<bi->nraw;r_c++) {
+    // char **al;
     // al = b_align(bi->seq, raws[r_c]->seq, score, GAPPEN, FALSE);
 //    al = raw_align(bi->center, raws[r_c], score, GAPPEN, FALSE);
     // Make hash key from substitutions

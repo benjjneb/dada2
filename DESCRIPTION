@@ -9,6 +9,6 @@ Description: This is a package.
 License: LGPL-3
 LazyLoad: yes
 Depends: BiocGenerics (>= 0.10.0), Biostrings (>= 2.32.1), Rcpp (>= 0.11.2)
-Imports: Biobase, methods, Rcpp (>= 0.11.2)
+Imports: Biobase, methods, Rcpp (>= 0.11.2), ShortRead
 biocViews: Microbiome, Sequencing
 LinkingTo: Rcpp

@@ -42,10 +42,8 @@ int *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
 char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool shroud) {
   static long nalign=0;
   static long nshroud=0;
-  int i;
-  char *str;
   char **al;
-  double adist, kdist;
+  double kdist;
   
   if(shroud) {
     kdist = kmer_dist(raw1->kmer, strlen(raw1->seq), raw2->kmer, strlen(raw2->seq), KMER_SIZE);
@@ -68,15 +66,9 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool shrou
 char **b_align(char *s1, char *s2, double score[4][4], int gap_p, bool shroud) {
   static long nalign=0;
   static long nshroud=0;
-  bool retrieve = FALSE;
-  bool oor = FALSE;
-  int i;
-  char *key;
-  char *str;
-  char **al; char **al2;
+  char **al;
   int *kv1; int *kv2;
-  double adist, kdist;
-  Sub *sub;
+  double kdist;
   
   if(shroud) {
     kv1 = get_kmer(s1, KMER_SIZE);
@@ -92,11 +84,13 @@ char **b_align(char *s1, char *s2, double score[4][4], int gap_p, bool shroud) {
   }
   nalign++;
   
+//  Sub *sub;
+//  double adist
 //  sub = al2subs(al);
 //  adist = ((double) sub->nsubs)/(strlen(s1) < strlen(s2) ? strlen(s1) : strlen(s2));
 //  fprintf(stderr, "%.8f,%.8f\n", kdist, adist);
   
-  if(TRUE && nalign%1000==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
+  if(tVERBOSE && nalign%1000==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
 
   return al;
 }
@@ -104,7 +98,7 @@ char **b_align(char *s1, char *s2, double score[4][4], int gap_p, bool shroud) {
 /* note: input sequence must end with string termination character, '\0' */
 char **nwalign_endsfree(char *s1, char *s2, double score[4][4], int gap_p, int band) {
   static int nnw = 0;
-  int i, j, nsubs = 0;
+  int i, j;
   int l, r;
   size_t len1 = strlen(s1);
   size_t len2 = strlen(s2);
@@ -262,6 +256,7 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], int gap_p, int b
     printf("1(%i):%s\n\n", strlen(al[1]), ntstr(al[1]));
   } */
 
+  nnw++;
   return al;
 }
 
@@ -323,7 +318,7 @@ char **str2al(char *str) {
  */
 Sub *al2subs(char **al) {
 //  printf("IN AL2SUBS...\n");
-  int i, i0, bytes, subs;
+  int i, i0, bytes;
   size_t align_length;
   char *al0, *al1; /* dummy pointers to the sequences in the alignment */
   
@@ -380,7 +375,6 @@ Sub *al2subs(char **al) {
   *pkey = '\0';
   int2nt(sub->key, sub->key);  // store sub keys as readable strings
     
-  //  sub->nsubs = subs;
   /* give back unused memory */
   sub->pos = (int *) realloc(sub->pos, sub->nsubs * sizeof(int));
   sub->nt0 = (char *) realloc(sub->nt0, sub->nsubs);
@@ -409,8 +403,8 @@ Sub *al2subs(char **al) {
  */
 double compute_lambda(Sub *sub, double self, double t[4][4]) {
   int i;
-  char nti0, nti1;
-  double lambda, lambdaV;
+  int nti0, nti1;
+  double lambda;
   
   if(sub == NULL) {
     return((double) 0.0);
