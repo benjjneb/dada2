@@ -27,10 +27,11 @@
 #' \code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
 #'
 #' @export
+#' @import ShortRead 
 #'
 #' @examples 
 #' # Test that chunk-size, `n`, does not affect the result.
-#' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dadac)
+#' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
 #' test1 = dereplicateFastqReads(testFile, verbose = TRUE)
 #' test2 = dereplicateFastqReads(testFile, 35, TRUE)
 #' test3 = dereplicateFastqReads(testFile, 100, TRUE)
