@@ -38,7 +38,7 @@
 #' all.equal(test1, test2[names(test1)])
 #' all.equal(test1, test3[names(test1)])
 dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
-  require("ShortRead")
+  # require("ShortRead")
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
   }
