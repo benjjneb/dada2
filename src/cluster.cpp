@@ -1,5 +1,5 @@
 #include <Rcpp.h>
-#include <gsl/gsl_cdf.h>
+//#include <gsl/gsl_cdf.h>
 #include "dada.h"
 using namespace Rcpp;
 // [[Rcpp::interfaces(cpp)]]
@@ -451,7 +451,7 @@ void b_lambda_update(B *b, bool use_kmers) {
 //        printf("%i subs for clust %i and index=%i\n", sub->nsubs, i, index);
 //        printf("sub key (strlen=%i): %s\n", strlen(b->bi[i]->sub[index]->key), b->bi[i]->sub[index]->key);
       }
-      printf("LU:%d, ", b->nraw);
+      if(tVERBOSE) printf("LU:%d, ", b->nraw);
       b->bi[i]->update_lambda = FALSE;
     } // if(b->bi[i]->update_lambda)
   }
@@ -528,7 +528,7 @@ void bi_fam_update(Bi *bi, double score[4][4]) {
     sub = bi->sub[bi->fam[f]->center->index];
     bi->fam[f]->sub = sub;
   }
-  printf("FU:%d+%d, ", bi->nraw, bi->nfam);
+  if(tVERBOSE) printf("FU:%d+%d, ", bi->nraw, bi->nfam);
   bi->update_fam = FALSE;
 }
 
@@ -603,7 +603,7 @@ void b_shuffle(B *b) {
  Calculates the abundance p-value for each family in the clustering.
  Depends on the lambda between the fam and its cluster, and the reads of each.
 */
-void b_p_update(B *b) {
+void b_p_update(B *b, Function ppois) {
   int i, f, reads;
   double self, mu, lambda, pval, norm;
   for(i=0;i<b->nclust;i++) {
@@ -633,20 +633,28 @@ void b_p_update(B *b) {
 
         // Calculate norm (since conditioning on sequence being present).
         norm = (1.0 - exp(-mu));
-        if(norm < TAIL_APPROX_CUTOFF) { // IMPORTANT THAT UNDERFLOW -> 0 (OR SO IT SEEMS) IN GSL FUNC
-          if(VERBOSE) { printf("b_p_u: Small norm: reads(%i) * lambda(%.4e) = mu(%.4e) -> norm(%.4e)\n", b->bi[i]->reads, lambda, mu, norm); }
-          norm = mu;
+        if(norm < TAIL_APPROX_CUTOFF) {
+          norm = mu - 0.5*pow(mu,2.);    // Assumption: TAIL_APPROX_CUTOFF is small enough to terminate taylor expansion here
         }
         
         // Calculate pval from poisson cdf.
-        // THE CURRENT HACK!!!!!!!!!!!!!!!!!!!!!
-        pval = 1 - gsl_cdf_poisson_P(reads-1, mu);  // THIS MUST EQUAL ZERO WHEN MU=DBL_MIN ... DOES IT?
-//        pval = 1 - bjc_cdf_poisson(reads-1, mu);
+        if(IMPLEMENTATION == 'R') {
+          bool low_tail = false;
+          Rcpp::NumericVector res = ppois(reads-1, mu, low_tail);
+          pval = *(res.begin());
+          
+/*          double gslval = 1 - gsl_cdf_poisson_P(reads-1, mu);
+          double minval = (pval < gslval) ? pval : gslval;
+          if( fabs(pval-gslval)/minval > 1e-5 && fabs(pval-gslval) > 1e-25 ) {
+            Rcpp::Rcout << "Pval disagreement (gsl/R) for mu=" << mu << " and n=" << reads-1 << ": " << gslval << ", " << pval << "\n";
+          }
+        } else {
+          pval = 1 - gsl_cdf_poisson_P(reads-1, mu);  // THIS MUST EQUAL ZERO WHEN MU=DBL_MIN ... DOES IT?
+          // THIS NEEDS TO BE CHANGED. DOES NOT LIMIT APPROPRIATELY!!!! */
+        }
         pval = pval/norm;
-        // IF PVAL SMALL, BETTER APPROX WITH FIRST TERM IN PDF?
         
 //        if(VERBOSE) { printf("Pval for %i reads on expectation of %.4e: %.4e\n", reads, mu, pval); }
-        // matches: lam=.7953;reads=2;(1-ppois(reads-1, lam))/(1-exp(-lam))
       }
       
       // Assign (abundance) pval to fam->pval

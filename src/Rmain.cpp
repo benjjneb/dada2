@@ -6,7 +6,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Uniques *uniques);
+B *run_dada(Uniques *uniques, Rcpp::Function ppois);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -24,7 +24,7 @@ B *run_dada(Uniques *uniques);
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame dada_uniques( std::vector< std::string > seqs,  std::vector< int > abundances ) {
+Rcpp::DataFrame dada_uniques( std::vector< std::string > seqs,  std::vector< int > abundances, Rcpp::Function ppois ) {
   int i;
   int len1 = seqs.size();
   int len2 = abundances.size();
@@ -36,7 +36,7 @@ Rcpp::DataFrame dada_uniques( std::vector< std::string > seqs,  std::vector< int
 //  for(i=0;i<len1;i++) { Rcpp::Rcout << seqs[i] << "\t" << abundances[i] << "\n"; }
   
   Uniques *uniques = uniques_from_vectors(seqs, abundances);
-  B *bb = run_dada(uniques);
+  B *bb = run_dada(uniques, ppois);
   uniques_free(uniques);
   
 //  b_print(bb);
@@ -55,9 +55,10 @@ Rcpp::DataFrame dada_uniques( std::vector< std::string > seqs,  std::vector< int
                                 Rcpp::Named("abundance")  = abunds);
 }
 
-//' Run DADA on the provided uniques filename.
-//' @export
-// [[Rcpp::export]]
+/*
+///' Run DADA on the provided uniques filename.
+///' @export
+/// [[Rcpp::export]]
 int dada_from_file( std::string filename ) {
   B *bb;
   const char * cfn = filename.c_str();
@@ -68,29 +69,29 @@ int dada_from_file( std::string filename ) {
   
   b_print(bb);
   return bb->nclust;
-}
+}*/
 
-B *run_dada(Uniques *uniques) {
+B *run_dada(Uniques *uniques, Rcpp::Function ppois) {
   int newi, round;
 //  double SCORE[4][4] = {{5, -4, -4, -4}, {-4, 5, -4, -4}, {-4, -4, 5, -4}, {-4, -4, -4, 5}};
   double ERR[4][4] = {{0.991, 0.003, 0.003, 0.003}, {0.003, 0.991, 0.003, 0.003}, {0.003, 0.003, 0.991, 0.003}, {0.003, 0.003, 0.003, 0.991}};  
   B *bb;
   bb = b_new(uniques, ERR, GAPPEN); // New cluster with all sequences in 1 bi and 1 fam
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus sequence
-  b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
+  b_p_update(bb, ppois);       // Calculates abundance p-value for each fam in its cluster (consensuses)
   newi = -1;
   if(tVERBOSE) { printf("Init Errors:\n"); err_print(ERR); }
   round = 1;
 
   while(newi != 0) {
     newi = b_bud(bb, OMEGA_A); if(tVERBOSE) Rcout << "Budded\n";
-    printf("----------- Round %i (newi=%i) -----------\n", round++, newi);
+    if(tVERBOSE) printf("----------- Round %i (newi=%i) -----------\n", round++, newi);
     b_consensus_update(bb); if(tVERBOSE) Rcout << "Consensused\n";
     b_lambda_update(bb, USE_KMERS); if(tVERBOSE) Rcout << "Lambdad\n";
     b_shuffle(bb);  if(tVERBOSE) Rcout << "Shuffled\n";
     b_consensus_update(bb); if(tVERBOSE) Rcout << "Consensused\n";
     b_fam_update(bb); if(tVERBOSE) Rcout << "Fam Updated\n";
-    b_p_update(bb);  if(tVERBOSE) Rcout << "Pvaled\n";
+    b_p_update(bb, ppois);  if(tVERBOSE) Rcout << "Pvaled\n";
   }
 
   return bb;

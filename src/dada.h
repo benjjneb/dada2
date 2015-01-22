@@ -1,12 +1,14 @@
 #ifndef _DADA_H_
 #define _DADA_H_
 
+#define IMPLEMENTATION 'R'
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <Rcpp.h>
-#include <gsl/gsl_cdf.h>
+//#include <gsl/gsl_cdf.h>
 #include <float.h>
 #include "strmap.h" // an ANSI C hash table
 
@@ -134,7 +136,7 @@ void b_lambda_update(B *b, bool shroud);
 void b_fam_update(B *b);
 void b_consensus_update(B *b);
 void b_e_update(B *b);
-void b_p_update(B *b);
+void b_p_update(B *b, Rcpp::Function ppois);
 void b_update_err(B *b, double err[4][4]);
 int b_bud(B *b, double omegaA);
 char **b_get_seqs(B *b);

@@ -19,14 +19,8 @@ NULL
 #' corresponding to the DADA denoised sample genotypes.
 #'
 #' @export
-dada_uniques <- function(seqs, abundances) {
-    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances)
-}
-
-#' Run DADA on the provided uniques filename.
-#' @export
-dada_from_file <- function(filename) {
-    .Call('dadac_dada_from_file', PACKAGE = 'dadac', filename)
+dada_uniques <- function(seqs, abundances, ppois) {
+    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, ppois)
 }
 
 # Register entry points for exported C++ functions

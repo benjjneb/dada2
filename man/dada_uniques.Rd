@@ -4,7 +4,7 @@
 \alias{dada_uniques}
 \title{Run DADA on the provided unique sequences/abundance pairs.}
 \usage{
-dada_uniques(seqs, abundances)
+dada_uniques(seqs, abundances, ppois)
 }
 \arguments{
 \item{seqs}{(Required). Character.
