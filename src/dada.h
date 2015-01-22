@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <Rcpp.h>
 #include <gsl/gsl_cdf.h>
 #include <float.h>
 #include "strmap.h" // an ANSI C hash table
@@ -112,9 +113,9 @@ typedef struct { /* Uniques object. */
   int nseqs; /* Total number of Unique objects */
 } Uniques;
 
-
 /* methods implemented in uniques.c */
 
+Uniques *uniques_from_vectors(std::vector< std::string > strings, std::vector< int > abundances);
 Uniques *uniques_from_file(const char *f);
 //uniques *uniques_from_fasta(char *f); TO BE WRITTEN
 int uniques_nseqs(Uniques *uniques);
@@ -136,6 +137,8 @@ void b_e_update(B *b);
 void b_p_update(B *b);
 void b_update_err(B *b, double err[4][4]);
 int b_bud(B *b, double omegaA);
+char **b_get_seqs(B *b);
+int *b_get_abunds(B *b);
 
 void bi_census(Bi *bi);
 int b_add_bi(B *b, Bi *bi);

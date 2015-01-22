@@ -8,6 +8,22 @@
 
 using namespace Rcpp;
 
+// dada_uniques
+Rcpp::DataFrame dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances);
+RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        Rcpp::traits::input_parameter< std::vector< std::string > >::type seqs(seqsSEXP );
+        Rcpp::traits::input_parameter< std::vector< int > >::type abundances(abundancesSEXP );
+        Rcpp::DataFrame __result = dada_uniques(seqs, abundances);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}
 // dada_from_file
 int dada_from_file(std::string filename);
 RcppExport SEXP dadac_dada_from_file(SEXP filenameSEXP) {

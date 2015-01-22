@@ -10,6 +10,30 @@ using namespace Rcpp;
  DADA cluster object "B" constructor takes a "Uniques"
  object as its input.
  */
+ 
+/*
+ uniques_from_vectors (CPP):
+ Create Uniques object from provided vectors of strings and abundances.
+*/
+Uniques *uniques_from_vectors(std::vector< std::string > strings, std::vector< int > abundances) {
+  Uniques *uniques = (Uniques *) malloc( sizeof(Uniques) );
+  uniques->nseqs = strings.size();
+
+  uniques->unique = (Unique*) malloc(uniques->nseqs * sizeof(Unique));
+  
+  /* Store each string/abundance in a Unique object. */
+  for (int i = 0; i < uniques->nseqs; i++) {
+    uniques->unique[i].seq = (char *) malloc( strings[i].length() + 1 );
+    strcpy(uniques->unique[i].seq, strings[i].c_str());
+    nt2int(uniques->unique[i].seq, uniques->unique[i].seq);
+    uniques->unique[i].reads = abundances[i];
+//    char* c = new char[s.length() + 1];
+//    strcpy(c, s.c_str());
+  }
+  
+  return uniques;
+}
+
 
 /*
  uniques_from_file:

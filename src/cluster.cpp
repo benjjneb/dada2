@@ -811,6 +811,25 @@ void b_update_err(B *b, double err[4][4]) {
 }
 
 
+char **b_get_seqs(B *b) {
+  int i;
+  char **seqs = (char **) malloc(b->nclust * sizeof(char *));
+  for(i=0;i<b->nclust;i++) {
+    seqs[i] = (char *) malloc((strlen(b->bi[i]->seq)+1) * sizeof(char));
+    ntcpy(seqs[i], b->bi[i]->seq);
+  }
+  return seqs;
+}
+
+int *b_get_abunds(B *b) {
+  int i;
+  int *abunds = (int *) malloc(b->nclust * sizeof(int));
+  for(i=0;i<b->nclust;i++) {
+    abunds[i] = b->bi[i]->reads;
+  }
+  return abunds;
+}
+
 
 
 

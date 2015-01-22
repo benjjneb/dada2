@@ -5,6 +5,24 @@
 #' @importFrom Rcpp evalCpp
 NULL
 
+#' Run DADA on the provided unique sequences/abundance pairs. 
+#'
+#' @param seqs (Required). Character.
+#'  A vector containing all unique sequences in the data set.
+#'  Only A/C/G/T/N/- allowed. Ungapped sequences recommended.
+#' 
+#' @param abundances (Required). Numeric.
+#'  A vector of the number of reads of each unique seuqences.
+#'  NAs not tolerated. Must be same length as the seqs vector.
+#'
+#' @return DataFrame object with sequence and abundance columns,
+#' corresponding to the DADA denoised sample genotypes.
+#'
+#' @export
+dada_uniques <- function(seqs, abundances) {
+    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances)
+}
+
 #' Run DADA on the provided uniques filename.
 #' @export
 dada_from_file <- function(filename) {
