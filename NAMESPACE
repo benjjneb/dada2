@@ -2,6 +2,8 @@
 
 export(dada_uniques)
 export(dereplicateFastqReads)
+export(get_dada_opt)
+export(set_dada_opt)
 import(ShortRead)
 importFrom(Rcpp,evalCpp)
 useDynLib(dadac)
