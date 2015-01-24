@@ -28,7 +28,7 @@ dereplicateFastqReads(fl, n = 1e+06, verbose = FALSE)
  Default is \code{FALSE}, no messages.}
 }
 \value{
-DNAStringSet object with names describing frequency of repeat (??)
+Named integer vector. Named by sequence, valued by number of occurence.
 }
 \description{
 Custom interface to \code{\link{FastqStreamer}}

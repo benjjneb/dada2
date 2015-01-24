@@ -127,7 +127,7 @@ void uniques_sequence(Uniques *uniques, int n, char *seq);
 void uniques_free(Uniques *uniques);
 
 /* methods implemented in cluster.c */
-B *b_new(Uniques *uniques, double err[4][4], int gap_pen);
+B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen);
 void b_free(B *b);
 void b_init(B *b);
 void b_shuffle(B *b);

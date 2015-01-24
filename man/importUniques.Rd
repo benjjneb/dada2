@@ -20,8 +20,4 @@ Named integer vector. Named by sequence, valued by number of occurence.
 Load .uniques file
 Basically a wrapper for read.table customized for .uniques format
 }
-\seealso{
-\code{\link{replicateReads}}, \code{\link{removeReadsWithNs}},
-\code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
-}
 

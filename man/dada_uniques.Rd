@@ -4,7 +4,7 @@
 \alias{dada_uniques}
 \title{Run DADA on the provided unique sequences/abundance pairs.}
 \usage{
-dada_uniques(seqs, abundances, ppois)
+dada_uniques(seqs, abundances, err, score, gap, ppois)
 }
 \arguments{
 \item{seqs}{(Required). Character.
@@ -14,6 +14,15 @@ dada_uniques(seqs, abundances, ppois)
 \item{abundances}{(Required). Numeric.
  A vector of the number of reads of each unique seuqences.
  NAs not tolerated. Must be same length as the seqs vector.}
+
+\item{err}{(Required). Numeric matrix (4x4).}
+
+\item{score}{(Required). Numeric matrix (4x4).
+The score matrix used during the alignment.}
+
+\item{gap}{(Required). A \code{numeric(1)} giving the gap penalty for alignment.}
+
+\item{ppois}{(Required). Must be the R ppois function.}
 }
 \value{
 DataFrame object with sequence and abundance columns,

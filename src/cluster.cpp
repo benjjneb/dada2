@@ -1,5 +1,4 @@
 #include <Rcpp.h>
-//#include <gsl/gsl_cdf.h>
 #include "dada.h"
 using namespace Rcpp;
 // [[Rcpp::interfaces(cpp)]]
@@ -106,11 +105,9 @@ void fam_free(Fam *fam) {
 int fam_add_raw(Fam *fam, Raw *raw) {
 //  if(VERBOSE) { printf("\tfam_add_raw - enter (%i, %i)\n", fam->nraw, fam->maxraw); }
   if(fam->nraw >= fam->maxraw) {    // Extend Raw* buffer
-//    if(VERBOSE) { printf("\tEXTENDING FAM RAW BUFFER\n"); }
     fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *));
     fam->maxraw+=RAWBUF;
   }
-//  else if(VERBOSE) { printf("\tno extension FAM RAW BUFFER\n"); }
 
   fam->raw[fam->nraw] = raw;
   fam->reads += raw->reads;
@@ -275,11 +272,9 @@ void bi_free(Bi *bi) {
  */
 int bi_add_fam(Bi *bi, Fam *fam) {
   if(bi->nfam >= bi->maxfam) {    // Extend Fam* buffer
-    if(VERBOSE) { printf("\tEXTENDING BI FAM BUFFER\n"); }
     bi->fam = (Fam **) realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *));
     bi->maxfam+=FAMBUF;
   }
-//  else if(VERBOSE) { printf("\tno extension BI FAM BUFFER\n"); }
 
   bi->fam[bi->nfam] = fam;
   bi->reads += fam->reads;
@@ -306,7 +301,7 @@ void bi_census(Bi *bi) {
  Places all sequences into the same family within the same cluster.
  New objects have flags set in such a way to force an update.
 */
-B *b_new(Uniques *uniques, double err[4][4], int gap_pen) {
+B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen) {
   int i, j, index;
   char *seq;
   
@@ -317,9 +312,9 @@ B *b_new(Uniques *uniques, double err[4][4], int gap_pen) {
   b->reads = 0;
   b->nraw = uniques_nseqs(uniques);
   b->gap_pen = gap_pen;
-  seq = (char *) malloc(SEQLEN);
   
   // Allocate the list of raws and then create them all.
+  seq = (char *) malloc(SEQLEN);
   b->raw = (Raw **) malloc(b->nraw * sizeof(Raw *));
   for (index = 0; index < b->nraw; index++) {
     uniques_sequence(uniques, index, (char *) seq);
@@ -327,23 +322,19 @@ B *b_new(Uniques *uniques, double err[4][4], int gap_pen) {
     b->raw[index]->index = index;
     b->reads += b->raw[index]->reads;
   }
-  
+  free(seq);
 
-  // Copy the error (transition matrix)
+  // Copy the error matrix
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
       b->err[i][j] = err[i][j];
     }
   }
-  
-  //      MATLABCODE: scoreMat = 5 + log(ERRa);
-  // I don't think this should be tied to the error rate...
-  // Errors are only one cause of sequence differences along with biological differences
-  // Make the score matrix for alignment
+
+  // Copy the score matrix
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      if(i==j) { b->score[i][j] = 5.; }     // DEFAULTING TO NUC44 RIGHT NOW FOR SCORE MATRIX
-      else     { b->score[i][j] = -4.; }
+      b->score[i][j] = score[i][j];
     }
   }
   
@@ -378,7 +369,9 @@ void b_init(B *b) {
 }
 
 void b_free(B *b) {
-  
+  for(int i=0;i<b->nclust;i++) { bi_free(b->bi[i]); }
+  free(b->bi);
+  free(b);
 }
 
 /* b_add_bi:
@@ -627,7 +620,7 @@ void b_p_update(B *b, Function ppois) {
         mu = lambda*b->bi[i]->reads;
         
         if(mu==0) {  // Check for underflow (occurs when lambda underflows to 0.0)
-          printf("ZEROFLOW MU: %.4e -- (%.4e, %i)\n", mu, lambda, b->bi[i]->reads);
+          if(tVERBOSE) { printf("ZEROFLOW MU: %.4e -- (%.4e, %i)\n", mu, lambda, b->bi[i]->reads); }
           mu = DBL_MIN;  // TEMPORARY SOLUTION?
         }
 
