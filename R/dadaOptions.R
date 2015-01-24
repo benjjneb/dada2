@@ -59,22 +59,11 @@ get_dada_opt <- function(option = NULL) {
 }
 
 
-
-#define VERBOSE 0
-#define tVERBOSE 0
-#define BUFFER_SIZE 1250
 #define GAPPEN -8
-#define KEY_BUFSIZE 2000
-#define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
-#define HASHOCC 20
 #define BAND 50 // Size of band in banded alignments. 0 means no banding.
 #define USE_KMERS 1
 #define KMER_SIZE 6
 #define KDIST_CUTOFF 0.5
-#define RAWBUF 50
-#define FAMBUF 50
-#define CLUSTBUF 50
-#define TAIL_APPROX_CUTOFF 0.0000000001
 #define OMEGA_A 0.01
 
 

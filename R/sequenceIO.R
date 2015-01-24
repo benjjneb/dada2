@@ -21,7 +21,7 @@
 #'  on the intermittent and final status of the dereplication.
 #'  Default is \code{FALSE}, no messages.
 #'
-#' @return DNAStringSet object with names describing frequency of repeat.
+#' @return Named integer vector. Named by sequence, valued by number of occurence.
 #'
 #' @seealso \code{\link{replicateReads}}, \code{\link{removeReadsWithNs}}, 
 #' \code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
@@ -81,3 +81,28 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
   return(derepCounts)
 }
 ################################################################################
+
+################################################################################
+#' Load .uniques file
+#' Basically a wrapper for read.table customized for .uniques format
+#'
+#' @param fl (Required). Character.
+#'  The file path to the .uniques file.
+#' 
+#' @param sep (Optional). The field separator character.
+#'
+#' @return Named integer vector. Named by sequence, valued by number of occurence.
+#'
+#' @export
+#' 
+importUniques <- function(fl, sep=""){
+  unqs <- read.table(fl, sep=sep)
+  if(ncol(unqs) != 2) stop(paste("Unexpected number of columns:", ncol(foo)))
+  if(class(unqs[,1]) != "integer" || class(unqs[,2]) != "character") stop(paste("Integer/sequence pairs required."))
+
+  rvec <- unqs[,1]
+  names(rvec) <- unqs[,2]
+  return(rvec)
+}
+################################################################################
+
