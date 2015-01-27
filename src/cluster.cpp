@@ -363,7 +363,7 @@ void b_init(B *b) {
 
   bi_census(b->bi[0]);
   b_consensus_update(b); // Makes cluster consensus sequence
-  b_lambda_update(b, FALSE);
+  b_lambda_update(b, FALSE, 1.);
   b_e_update(b);
   if(VERBOSE) { printf("b_init - exit\n"); }
 }
@@ -421,7 +421,7 @@ void b_reads_update(B *b) {
  NOTE: CONTEXT-DEPENDENT ERROR-RATES AND HOMOPOLYMER GAPPING
  NOT YET IMPLEMENTED.
 */
-void b_lambda_update(B *b, bool use_kmers) {
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
   int i, index;
   double lambda;
   char **al; // stores alignments
@@ -431,8 +431,8 @@ void b_lambda_update(B *b, bool use_kmers) {
       // update alignments and lambda of all raws to this sequence
       for(index=0; index<b->nraw; index++) {
         /* perform alignment */
-//        al = b_align(b->bi[i]->seq, b->raw[index]->seq, b->score, b->gap_pen, TRUE);
-        al = raw_align(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers);
+//        al = b_align(b->bi[i]->seq, b->raw[index]->seq, b->score, b->gap_pen, TRUE, kdist_cutoff);
+        al = raw_align(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff);
         
         /* Store sub and lambda in the cluster object Bi */
         sub = al2subs(al);
@@ -825,7 +825,6 @@ void b_get_trans_matrix(B *b, int32_t obs[4][4]) {
       obs[i][j] = 0;
     }
   }
-  int32_t counts[4] = {4, 4, 4, 4};  // PSEUDOCOUNTS
   
   // Count up all observed transitions
   for(i=0;i<b->nclust;i++) {

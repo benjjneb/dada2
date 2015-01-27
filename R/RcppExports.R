@@ -22,12 +22,11 @@ NULL
 #'
 #' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
 #'
-#' @return DataFrame object with sequence and abundance columns,
-#' corresponding to the DADA denoised sample genotypes.
+#' @return List.
 #'
 #' @export
-dada_uniques <- function(seqs, abundances, err, score, gap) {
-    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap)
+dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff) {
+    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff)
 }
 
 # Register entry points for exported C++ functions

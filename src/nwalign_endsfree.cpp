@@ -6,7 +6,6 @@
 using namespace Rcpp;
 // [[Rcpp::interfaces(cpp)]]
 
-
 char *al2str(char **al);
 char **str2al(char *str);
 
@@ -39,17 +38,17 @@ int *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
   return kvec;
 }
 
-char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool shroud) {
+char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_kmer, double kdist_cutoff) {
   static long nalign=0;
   static long nshroud=0;
   char **al;
   double kdist;
   
-  if(shroud) {
+  if(use_kmer) {
     kdist = kmer_dist(raw1->kmer, strlen(raw1->seq), raw2->kmer, strlen(raw2->seq), KMER_SIZE);
   } else { kdist = 0; }
   
-  if(shroud && kdist > KDIST_CUTOFF) {
+  if(use_kmer && kdist > kdist_cutoff) {
     al = NULL;
     nshroud++;
   } else {
@@ -57,26 +56,26 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool shrou
   }
   nalign++;
   
-  if(TRUE && nalign%1000==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
+  if(tVERBOSE && nalign%1000==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
   
   return al;
 }
 
 // Wrapper for the NW align in the clustering context
-char **b_align(char *s1, char *s2, double score[4][4], int gap_p, bool shroud) {
+char **b_align(char *s1, char *s2, double score[4][4], int gap_p, bool use_kmers, double kdist_cutoff) {
   static long nalign=0;
   static long nshroud=0;
   char **al;
   int *kv1; int *kv2;
   double kdist;
   
-  if(shroud) {
+  if(use_kmers) {
     kv1 = get_kmer(s1, KMER_SIZE);
     kv2 = get_kmer(s2, KMER_SIZE);
     kdist = kmer_dist(kv1, strlen(s1), kv2, strlen(s2), KMER_SIZE);
   } else { kdist = 0; }
   
-  if(shroud && kdist > 0.42) {
+  if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
     nshroud++;
   } else {
@@ -179,27 +178,7 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], int gap_p, int b
       }
     }
   }
-  
-/*  if(VERBOSE) {
-    printf("\nDP matrix:\n[");
-    for(i=0; i<len1 + 1; i++) {
-      for(j=0;j<len2 + 1;j++) {
-        printf("%.2f, ", d[i][j]);
-      }
-      printf("\n");
-    }
-    printf("];\n");
- 
-    printf("\nBP matrix:\n[");
-    for(i=0; i<len1 + 1; i++) {
-      for(j=0;j<len2 + 1;j++) {
-        printf("%i, ", p[i][j]);
-      }
-      printf("\n");
-    }
-    printf("];\n");
-  } */
-  
+    
   /* Allocate memory to alignment strings. */
   char **al = (char **) malloc( 2 * sizeof(char *) );
   al[0] = (char *) calloc( len1 + len2 + 1, sizeof(char)); //initialize to max possible length

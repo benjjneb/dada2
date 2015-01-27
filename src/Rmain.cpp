@@ -6,7 +6,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen);
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -26,13 +26,14 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
 //'
 //' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
 //'
-//' @return DataFrame object with sequence and abundance columns,
-//' corresponding to the DADA denoised sample genotypes.
+//' @return List.
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abundances, Rcpp::NumericMatrix err,
-                        Rcpp::NumericMatrix score, Rcpp::NumericVector gap) {
+Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abundances,
+                        Rcpp::NumericMatrix err,
+                        Rcpp::NumericMatrix score, Rcpp::NumericVector gap,
+                        Rcpp::NumericVector use_kmers, Rcpp::NumericVector kdist_cutoff) {
   int i, j, len1, len2, nrow, ncol;
   
   // Load the seqs/abundances into a Uniques struct
@@ -81,8 +82,24 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   double c_gap = *(gap.begin());
   
+  // Copy use kmers into a C++ bool
+  len1 = use_kmers.size();
+  if(len1 != 1) {
+    Rcpp::Rcout << "C: Use_kmers not length 1:" << len1 << "\n";
+    return R_NilValue;
+  }
+  bool c_use_kmers = *(use_kmers.begin());
+
+  // Copy kdist_cutoff into a C double
+  len1 = kdist_cutoff.size();
+  if(len1 != 1) {
+    Rcpp::Rcout << "C: Kdist cutoff not length 1:" << len1 << "\n";
+    return R_NilValue;
+  }
+  double c_kdist_cutoff = *(kdist_cutoff.begin());
+
   // Run DADA
-  B *bb = run_dada(uniques, c_score, c_err, c_gap);
+  B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff);
   uniques_free(uniques);
   
   // Extract output from B object
@@ -109,7 +126,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   return Rcpp::List::create(_["genotypes"] = df_genotypes, _["trans"] = otrans);
 }
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen) {
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff) {
   int newi, round;
 //  double SCORE[4][4] = {{5, -4, -4, -4}, {-4, 5, -4, -4}, {-4, -4, 5, -4}, {-4, -4, -4, 5}};
 //  double ERR[4][4] = {{0.991, 0.003, 0.003, 0.003}, {0.003, 0.991, 0.003, 0.003}, {0.003, 0.003, 0.991, 0.003}, {0.003, 0.003, 0.003, 0.991}};  
@@ -124,7 +141,7 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
     newi = b_bud(bb, OMEGA_A); if(tVERBOSE) Rcout << "C: Budded\n";
     if(tVERBOSE) printf("C: ----------- Round %i (newi=%i) -----------\n", round++, newi);
     b_consensus_update(bb); if(tVERBOSE) Rcout << "C: Consensused\n";
-    b_lambda_update(bb, USE_KMERS); if(tVERBOSE) Rcout << "C: Lambdad\n";
+    b_lambda_update(bb, use_kmers, kdist_cutoff); if(tVERBOSE) Rcout << "C: Lambdad\n";
     b_shuffle(bb);  if(tVERBOSE) Rcout << "C: Shuffled\n";
     b_consensus_update(bb); if(tVERBOSE) Rcout << "C: Consensused\n";
     b_fam_update(bb); if(tVERBOSE) Rcout << "C: Fam Updated\n";

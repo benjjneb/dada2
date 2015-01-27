@@ -9,8 +9,8 @@
 using namespace Rcpp;
 
 // dada_uniques
-Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix score, Rcpp::NumericVector gap);
-RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP scoreSEXP, SEXP gapSEXP) {
+Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::NumericVector use_kmers, Rcpp::NumericVector kdist_cutoff);
+RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
@@ -20,7 +20,9 @@ BEGIN_RCPP
         Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type err(errSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericVector >::type gap(gapSEXP );
-        Rcpp::List __result = dada_uniques(seqs, abundances, err, score, gap);
+        Rcpp::traits::input_parameter< Rcpp::NumericVector >::type use_kmers(use_kmersSEXP );
+        Rcpp::traits::input_parameter< Rcpp::NumericVector >::type kdist_cutoff(kdist_cutoffSEXP );
+        Rcpp::List __result = dada_uniques(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);

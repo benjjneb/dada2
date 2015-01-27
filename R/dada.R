@@ -21,6 +21,10 @@
 #' @param self_consist (Optional). \code{logical(1)}
 #'  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat
 #'  the algorithm using the newly estimated error rates. This continues until convergence.
+#'
+#' @return List.
+#'  $genotypes: named integer vector of the inferred sample genotypes.
+#'  $trans: 4x4 integer matrix of the observed transitions between nts. 
 #'   
 #' @export
 #'
@@ -43,7 +47,6 @@ dada <- function(uniques,
     stop("dada: Invalid uniques vector. Names must be sequences made up of A/C/G/T/N/-")
   }
   
-  
   if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {
     stop("dada: Invalid error matrix.")
   }
@@ -59,12 +62,25 @@ dada <- function(uniques,
   if(gap_penalty > -1) warning("dada: Very small gap penalty.")
   
   prev <- NULL
-  cur <- dada_uniques(names(uniques), unname(uniques), err, score, gap_penalty)
-  while(self_consist && !identical(cur, prev)) {
+  nn <- 1
+  cur <- dada_uniques(names(uniques), unname(uniques), err, score, gap_penalty,
+                      get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts))
+  while(self_consist && !identical(cur, prev) && nn < get("MAX_CONSIST", envir=dada_opts)) {
+    cat(".")
     prev <- cur
     err <- cur$trans + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
     err <- t(apply(err, 1, function(x) x/sum(x)))  # apply returns a transposed result
-    cur <- dada_uniques(names(uniques), unname(uniques), err, score, gap_penalty)
+    cur <- dada_uniques(names(uniques), unname(uniques), err, score, gap_penalty,
+                        get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts))
+    nn <- nn+1
   }
+  cat("\n")
+  if(self_consist && nn == get("MAX_CONSIST", envir=dada_opts)) {
+    warning("dada: Self-consistency loop terminated before convergence.")
+  }
+  # Convert cur$genotypes to the named integer vector being used as the uniques format
+  foo <- as.integer(cur$genotypes$abundance)
+  names(foo) <- cur$genotypes$sequence
+  cur$genotypes <- sort(foo, decreasing=TRUE)
   cur
 }
