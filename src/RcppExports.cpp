@@ -9,8 +9,8 @@
 using namespace Rcpp;
 
 // dada_uniques
-Rcpp::DataFrame dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::Function ppois);
-RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP ppoisSEXP) {
+Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix score, Rcpp::NumericVector gap);
+RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP scoreSEXP, SEXP gapSEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
@@ -20,8 +20,7 @@ BEGIN_RCPP
         Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type err(errSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericVector >::type gap(gapSEXP );
-        Rcpp::traits::input_parameter< Rcpp::Function >::type ppois(ppoisSEXP );
-        Rcpp::DataFrame __result = dada_uniques(seqs, abundances, err, score, gap, ppois);
+        Rcpp::List __result = dada_uniques(seqs, abundances, err, score, gap);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);

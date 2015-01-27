@@ -22,14 +22,12 @@ NULL
 #'
 #' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
 #'
-#' @param ppois (Required). Must be the R ppois function.
-#'
 #' @return DataFrame object with sequence and abundance columns,
 #' corresponding to the DADA denoised sample genotypes.
 #'
 #' @export
-dada_uniques <- function(seqs, abundances, err, score, gap, ppois) {
-    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, ppois)
+dada_uniques <- function(seqs, abundances, err, score, gap) {
+    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap)
 }
 
 # Register entry points for exported C++ functions

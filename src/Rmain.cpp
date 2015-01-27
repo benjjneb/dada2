@@ -6,7 +6,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, Rcpp::Function ppois);
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -26,15 +26,13 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
 //'
 //' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
 //'
-//' @param ppois (Required). Must be the R ppois function.
-//'
 //' @return DataFrame object with sequence and abundance columns,
 //' corresponding to the DADA denoised sample genotypes.
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame dada_uniques(std::vector< std::string > seqs,  std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::Function ppois ) {
-  // NOTE: RCPP DOES NOT PLAY WELL WITH LINE BREAKS IN EXPORTED FUNCTION DECLARATIONS!!!
+Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abundances, Rcpp::NumericMatrix err,
+                        Rcpp::NumericMatrix score, Rcpp::NumericVector gap) {
   int i, j, len1, len2, nrow, ncol;
   
   // Load the seqs/abundances into a Uniques struct
@@ -84,32 +82,41 @@ Rcpp::DataFrame dada_uniques(std::vector< std::string > seqs,  std::vector< int 
   double c_gap = *(gap.begin());
   
   // Run DADA
-  B *bb = run_dada(uniques, c_score, c_err, c_gap, ppois);
+  B *bb = run_dada(uniques, c_score, c_err, c_gap);
   uniques_free(uniques);
   
   // Extract output from B object
   char **ostrs = b_get_seqs(bb);
   int *oabs = b_get_abunds(bb);
+  int32_t trans[4][4];
+  b_get_trans_matrix(bb, trans);
   
-  // Convert to R object and return
+  // Convert to R objects and return
   Rcpp::CharacterVector oseqs;
-  Rcpp::NumericVector abunds(bb->nclust);
+  Rcpp::NumericVector oabunds(bb->nclust);
   for(i=0;i<bb->nclust;i++) {
     oseqs.push_back(std::string(ostrs[i]));
-    abunds[i] = oabs[i];
+    oabunds[i] = oabs[i];
   }
-  return Rcpp::DataFrame::create(Rcpp::Named("sequence") = oseqs, 
-                                Rcpp::Named("abundance")  = abunds);
+  Rcpp::IntegerMatrix otrans(4, 4);  // R INTS ARE SIGNED 32 BIT
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      otrans(i,j) = trans[i][j];
+    }
+  }
+  
+  Rcpp::DataFrame df_genotypes = Rcpp::DataFrame::create(_["sequence"] = oseqs, _["abundance"]  = oabunds);
+  return Rcpp::List::create(_["genotypes"] = df_genotypes, _["trans"] = otrans);
 }
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, Rcpp::Function ppois) {
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen) {
   int newi, round;
 //  double SCORE[4][4] = {{5, -4, -4, -4}, {-4, 5, -4, -4}, {-4, -4, 5, -4}, {-4, -4, -4, 5}};
 //  double ERR[4][4] = {{0.991, 0.003, 0.003, 0.003}, {0.003, 0.991, 0.003, 0.003}, {0.003, 0.003, 0.991, 0.003}, {0.003, 0.003, 0.003, 0.991}};  
   B *bb;
   bb = b_new(uniques, err, score, gap_pen); // New cluster with all sequences in 1 bi and 1 fam
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus sequence
-  b_p_update(bb, ppois);       // Calculates abundance p-value for each fam in its cluster (consensuses)
+  b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
   newi = -999;
   round = 1;
 
@@ -121,7 +128,7 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
     b_shuffle(bb);  if(tVERBOSE) Rcout << "C: Shuffled\n";
     b_consensus_update(bb); if(tVERBOSE) Rcout << "C: Consensused\n";
     b_fam_update(bb); if(tVERBOSE) Rcout << "C: Fam Updated\n";
-    b_p_update(bb, ppois);  if(tVERBOSE) Rcout << "C: Pvaled\n";
+    b_p_update(bb);  if(tVERBOSE) Rcout << "C: Pvaled\n";
   }
 
   return bb;

@@ -14,7 +14,7 @@ using namespace Rcpp;
 #define RAWBUF 50
 #define FAMBUF 50
 #define CLUSTBUF 50
-#define TAIL_APPROX_CUTOFF 0.0000000001
+#define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 
 /* private function declarations */
 Raw *raw_new(char *seq, int reads);
@@ -596,7 +596,7 @@ void b_shuffle(B *b) {
  Calculates the abundance p-value for each family in the clustering.
  Depends on the lambda between the fam and its cluster, and the reads of each.
 */
-void b_p_update(B *b, Function ppois) {
+void b_p_update(B *b) {
   int i, f, reads;
   double self, mu, lambda, pval, norm;
   for(i=0;i<b->nclust;i++) {
@@ -632,8 +632,9 @@ void b_p_update(B *b, Function ppois) {
         
         // Calculate pval from poisson cdf.
         if(IMPLEMENTATION == 'R') {
-          bool low_tail = false;
-          Rcpp::NumericVector res = ppois(reads-1, mu, low_tail);
+          Rcpp::IntegerVector n_repeats(1);
+          n_repeats(0) = reads-1;
+          Rcpp::NumericVector res = Rcpp::ppois(n_repeats, mu, false);  // lower.tail = false
           pval = *(res.begin());
           
 /*          double gslval = 1 - gsl_cdf_poisson_P(reads-1, mu);
@@ -779,8 +780,8 @@ void b_consensus_update(B *b) {
 void b_update_err(B *b, double err[4][4]) {
   int nti0, nti1, i, j, f, s;
   Fam *fam;
-  uint32_t counts[4] = {4, 4, 4, 4};  // PSEUDOCOUNTS
-  uint32_t obs[4][4] = {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}};
+  int32_t counts[4] = {4, 4, 4, 4};  // PSEUDOCOUNTS
+  int32_t obs[4][4] = {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}};
   
   // Count up all observed transitions
   for(i=0;i<b->nclust;i++) {
@@ -809,6 +810,48 @@ void b_update_err(B *b, double err[4][4]) {
       err[nti0][nti1] = ((double) obs[nti0][nti1]) / ((double) counts[nti0]);
     }
   }
+}
+
+// Function to get the number of transitions observed for each possible nt combo
+void b_get_trans_matrix(B *b, int32_t obs[4][4]) {
+  int nti0, nti1, i, j, f, s;
+  int32_t total = 0; // Will be used to check for overflows
+  int32_t prev;
+  Fam *fam;
+  
+  // Initialize obs - no pseudocounts
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      obs[i][j] = 0;
+    }
+  }
+  int32_t counts[4] = {4, 4, 4, 4};  // PSEUDOCOUNTS
+  
+  // Count up all observed transitions
+  for(i=0;i<b->nclust;i++) {
+    // Initially add all counts to the no-error slots
+    for(j=0;j<strlen(b->bi[i]->seq);j++) {
+      nti0 = (int) (b->bi[i]->seq[j] - 1);
+      obs[nti0][nti0] += b->bi[i]->reads;
+      
+      prev = total;
+      total += b->bi[i]->reads;
+      if(total < prev) { // OVERFLOW
+        printf("OVERFLOW IN b_get_trans_matrix!!!!!!\n");
+      }
+    }
+    
+    // Move counts corresponding to each substitution with the fams
+    for(f=0;f<b->bi[i]->nfam;f++) {
+      fam = b->bi[i]->fam[f];
+      for(s=0;s<fam->sub->nsubs;s++) {
+        nti0 = (int) (fam->sub->nt0[s]-1);
+        nti1 = (int) (fam->sub->nt1[s]-1);
+        obs[nti0][nti0] -= fam->reads;
+        obs[nti0][nti1] += fam->reads;
+      }
+    }
+  } // for(i=0;i<b->nclust;i++)
 }
 
 
