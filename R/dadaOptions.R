@@ -57,6 +57,7 @@ get_dada_opt <- function(option = NULL) {
 
   ropts <- lapply(option, function(x) get(x, envir=dada_opts))
   names(ropts) <- option
+  if(length(ropts) == 1) ropts <- ropts[[1]]  # If just one option requested, return it alone
   return(ropts)
 }
 

@@ -43,7 +43,7 @@ dada <- function(uniques,
       stop("dada: Invalid uniques vector. Must be integer valued.")
     }
   }
-  if(!(all(sapply(names(bar), function(x) nchar(gsub("[ACGTN-]", "", x))==0, USE.NAMES=FALSE)))) {
+  if(!(all(sapply(names(uniques), function(x) nchar(gsub("[ACGTN-]", "", x))==0, USE.NAMES=FALSE)))) {
     stop("dada: Invalid uniques vector. Names must be sequences made up of A/C/G/T/N/-")
   }
   
