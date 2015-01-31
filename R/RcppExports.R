@@ -29,8 +29,26 @@ dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cut
     .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff)
 }
 
-calibrate_kmers <- function(seqs, abundances, score, gap, max_aligns) {
-    .Call('dadac_calibrate_kmers', PACKAGE = 'dadac', seqs, abundances, score, gap, max_aligns)
+#' Generate the kmer-distance and the alignment distance from the
+#'   given set of sequences. 
+#'
+#' @param seqs (Required). Character.
+#'  A vector containing all unique sequences in the data set.
+#'  Only A/C/G/T/N/- allowed. Ungapped sequences recommended.
+#' 
+#' @param score (Required). Numeric matrix (4x4).
+#' The score matrix used during the alignment.
+#'
+#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
+#'
+#' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
+#' pairwise alignments to do.
+#'
+#' @return DataFrame.
+#'
+#' @export
+calibrate_kmers <- function(seqs, score, gap, max_aligns) {
+    .Call('dadac_calibrate_kmers', PACKAGE = 'dadac', seqs, score, gap, max_aligns)
 }
 
 # Register entry points for exported C++ functions

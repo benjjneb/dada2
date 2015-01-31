@@ -33,6 +33,11 @@ dada(uniques, err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003,
  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat
  the algorithm using the newly estimated error rates. This continues until convergence.}
 }
+\value{
+List.
+ $genotypes: named integer vector of the inferred sample genotypes.
+ $trans: 4x4 integer matrix of the observed transitions between nts.
+}
 \description{
 The dada function takes as input the unique sequences in an amplicon sequencing sample paired
  with their abundances, and returns the sample genotypes paired with their abundances

@@ -5,7 +5,7 @@
 \title{Load .uniques file
 Basically a wrapper for read.table customized for .uniques format}
 \usage{
-importUniques(fl, sep = "")
+importUniques(fl, ...)
 }
 \arguments{
 \item{fl}{(Required). Character.

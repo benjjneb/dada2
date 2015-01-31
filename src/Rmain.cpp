@@ -199,8 +199,27 @@ void test_dada(Uniques *uniques, double score[4][4], double err[4][4], double ga
   }
 }
 
+//------------------------------------------------------------------
+//' Generate the kmer-distance and the alignment distance from the
+//'   given set of sequences. 
+//'
+//' @param seqs (Required). Character.
+//'  A vector containing all unique sequences in the data set.
+//'  Only A/C/G/T/N/- allowed. Ungapped sequences recommended.
+//' 
+//' @param score (Required). Numeric matrix (4x4).
+//' The score matrix used during the alignment.
+//'
+//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
+//'
+//' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
+//' pairwise alignments to do.
+//'
+//' @return DataFrame.
+//'
+//' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame calibrate_kmers(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, size_t max_aligns) {
+Rcpp::DataFrame calibrate_kmers(std::vector< std::string > seqs, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, size_t max_aligns) {
   int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
   char *seq1, *seq2;
   double c_gap = as<double>(gap);
@@ -209,12 +228,6 @@ Rcpp::DataFrame calibrate_kmers(std::vector< std::string > seqs, std::vector< in
     for(j=0;j<4;j++) {
       c_score[i][j] = score(i,j);
     }
-  }
-
-  // Consistency check
-  if(seqs.size() != abundances.size()) {
-    Rcpp::Rcout << "C: Different input lengths:" << len1 << ", " << len2 << "\n";
-    return R_NilValue;
   }
   nseqs = seqs.size();
   

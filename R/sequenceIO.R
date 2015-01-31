@@ -106,6 +106,3 @@ importUniques <- function(fl, ...){
   return(rvec)
 }
 ################################################################################
-
-lu <- importUniques("inst/extdata/test.uniques")
-
