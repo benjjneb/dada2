@@ -29,6 +29,10 @@ dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cut
     .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff)
 }
 
+calibrate_kmers <- function(seqs, abundances, score, gap, max_aligns) {
+    .Call('dadac_calibrate_kmers', PACKAGE = 'dadac', seqs, abundances, score, gap, max_aligns)
+}
+
 # Register entry points for exported C++ functions
 methods::setLoadAction(function(ns) {
     .Call('dadac_RcppExport_registerCCallable', PACKAGE = 'dadac')

@@ -2,7 +2,7 @@
 dada_opts <- new.env()
 assign("OMEGA_A", 0.01, envir = dada_opts) # NOT YET PASSED IN
 assign("USE_KMERS", TRUE, envir = dada_opts)
-assign("KDIST_CUTOFF", 0.5, envir = dada_opts)
+assign("KDIST_CUTOFF", 0.55, envir = dada_opts)
 assign("BAND_SIZE", 50, envir = dada_opts) # NOT YET PASSED IN
 assign("MAX_CONSIST", 25, envir = dada_opts)
 assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED

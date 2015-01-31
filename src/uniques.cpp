@@ -1,6 +1,4 @@
-#include <Rcpp.h>
 #include "dada.h"
-using namespace Rcpp;
 // [[Rcpp::interfaces(cpp)]]
 
 /* 

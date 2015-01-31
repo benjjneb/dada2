@@ -1,6 +1,5 @@
 #include <Rcpp.h>
 #include "dada.h"
-using namespace Rcpp;
 // [[Rcpp::interfaces(cpp)]]
 
 /*
@@ -35,7 +34,7 @@ Fam *bi_pop_fam(Bi *bi, int f);
 void bi_census(Bi *bi);
 void bi_consensus_update(Bi *bi);
 void fam_consensus_update(Fam *fam);
-void bi_fam_update(Bi *bi, double score[4][4]);
+void bi_fam_update(Bi *bi, double score[4][4], double gap_pen);
 double get_self(char *seq, double err[4][4]);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 Sub *al2subs(char **al);
@@ -412,30 +411,25 @@ void b_reads_update(B *b) {
  lambda_update:
  updates the alignments and lambda of all raws to Bi with
  updated consensus sequences. 
- parameters:
- b, the cluster object,
- t, context-independent error rates
- s, score matrix,
- gap_p the gap penalty for alignments.
- 
- NOTE: CONTEXT-DEPENDENT ERROR-RATES AND HOMOPOLYMER GAPPING
- NOT YET IMPLEMENTED.
 */
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
   int i, index;
   double lambda;
   char **al; // stores alignments
   Sub *sub; // stores Sub structs
+  if(VERBOSE) { printf("b_l_u: Enter.\n"); }
   for (i = 0; i < b->nclust; i++) {
+    if(VERBOSE) { printf("Bi%i\n", i); }
     if(b->bi[i]->update_lambda) {   // consensus sequence for B[i] has changed
+      if(VERBOSE) { printf("\tChanged.\n"); }
       // update alignments and lambda of all raws to this sequence
       for(index=0; index<b->nraw; index++) {
         /* perform alignment */
-//        al = b_align(b->bi[i]->seq, b->raw[index]->seq, b->score, b->gap_pen, TRUE, kdist_cutoff);
         al = raw_align(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff);
         
         /* Store sub and lambda in the cluster object Bi */
         sub = al2subs(al);
+
         // printf("Stored sub (n=%i) for raw %i.\n", sub->nsubs, index);
         b->bi[i]->sub[index] = sub;
         lambda = compute_lambda(sub, b->bi[i]->self, b->err);  // WHERE IS SELF SET!??  -- IN BI_CONSENSUS_UPDATE
@@ -448,7 +442,9 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
       b->bi[i]->update_lambda = FALSE;
     } // if(b->bi[i]->update_lambda)
   }
+  if(VERBOSE) { printf("b_l_u: Done.\n"); }
   b_e_update(b);
+  if(VERBOSE) { printf("b_l_u: Exit.\n"); }
 }
 
 /* b_fam_update(B *b):
@@ -456,7 +452,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
    cluster consensus.
   Currently completely destructive of old fams.
    */
-void bi_fam_update(Bi *bi, double score[4][4]) {
+void bi_fam_update(Bi *bi, double score[4][4], double gap_pen) {
   int foo, f, r, result, r_c;
   Sub *sub;
   char buf[10];
@@ -496,7 +492,12 @@ void bi_fam_update(Bi *bi, double score[4][4]) {
 //    printf("%i subs for r_c=%i, index=%i\n", sub->nsubs, r_c, raws[r_c]->index);
 //    printf("sub key 0...3: %c %c %c %c\n", sub->key[0], sub->key[1], sub->key[2], sub->key[3]);
 //    printf("sub key (strlen=%i): %s\n", strlen(sub->key), sub->key);
+    if(!sub) { // Protect from null subs, but this should never arise...
+      printf("WARNING: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN.\n");
+      sub = al2subs(raw_align(bi->center, raws[r_c], score, gap_pen, FALSE, 1.));
+    }
     result = sm_exists(bi->sm, sub->key);
+
     if (result == 0) {                  // Handle value not found
       foo = bi_add_fam(bi, fam_new());
       fam_add_raw(bi->fam[foo], raws[r_c]);
@@ -515,10 +516,15 @@ void bi_fam_update(Bi *bi, double score[4][4]) {
   // consensus_update/align the fams
   for(f=0;f<bi->nfam;f++) {
     fam_consensus_update(bi->fam[f]);
-    // al = b_align(bi->seq, bi->fam[f]->seq, score, GAPPEN, FALSE);
-//    al = raw_align(bi->center, bi->fam[f]->center, score, GAPPEN, FALSE);
+//    al = raw_align(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1.);
 //    sub = al2subs(al);
+
     sub = bi->sub[bi->fam[f]->center->index];
+    if(!sub) { // Protect from null subs, but this should never arise...
+      printf("WARNING: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN (2).\n");
+      sub = al2subs(raw_align(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1.));
+    }
+
     bi->fam[f]->sub = sub;
   }
   if(tVERBOSE) printf("FU:%d+%d, ", bi->nraw, bi->nfam);
@@ -528,7 +534,7 @@ void bi_fam_update(Bi *bi, double score[4][4]) {
 void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
-      bi_fam_update(b->bi[i], b->score);
+      bi_fam_update(b->bi[i], b->score, b->gap_pen);
     }
   }
   
@@ -547,7 +553,7 @@ void b_e_update(B *b) {
 
 /* b_shuffle:
  move each sequence to the bi that produces the highest expected
- number of that sequence
+ number of that sequence. The center of a Bi cannot leave.
 */
 void b_shuffle(B *b) {
   int ibest, index;
@@ -578,11 +584,16 @@ void b_shuffle(B *b) {
         
         // If different, move the raw to the new bi
         if(ibest != i) {
-          raw = bi_pop_raw(b->bi[i], f, r);
-          bi_shove_raw(b->bi[ibest], raw);
-          b->bi[i]->update_fam = TRUE;
-          b->bi[ibest]->update_fam = TRUE;  // DUPLICATIVE FLAGGING FROM SHOVE_RAW FUNCTION
-          if(VERBOSE) { printf("shuffle: Raw %i from C%i to C%i (%.4e -> %.4e)\n", index, i, ibest, b->bi[i]->e[index], b->bi[ibest]->e[index]); }
+          if(raw->index == b->bi[i]->center->index) {  // Check if center
+            printf("Shuffle: The center of a Bi cannot leave (THIS SHOULD NEVER BE SEEN).\n");
+            printf("Attempting: Raw %i from C%i to C%i (%.4e (%i) -> %.4e (%i))\n", index, i, ibest, b->bi[i]->e[index], b->bi[i]->reads, b->bi[ibest]->e[index], b->bi[ibest]->reads);
+          } else {
+            raw = bi_pop_raw(b->bi[i], f, r);
+            bi_shove_raw(b->bi[ibest], raw);
+            b->bi[i]->update_fam = TRUE;
+            b->bi[ibest]->update_fam = TRUE;  // DUPLICATIVE FLAGGING FROM SHOVE_RAW FUNCTION
+            if(VERBOSE) { printf("shuffle: Raw %i from C%i to C%i (%.4e -> %.4e)\n", index, i, ibest, b->bi[i]->e[index], b->bi[ibest]->e[index]); }
+          }  
         }
 //            printf("\tE_new = %.2e, lambda_new = %.2e, reads_new = %i, key=%s\n", b->bi[ibest]->e[index],
 //            b->bi[ibest]->lambda[index], b->bi[ibest]->reads, ntstr(b->bi[ibest]->sub[index]->key));
@@ -611,7 +622,10 @@ void b_p_update(B *b) {
       }
       else if(reads == 1) {   // Singleton. No abundance pval.
         pval=1.;
-      } else if(b->bi[i]->fam[f]->sub->nsubs == 0) { // Cluster center
+      } else if(!(b->bi[i]->fam[f]->sub)) { // Outside kmer threshhold
+        pval=0.;
+      } 
+      else if(b->bi[i]->fam[f]->sub->nsubs == 0) { // Cluster center
         pval=1.;
       }
       else {                  // Calculate abundance pval.
@@ -770,8 +784,7 @@ void bi_consensus_update(Bi *bi) {
  Updates all its Bi's. Will check flag status eventually.
  */
 void b_consensus_update(B *b) {
-  int i;
-  for (i=0; i<b->nclust; i++) {
+  for (int i=0; i<b->nclust; i++) {
     bi_consensus_update(b->bi[i]);
     b->bi[i]->self = get_self(b->bi[i]->seq, b->err);
   }
@@ -795,7 +808,7 @@ void b_update_err(B *b, double err[4][4]) {
     // Move counts corresponding to each substitution with the fams
     for(f=0;f<b->bi[i]->nfam;f++) {
       fam = b->bi[i]->fam[f];
-      for(s=0;s<fam->sub->nsubs;s++) {
+      for(s=0;s<fam->sub->nsubs;s++) { // ASSUMING SUB IS NOT NULL!!
         nti0 = fam->sub->nt0[s]-1;
         nti1 = fam->sub->nt1[s]-1;
         obs[nti0][nti0] -= fam->reads;
@@ -843,7 +856,7 @@ void b_get_trans_matrix(B *b, int32_t obs[4][4]) {
     // Move counts corresponding to each substitution with the fams
     for(f=0;f<b->bi[i]->nfam;f++) {
       fam = b->bi[i]->fam[f];
-      for(s=0;s<fam->sub->nsubs;s++) {
+      for(s=0;s<fam->sub->nsubs;s++) { // ASSUMING SUB IS NOT NULL!
         nti0 = (int) (fam->sub->nt0[s]-1);
         nti1 = (int) (fam->sub->nt1[s]-1);
         obs[nti0][nti0] -= fam->reads;

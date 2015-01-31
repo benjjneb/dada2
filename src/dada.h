@@ -14,17 +14,16 @@
 
 // gcc dada.h test.c misc.c uniques.c cluster.c nwalign_endsfree.c strmap.c -lgsl
 
+#define ALIGN_SQUAWK 100000
+#define TESTING 0
 #define VERBOSE 0
-#define tVERBOSE 0
+#define tVERBOSE 1
 #define BUFFER_SIZE 1250
-#define GAPPEN -8
 #define KEY_BUFSIZE 2000
 #define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
 #define HASHOCC 20
 #define BAND 50 // Size of band in banded alignments. 0 means no banding.
-#define USE_KMERS 1
 #define KMER_SIZE 6
-#define KDIST_CUTOFF 0.5
 
 /* objects */
 // typedef int bool;  // [C++]: has builtin bool type
@@ -142,6 +141,7 @@ void b_get_trans_matrix(B *b, int32_t obs[4][4]);
 int b_bud(B *b, double omegaA);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
+Raw *raw_new(char *seq, int reads);
 
 void bi_census(Bi *bi);
 int b_add_bi(B *b, Bi *bi);
@@ -156,10 +156,11 @@ void t_update(T *t, B *b);
 */
 
 /* methods implemented in misc.c misc */
-void nt2int(char *oseq, char *iseq);
-void int2nt(char *oseq, char *iseq);
-void ntcpy(char *oseq, char *iseq);
-char *ntstr(char *iseq);
+void nt2int(char *oseq, const char *iseq);
+void int2nt(char *oseq, const char *iseq);
+void ntcpy(char *oseq, const char *iseq);
+char *ntstr(const char *iseq);
+char *intstr(const char *iseq);
 void b_print(B *b);
 void align_print(char **al);
 void b_dump(B *b, char *fn);
@@ -168,13 +169,11 @@ void test_fun(int i);
 
 /* nwalign.c */
 char **nwalign_endsfree(char *s1, char *s2, double s[4][4], int gap_p, int band);
-char **b_align(char *s1, char *s2, double s[4][4], int gap_p, bool use_kmer, double kdist_cutoff); // DEPRECATED
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 double get_self(char *seq, double err[4][4]);
 Sub *al2subs(char **al);
 int *get_kmer(char *seq, int k);
 char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_kmer, double kdist_cutoff);
-
-int timesTwo(int x);
+double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
 
 #endif

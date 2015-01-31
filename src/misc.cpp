@@ -1,8 +1,5 @@
-#include <Rcpp.h>
 #include "dada.h"
-using namespace Rcpp;
 // [[Rcpp::interfaces(cpp)]]
- 
 
 void err_print(double err[4][4]) {
   for(int i=0;i<4;i++) {
@@ -20,6 +17,7 @@ void err_print(double err[4][4]) {
 
 void align_print(char **al) {
   char *al0, *al1;
+  if(!al) { return; }
   al0 = al[0]; al1 = al[1];
   
   printf("%s\n", ntstr(al0));
@@ -86,7 +84,7 @@ void b_print(B *b) {
   nt2int(seq,seq) gives previous functionality.
 */
 
-void nt2int(char *oseq, char *iseq) {
+void nt2int(char *oseq, const char *iseq) {
   int i, len = strlen(iseq);
 
 /*  if (len > sizeof iseq)
@@ -124,7 +122,7 @@ void nt2int(char *oseq, char *iseq) {
 }
 
 /* Converts seq in index form back to nts. */
-void int2nt(char *oseq, char *iseq) {
+void int2nt(char *oseq, const char *iseq) {
   int i, len = strlen(iseq);
   for (i = 0; i < len; i++, iseq++, oseq++) {
     switch (*iseq) {
@@ -157,14 +155,22 @@ void int2nt(char *oseq, char *iseq) {
 }
 
 /* Convenience function for diagnostic output. */
-void ntcpy(char *oseq, char *iseq) {
+void ntcpy(char *oseq, const char *iseq) {
   strcpy(oseq, iseq);
   int2nt(oseq, oseq);
 }
 
 /* Convenience function for diagnostic output. */
-char *ntstr(char *iseq) {
-  char *foo = (char *) malloc(strlen(iseq)+1);
-  ntcpy(foo, iseq);
-  return foo;
+char *ntstr(const char *iseq) {
+  char *oseq = (char *) malloc(strlen(iseq)+1);
+  ntcpy(oseq, iseq);
+  return oseq;
+}
+
+/* Convenience function for diagnostic input. */
+char *intstr(const char *iseq) {
+  char *oseq = (char *) malloc(strlen(iseq)+1);
+  strcpy(oseq, iseq);
+  nt2int(oseq, oseq);
+  return oseq;
 }

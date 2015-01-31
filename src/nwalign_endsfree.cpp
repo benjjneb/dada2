@@ -1,9 +1,6 @@
-#include <Rcpp.h>
 #include <string.h>
 #include <stdlib.h>
 #include "dada.h"
-
-using namespace Rcpp;
 // [[Rcpp::interfaces(cpp)]]
 
 char *al2str(char **al);
@@ -18,37 +15,51 @@ double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k) {
   dot = dot/((len1 < len2 ? len1 : len2) - k + 1.);
   
   if(dot < 0 || dot > 1) { printf("Bad dot: %.4e\n", dot); }
-  
-  return 1. - dot;
+
+  return (1. - dot);
 }
 
 int *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
-  int i, j;
+  int i, j, nti;
   int len = strlen(seq);
-  unsigned long int kmer = 0;
-  int *kvec = (int *) calloc((2 << (2*k)),  sizeof(int));
-  
+  size_t kmer = 0;
+  size_t n_kmers = (2 << (2*k));  // 4^k kmers
+  int *kvec = (int *) calloc(n_kmers,  sizeof(int));
+
+  if(len <=0 || len > SEQLEN) {
+    printf("Unexpected sequence length: %d\n", len);
+  }
+
   for(i=0; i<len-k; i++) {
     kmer = 0;
     for(j=i; j<i+k; j++) {
-      kmer = 4*kmer + (int) seq[j];
+      nti = ((int) seq[j]) - 1; // Change 1s, 2s, 3s, 4s, to 0/1/2/3
+      if(nti != 0 && nti != 1 && nti != 2 && nti != 3) {
+        printf("Unexpected nucleotide: %d\n", seq[j]);
+      }
+      kmer = 4*kmer + nti;
+    }
+    if(TESTING && kmer >= n_kmers) {
+      printf("Kmer index out of range!\n");
     }
     kvec[kmer]++;
   }
   return kvec;
 }
 
-char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_kmer, double kdist_cutoff) {
+char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_kmers, double kdist_cutoff) {
   static long nalign=0;
   static long nshroud=0;
   char **al;
   double kdist;
   
-  if(use_kmer) {
+//  if(tVERBOSE) { printf("In align %i.\n", nalign); }
+  if(use_kmers) {
     kdist = kmer_dist(raw1->kmer, strlen(raw1->seq), raw2->kmer, strlen(raw2->seq), KMER_SIZE);
   } else { kdist = 0; }
+//  if(VERBOSE) { printf("Kmered.\n"); }
   
-  if(use_kmer && kdist > kdist_cutoff) {
+  if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
     nshroud++;
   } else {
@@ -56,40 +67,8 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_k
   }
   nalign++;
   
-  if(tVERBOSE && nalign%1000==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
-  
-  return al;
-}
-
-// Wrapper for the NW align in the clustering context
-char **b_align(char *s1, char *s2, double score[4][4], int gap_p, bool use_kmers, double kdist_cutoff) {
-  static long nalign=0;
-  static long nshroud=0;
-  char **al;
-  int *kv1; int *kv2;
-  double kdist;
-  
-  if(use_kmers) {
-    kv1 = get_kmer(s1, KMER_SIZE);
-    kv2 = get_kmer(s2, KMER_SIZE);
-    kdist = kmer_dist(kv1, strlen(s1), kv2, strlen(s2), KMER_SIZE);
-  } else { kdist = 0; }
-  
-  if(use_kmers && kdist > kdist_cutoff) {
-    al = NULL;
-    nshroud++;
-  } else {
-    al = nwalign_endsfree(s1, s2, score, gap_p, BAND);
-  }
-  nalign++;
-  
-//  Sub *sub;
-//  double adist
-//  sub = al2subs(al);
-//  adist = ((double) sub->nsubs)/(strlen(s1) < strlen(s2) ? strlen(s1) : strlen(s2));
-//  fprintf(stderr, "%.8f,%.8f\n", kdist, adist);
-  
-  if(tVERBOSE && nalign%1000==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
+  if(tVERBOSE && nalign%ALIGN_SQUAWK==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
+//  if(VERBOSE) { printf("Out align.\n"); }
 
   return al;
 }
@@ -309,7 +288,7 @@ Sub *al2subs(char **al) {
   
   size_t key_size = 0; /* key buffer bytes written*/
   
-  if(al == NULL) { // Null alignment (outside kmer thresh) -> Null sub
+  if(!al) { // Null alignment (outside kmer thresh) -> Null sub
     Sub *sub = NULL;
     return sub;
   }
@@ -385,8 +364,8 @@ double compute_lambda(Sub *sub, double self, double t[4][4]) {
   int nti0, nti1;
   double lambda;
   
-  if(sub == NULL) {
-    return((double) 0.0);
+  if(!sub) { // NULL Sub, outside Kmer threshold
+    return 0.0;
   }
 //  printf("CL-Key(%i): %s\n", sub->nsubs, ntstr(sub->key));
   lambda = self;
@@ -436,34 +415,3 @@ double get_self(char *seq, double err[4][4]) {
   
   return self;
 }
-
-
-//  static StrMap *hash_al;
-//  char buf[1250];  // FIX THIS FIX THIS, NEEDS TO BE BIG ENOUGH FOR ALSTR
-
-/*
- if(hash_al == NULL) {  // Initialize hash
- hash_al = sm_new(HASHOCC);
- }
- 
- key = malloc(strlen(s1)+strlen(s2)+2);
- strcpy(key, s1);
- strcat(key, "*");
- strcat(key, s2);
- if(sm_exists(hash_al, key)) {
- // get alignment from value
- retrieve = TRUE;
- sm_get(hash_al, key, buf, sizeof(buf));
- //    printf("\nRetrieving al_str (%i): %s\n\n", strlen(buf), ntstr(buf));
- al = str2al(buf);
- ndupe++;
- }
- else {
- // align and put al2str(al) in value
- retrieve = FALSE;
- al = nwalign_endsfree(s1, s2, s, gap_p);
- str = al2str(al);
- sm_put(hash_al, key, str);
- //    printf("\nStoring al_str (%i): %s\n\n", strlen(al2str(al)), ntstr(al2str(al)));
- }*/
-

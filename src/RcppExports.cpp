@@ -29,6 +29,25 @@ BEGIN_RCPP
     return __sexp_result;
 END_RCPP
 }
+// calibrate_kmers
+Rcpp::DataFrame calibrate_kmers(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, size_t max_aligns);
+RcppExport SEXP dadac_calibrate_kmers(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP max_alignsSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::RNGScope __rngScope;
+        Rcpp::traits::input_parameter< std::vector< std::string > >::type seqs(seqsSEXP );
+        Rcpp::traits::input_parameter< std::vector< int > >::type abundances(abundancesSEXP );
+        Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP );
+        Rcpp::traits::input_parameter< Rcpp::NumericVector >::type gap(gapSEXP );
+        Rcpp::traits::input_parameter< size_t >::type max_aligns(max_alignsSEXP );
+        Rcpp::DataFrame __result = calibrate_kmers(seqs, abundances, score, gap, max_aligns);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP
+}
 
 // validate (ensure exported C++ functions exist before calling them)
 static int dadac_RcppExport_validate(const char* sig) { 
