@@ -4,8 +4,7 @@
 #'
 #' @param uniques (Required). Named integer vector.
 #'  This is a vector of abundances of unique sequences, with the sequence specified by the name.
-#'  Sequences are only allowed to contain A/C/G/T/N/- characters.
-#'  Warning: N and - need more testing!
+#'  Sequences are only allowed to contain A/C/G/T characters.
 #'  
 #' @param err (Optional). 4x4 numeric matrix.
 #'  The matrix of estimated error rates from one nucleotide to another.
@@ -43,8 +42,8 @@ dada <- function(uniques,
       stop("dada: Invalid uniques vector. Must be integer valued.")
     }
   }
-  if(!(all(sapply(names(uniques), function(x) nchar(gsub("[ACGTN-]", "", x))==0, USE.NAMES=FALSE)))) {
-    stop("dada: Invalid uniques vector. Names must be sequences made up of A/C/G/T/N/-")
+  if(!(all(sapply(names(uniques), function(x) nchar(gsub("[ACGT]", "", x))==0, USE.NAMES=FALSE)))) {
+    stop("dada: Invalid uniques vector. Names must be sequences made up of A/C/G/T")
   }
   
   if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {

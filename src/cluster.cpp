@@ -19,6 +19,7 @@
 Raw *raw_new(char *seq, int reads);
 Fam *fam_new();
 Bi *bi_new(int totraw);
+void raw_free(Raw *raw);
 void fam_free(Fam *fam);
 void bi_free(Bi *bi);
 
@@ -39,25 +40,6 @@ double get_self(char *seq, double err[4][4]);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 Sub *al2subs(char **al);
 
-// HACK IMPLEMENTATION OF POISSON CDF TO AVOID GSL DEPENDENCY
-int factorial(int n)
-{
-  return (n == 1 || n == 0) ? 1 : factorial(n - 1) * n;
-}
-
-double bjc_cdf_poisson(int k, double mu) {
-  double cdf = 0.0;
-  
-  if(k>10) { k = 10; }  // HACK HARD CUTOFF TO COMPILE
-  
-  if(mu > DBL_MIN) {
-    for(int i=0;i<=k;i++) {
-      cdf += (pow(mu, i)/factorial(i));
-    }
-  }  
-  return cdf;
-}
-
 /*
  raw_new:
  The constructor for the Raw object.
@@ -71,6 +53,11 @@ Raw *raw_new(char *seq, int reads) {
   return raw;
 }
 
+void raw_free(Raw *raw) {
+  free(raw->seq);
+  free(raw->kmer);
+  free(raw);  
+}
 /*
  fam_new:
  The constructor for the Fam object.
@@ -367,9 +354,18 @@ void b_init(B *b) {
   if(VERBOSE) { printf("b_init - exit\n"); }
 }
 
+/* b_free:
+  Destruct the B object.
+*/
 void b_free(B *b) {
   for(int i=0;i<b->nclust;i++) { bi_free(b->bi[i]); }
   free(b->bi);
+
+  for (int index = 0; index < b->nraw; index++) {
+    raw_free(b->raw[index]);
+  }
+  free(b->raw);
+
   free(b);
 }
 
@@ -386,28 +382,6 @@ int b_add_bi(B *b, Bi *bi) {
 }
 
 /*
- reads_update:
- Updates the read numbers
-*/
-void b_reads_update(B *b) {
-  int i,j,k,reads;
-  for (i = 0; i < b->nclust; i++) {
-    if (1) {
-      reads = 0;
-      for (j = 0; j < b->bi[i]->nfam; j++) {
-          for (k = 0; k < b->bi[i]->fam[j]->nraw; k++) {
-              reads += b->bi[i]->fam[j]->raw[k]->reads;
-          }
-      }
-      if (reads != b->bi[i]->reads) {
-          b->bi[i]->reads = reads;
-          // b->bi[i]->update_p = TRUE;
-      }
-    }
-  }
-}
-
-/*
  lambda_update:
  updates the alignments and lambda of all raws to Bi with
  updated consensus sequences. 
@@ -417,34 +391,25 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
   double lambda;
   char **al; // stores alignments
   Sub *sub; // stores Sub structs
-  if(VERBOSE) { printf("b_l_u: Enter.\n"); }
   for (i = 0; i < b->nclust; i++) {
-    if(VERBOSE) { printf("Bi%i\n", i); }
-    if(b->bi[i]->update_lambda) {   // consensus sequence for B[i] has changed
-      if(VERBOSE) { printf("\tChanged.\n"); }
+    if(b->bi[i]->update_lambda) {   // consensus sequence for Bi[i] has changed
       // update alignments and lambda of all raws to this sequence
+      if(tVERBOSE) printf("C%iLU:", i);
       for(index=0; index<b->nraw; index++) {
         /* perform alignment */
         al = raw_align(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff);
+        sub = al2subs(al);
         
         /* Store sub and lambda in the cluster object Bi */
-        sub = al2subs(al);
-
-        // printf("Stored sub (n=%i) for raw %i.\n", sub->nsubs, index);
         b->bi[i]->sub[index] = sub;
         lambda = compute_lambda(sub, b->bi[i]->self, b->err);  // WHERE IS SELF SET!??  -- IN BI_CONSENSUS_UPDATE
         b->bi[i]->lambda[index] = lambda;
-
-//        printf("%i subs for clust %i and index=%i\n", sub->nsubs, i, index);
-//        printf("sub key (strlen=%i): %s\n", strlen(b->bi[i]->sub[index]->key), b->bi[i]->sub[index]->key);
+//        if(index == TARGET_RAW) printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]);
       }
-      if(tVERBOSE) printf("LU:%d, ", b->nraw);
       b->bi[i]->update_lambda = FALSE;
     } // if(b->bi[i]->update_lambda)
   }
-  if(VERBOSE) { printf("b_l_u: Done.\n"); }
   b_e_update(b);
-  if(VERBOSE) { printf("b_l_u: Exit.\n"); }
 }
 
 /* b_fam_update(B *b):
@@ -472,7 +437,7 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen) {
   }
   
   if(r_c != bi->nraw) {
-    printf("bi_fam_update: nraw inconsistent (%i, %i).\n", r_c, bi->nraw);
+    printf("Warning: bi_fam_update --- nraw inconsistent (%i, %i).\n", r_c, bi->nraw);
   }
   
   // Destruct old fams
@@ -482,18 +447,11 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen) {
   // Construct hash from raw->sub->key to new fam index.
   // Make fams, that contain all raws with the same substitution pattern.
   for(r_c=0;r_c<bi->nraw;r_c++) {
-    // char **al;
-    // al = b_align(bi->seq, raws[r_c]->seq, score, GAPPEN, FALSE);
-//    al = raw_align(bi->center, raws[r_c], score, GAPPEN, FALSE);
     // Make hash key from substitutions
-//    sub = al2subs(al);  // How are these subs getting cleaned up?
     sub = bi->sub[raws[r_c]->index];
     // Place raw in fams.
-//    printf("%i subs for r_c=%i, index=%i\n", sub->nsubs, r_c, raws[r_c]->index);
-//    printf("sub key 0...3: %c %c %c %c\n", sub->key[0], sub->key[1], sub->key[2], sub->key[3]);
-//    printf("sub key (strlen=%i): %s\n", strlen(sub->key), sub->key);
     if(!sub) { // Protect from null subs, but this should never arise...
-      printf("WARNING: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN.\n");
+      printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN.\n");
       sub = al2subs(raw_align(bi->center, raws[r_c], score, gap_pen, FALSE, 1.));
     }
     result = sm_exists(bi->sm, sub->key);
@@ -503,11 +461,9 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen) {
       fam_add_raw(bi->fam[foo], raws[r_c]);
       bi->fam[foo]->sub = sub;                   // Sub set on new fam formation.
       sprintf(buf, "%i", foo); // strmap only takes strings as values
-//      if(VERBOSE) { printf("New Fam %s: %s\n", buf, ntstr(sub->key)); }
       sm_put(bi->sm, sub->key, buf);
     } else {                            // Joining existing family
       sm_get(bi->sm, sub->key, buf, sizeof(buf));
-//      if(VERBOSE) { printf("Old Fam: %s\n", buf); }
       foo = atoi(buf);
       fam_add_raw(bi->fam[foo], raws[r_c]);
     }
@@ -527,13 +483,14 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen) {
 
     bi->fam[f]->sub = sub;
   }
-  if(tVERBOSE) printf("FU:%d+%d, ", bi->nraw, bi->nfam);
+  if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
   bi->update_fam = FALSE;
 }
 
 void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
+      if(tVERBOSE) printf("C%iFU:", i);
       bi_fam_update(b->bi[i], b->score, b->gap_pen);
     }
   }
@@ -544,8 +501,8 @@ void b_e_update(B *b) {
   for(int i=0; i < b->nclust; i++) {
     for(int index=0; index < b->nraw; index++) {
       b->bi[i]->e[index] = b->bi[i]->lambda[index]*b->bi[i]->reads;
-//      if(VERBOSE && b->bi[i]->e[index] > 1) {
-//        printf("Raw %i with E>1: %.4e, lam = %.4e, reads = %i\n", index, b->bi[i]->e[index], b->bi[i]->lambda[index],b->bi[i]->reads);
+//      if(index == TARGET_RAW) {
+//        printf("E_%i(TARG|r=%i) = %.3e; ", i, b->bi[i]->reads, b->bi[i]->e[index]);
 //      }
     }
   }
@@ -576,7 +533,7 @@ void b_shuffle(B *b) {
         }
         
         // Check to see if a cluster was assigned, complain if not.
-        if(ibest == -99) {  // Bug
+        if(ibest == -99) {  // Shouldn't see this
           printf("shuffle: Failed to assign raw %i to cluster. Defaulting to no move.\n", index);
           printf("\t (e_i=%.4e, lam_i=%.4e).\n", b->bi[i]->e[index], b->bi[i]->lambda[index]);
           ibest=i;
@@ -584,9 +541,15 @@ void b_shuffle(B *b) {
         
         // If different, move the raw to the new bi
         if(ibest != i) {
-          if(raw->index == b->bi[i]->center->index) {  // Check if center
-            printf("Shuffle: The center of a Bi cannot leave (THIS SHOULD NEVER BE SEEN).\n");
-            printf("Attempting: Raw %i from C%i to C%i (%.4e (%i) -> %.4e (%i))\n", index, i, ibest, b->bi[i]->e[index], b->bi[i]->reads, b->bi[ibest]->e[index], b->bi[ibest]->reads);
+          if(index == b->bi[i]->center->index) {  // Check if center
+            printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
+            if(tVERBOSE) {
+              printf("Attempted: Raw %i from C%i (center=%i, self=%.2e) to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (lam=%.2e,n=%i))\n", \
+                  index, i, b->bi[i]->center->index, get_self(b->raw[index]->seq, b->err), ibest, \
+                  b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
+                  b->bi[ibest]->e[index], b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
+              printf("%s\n", ntstr(b->raw[index]->seq));
+            }
           } else {
             raw = bi_pop_raw(b->bi[i], f, r);
             bi_shove_raw(b->bi[ibest], raw);
@@ -595,8 +558,6 @@ void b_shuffle(B *b) {
             if(VERBOSE) { printf("shuffle: Raw %i from C%i to C%i (%.4e -> %.4e)\n", index, i, ibest, b->bi[i]->e[index], b->bi[ibest]->e[index]); }
           }  
         }
-//            printf("\tE_new = %.2e, lambda_new = %.2e, reads_new = %i, key=%s\n", b->bi[ibest]->e[index],
-//            b->bi[ibest]->lambda[index], b->bi[ibest]->reads, ntstr(b->bi[ibest]->sub[index]->key));
       } //End loop(s) over raws (r).
     } // End loop over fams (f).
   } // End loop over clusters (i).
@@ -679,9 +640,10 @@ void b_p_update(B *b) {
 
 int b_bud(B *b, double omegaA) {
   int rval=0;
-  int i, f, r;
+  int i, f, r, index;
   int mini=0, minf=0, totfams=0;
   double minp = 1.;
+  int minreads = 0;
   Fam *fam;
 
   // Find i, f indices and value of minimum pval.
@@ -689,9 +651,15 @@ int b_bud(B *b, double omegaA) {
     for(f=0; f<b->bi[i]->nfam; f++) {
       totfams++;
       if(b->bi[i]->fam[f]->p < minp) { // Most significant
-        mini = i;
-        minf = f;
+        mini = i; minf = f;
         minp = b->bi[i]->fam[f]->p;
+        minreads = b->bi[i]->fam[f]->reads;
+      } 
+      else if((b->bi[i]->fam[f]->p == minp) && (b->bi[i]->fam[f]->reads > minreads)) {
+        // Ties occur at p=0 (underflow). In that case choose the fam with most reads.
+        mini = i; minf = f;
+        minp = b->bi[i]->fam[f]->p;
+        minreads = b->bi[i]->fam[f]->reads;
       }
     }
   }
@@ -706,15 +674,26 @@ int b_bud(B *b, double omegaA) {
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
     
-    if(VERBOSE) { printf("Kicked Fam: %s\n", ntstr(fam->seq)); }
     // Move raws into new cluster, could be more elegant.
     for(r=0;r<fam->nraw;r++) {
       bi_shove_raw(b->bi[i], fam->raw[r]);
     }
+
+    if(tVERBOSE) { 
+      printf("\nNew cluster from C%iF%i: p*=%.3e\n", mini, minf, minp*totfams);
+      printf("Contains raws: ");
+      for(r=0;r<fam->nraw;r++) { printf("%i,", fam->raw[r]->index); }
+      printf("reads = %i\n", fam->reads);
+      if(fam->sub) {
+        printf("Subs: %s\n", ntstr(fam->sub->key));
+      } else { // Fam has a NULL sub -- Should not happen
+        printf("Budded Fam had a NULL sub. THIS SHOULD NEVER BE SEEN!\n");
+      }
+    }
+    
     bi_consensus_update(b->bi[i]);
     fam_free(fam);
     rval = i;
-    if(tVERBOSE) { printf("New cluster from C%iF%i: p*=%.2e vs. omega=%.2e\n", mini, minf, minp*totfams, omegaA); }
   }
   return rval;
 }
@@ -764,7 +743,6 @@ void bi_consensus_update(Bi *bi) {
       }
     }
   }
-  if(VERBOSE) { printf("\n"); }
   
   if(strcmp(bi->seq, bi->fam[maxf]->raw[maxr]->seq) != 0) {  // strings differ
     bi->update_lambda = TRUE;
@@ -776,7 +754,6 @@ void bi_consensus_update(Bi *bi) {
     }
     bi->center = bi->fam[maxf]->raw[maxr];
     strcpy(bi->seq,bi->fam[maxf]->raw[maxr]->seq);
-    if(VERBOSE) { printf("\tExit\n"); }
   }
 }
 

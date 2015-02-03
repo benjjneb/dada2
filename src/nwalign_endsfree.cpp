@@ -36,13 +36,21 @@ int *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
       nti = ((int) seq[j]) - 1; // Change 1s, 2s, 3s, 4s, to 0/1/2/3
       if(nti != 0 && nti != 1 && nti != 2 && nti != 3) {
         printf("Unexpected nucleotide: %d\n", seq[j]);
+        kmer = 999999;
+        break;
       }
       kmer = 4*kmer + nti;
     }
-    if(TESTING && kmer >= n_kmers) {
+    
+    // Make sure kmer index is valid. This doesn't solve the N's/-'s
+    // issue though, as the "length" of the string (# of kmers) needs
+    // to also reflect the reduction from the N's/-'s
+    if(kmer == 999999) { ; } 
+    else if(kmer >= n_kmers) {
       printf("Kmer index out of range!\n");
+    } else { // Valid kmer
+      kvec[kmer]++;
     }
-    kvec[kmer]++;
   }
   return kvec;
 }
@@ -403,14 +411,7 @@ double get_self(char *seq, double err[4][4]) {
     }
   }
   if(self==0.0) { // UNDERFLOW TO ZERO
-    printf("GET_SELF: ZEROFLOW OF SELF: %.4e\n", self);
-/*    self=1.0;
-    for(i=0; i < strlen(seq); i++) {
-      nti = (*seq - 1);
-      self = self*err[nti][nti];
-      printf("%i:%.2e, ", i, self);
-    } */
-    printf("\n");
+    printf("Warning: get_self underflowed to zero.\n", self);
   }
   
   return self;

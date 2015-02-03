@@ -81,8 +81,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     Rcpp::Rcout << "C: Gap penalty not length 1:" << len1 << "\n";
     return R_NilValue;
   }
-//  double c_gap = as<double>(gap);
-  double c_gap = *(gap.begin());
+  double c_gap = as<double>(gap);
   
   // Copy use kmers into a C++ bool
   len1 = use_kmers.size();
@@ -90,8 +89,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     Rcpp::Rcout << "C: Use_kmers not length 1:" << len1 << "\n";
     return R_NilValue;
   }
-//  bool c_use_kmers = as<bool>(use_kmers);
-  bool c_use_kmers = *(use_kmers.begin());
+  bool c_use_kmers = as<bool>(use_kmers);
 
   // Copy kdist_cutoff into a C double
   len1 = kdist_cutoff.size();
@@ -99,8 +97,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     Rcpp::Rcout << "C: Kdist cutoff not length 1:" << len1 << "\n";
     return R_NilValue;
   }
-//  double c_kdist_cutoff = as<double>(kdist_cutoff);
-  double c_kdist_cutoff = *(kdist_cutoff.begin());
+  double c_kdist_cutoff = as<double>(kdist_cutoff);
 
   // TESTING diversion
   if(TESTING) {
@@ -132,71 +129,35 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     }
   }
   
+  b_free(bb);
   Rcpp::DataFrame df_genotypes = Rcpp::DataFrame::create(_["sequence"] = oseqs, _["abundance"]  = oabunds);
   return Rcpp::List::create(_["genotypes"] = df_genotypes, _["trans"] = otrans);
 }
 
 B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff) {
-  int newi = -999, round = 1;
-//  double SCORE[4][4] = {{5, -4, -4, -4}, {-4, 5, -4, -4}, {-4, -4, 5, -4}, {-4, -4, -4, 5}};
-//  double ERR[4][4] = {{0.991, 0.003, 0.003, 0.003}, {0.003, 0.991, 0.003, 0.003}, {0.003, 0.003, 0.991, 0.003}, {0.003, 0.003, 0.003, 0.991}};  
+  int newi = 0, round = 1;
   B *bb;
   bb = b_new(uniques, err, score, gap_pen); // New cluster with all sequences in 1 bi and 1 fam
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus sequence
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
-  b_print(bb);
+  newi = b_bud(bb, OMEGA_A);
   
   while(newi) {
-    newi = b_bud(bb, OMEGA_A);
-    if(tVERBOSE) Rcout << "C: ----------- Round " << round++ << "-----------\n";
+    if(tVERBOSE) printf("C: ----------- Round %i -----------\n", round++);
     b_consensus_update(bb);
     b_lambda_update(bb, use_kmers, kdist_cutoff);
     b_shuffle(bb);
     b_consensus_update(bb);
     b_fam_update(bb);
     b_p_update(bb);
+    newi = b_bud(bb, OMEGA_A);
   }
   return bb;
 }
 
 void test_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff) {
-  int i, foo, newi=-999;
-  int round = 1;
-/*  char *seq1; char *seq2;
-  Raw *raw1; Raw *raw2;
-  Sub *sub;
-  char **al;
-  seq1 = (char *) malloc(SEQLEN);
-  seq2 = (char *) malloc(SEQLEN);
-  uniques_sequence(uniques, 1, seq1);
-  uniques_sequence(uniques, 2, seq2);
-  raw1 = raw_new(seq1, 2);
-  raw2 = raw_new(seq2, 2);
-  
-  Rcpp::Rcout << "Made raws\n";
-  al = raw_align(raw1, raw2, score, gap_pen, 1, kdist_cutoff);
-  Rcpp::Rcout << "Made align\n";
-
-  align_print(al);
-  sub = al2subs(al);
-  compute_lambda(sub, 1e-2, err);*/
-  
-  B *bb;
-  bb = b_new(uniques, err, score, gap_pen); // New cluster with all sequences in 1 bi and 1 fam
-  b_fam_update(bb);     // Organizes raws into fams, makes fam consensus sequence
-  b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
-  b_print(bb);
-  
-  while(newi) {
-    newi = b_bud(bb, OMEGA_A);
-    b_consensus_update(bb);
-    b_lambda_update(bb, 1, kdist_cutoff);
-    b_shuffle(bb);
-    b_consensus_update(bb);
-    b_fam_update(bb);
-    b_p_update(bb);
-    printf("-------------%i--------------\n", newi);
-  }
+  int newi=-999;
+  return;
 }
 
 //------------------------------------------------------------------

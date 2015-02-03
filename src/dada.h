@@ -14,6 +14,7 @@
 
 // gcc dada.h test.c misc.c uniques.c cluster.c nwalign_endsfree.c strmap.c -lgsl
 
+#define TARGET_RAW 0
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
@@ -130,7 +131,6 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen)
 void b_free(B *b);
 void b_init(B *b);
 void b_shuffle(B *b);
-void b_reads_update(B *b);
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff);
 void b_fam_update(B *b);
 void b_consensus_update(B *b);
@@ -149,12 +149,6 @@ Bi *bi_new(int totraw);
 Raw *bi_pop_raw(Bi *bi, int f, int r);
 void bi_shove_raw(Bi *bi, Raw *raw);
 
-/* methods implemented in error.c
-T *t_new(B *b);
-void t_free(T *t);
-void t_update(T *t, B *b);
-*/
-
 /* methods implemented in misc.c misc */
 void nt2int(char *oseq, const char *iseq);
 void int2nt(char *oseq, const char *iseq);
@@ -169,11 +163,11 @@ void test_fun(int i);
 
 /* nwalign.c */
 char **nwalign_endsfree(char *s1, char *s2, double s[4][4], int gap_p, int band);
+char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_kmer, double kdist_cutoff);
+int *get_kmer(char *seq, int k);
+double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
+Sub *al2subs(char **al);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 double get_self(char *seq, double err[4][4]);
-Sub *al2subs(char **al);
-int *get_kmer(char *seq, int k);
-char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_kmer, double kdist_cutoff);
-double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
 
 #endif
