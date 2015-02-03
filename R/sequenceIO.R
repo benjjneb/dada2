@@ -98,8 +98,18 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
 importUniques <- function(fl, ...){
   unqs <- read.table(fl, ...)
   if(ncol(unqs) != 2) stop(paste("Unexpected number of columns:", ncol(foo)))
-  if(class(unqs[,2]) != "character") stop(paste("Integer/sequence pairs required."))
-  # CHECK FOR INTEGER, BUT THAT WAS BREAKING ON OTHER INSTALLS?
+  if(class(unqs[,2]) != "character") stop(paste("Integer/sequence pairs required(1)."))
+  if(class(unqs[,1]) != "integer") {
+    if(class(unqs[,1]) != "numeric") {
+      stop(paste("Integer/sequence pairs required(2)."))
+    }
+    foo <- as.integer(unqs[,1])
+    if(all.equal(foo, unqs[,1])) {
+      unqs[,1] <- as.integer(unqs[,1])
+    } else {
+      stop(paste("Integer/sequence pairs required(3)."))
+    }
+  }
   
   rvec <- unqs[,1]
   names(rvec) <- unqs[,2]
