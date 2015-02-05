@@ -10,6 +10,8 @@ assign("SCORE_MATRIX", matrix(c(5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5, -4, -4,
                               nrow=4, byrow=TRUE), envir = dada_opts)  # UNUSED. NECESSARY?
 assign("GAP_PENALTY", -8, envir = dada_opts) # UNUSED. NECESSARY?
 
+#define KMER_SIZE 6 # Hard-coded. This seems to be close to optimal for DNA.
+
 ################################################################################
 #' Set DADA options
 #'
@@ -60,14 +62,3 @@ get_dada_opt <- function(option = NULL) {
   if(length(ropts) == 1) ropts <- ropts[[1]]  # If just one option requested, return it alone
   return(ropts)
 }
-
-
-#define GAPPEN -8
-#define BAND 50 // Size of band in banded alignments. 0 means no banding.
-#define USE_KMERS 1
-#define KMER_SIZE 6
-#define KDIST_CUTOFF 0.5
-#define OMEGA_A 0.01
-
-
-

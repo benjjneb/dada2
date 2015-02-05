@@ -25,6 +25,7 @@
 #define HASHOCC 20
 #define BAND 50 // Size of band in banded alignments. 0 means no banding.
 #define KMER_SIZE 6
+#define NERRS 12
 
 /* objects */
 // typedef int bool;  // [C++]: has builtin bool type

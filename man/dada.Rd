@@ -15,8 +15,7 @@ dada(uniques, err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003,
 \arguments{
 \item{uniques}{(Required). Named integer vector.
  This is a vector of abundances of unique sequences, with the sequence specified by the name.
- Sequences are only allowed to contain A/C/G/T/N/- characters.
- Warning: N and - need more testing!}
+ Sequences are only allowed to contain A/C/G/T characters.}
 
 \item{err}{(Optional). 4x4 numeric matrix.
  The matrix of estimated error rates from one nucleotide to another.

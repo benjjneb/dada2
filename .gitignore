@@ -34,3 +34,5 @@
 *.app
 
 .Rproj.user
+
+R/Rsingle.R

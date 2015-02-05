@@ -411,7 +411,7 @@ double get_self(char *seq, double err[4][4]) {
     }
   }
   if(self==0.0) { // UNDERFLOW TO ZERO
-    printf("Warning: get_self underflowed to zero.\n", self);
+    printf("Warning: get_self underflowed to zero.\n");
   }
   
   return self;

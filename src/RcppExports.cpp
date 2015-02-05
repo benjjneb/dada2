@@ -8,6 +8,42 @@
 
 using namespace Rcpp;
 
+// getProbs
+Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD);
+static SEXP dadac_getProbs_try(SEXP errSEXP, SEXP nntSEXP, SEXP maxDSEXP) {
+BEGIN_RCPP
+    SEXP __sexp_result;
+    {
+        Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type err(errSEXP );
+        Rcpp::traits::input_parameter< std::vector<int> >::type nnt(nntSEXP );
+        Rcpp::traits::input_parameter< int >::type maxD(maxDSEXP );
+        Rcpp::DataFrame __result = getProbs(err, nnt, maxD);
+        PROTECT(__sexp_result = Rcpp::wrap(__result));
+    }
+    UNPROTECT(1);
+    return __sexp_result;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP dadac_getProbs(SEXP errSEXP, SEXP nntSEXP, SEXP maxDSEXP) {
+    SEXP __result;
+    {
+        Rcpp::RNGScope __rngScope;
+        __result = PROTECT(dadac_getProbs_try(errSEXP, nntSEXP, maxDSEXP));
+    }
+    Rboolean __isInterrupt = Rf_inherits(__result, "interrupted-error");
+    if (__isInterrupt) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    Rboolean __isError = Rf_inherits(__result, "try-error");
+    if (__isError) {
+        SEXP __msgSEXP = Rf_asChar(__result);
+        UNPROTECT(1);
+        Rf_error(CHAR(__msgSEXP));
+    }
+    UNPROTECT(1);
+    return __result;
+}
 // dada_uniques
 Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::NumericVector use_kmers, Rcpp::NumericVector kdist_cutoff);
 RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP) {
@@ -52,12 +88,14 @@ END_RCPP
 static int dadac_RcppExport_validate(const char* sig) { 
     static std::set<std::string> signatures;
     if (signatures.empty()) {
+        signatures.insert("Rcpp::DataFrame(*getProbs)(Rcpp::NumericMatrix,std::vector<int>,int)");
     }
     return signatures.find(sig) != signatures.end();
 }
 
 // registerCCallable (register entry points for exported C++ functions)
 RcppExport SEXP dadac_RcppExport_registerCCallable() { 
+    R_RegisterCCallable("dadac", "dadac_getProbs", (DL_FUNC)dadac_getProbs_try);
     R_RegisterCCallable("dadac", "dadac_RcppExport_validate", (DL_FUNC)dadac_RcppExport_validate);
     return R_NilValue;
 }
