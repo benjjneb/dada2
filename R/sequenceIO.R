@@ -1,8 +1,8 @@
 ################################################################################
 #' Custom interface to \code{\link{FastqStreamer}} 
-#' for dereplicating amplicon sequences from a file,
-#' while controlling peak memory requirement to support large files.
-#' Also relies heavily on the \code{\link[ShortRead]{tables}} method.
+#' for dereplicating amplicon sequences from a fastq or fastq.gz file,
+#' while also controlling peak memory requirement to support large files.
+#' This function relies heavily on the \code{\link[ShortRead]{tables}} method.
 #'
 #' @param fl (Required). Character.
 #'  The file path to the fastq or fastq.gz file.
