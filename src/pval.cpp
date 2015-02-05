@@ -21,6 +21,7 @@ int ipow(int base, int exp)
 Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD) {
   // THIS DOESNT DO ANY SORTING YET, NOT DONE
   int i, j, k, d;
+  size_t index;
   
   // Copy err "matrix" into errs vector
   k=0;
@@ -31,9 +32,7 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
     }
   }
 
-  std::vector<double> ps;
-  std::vector<double> ns;
-  std::vector<double> pval;
+  std::vector<Prob> probs;
 
   // Get prob of error for each nt, and the self-trans prob
   double pa = errs[0]+errs[1]+errs[2];
@@ -47,12 +46,12 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
   for(i=3;i<6;i++) { errs[i] = errs[i]/(1.0 - pc); }
   for(i=6;i<9;i++) { errs[i] = errs[i]/(1.0 - pg); }
   for(i=9;i<12;i++) { errs[i] = errs[i]/(1.0 - pt); }
-
+  
   // Declare variables needed to iterate though all d-aways
   int nerr[NERRS];
   double nopen[4];
   int first, store;
-  double p, n, cum = 0.0;
+  double p, n;
 
   for(d=0;d<=maxD;d++) {
     // init partition
@@ -80,16 +79,8 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
           }
         }
       }
-      cum += p*n;
-      ps.push_back(p);
-      ns.push_back(n);
-      pval.push_back(cum);
+      probs.push_back(Prob(p,n));
 
-      if(VERBOSE) {
-        for(i=0;i<NERRS;i++) { Rcpp::Rcout << nerr[i] << " "; }
-        Rcpp::Rcout << ": +" << p << "*" << n << "--->" << cum << "\n";
-      }
-      
       if(nerr[0] >= d) { break; } // Should break when all d in first
       
       // Advance to next partition
@@ -114,7 +105,36 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
     } // while(1)
 
   } // for(d=0;d<maxD;d++)
-  return Rcpp::DataFrame::create(Rcpp::_["p"]=ps, Rcpp::_["n"]=ns, Rcpp::_["cdf"]=pval);
+
+  // Sort probs in descending order and create pval vector
+  std::sort(probs.rbegin(), probs.rend());   // note: reverse iterators -> decreasing sort
+  // For some reason this (very slightly) changes the cumulative sum (~10^-15 difference)!?
+  // Could be a precision issue? Yep, double's have 15-17 digit significand precision.
+
+  std::vector<double> ps;
+  std::vector<double> ns;
+  std::vector<double> cdf;
+  double cum = 0;
+  for(index=0;index < probs.size();index++) {
+    cum += (probs[index].first * probs[index].second);
+    ps.push_back(probs[index].first);
+    ns.push_back(probs[index].second);
+    cdf.push_back(cum);
+  }
+
+  // Find largest p beyond maxD (= max_err**(maxD+1))
+  double max_err = 0.0;
+  for(i=0;i<12;i++) { if(errs[i] > max_err) max_err = errs[i]; }
+  double min_p = pow(max_err, maxD+1);
+  
+  for(index=0;index < ps.size();index++) {
+    if(ps[index] <= min_p) { break; }
+  }
+  ps.resize(index);
+  ns.resize(index);
+  cdf.resize(index);
+
+  return Rcpp::DataFrame::create(Rcpp::_["p"]=ps, Rcpp::_["n"]=ns, Rcpp::_["cdf"]=cdf);
 }
 
 

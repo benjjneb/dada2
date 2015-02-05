@@ -29,6 +29,7 @@
 
 /* objects */
 // typedef int bool;  // [C++]: has builtin bool type
+typedef std::pair<double, double> Prob;
 #define TRUE  1
 #define FALSE 0
 
