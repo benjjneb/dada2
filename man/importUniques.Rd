@@ -5,13 +5,19 @@
 \title{Load .uniques file
 Basically a wrapper for read.table customized for .uniques format}
 \usage{
-importUniques(fl, ...)
+importUniques(fl, colClasses = c("integer", "character"), ...)
 }
 \arguments{
-\item{fl}{(Required). Character.
- The file path to the .uniques file.}
+\item{fl}{(Required). \code{character(1)}.
+ The file path to the .uniques file,
+ a delimited text table file containing unique sequences and their abundances.}
 
-\item{sep}{(Optional). The field separator character.}
+\item{colClasses}{(Optional). \code{character}.
+ The classes of the columns in the delimited text file.
+ Defaults to \code{c("integer", "character")}.
+ See \code{\link[utils]{read.table}} for more information.}
+
+\item{...}{(Optional). Additional arguments passed on to \code{\link[utils]{read.table}}.}
 }
 \value{
 Named integer vector. Named by sequence, valued by number of occurence.
