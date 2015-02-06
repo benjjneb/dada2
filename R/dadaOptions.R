@@ -1,6 +1,7 @@
 
 dada_opts <- new.env()
-assign("OMEGA_A", 0.01, envir = dada_opts) # NOT YET PASSED IN
+assign("OMEGA_A", 0.01, envir = dada_opts)
+assign("OMEGA_S", 0.01, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.55, envir = dada_opts)
 assign("BAND_SIZE", 50, envir = dada_opts) # NOT YET PASSED IN

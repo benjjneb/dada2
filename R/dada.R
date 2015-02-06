@@ -63,14 +63,17 @@ dada <- function(uniques,
   prev <- NULL
   nn <- 1
   cur <- dada_uniques(names(uniques), unname(uniques), err, score, gap_penalty,
-                      get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts))
+                      get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
+                      get("OMEGA_A", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
+  
   while(self_consist && !identical(cur, prev) && nn < get("MAX_CONSIST", envir=dada_opts)) {
     cat(".")
     prev <- cur
     err <- cur$trans + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
     err <- t(apply(err, 1, function(x) x/sum(x)))  # apply returns a transposed result
     cur <- dada_uniques(names(uniques), unname(uniques), err, score, gap_penalty,
-                        get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts))
+                        get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
+                        get("OMEGA_A", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
     nn <- nn+1
   }
   cat("\n")

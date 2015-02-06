@@ -101,6 +101,11 @@ typedef struct { // This is the full cluster object, B.
   double err[4][4];
   double score[4][4];
   double gap_pen;
+  double omegaA;
+  double omegaS;
+  double *lams;
+  double *cdf;
+  size_t nlam;
   Raw **raw;
   Bi **bi;
 } B;
@@ -129,7 +134,7 @@ void uniques_sequence(Uniques *uniques, int n, char *seq);
 void uniques_free(Uniques *uniques);
 
 /* methods implemented in cluster.c */
-B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen);
+B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, double omegaS);
 void b_free(B *b);
 void b_init(B *b);
 void b_shuffle(B *b);
@@ -140,7 +145,7 @@ void b_e_update(B *b);
 void b_p_update(B *b);
 void b_update_err(B *b, double err[4][4]);
 void b_get_trans_matrix(B *b, int32_t obs[4][4]);
-int b_bud(B *b, double omegaA);
+int b_bud(B *b);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
 Raw *raw_new(char *seq, int reads);
@@ -171,5 +176,8 @@ double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
 Sub *al2subs(char **al);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 double get_self(char *seq, double err[4][4]);
+
+/* pval.c */
+void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD);
 
 #endif

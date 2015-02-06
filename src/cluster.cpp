@@ -284,46 +284,85 @@ void bi_census(Bi *bi) {
 
 /* B_new:
  The constructor for the B object. Takes in a Uniques object.
- Places all sequences into the same family within the same cluster.
- New objects have flags set in such a way to force an update.
+ Places all sequences into the same family within one cluster.
 */
-B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen) {
-  int i, j, index;
-  char *seq;
-  
+B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, double omegaS) {
+  int i, j, nti;
+  size_t index;
+
+  // Allocate memory
   B *b = (B *) malloc(sizeof(B));
   b->bi = (Bi **) malloc(CLUSTBUF * sizeof(Bi *));
   b->maxclust = CLUSTBUF;
+  
+  // Initialize basic values
   b->nclust = 0;
   b->reads = 0;
   b->nraw = uniques_nseqs(uniques);
   b->gap_pen = gap_pen;
+  b->omegaA = omegaA;
+  b->omegaS = omegaS;
   
+  // Copy the error and score matrices
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      b->err[i][j] = err[i][j];
+      b->score[i][j] = score[i][j];
+    }
+  }
+
   // Allocate the list of raws and then create them all.
-  seq = (char *) malloc(SEQLEN);
+  char *seq = (char *) malloc(SEQLEN);
+  double tot_nnt[] = {0.0,0.0,0.0,0.0};
   b->raw = (Raw **) malloc(b->nraw * sizeof(Raw *));
   for (index = 0; index < b->nraw; index++) {
     uniques_sequence(uniques, index, (char *) seq);
+    for(i=0;i<strlen(seq);i++) {
+      nti = ((int) seq[i]) - 1;
+      if(nti == 0 || nti == 1 || nti ==2 || nti == 3) {
+        tot_nnt[nti]++;
+      }
+    }
     b->raw[index] = raw_new(seq, uniques_reads(uniques, index));
     b->raw[index]->index = index;
     b->reads += b->raw[index]->reads;
   }
   free(seq);
 
-  // Copy the error matrix
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      b->err[i][j] = err[i][j];
-    }
+  // Create the (for now) solitary lookup table from lambda -> pS
+  // Use the average sequence composition
+  // Pval lookup depends on sequence composition when the error matrix
+  //   is not uniform, but this dependence is not super-strong normally.
+  // However, we very much need the sequences to be all close to the same
+  //   length for this to be valid!!!!
+  
+  // Calculate average sequence nnt
+  int ave_nnt[4];
+  for(nti=0;nti<4;nti++) {
+    ave_nnt[nti] = (int) (0.499 + tot_nnt[nti]/b->nraw);
   }
 
-  // Copy the score matrix
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      b->score[i][j] = score[i][j];
-    }
-  }
+  // Iterate over maxDs until going far enough to call significant singletons
+  // NO GRACEFUL FAILURE YET IF NOT FOUND IN A REASONABLE MAXD!!
+  int maxD=10;
+  std::vector<double> temp_lambdas;
+  std::vector<double> temp_cdf;
+  do {
+    maxD+=2;
+    getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
+  } while((1.0 - temp_cdf.back()) > (b->nraw * b->omegaS));
   
+  // Copy into C style arrays
+  // Kind of ridiculous, at some point might be worthwhile doing the cull C++ conversion
+  printf("b_new: Most significant possible pval = %.15e, maxD=%i, nnt=(%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]);
+  b->lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
+  b->cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
+  b->nlam = temp_lambdas.size();
+  for(index=0;index<b->nlam;index++) {
+    b->lams[index] = temp_lambdas[index];
+    b->cdf[index] = temp_cdf[index];
+  }
+
   // Initialize with one cluster/one-family containing all the raws.
   b_init(b);
   return b;
@@ -365,6 +404,8 @@ void b_free(B *b) {
     raw_free(b->raw[index]);
   }
   free(b->raw);
+  free(b->lams);
+  free(b->cdf);
 
   free(b);
 }
@@ -570,8 +611,8 @@ void b_shuffle(B *b) {
  Depends on the lambda between the fam and its cluster, and the reads of each.
 */
 void b_p_update(B *b) {
-  int i, f, reads;
-  double self, mu, lambda, pval, norm;
+  int i, f;
+  double mu, pval, norm;
   Fam *fam;
   for(i=0;i<b->nclust;i++) {
     for(f=0;f<b->bi[i]->nfam;f++) {
@@ -635,7 +676,7 @@ void b_p_update(B *b) {
  Returns index of new cluster, or 0 if no new cluster added.
 */
 
-int b_bud(B *b, double omegaA) {
+int b_bud(B *b) {
   int rval=0;
   int i, f, r;
   int mini=0, minf=0, totfams=0;
@@ -663,28 +704,20 @@ int b_bud(B *b, double omegaA) {
   
   // Bonferroni correct the abundance pval by the number of fams
   // (quite conservative, although probably unimportant given the abundance model issues)
-  if(minp*totfams >= omegaA) {  // Not significant, return 0
+  if(minp*totfams >= b->omegaA) {  // Not significant, return 0
     rval = 0;
   }
   else {  // A significant abundance pval
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
     
-    // Move raws into new cluster, could be more elegant.
+    // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {
       bi_shove_raw(b->bi[i], fam->raw[r]);
     }
 
     if(tVERBOSE) { 
       printf("\nNew cluster from C%iF%i: p*=%.3e\n", mini, minf, minp*totfams);
-      printf("Contains raws: ");
-      for(r=0;r<fam->nraw;r++) { printf("%i,", fam->raw[r]->index); }
-      printf("reads = %i\n", fam->reads);
-      if(fam->sub) {
-        printf("Subs: %s\n", ntstr(fam->sub->key));
-      } else { // Fam has a NULL sub -- Should not happen... Error?
-        printf("Warning: Budded Fam had a NULL sub. THIS SHOULD NEVER BE SEEN!\n");
-      }
     }
     
     bi_consensus_update(b->bi[i], b->err);
