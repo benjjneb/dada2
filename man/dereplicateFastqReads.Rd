@@ -2,10 +2,14 @@
 % Please edit documentation in R/sequenceIO.R
 \name{dereplicateFastqReads}
 \alias{dereplicateFastqReads}
+<<<<<<< HEAD
 \title{Custom interface to \code{\link{FastqStreamer}}
 for dereplicating amplicon sequences from a fastq or fastq.gz file,
 while also controlling peak memory requirement to support large files.
 This function relies heavily on the \code{\link[ShortRead]{tables}} method.}
+=======
+\title{Read and Dereplicate a Fastq file.}
+>>>>>>> FETCH_HEAD
 \usage{
 dereplicateFastqReads(fl, n = 1e+06, verbose = FALSE)
 }
@@ -31,7 +35,11 @@ dereplicateFastqReads(fl, n = 1e+06, verbose = FALSE)
 Named integer vector. Named by sequence, valued by number of occurence.
 }
 \description{
+<<<<<<< HEAD
 Custom interface to \code{\link{FastqStreamer}}
+=======
+This is a custom interface to \code{\link{FastqStreamer}}
+>>>>>>> FETCH_HEAD
 for dereplicating amplicon sequences from a fastq or fastq.gz file,
 while also controlling peak memory requirement to support large files.
 This function relies heavily on the \code{\link[ShortRead]{tables}} method.
