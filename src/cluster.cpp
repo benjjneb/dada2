@@ -33,9 +33,9 @@ Raw *bi_pop_raw(Bi *bi, int f, int r);
 Fam *bi_pop_fam(Bi *bi, int f);
 
 void bi_census(Bi *bi);
-void bi_consensus_update(Bi *bi);
+void bi_consensus_update(Bi *bi, double err[4][4]);
 void fam_consensus_update(Fam *fam);
-void bi_fam_update(Bi *bi, double score[4][4], double gap_pen);
+void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen);
 double get_self(char *seq, double err[4][4]);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 Sub *al2subs(char **al);
@@ -417,7 +417,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
    cluster consensus.
   Currently completely destructive of old fams.
    */
-void bi_fam_update(Bi *bi, double score[4][4], double gap_pen) {
+void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen) {
   int foo, f, r, result, r_c;
   Sub *sub;
   char buf[10];
@@ -482,6 +482,7 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen) {
     }
 
     bi->fam[f]->sub = sub;
+    bi->fam[f]->lambda = compute_lambda(sub, bi->self, err);
   }
   if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
   bi->update_fam = FALSE;
@@ -491,7 +492,7 @@ void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
       if(tVERBOSE) printf("C%iFU:", i);
-      bi_fam_update(b->bi[i], b->score, b->gap_pen);
+      bi_fam_update(b->bi[i], b->err, b->score, b->gap_pen);
     }
   }
   
@@ -571,34 +572,31 @@ void b_shuffle(B *b) {
 void b_p_update(B *b) {
   int i, f, reads;
   double self, mu, lambda, pval, norm;
+  Fam *fam;
   for(i=0;i<b->nclust;i++) {
-    self = get_self(b->bi[i]->seq, b->err);    // self-production prob for cluster consensus
     for(f=0;f<b->bi[i]->nfam;f++) {
-      reads = b->bi[i]->fam[f]->reads;
+      fam = b->bi[i]->fam[f];
 
       // Calculate abundance pval
-      if(reads < 1) {
-        printf("b_p_update: No or negative reads (%i) in fam %i.\n", reads, f);
+      if(fam->reads < 1) {
+        printf("Warning: No or negative reads (%i) in fam %i.\n", fam->reads, f);
         pval=1.;
-      }
-      else if(reads == 1) {   // Singleton. No abundance pval.
+      } 
+      else if(fam->reads == 1) {   // Singleton. No abundance pval.
         pval=1.;
-      } else if(!(b->bi[i]->fam[f]->sub)) { // Outside kmer threshhold
+      } 
+      else if(!(fam->sub)) { // Outside kmer threshhold
         pval=0.;
       } 
-      else if(b->bi[i]->fam[f]->sub->nsubs == 0) { // Cluster center
+      else if(fam->sub->nsubs == 0) { // Cluster center
         pval=1.;
       }
-      else {                  // Calculate abundance pval.
-        // Get self probability, lambda, and mu
-        lambda = compute_lambda(b->bi[i]->fam[f]->sub, self, b->err);
-        mu = lambda*b->bi[i]->reads;
+      else if(fam->lambda == 0) { // Zero expected reads of this fam
+        pval = 0.;
+      } else { // Calculate abundance pval.
+        // mu is the expected number of reads for this fam
+        mu = fam->lambda * b->bi[i]->reads;
         
-        if(mu==0) {  // Check for underflow (occurs when lambda underflows to 0.0)
-          if(tVERBOSE) { printf("ZEROFLOW MU: %.4e -- (%.4e, %i)\n", mu, lambda, b->bi[i]->reads); }
-          mu = DBL_MIN;  // TEMPORARY SOLUTION?
-        }
-
         // Calculate norm (since conditioning on sequence being present).
         norm = (1.0 - exp(-mu));
         if(norm < TAIL_APPROX_CUTOFF) {
@@ -608,9 +606,10 @@ void b_p_update(B *b) {
         // Calculate pval from poisson cdf.
         if(IMPLEMENTATION == 'R') {
           Rcpp::IntegerVector n_repeats(1);
-          n_repeats(0) = reads-1;
+          n_repeats(0) = fam->reads-1;
           Rcpp::NumericVector res = Rcpp::ppois(n_repeats, mu, false);  // lower.tail = false
-          pval = *(res.begin());
+          pval = Rcpp::as<double>(res);
+          //*(res.begin());
           
 /*          double gslval = 1 - gsl_cdf_poisson_P(reads-1, mu);
           double minval = (pval < gslval) ? pval : gslval;
@@ -622,8 +621,6 @@ void b_p_update(B *b) {
           // THIS NEEDS TO BE CHANGED. DOES NOT LIMIT APPROPRIATELY!!!! */
         }
         pval = pval/norm;
-        
-//        if(VERBOSE) { printf("Pval for %i reads on expectation of %.4e: %.4e\n", reads, mu, pval); }
       }
       
       // Assign (abundance) pval to fam->pval
@@ -640,7 +637,7 @@ void b_p_update(B *b) {
 
 int b_bud(B *b, double omegaA) {
   int rval=0;
-  int i, f, r, index;
+  int i, f, r;
   int mini=0, minf=0, totfams=0;
   double minp = 1.;
   int minreads = 0;
@@ -668,7 +665,6 @@ int b_bud(B *b, double omegaA) {
   // (quite conservative, although probably unimportant given the abundance model issues)
   if(minp*totfams >= omegaA) {  // Not significant, return 0
     rval = 0;
-    if(VERBOSE) { printf("NO SIGNIFICANT NEW CLUSTER: p*=%.2e vs. omega=%.2e\n", minp*totfams, omegaA); }
   }
   else {  // A significant abundance pval
     fam = bi_pop_fam(b->bi[mini], minf);
@@ -686,12 +682,12 @@ int b_bud(B *b, double omegaA) {
       printf("reads = %i\n", fam->reads);
       if(fam->sub) {
         printf("Subs: %s\n", ntstr(fam->sub->key));
-      } else { // Fam has a NULL sub -- Should not happen
-        printf("Budded Fam had a NULL sub. THIS SHOULD NEVER BE SEEN!\n");
+      } else { // Fam has a NULL sub -- Should not happen... Error?
+        printf("Warning: Budded Fam had a NULL sub. THIS SHOULD NEVER BE SEEN!\n");
       }
     }
     
-    bi_consensus_update(b->bi[i]);
+    bi_consensus_update(b->bi[i], b->err);
     fam_free(fam);
     rval = i;
   }
@@ -726,16 +722,16 @@ void fam_consensus_update(Fam *fam) {
 /* Bi_consensus_update:
  Takes a Bi object, and calculates and assigns its consensus sequence.
  Currently this is done trivially by choosing the most abundant sequence.
- Flags update_fam and update_lambda if consensus changes.
+ If consensus changes...
+    Updates .center and .self
+    Flags update_fam and update_lambda
 */
-void bi_consensus_update(Bi *bi) {
+void bi_consensus_update(Bi *bi, double err[4][4]) {
   int max_reads = 0;
   int f, r;
   int maxf = 0, maxr= 0;
   
-  if(VERBOSE) { printf("bi_consensus_update: NF%i(%i)", bi->nfam, bi->reads); }
   for(f=0;f<bi->nfam;f++) {
-    if(VERBOSE) { printf(" %i", bi->fam[f]->nraw); }
     for(r=0;r<bi->fam[f]->nraw;r++) {
       if(bi->fam[f]->raw[r]->reads > max_reads) { // Most abundant
          maxf=f; maxr=r;
@@ -754,16 +750,16 @@ void bi_consensus_update(Bi *bi) {
     }
     bi->center = bi->fam[maxf]->raw[maxr];
     strcpy(bi->seq,bi->fam[maxf]->raw[maxr]->seq);
+    bi->self = get_self(bi->seq, err);
   }
 }
 
 /* B_consensus_update:
- Updates all its Bi's. Will check flag status eventually.
+ Updates all Bi consensi.
  */
 void b_consensus_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
-    bi_consensus_update(b->bi[i]);
-    b->bi[i]->self = get_self(b->bi[i]->seq, b->err);
+    bi_consensus_update(b->bi[i], b->err);
   }
 }
 

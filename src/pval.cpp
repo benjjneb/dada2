@@ -17,18 +17,16 @@ int ipow(int base, int exp)
     return result;
 }
 
-// [[Rcpp::export]]
-Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD) {
-  // THIS DOESNT DO ANY SORTING YET, NOT DONE
+void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD) {
   int i, j, k, d;
   size_t index;
   
-  // Copy err "matrix" into errs vector
+  // Copy err "matrix" into relative errs vector
   k=0;
   double errs[NERRS];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      if(i!=j) { errs[k++] = err(i,j); }
+      if(i!=j) { errs[k++] = err[i][j]; }
     }
   }
 
@@ -94,8 +92,8 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
         for(first=1;first<NERRS;first++) {
           if(nerr[first]>0) { break; }
           if(first==(NERRS-1)) {  // Error checking
-            printf("Bad news!\n");
-            return R_NilValue;
+            printf("Error: Partition iteration failed in getCDF!\n");
+            return;
           }
         }
         nerr[first]--;
@@ -111,14 +109,14 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
   // For some reason this (very slightly) changes the cumulative sum (~10^-15 difference)!?
   // Could be a precision issue? Yep, double's have 15-17 digit significand precision.
 
-  std::vector<double> ps;
-  std::vector<double> ns;
-  std::vector<double> cdf;
+//  std::vector<double> ns;
+  ps.resize(0);
+  cdf.resize(0);
   double cum = 0;
   for(index=0;index < probs.size();index++) {
     cum += (probs[index].first * probs[index].second);
     ps.push_back(probs[index].first);
-    ns.push_back(probs[index].second);
+//    ns.push_back(probs[index].second);
     cdf.push_back(cum);
   }
 
@@ -131,10 +129,37 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
     if(ps[index] <= min_p) { break; }
   }
   ps.resize(index);
-  ns.resize(index);
+//  ns.resize(index);
   cdf.resize(index);
+}
 
-  return Rcpp::DataFrame::create(Rcpp::_["p"]=ps, Rcpp::_["n"]=ns, Rcpp::_["cdf"]=cdf);
+
+// void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD)
+
+// [[Rcpp::export]]
+Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD) {
+  int i, j;
+  // Copy err into a C style array
+  if(err.nrow() != 4 || err.ncol() != 4) {
+    Rcpp::Rcout << "C: Error matrix malformed:" << err.nrow() << ", " << err.ncol() << "\n";
+    return R_NilValue;
+  }
+
+  double c_err[4][4];
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      c_err[i][j] = err(i,j);
+    }
+  }
+  
+  int c_nnt[4];
+  for(i=0;i<4;i++) { c_nnt[i] = nnt[i]; }
+
+  std::vector<double> ps;
+  std::vector<double> cdf;
+  getCDF(ps, cdf, c_err, c_nnt, maxD);
+  
+  return Rcpp::DataFrame::create(Rcpp::_["p"]=ps, Rcpp::_["cdf"]=cdf);
 }
 
 
