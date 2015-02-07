@@ -6,7 +6,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, double omegaA, double omegaS);
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, double omegaA, bool use_singletons, double omegaS);
 void test_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff);
 
 //------------------------------------------------------------------
@@ -35,7 +35,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::NumericMatrix err,
                         Rcpp::NumericMatrix score, Rcpp::NumericVector gap,
                         Rcpp::NumericVector use_kmers, Rcpp::NumericVector kdist_cutoff,
-                        Rcpp::NumericVector omegaA, Rcpp::NumericVector omegaS) {
+                        Rcpp::NumericVector omegaA, 
+                        Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS) {
   int i, j, len1, len2, nrow, ncol;
   
   // Load the seqs/abundances into a Uniques struct
@@ -107,6 +108,13 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   double c_omegaA = as<double>(omegaA);
 
+  len1 = use_singletons.size();
+  if(len1 != 1) {
+    Rcpp::Rcout << "C: use_singletons not length 1:" << len1 << "\n";
+    return R_NilValue;
+  }
+  bool c_use_singletons = as<bool>(use_singletons);
+
   len1 = omegaS.size();
   if(len1 != 1) {
     Rcpp::Rcout << "C: OmegaS not length 1:" << len1 << "\n";
@@ -121,7 +129,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   
   // Run DADA
-  B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_omegaA, c_omegaS);
+  B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_omegaA, c_use_singletons, c_omegaS);
   uniques_free(uniques);
   
   // Extract output from B object
@@ -149,10 +157,10 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   return Rcpp::List::create(_["genotypes"] = df_genotypes, _["trans"] = otrans);
 }
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, double omegaA, double omegaS) {
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, double omegaA, bool use_singletons, double omegaS) {
   int newi = 0, round = 1;
   B *bb;
-  bb = b_new(uniques, err, score, gap_pen, omegaA, omegaS); // New cluster with all sequences in 1 bi and 1 fam
+  bb = b_new(uniques, err, score, gap_pen, omegaA, use_singletons, omegaS); // New cluster with all sequences in 1 bi and 1 fam
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
   newi = b_bud(bb);

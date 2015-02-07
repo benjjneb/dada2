@@ -293,7 +293,7 @@ void bi_census(Bi *bi) {
  The constructor for the B object. Takes in a Uniques object.
  Places all sequences into the same family within one cluster.
 */
-B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, double omegaS) {
+B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS) {
   int i, j, nti;
   size_t index;
 
@@ -308,6 +308,7 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
   b->nraw = uniques_nseqs(uniques);
   b->gap_pen = gap_pen;
   b->omegaA = omegaA;
+  b->use_singletons = use_singletons;
   b->omegaS = omegaS;
   
   // Copy the error and score matrices
@@ -336,7 +337,7 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
   }
   free(seq);
 
-  if(USE_SINGLETONS) {
+  if(b->use_singletons) {
     // Create the (for now) solitary lookup table from lambda -> pS
     // Use the average sequence composition
     // Pval lookup depends on sequence composition when the error matrix
@@ -396,7 +397,7 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
       b->lams[index] = temp_lambdas[index];
       b->cdf[index] = temp_cdf[index];
     }
-  } // if(USE_SINGLETONS)
+  } // if(b->use_singletons)
 
   // Initialize with one cluster/one-family containing all the raws.
   b_init(b);
@@ -440,7 +441,7 @@ void b_free(B *b) {
   }
   free(b->raw);
   
-  if(USE_SINGLETONS) {
+  if(b->use_singletons) {
     free(b->lams);
     free(b->cdf);
   }
@@ -551,12 +552,10 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
   // consensus_update/align the fams
   for(f=0;f<bi->nfam;f++) {
     fam_consensus_update(bi->fam[f]);
-//    al = raw_align(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1.);
-//    sub = al2subs(al);
-
     sub = bi->sub[bi->fam[f]->center->index];
+
     if(!sub) { // Protect from null subs, but this should never arise...
-      printf("WARNING: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN (2).\n");
+      printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN (2).\n");
       sub = al2subs(raw_align(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1.));
     }
 
@@ -614,7 +613,7 @@ void b_shuffle(B *b) {
         
         // Check to see if a cluster was assigned, complain if not.
         if(ibest == -99) {  // Shouldn't see this
-          printf("shuffle: Failed to assign raw %i to cluster. Defaulting to no move.\n", index);
+          printf("Warning: Failed to assign raw %i to cluster. Defaulting to no move.\n", index);
           printf("\t (e_i=%.4e, lam_i=%.4e).\n", b->bi[i]->e[index], b->bi[i]->lambda[index]);
           ibest=i;
         }
@@ -702,7 +701,7 @@ void b_p_update(B *b) {
       }
       fam->p = pval; // Assign abundance pval
       
-      if(USE_SINGLETONS) {
+      if(b->use_singletons) {
         // Calculate singleton pval (pS) from cluster lookup
         if(fam->lambda >= b->lams[0]) {  // fam->lambda bigger than all lambdas in lookup
           fam->pS = 1.0;
@@ -723,7 +722,7 @@ void b_p_update(B *b) {
           }
           fam->pS = (1.0 - b->cdf[ifirst]);
         }
-      } // if(USE_SINGLETONS)
+      } // if(b->use_singletons)
       
     } // for(f=0;f<b->bi[i]->nfam;f++)
   } // for(i=0;i<b->nclust;i++)
@@ -781,7 +780,7 @@ int b_bud(B *b) {
   }
 
   // No significant abundance pval
-  if(!USE_SINGLETONS) {
+  if(!b->use_singletons) {
     return 0;
   }
   

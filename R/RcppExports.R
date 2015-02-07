@@ -29,8 +29,8 @@ NULL
 #' @return List.
 #'
 #' @export
-dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, omegaA, omegaS) {
-    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, omegaA, omegaS)
+dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, omegaA, use_singletons, omegaS) {
+    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, omegaA, use_singletons, omegaS)
 }
 
 #' Generate the kmer-distance and the alignment distance from the

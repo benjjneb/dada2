@@ -1,6 +1,7 @@
 
 dada_opts <- new.env()
 assign("OMEGA_A", 0.01, envir = dada_opts)
+assign("USE_SINGLETONS", TRUE, envir=dada_opts)
 assign("OMEGA_S", 0.01, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.55, envir = dada_opts)
@@ -33,6 +34,13 @@ set_dada_opt <- function(option, value) {
   if(length(option) != length(value)) {
     stop(paste("Different lengths of name/value vectors:", length(option), ",", length(value)))
   }
+
+  if(class(get_dada_opt(option)) != class(value))
+  {
+    stop(paste0("Provided value has different class (", class(value), 
+                ") then current option value (", class(get_dada_opt(option)), ")"))
+  }
+  # ADD CHECKING INSIDE OF LISTS WHEN LIST OF OPT/VALUES IS PROVIDED
   
   for(i in seq(length(option))) {
     assign(option[[i]], value[[i]], envir=dada_opts)

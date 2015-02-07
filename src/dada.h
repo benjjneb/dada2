@@ -12,7 +12,7 @@
 #include <float.h>
 #include "strmap.h" // an ANSI C hash table
 
-#define USE_SINGLETONS 1
+//#define USE_SINGLETONS 1
 #define MAXMAXD 18
 #define TARGET_RAW 0
 #define ALIGN_SQUAWK 100000
@@ -102,6 +102,7 @@ typedef struct {
   double score[4][4];
   double gap_pen;
   double omegaA;
+  bool use_singletons;
   double omegaS;
   double *lams;
   double *cdf;
@@ -137,7 +138,7 @@ void uniques_sequence(Uniques *uniques, int n, char *seq);
 void uniques_free(Uniques *uniques);
 
 // methods implemented in cluster.c
-B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, double omegaS);
+B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS);
 void b_free(B *b);
 void b_init(B *b);
 void b_shuffle(B *b);
