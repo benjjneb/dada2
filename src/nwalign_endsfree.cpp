@@ -283,7 +283,6 @@ char **str2al(char *str) {
  differs from al[0]
  */
 Sub *al2subs(char **al) {
-//  printf("IN AL2SUBS...\n");
   int i, i0, bytes;
   size_t align_length;
   char *al0, *al1; /* dummy pointers to the sequences in the alignment */
@@ -301,8 +300,8 @@ Sub *al2subs(char **al) {
     return sub;
   }
   
-  /* create Sub obect and initialize memory */
-  Sub *sub = (Sub *) malloc(sizeof(Sub)); /* create a Sub struct */
+  // create Sub obect and initialize memory
+  Sub *sub = (Sub *) malloc(sizeof(Sub));
   sub->pos = (int *) malloc(strlen(al[0]) * sizeof(int));
   sub->nt0 = (char *) malloc(strlen(al[0]));
   sub->nt1 = (char *) malloc(strlen(al[0]));
@@ -315,10 +314,8 @@ Sub *al2subs(char **al) {
   pnt1 = sub->nt1;
   pkey = sub->key;
   
-//  printf("IN AL2SUBS - LOOP START\n");
   i0 = -1; al0 = al[0]; al1 = al[1];
   align_length = strlen(al[0]);
-//  printf(" ... strlen(al0): %i\n", strlen(al0));
   for(i=0;i<align_length;i++) {
     if((al0[i] == 1) || (al0[i] == 2) || (al0[i] == 3) || (al0[i] == 4) || (al0[i] == 5)) { // a nt (non-gap) in the seq0
       i0++;
@@ -328,7 +325,6 @@ Sub *al2subs(char **al) {
           *pnt0 = al0[i];
           *pnt1 = al1[i];
           bytes = sprintf(pkey,"%c%d%c,",*pnt0,i0,*pnt1);
-//          printf("%c%d%c,",*pnt0,i0,*pnt1);
           
           ppos++; pnt0++; pnt1++;
           key_size += bytes;

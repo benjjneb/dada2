@@ -162,7 +162,7 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
   return Rcpp::DataFrame::create(Rcpp::_["p"]=ps, Rcpp::_["cdf"]=cdf);
 }
 
-
+/* WORK IN PROGRESS
 Rcpp::NumericVector sampleProbs(std::vector<double> errs, std::vector<int> nnt, int32_t nsam) {
   // binom draw of #A errors, #C errors, #G errors and #T errors
   int n, e;
@@ -216,7 +216,7 @@ Rcpp::NumericVector sampleProbs(std::vector<double> errs, std::vector<int> nnt, 
     /// REPEAT REPEAT REPAAT
   }
 }
-
+*/
 
 
 

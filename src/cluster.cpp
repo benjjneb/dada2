@@ -23,6 +23,13 @@ void raw_free(Raw *raw);
 void fam_free(Fam *fam);
 void bi_free(Bi *bi);
 
+Raw *raw_new(char *seq, int reads);
+void bi_census(Bi *bi);
+int b_add_bi(B *b, Bi *bi);
+Bi *bi_new(int totraw);
+Raw *bi_pop_raw(Bi *bi, int f, int r);
+void bi_shove_raw(Bi *bi, Raw *raw);
+
 int fam_add_raw(Fam *fam, Raw *raw);
 int bi_add_fam(Bi *bi, Fam *fam);
 int b_add_bi(B *b, Bi *bi);
@@ -329,39 +336,41 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
   }
   free(seq);
 
-  // Create the (for now) solitary lookup table from lambda -> pS
-  // Use the average sequence composition
-  // Pval lookup depends on sequence composition when the error matrix
-  //   is not uniform, but this dependence is not super-strong normally.
-  // However, we very much need the sequences to be all close to the same
-  //   length for this to be valid!!!!
+  if(USE_SINGLETONS) {
+    // Create the (for now) solitary lookup table from lambda -> pS
+    // Use the average sequence composition
+    // Pval lookup depends on sequence composition when the error matrix
+    //   is not uniform, but this dependence is not super-strong normally.
+    // However, we very much need the sequences to be all close to the same
+    //   length for this to be valid!!!!
+    
+    // Calculate average sequence nnt
+    int ave_nnt[4];
+    for(nti=0;nti<4;nti++) {
+      ave_nnt[nti] = (int) (0.499 + tot_nnt[nti]/b->nraw);
+    }
   
-  // Calculate average sequence nnt
-  int ave_nnt[4];
-  for(nti=0;nti<4;nti++) {
-    ave_nnt[nti] = (int) (0.499 + tot_nnt[nti]/b->nraw);
-  }
-
-  // Iterate over maxDs until going far enough to call significant singletons
-  // NO GRACEFUL FAILURE YET IF NOT FOUND IN A REASONABLE MAXD!!
-  int maxD=10;
-  std::vector<double> temp_lambdas;
-  std::vector<double> temp_cdf;
-  do {
-    maxD+=2;
-    getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
-  } while((1.0 - temp_cdf.back()) > (b->nraw * b->omegaS));
-  
-  // Copy into C style arrays
-  // Kind of ridiculous, at some point might be worthwhile doing the cull C++ conversion
-  printf("b_new: Most significant possible pval = %.15e, maxD=%i, nnt=(%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]);
-  b->lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
-  b->cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
-  b->nlam = temp_lambdas.size();
-  for(index=0;index<b->nlam;index++) {
-    b->lams[index] = temp_lambdas[index];
-    b->cdf[index] = temp_cdf[index];
-  }
+    // Iterate over maxDs until going far enough to call significant singletons
+    // NO GRACEFUL FAILURE YET IF NOT FOUND IN A REASONABLE MAXD!!
+    int maxD=10;
+    std::vector<double> temp_lambdas;
+    std::vector<double> temp_cdf;
+    do {
+      maxD+=2;
+      getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
+    } while((1.0 - temp_cdf.back()) > (b->nraw * b->omegaS));
+    
+    // Copy into C style arrays
+    // Kind of ridiculous, at some point might be worthwhile doing the full C++ conversion
+    if(tVERBOSE) { printf("b_new: Most significant possible pval = %.15e, maxD=%i, ave_nnt=(%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
+    b->lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
+    b->cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
+    b->nlam = temp_lambdas.size();
+    for(index=0;index<b->nlam;index++) {
+      b->lams[index] = temp_lambdas[index];
+      b->cdf[index] = temp_cdf[index];
+    }
+  } // if(USE_SINGLETONS)
 
   // Initialize with one cluster/one-family containing all the raws.
   b_init(b);
@@ -404,8 +413,11 @@ void b_free(B *b) {
     raw_free(b->raw[index]);
   }
   free(b->raw);
-  free(b->lams);
-  free(b->cdf);
+  
+  if(USE_SINGLETONS) {
+    free(b->lams);
+    free(b->cdf);
+  }
 
   free(b);
 }
@@ -612,6 +624,7 @@ void b_shuffle(B *b) {
 */
 void b_p_update(B *b) {
   int i, f;
+  size_t ifirst, imid, ilast;
   double mu, pval, norm;
   Fam *fam;
   for(i=0;i<b->nclust;i++) {
@@ -650,24 +663,44 @@ void b_p_update(B *b) {
           n_repeats(0) = fam->reads-1;
           Rcpp::NumericVector res = Rcpp::ppois(n_repeats, mu, false);  // lower.tail = false
           pval = Rcpp::as<double>(res);
-          //*(res.begin());
-          
-/*          double gslval = 1 - gsl_cdf_poisson_P(reads-1, mu);
+        }          
+/*      else { // C implementation
+          double gslval = 1 - gsl_cdf_poisson_P(reads-1, mu);
           double minval = (pval < gslval) ? pval : gslval;
           if( fabs(pval-gslval)/minval > 1e-5 && fabs(pval-gslval) > 1e-25 ) {
             Rcpp::Rcout << "Pval disagreement (gsl/R) for mu=" << mu << " and n=" << reads-1 << ": " << gslval << ", " << pval << "\n";
           }
-        } else {
-          pval = 1 - gsl_cdf_poisson_P(reads-1, mu);  // THIS MUST EQUAL ZERO WHEN MU=DBL_MIN ... DOES IT?
-          // THIS NEEDS TO BE CHANGED. DOES NOT LIMIT APPROPRIATELY!!!! */
-        }
+        }  // THIS MUST BE CHANGED. DOES NOT LIMIT APPROPRIATELY!!!! */
+        
         pval = pval/norm;
       }
+      fam->p = pval; // Assign abundance pval
       
-      // Assign (abundance) pval to fam->pval
-      b->bi[i]->fam[f]->p = pval;
-    }
-  }
+      if(USE_SINGLETONS) {
+        // Calculate singleton pval (pS) from cluster lookup
+        if(fam->lambda >= b->lams[0]) {  // fam->lambda bigger than all lambdas in lookup
+          fam->pS = 1.0;
+        }
+        else if(fam->lambda <= b->lams[b->nlam-1]) { // fam->lam smaller than all lams in lookup
+          fam->pS = (1.0 - b->cdf[b->nlam-1]);
+        }
+        else { // Find lam in the lookup and assign pS
+          ifirst = 0;
+          ilast = b->nlam-1;
+          while((ilast-ifirst) > 1) {
+            imid = (ifirst+ilast)/2;
+            if(b->lams[imid] > fam->lambda) {
+              ifirst = imid;
+            } else {
+              ilast = imid;
+            }
+          }
+          fam->pS = (1.0 - b->cdf[ifirst]);
+        }
+      } // if(USE_SINGLETONS)
+      
+    } // for(f=0;f<b->bi[i]->nfam;f++)
+  } // for(i=0;i<b->nclust;i++)
 }
 
 /* b_bud:

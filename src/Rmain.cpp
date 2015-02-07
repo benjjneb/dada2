@@ -171,7 +171,6 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
 }
 
 void test_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff) {
-  int newi=-999;
   return;
 }
 
