@@ -344,6 +344,19 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
     // However, we very much need the sequences to be all close to the same
     //   length for this to be valid!!!!
     
+    // Error and exit if requested OmegaS would exceed or near double precision
+    double DBL_PREC = 1e-14;
+    if(b->nraw * DBL_PREC > b->omegaS) {
+      printf("Error: Doubles not precise enough to meet requested OmegaS.\n");
+      printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
+      for(index=0;index<b->nraw;index++) { raw_free(b->raw[index]); }
+      free(b->raw);
+      free(b->bi);
+      free(b);
+      Rcpp::stop("Cannot meet requsted OmegaS\n");
+//      exit(EXIT_FAILURE);
+    }    
+    
     // Calculate average sequence nnt
     int ave_nnt[4];
     for(nti=0;nti<4;nti++) {
@@ -351,18 +364,31 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
     }
   
     // Iterate over maxDs until going far enough to call significant singletons
-    // NO GRACEFUL FAILURE YET IF NOT FOUND IN A REASONABLE MAXD!!
-    int maxD=10;
+    // Approximating Bonferonni correction by nraw (in place of total fams)
+    // i.e. most significant possible pS* = (1.0 - temp_cdf.back()) * b->nraw
+    int maxD=8;
     std::vector<double> temp_lambdas;
     std::vector<double> temp_cdf;
     do {
       maxD+=2;
       getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
-    } while((1.0 - temp_cdf.back()) > (b->nraw * b->omegaS));
+    } while((1.0 - temp_cdf.back()) * b->nraw > b->omegaS && maxD < MAXMAXD);
+    
+    // Error and exit if couldnt make lookup big enough to get OmegaS
+    if((1.0 - temp_cdf.back()) * b->nraw > b->omegaS) {
+      printf("Error: Cannot calculate singleton pvals small enough to meet requested OmegaS.\n");
+      printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
+      for(index=0;index<b->nraw;index++) { raw_free(b->raw[index]); }
+      free(b->raw);
+      free(b->bi);
+      free(b);
+      Rcpp::stop("Cannot meet requsted OmegaS\n");
+//      exit(EXIT_FAILURE);
+    }
     
     // Copy into C style arrays
-    // Kind of ridiculous, at some point might be worthwhile doing the full C++ conversion
-    if(tVERBOSE) { printf("b_new: Most significant possible pval = %.15e, maxD=%i, ave_nnt=(%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
+    // Kind of silly, at some point might be worthwhile doing the full C++ conversion
+    if(tVERBOSE) { printf("b_new: Most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->nraw*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
     b->lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
     b->cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
     b->nlam = temp_lambdas.size();

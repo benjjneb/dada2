@@ -13,6 +13,7 @@
 #include "strmap.h" // an ANSI C hash table
 
 #define USE_SINGLETONS 1
+#define MAXMAXD 18
 #define TARGET_RAW 0
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
