@@ -35,14 +35,12 @@ set_dada_opt <- function(option, value) {
     stop(paste("Different lengths of name/value vectors:", length(option), ",", length(value)))
   }
 
-  if(class(get_dada_opt(option)) != class(value))
-  {
-    stop(paste0("Provided value has different class (", class(value), 
-                ") then current option value (", class(get_dada_opt(option)), ")"))
-  }
-  # ADD CHECKING INSIDE OF LISTS WHEN LIST OF OPT/VALUES IS PROVIDED
-  
   for(i in seq(length(option))) {
+    if(class(get_dada_opt(option[[i]])) != class(value[[i]]))
+    {
+      stop(paste0("Value provided for option ", option[[i]], " has different class (", class(value[[i]]), 
+                  ") then current option value (", class(get_dada_opt(option[[i]])), ")"))
+    }
     assign(option[[i]], value[[i]], envir=dada_opts)
   }
 }
