@@ -736,14 +736,13 @@ void b_p_update(B *b) {
 */
 
 int b_bud(B *b) {
-  int rval=0;
   int i, f, r;
-  int mini=0, minf=0, totfams=0;
-  double minp = 1.;
-  int minreads = 0;
+  int mini, minf, totfams, minreads;
+  double minp = 1.0, minlam=1.0;
   Fam *fam;
 
   // Find i, f indices and value of minimum pval.
+  mini=-999; minf=-999; minreads=0; minp=1.0; totfams=0;
   for(i=0;i<b->nclust;i++) {
     for(f=0; f<b->bi[i]->nfam; f++) {
       totfams++;
@@ -761,12 +760,9 @@ int b_bud(B *b) {
     }
   }
   
-  // Bonferroni correct the abundance pval by the number of fams
+  // Bonferroni correct the abundance pval by the number of fams and compare to OmegaA
   // (quite conservative, although probably unimportant given the abundance model issues)
-  if(minp*totfams >= b->omegaA) {  // Not significant, return 0
-    rval = 0;
-  }
-  else {  // A significant abundance pval
+  if(minp*totfams < b->omegaA && mini >= 0 && minf >= 0) {  // A significant abundance pval
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
     
@@ -781,9 +777,53 @@ int b_bud(B *b) {
     
     bi_consensus_update(b->bi[i], b->err);
     fam_free(fam);
-    rval = i;
+    return i;
   }
-  return rval;
+
+  // No significant abundance pval
+  if(!USE_SINGLETONS) {
+    return 0;
+  }
+  
+  // Using singletons, so find minimum pS
+  mini=-999; minf=-999; minp=1.0; minlam = 1.0;
+  for(i=0;i<b->nclust;i++) {
+    for(f=0; f<b->bi[i]->nfam; f++) {
+      if(b->bi[i]->fam[f]->pS < minp) { // Most significant
+        mini = i; minf = f;
+        minp = b->bi[i]->fam[f]->pS;
+        minlam = b->bi[i]->fam[f]->lambda;
+      } 
+      else if((b->bi[i]->fam[f]->pS == minp) && (b->bi[i]->fam[f]->lambda < minlam)) {
+        // Ties occur at the most sig possible pS. In that case choose the lowers lambda.
+        mini = i; minf = f;
+        minp = b->bi[i]->fam[f]->pS;
+        minlam = b->bi[i]->fam[f]->lambda;
+      }
+    }
+  }
+
+  // Bonferroni correct the singleton pval by the number of fams and compare to OmegaS
+  if(minp*totfams < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
+    fam = bi_pop_fam(b->bi[mini], minf);
+    i = b_add_bi(b, bi_new(b->nraw));
+    
+    // Move raws into new cluster, could be more elegant but this works.
+    for(r=0;r<fam->nraw;r++) {
+      bi_shove_raw(b->bi[i], fam->raw[r]);
+    }
+
+    if(tVERBOSE) { 
+      printf("\nNew cluster from C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", mini, minf, minp*totfams, fam->lambda);
+    }
+    
+    bi_consensus_update(b->bi[i], b->err);
+    fam_free(fam);
+    return i;
+  }
+
+  // No significant abundance or singleton pval
+  return 0;
 }
 
 /* fam_consensus_update:
