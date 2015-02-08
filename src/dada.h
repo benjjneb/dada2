@@ -18,7 +18,7 @@
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
-#define tVERBOSE 1
+#define tVERBOSE 0
 #define BUFFER_SIZE 1250
 #define KEY_BUFSIZE 2000
 #define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
@@ -174,7 +174,7 @@ Sub *al2subs(char **al);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 double get_self(char *seq, double err[4][4]);
 
-// methods implemented in pval.c
+// methods implemented in pval.cpp
 void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD);
 
 #endif

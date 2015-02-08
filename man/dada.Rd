@@ -8,25 +8,20 @@
 \usage{
 dada(uniques, err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003,
   0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow = 4,
-  byrow = T), score = matrix(c(5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5, -4,
-  -4, -4, -4, 5), nrow = 4, byrow = T), gap_penalty = -8,
-  self_consist = FALSE)
+  byrow = T), self_consist = FALSE)
 }
 \arguments{
-\item{uniques}{(Required). Named integer vector.
- This is a vector of abundances of unique sequences, with the sequence specified by the name.
- Sequences are only allowed to contain A/C/G/T characters.}
+\item{uniques}{(Required). Named integer vector or list of named integer vectors.
+ Each uniques vector is an integer vector of abundances, named by the unique DNA
+   sequence to which that abundance corresponds.
+ Sequences are only allowed to contain A/C/G/T characters.
+ A list of such vectors can be provided, in which case the error model will be
+   shared across these samples when denoising.}
 
 \item{err}{(Optional). 4x4 numeric matrix.
  The matrix of estimated error rates from one nucleotide to another.
  err[i,j] = Prob(j in sequence | i in sample genotype).
  A=1, C=2, G=3, T=4 for indexing. Rows required to sum to 1.}
-
-\item{score}{(Optional). 4x4 numeric matrix.
- The score matrix used by the Needleman-Wunsch alignment algorithm. Defaults to nuc44.}
-
-\item{gap_penalty}{(Optional). \code{numeric(1)}
- The gap penalty for the Needleman-Wunsch alignemnt algoirithm. Defaults to -8.}
 
 \item{self_consist}{(Optional). \code{logical(1)}
  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat

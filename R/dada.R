@@ -14,12 +14,6 @@
 #'  err[i,j] = Prob(j in sequence | i in sample genotype).
 #'  A=1, C=2, G=3, T=4 for indexing. Rows required to sum to 1.
 #'  
-#' @param score (Optional). 4x4 numeric matrix.
-#'  The score matrix used by the Needleman-Wunsch alignment algorithm. Defaults to nuc44.
-#'  
-#' @param gap_penalty (Optional). \code{numeric(1)}
-#'  The gap penalty for the Needleman-Wunsch alignemnt algoirithm. Defaults to -8.
-#'  
 #' @param self_consist (Optional). \code{logical(1)}
 #'  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat
 #'  the algorithm using the newly estimated error rates. This continues until convergence.
@@ -32,8 +26,6 @@
 #'
 dada <- function(uniques,
                  err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow=4, byrow=T),
-                 score = matrix(c(5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5), nrow=4, byrow=T),
-                 gap_penalty = -8,
                  self_consist = FALSE) {
   
   if(!is.list(uniques)) { # If a single vector, make into a length 1 list
@@ -61,21 +53,13 @@ dada <- function(uniques,
   }
   if(any(err==0)) warning("dada: Zero in error matrix.")
 
-  if(!(is.numeric(score) && dim(err) == c(4,4))) {
-    stop("dada: Invalid score matrix.")
-  }
-  
-  if(!(is.numeric(gap_penalty) && gap_penalty <=0)) {
-    stop("dada: Invalid gap penalty.")
-  }
-  if(gap_penalty > -1) warning("dada: Very small gap penalty.")
-  
   prev <- NULL
   denoised <- list()
   trans <- matrix(0, nrow=4, ncol=4)
   nconsist <- 1
   for(i in seq(length(uniques))) {
-    res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, score, gap_penalty,
+    res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, 
+                        get("SCORE_MATRIX", envir=dada_opts), get("GAP_PENALTY", envir=dada_opts),
                         get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
                         get("OMEGA_A", envir=dada_opts), 
                         get("USE_SINGLETONS", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
@@ -121,5 +105,12 @@ dada <- function(uniques,
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
   }
+  
+  # Store all the options in the return object
+  opts <- ls(dada_opts)
+  ropts <- lapply(opts, function(x) get(x, envir=dada_opts))
+  names(ropts) <- opts
+  rval$opts <- ropts
+  
   rval
 }

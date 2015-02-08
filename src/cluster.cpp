@@ -346,8 +346,8 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
     //   length for this to be valid!!!!
     
     // Error and exit if requested OmegaS would exceed or near double precision
-    double DBL_PREC = 1e-14;
-    if(b->nraw * DBL_PREC > b->omegaS) {
+    double DBL_PREC = 1e-15;
+    if(b->reads * DBL_PREC > b->omegaS) {
       printf("Error: Doubles not precise enough to meet requested OmegaS.\n");
       printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
       for(index=0;index<b->nraw;index++) { raw_free(b->raw[index]); }
@@ -373,10 +373,10 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
     do {
       maxD+=2;
       getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
-    } while((1.0 - temp_cdf.back()) * b->nraw > b->omegaS && maxD < MAXMAXD);
+    } while((1.0 - temp_cdf.back()) * b->reads > b->omegaS && maxD < MAXMAXD);
     
     // Error and exit if couldnt make lookup big enough to get OmegaS
-    if((1.0 - temp_cdf.back()) * b->nraw > b->omegaS) {
+    if((1.0 - temp_cdf.back()) * b->reads > b->omegaS) {
       printf("Error: Cannot calculate singleton pvals small enough to meet requested OmegaS.\n");
       printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
       for(index=0;index<b->nraw;index++) { raw_free(b->raw[index]); }
@@ -389,7 +389,7 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
     
     // Copy into C style arrays
     // Kind of silly, at some point might be worthwhile doing the full C++ conversion
-    if(tVERBOSE) { printf("b_new: Most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->nraw*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
+    if(tVERBOSE) { printf("b_new: Most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
     b->lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
     b->cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
     b->nlam = temp_lambdas.size();
@@ -707,7 +707,7 @@ void b_p_update(B *b) {
           fam->pS = 1.0;
         }
         else if(fam->lambda <= b->lams[b->nlam-1]) { // fam->lam smaller than all lams in lookup
-          fam->pS = (1.0 - b->cdf[b->nlam-1]);
+          fam->pS = (1.0 - b->cdf[b->nlam-1]) * b->bi[i]->reads;
         }
         else { // Find lam in the lookup and assign pS
           ifirst = 0;
@@ -720,7 +720,7 @@ void b_p_update(B *b) {
               ilast = imid;
             }
           }
-          fam->pS = (1.0 - b->cdf[ifirst]);
+          fam->pS = (1.0 - b->cdf[ifirst]) * b->bi[i]->reads;
         }
       } // if(b->use_singletons)
       
@@ -803,7 +803,8 @@ int b_bud(B *b) {
   }
 
   // Bonferroni correct the singleton pval by the number of fams and compare to OmegaS
-  if(minp*totfams < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
+  // CHANGED TO MATCH MATLAB CODE>>>>>>>>>> REVIEW THIS
+  if(minp*b->nclust < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
     
@@ -813,7 +814,7 @@ int b_bud(B *b) {
     }
 
     if(tVERBOSE) { 
-      printf("\nNew cluster from C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", mini, minf, minp*totfams, fam->lambda);
+      printf("\nNew cluster from C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", mini, minf, minp*b->nclust, fam->lambda);
     }
     
     bi_consensus_update(b->bi[i], b->err);
