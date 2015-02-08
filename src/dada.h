@@ -12,18 +12,17 @@
 #include <float.h>
 #include "strmap.h" // an ANSI C hash table
 
-//#define USE_SINGLETONS 1
 #define MAXMAXD 18
 #define TARGET_RAW 0
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
-#define tVERBOSE 0
+#define tVERBOSE 1
 #define BUFFER_SIZE 1250
 #define KEY_BUFSIZE 2000
 #define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
 #define HASHOCC 20
-#define BAND 50 // Size of band in banded alignments. 0 means no banding.
+// #define BAND 50 // Size of band in banded alignments. 0 means no banding.
 #define KMER_SIZE 6
 #define NERRS 12
 #define TRUE  1
@@ -142,7 +141,7 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
 void b_free(B *b);
 void b_init(B *b);
 void b_shuffle(B *b);
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff);
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size);
 void b_fam_update(B *b);
 void b_consensus_update(B *b);
 void b_e_update(B *b);
@@ -166,8 +165,8 @@ void err_print(double err[4][4]);
 void test_fun(int i);
 
 // method implemented in nwalign_endsfree.c
-char **nwalign_endsfree(char *s1, char *s2, double s[4][4], int gap_p, int band);
-char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_kmer, double kdist_cutoff);
+char **nwalign_endsfree(char *s1, char *s2, double s[4][4], double gap_p, int band);
+char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmer, double kdist_cutoff, int band);
 int *get_kmer(char *seq, int k);
 double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
 Sub *al2subs(char **al);

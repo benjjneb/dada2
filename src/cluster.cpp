@@ -389,7 +389,7 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
     
     // Copy into C style arrays
     // Kind of silly, at some point might be worthwhile doing the full C++ conversion
-    if(tVERBOSE) { printf("b_new: Most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
+    if(tVERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
     b->lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
     b->cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
     b->nlam = temp_lambdas.size();
@@ -424,7 +424,7 @@ void b_init(B *b) {
 
   bi_census(b->bi[0]);
   b_consensus_update(b); // Makes cluster consensus sequence
-  b_lambda_update(b, FALSE, 1.);
+  b_lambda_update(b, FALSE, 1., 0);
   b_e_update(b);
   if(VERBOSE) { printf("b_init - exit\n"); }
 }
@@ -466,7 +466,7 @@ int b_add_bi(B *b, Bi *bi) {
  updates the alignments and lambda of all raws to Bi with
  updated consensus sequences. 
 */
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size) {
   int i, index;
   double lambda;
   char **al; // stores alignments
@@ -477,7 +477,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
       if(tVERBOSE) printf("C%iLU:", i);
       for(index=0; index<b->nraw; index++) {
         /* perform alignment */
-        al = raw_align(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff);
+        al = raw_align(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, band_size);
         sub = al2subs(al);
         
         /* Store sub and lambda in the cluster object Bi */
@@ -532,7 +532,7 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
     // Place raw in fams.
     if(!sub) { // Protect from null subs, but this should never arise...
       printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN.\n");
-      sub = al2subs(raw_align(bi->center, raws[r_c], score, gap_pen, FALSE, 1.));
+      sub = al2subs(raw_align(bi->center, raws[r_c], score, gap_pen, FALSE, 1., 0));
     }
     result = sm_exists(bi->sm, sub->key);
 
@@ -556,7 +556,7 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
 
     if(!sub) { // Protect from null subs, but this should never arise...
       printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN (2).\n");
-      sub = al2subs(raw_align(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1.));
+      sub = al2subs(raw_align(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., 0));
     }
 
     bi->fam[f]->sub = sub;
@@ -823,6 +823,7 @@ int b_bud(B *b) {
   }
 
   // No significant abundance or singleton pval
+  if(tVERBOSE) { printf("\nNo significant pval, no new cluster.\n"); }
   return 0;
 }
 

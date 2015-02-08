@@ -29,8 +29,9 @@ dada(uniques, err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003,
 }
 \value{
 List.
- $genotypes: named integer vector of the inferred sample genotypes.
- $trans: 4x4 integer matrix of the observed transitions between nts.
+ $genotypes: named integer vector of the denoised sample genotypes.
+ $trans: 4x4 integer matrix of the inferred substutions ("errors") between nts.
+ $opts: A list of the dada_opts used for this function call.
 }
 \description{
 The dada function takes as input the unique sequences in an amplicon sequencing sample paired

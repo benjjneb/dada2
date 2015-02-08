@@ -55,7 +55,7 @@ int *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
   return kvec;
 }
 
-char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_kmers, double kdist_cutoff) {
+char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band) {
   static long nalign=0;
   static long nshroud=0;
   char **al;
@@ -71,7 +71,7 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_k
     al = NULL;
     nshroud++;
   } else {
-    al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, BAND);
+    al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band);
   }
   nalign++;
   
@@ -82,8 +82,8 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], int gap_p, bool use_k
 }
 
 /* note: input sequence must end with string termination character, '\0' */
-char **nwalign_endsfree(char *s1, char *s2, double score[4][4], int gap_p, int band) {
-  static int nnw = 0;
+char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, int band) {
+  static size_t nnw = 0;
   int i, j;
   int l, r;
   size_t len1 = strlen(s1);

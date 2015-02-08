@@ -19,8 +19,9 @@
 #'  the algorithm using the newly estimated error rates. This continues until convergence.
 #'
 #' @return List.
-#'  $genotypes: named integer vector of the inferred sample genotypes.
-#'  $trans: 4x4 integer matrix of the observed transitions between nts. 
+#'  $genotypes: named integer vector of the denoised sample genotypes.
+#'  $trans: 4x4 integer matrix of the inferred substutions ("errors") between nts. 
+#'  $opts: A list of the dada_opts used for this function call.
 #'   
 #' @export
 #'
@@ -61,6 +62,7 @@ dada <- function(uniques,
     res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, 
                         get("SCORE_MATRIX", envir=dada_opts), get("GAP_PENALTY", envir=dada_opts),
                         get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
+                        get("BAND_SIZE", envir=dada_opts),
                         get("OMEGA_A", envir=dada_opts), 
                         get("USE_SINGLETONS", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
     denoised[[i]] <- res$genotypes

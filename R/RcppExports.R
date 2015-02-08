@@ -29,8 +29,8 @@ NULL
 #' @return List.
 #'
 #' @export
-dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, omegaA, use_singletons, omegaS) {
-    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, omegaA, use_singletons, omegaS)
+dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS) {
+    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS)
 }
 
 #' Generate the kmer-distance and the alignment distance from the
@@ -38,7 +38,7 @@ dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cut
 #'
 #' @param seqs (Required). Character.
 #'  A vector containing all unique sequences in the data set.
-#'  Only A/C/G/T/N/- allowed. Ungapped sequences recommended.
+#'  Only A/C/G/T allowed.
 #' 
 #' @param score (Required). Numeric matrix (4x4).
 #' The score matrix used during the alignment.
@@ -51,8 +51,31 @@ dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cut
 #' @return DataFrame.
 #'
 #' @export
-calibrate_kmers <- function(seqs, score, gap, max_aligns) {
-    .Call('dadac_calibrate_kmers', PACKAGE = 'dadac', seqs, score, gap, max_aligns)
+calibrate_kmers <- function(seqs, score, gap, band, max_aligns) {
+    .Call('dadac_calibrate_kmers', PACKAGE = 'dadac', seqs, score, gap, band, max_aligns)
+}
+
+#' Quantify the number of alignments altered by banding at the given BAND_SIZE.
+#'
+#' @param seqs (Required). Character.
+#'  A vector containing all unique sequences in the data set.
+#'  Only A/C/G/T allowed.
+#' 
+#' @param score (Required). Numeric matrix (4x4).
+#' The score matrix used during the alignment.
+#'
+#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
+#' 
+#' @param band_size (Required). A \code{numeric(1)} giving the band size to consider.
+#'
+#' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
+#' pairwise alignments to do.
+#'
+#' @return DataFrame.
+#'
+#' @export
+evaluate_band <- function(seqs, score, gap, band_size, max_aligns) {
+    .Call('dadac_evaluate_band', PACKAGE = 'dadac', seqs, score, gap, band_size, max_aligns)
 }
 
 # Register entry points for exported C++ functions
