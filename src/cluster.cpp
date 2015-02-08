@@ -234,8 +234,10 @@ Bi *bi_new(int totraw) {
   bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *));
   bi->maxfam = FAMBUF;
   bi->sub = (Sub **) malloc(totraw * sizeof(Sub *));
+  for(int i=0;i<totraw;i++) { bi->sub[i] = NULL; }   // Init to null pointers
   bi->lambda = (double *) malloc(totraw * sizeof(double));
   bi->e = (double *) malloc(totraw * sizeof(double));
+  bi->totraw = totraw;
   bi->sm = sm_new(HASHOCC);
   bi->update_lambda = TRUE;
   bi->update_fam = TRUE;
@@ -253,6 +255,7 @@ void bi_free(Bi *bi) {
   for(int f=0;f<bi->nfam;f++) { fam_free(bi->fam[f]); }
   free(bi->fam);
   free(bi->seq);
+  for(int i=0;i<bi->totraw;i++) { sub_free(bi->sub[i]); }
   free(bi->sub);
   free(bi->lambda);
   free(bi->e);
@@ -469,18 +472,17 @@ int b_add_bi(B *b, Bi *bi) {
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size) {
   int i, index;
   double lambda;
-  char **al; // stores alignments
   Sub *sub; // stores Sub structs
   for (i = 0; i < b->nclust; i++) {
     if(b->bi[i]->update_lambda) {   // consensus sequence for Bi[i] has changed
       // update alignments and lambda of all raws to this sequence
       if(tVERBOSE) printf("C%iLU:", i);
       for(index=0; index<b->nraw; index++) {
-        /* perform alignment */
-        al = raw_align(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, band_size);
-        sub = al2subs(al);
+        // get sub object
+        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, band_size);
         
-        /* Store sub and lambda in the cluster object Bi */
+        // Store sub and lambda in the cluster object Bi
+        sub_free(b->bi[i]->sub[index]);
         b->bi[i]->sub[index] = sub;
         lambda = compute_lambda(sub, b->bi[i]->self, b->err);  // WHERE IS SELF SET!??  -- IN BI_CONSENSUS_UPDATE
         b->bi[i]->lambda[index] = lambda;
@@ -532,7 +534,7 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
     // Place raw in fams.
     if(!sub) { // Protect from null subs, but this should never arise...
       printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN.\n");
-      sub = al2subs(raw_align(bi->center, raws[r_c], score, gap_pen, FALSE, 1., 0));
+      sub = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., 0);
     }
     result = sm_exists(bi->sm, sub->key);
 
@@ -556,13 +558,14 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
 
     if(!sub) { // Protect from null subs, but this should never arise...
       printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN (2).\n");
-      sub = al2subs(raw_align(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., 0));
+      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., 0);
     }
 
     bi->fam[f]->sub = sub;
     bi->fam[f]->lambda = compute_lambda(sub, bi->self, err);
   }
   if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
+  free(raws);
   bi->update_fam = FALSE;
 }
 

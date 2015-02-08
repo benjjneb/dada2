@@ -294,7 +294,7 @@ Rcpp::DataFrame calibrate_kmers(std::vector< std::string > seqs, Rcpp::NumericMa
 //' @export
 // [[Rcpp::export]]
 Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, size_t max_aligns) {
-  int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
+  int i, j, n_iters, stride, nseqs, len1 = 0, len2 = 0;
   char *seq1, *seq2;
 //  double c_gap = as<double>(gap);
   double c_score[4][4];

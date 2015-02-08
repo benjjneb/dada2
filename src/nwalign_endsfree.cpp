@@ -3,9 +3,6 @@
 #include "dada.h"
 // [[Rcpp::interfaces(cpp)]]
 
-char *al2str(char **al);
-char **str2al(char *str);
-
 double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k) {
   double dot = 0;
   
@@ -61,11 +58,9 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool us
   char **al;
   double kdist;
   
-//  if(tVERBOSE) { printf("In align %i.\n", nalign); }
   if(use_kmers) {
     kdist = kmer_dist(raw1->kmer, strlen(raw1->seq), raw2->kmer, strlen(raw2->seq), KMER_SIZE);
   } else { kdist = 0; }
-//  if(VERBOSE) { printf("Kmered.\n"); }
   
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
@@ -76,7 +71,6 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool us
   nalign++;
   
   if(tVERBOSE && nalign%ALIGN_SQUAWK==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
-//  if(VERBOSE) { printf("Out align.\n"); }
 
   return al;
 }
@@ -91,8 +85,6 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
   double d[len1 + 1][len2 + 1]; /* d: DP matrix */
   int p[len1 + 1][len2 + 1]; /* backpointer matrix with 1 for diagonal, 2 for left, 3 for up. */  
   double diag, left, up;
-  
-//  printf("IN ALIGN...");
   
   int is_nt = 0;
   if(VERBOSE) {
@@ -216,62 +208,7 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
   al[0][len_al] = '\0';
   al[1][len_al] = '\0';
   
-/*  if(strlen(al[0]) != strlen(al[1])) {
-    printf("NWALIGN: different lengths (%i, %i) \n", strlen(al[0]), strlen(al[1]));
-    printf("0(%i):%s\n", strlen(al[0]), ntstr(al[0]));
-    printf("1(%i):%s\n\n", strlen(al[1]), ntstr(al[1]));
-  } */
-
   nnw++;
-  return al;
-}
-
-/*
- al2str:
- takes in an alignment represented as a char ** al.
- Returns a string of the concatenated alignment.
- */
-
-char *al2str(char **al) {
-  char *str;
-  
-  str = (char *) calloc(strlen(al[0]) + strlen(al[1]) + 1, sizeof(char));
-  strcpy(str, al[0]);
-  strcat(str, al[1]);
-  
-  return str;
-}
-
-/*
- str2al:
- takes in a string of the concatenated alignment.
- Returns an alignment represented as a char ** al.
- */
-
-char **str2al(char *str) {
-  /* Allocate memory to alignment strings. */
-  char **al = (char **) malloc( 2 * sizeof(char *) );
-  char *al0; char *al1;
-  int i, len;
-  len = strlen(str)/2;
-  if(strlen(str)%2 != 0) { printf("str2al odd strlen: %i\n", (int) strlen(str)); }
-  al[0] = (char *) calloc(1+len, sizeof(char)); // Assumes alignment has equal lengths (it must)
-  al[1] = (char *) calloc(1+len, sizeof(char)); // BJC
-  al0 = al[0]; al1 = al[1];
-
-  for(i=0;i<len;i++) {
-    al0[i] = str[i];
-    al1[i] = str[i+len];
-  }
-  al0[len] = '\0';
-  al1[len] = '\0';
-  
-  if(strlen(str) != strlen(al[0]) + strlen(al[1]) || strlen(al[0]) != strlen(al[1])) {
-    printf("str2al mismatch: %i != %i + %i\n", (int) strlen(str), (int) strlen(al[0]), (int) strlen(al[1]));
-    printf("string: %s\n", str);
-  }
-
-  
   return al;
 }
 
@@ -346,69 +283,34 @@ Sub *al2subs(char **al) {
   
   if(VERBOSE && sub->nsubs>150) {
     printf("AL2SUBS: Many subs (%i) \n", sub->nsubs);
-    //    printf("Key %i\t%i\t%s\n", key_size, strlen(sub->key), ntstr(sub->key));
   }
   return sub;
 }
 
-/*
- compute_lambda:
- 
- parameters:
- char *seq, the consensus sequence away from which a lambda will be computed
- Sub *sub, a substitution struct
- double lambda, the rate of self-production of the consensus sequence
- double t[4][4], a 4x4 matrix of content-independent error probabilities
- 
- returns:
- the double lambda.
- */
-double compute_lambda(Sub *sub, double self, double t[4][4]) {
-  int i;
-  int nti0, nti1;
-  double lambda;
+// Wrapper for al2subs(raw_align(...)) that manages memory
+Sub *sub_new(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band) {
+  char **al;
+  Sub *sub;
+
+  al = raw_align(raw1, raw2, score, gap_p, use_kmers, kdist_cutoff, band);
+  sub = al2subs(al);
   
-  if(!sub) { // NULL Sub, outside Kmer threshold
-    return 0.0;
-  }
-//  printf("CL-Key(%i): %s\n", sub->nsubs, ntstr(sub->key));
-  lambda = self;
-  for(i=0; i < sub->nsubs; i++) {
-    nti0 = (int)sub->nt0[i] - 1;
-    nti1 = (int)sub->nt1[i] - 1;
-//    printf("%c->%c: %.4e/%.4e = %.4e\n", ntstr(sub->nt0)[i], ntstr(sub->nt1)[i], t[nti0][nti1], t[nti0][nti0], t[nti0][nti1]/t[nti0][nti0]);
-    
-    if(nti0 < 0 || nti0 > 6) { printf("%i!", nti0); }
-    if(nti1 < 0 || nti1 > 6) { printf("%i!", nti1); }
-    
-//    printf("%i:%.2e, ", i, lambda);
-    lambda = lambda * t[nti0][nti1] / t[nti0][nti0];
+  if(al) { // not a NULL align
+    free(al[0]);
+    free(al[1]);
+    free(al);
   }
 
-  if(lambda < 0 || lambda > 1) { printf("ERROR: OVERUNDERFLOW OF LAMBDA: %.4e\n", lambda); }
-
-  if(lambda==0.0) { // UNDERFLOW TO ZERO
-    printf("COMPUTE_LAMBDA: ZEROFLOW OF LAMBDA (%i): %.4e\n", sub->nsubs, lambda);
-  }
-  
-  return lambda;
+  return sub;
 }
 
-/* get_self:
- Gets the self-transition probabilty for a sequence under a transition matrix.
- */
-double get_self(char *seq, double err[4][4]) {
-  int i, nti;
-  double self = 1.;
-  for(i=0;i<strlen(seq);i++, seq++) {
-    nti = (*seq - 1);
-    if(nti==0 || nti==1 || nti==2 || nti==3) { // A,C,G or T. Not N or -.
-      self = self*err[nti][nti];
-    }
+// Destructor for sub object
+void sub_free(Sub *sub) {
+  if(sub) { // not a NULL sub
+    free(sub->key);
+    free(sub->nt1);
+    free(sub->nt0);
+    free(sub->pos);
+    free(sub);
   }
-  if(self==0.0) { // UNDERFLOW TO ZERO
-    printf("Warning: get_self underflowed to zero.\n");
-  }
-  
-  return self;
 }

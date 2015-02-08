@@ -9,7 +9,6 @@
 #include <math.h>
 #include <Rcpp.h>
 //#include <gsl/gsl_cdf.h>
-#include <float.h>
 #include "strmap.h" // an ANSI C hash table
 
 #define MAXMAXD 18
@@ -22,7 +21,6 @@
 #define KEY_BUFSIZE 2000
 #define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
 #define HASHOCC 20
-// #define BAND 50 // Size of band in banded alignments. 0 means no banding.
 #define KMER_SIZE 6
 #define NERRS 12
 #define TRUE  1
@@ -89,6 +87,7 @@ typedef struct {
   Sub **sub;   // Array of pointers to subs with all raws.
   double *lambda; // Array of lambdas with all raws.
   double *e;   // Array of expected read numbers with all raws.
+  size_t totraw; // number of total raws in the clustering
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).
@@ -170,10 +169,12 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool us
 int *get_kmer(char *seq, int k);
 double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
 Sub *al2subs(char **al);
-double compute_lambda(Sub *sub, double self, double t[4][4]);
-double get_self(char *seq, double err[4][4]);
+Sub *sub_new(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmer, double kdist_cutoff, int band);
+void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
 void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD);
+double compute_lambda(Sub *sub, double self, double t[4][4]);
+double get_self(char *seq, double err[4][4]);
 
 #endif

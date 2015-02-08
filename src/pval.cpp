@@ -162,6 +162,68 @@ Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD
   return Rcpp::DataFrame::create(Rcpp::_["p"]=ps, Rcpp::_["cdf"]=cdf);
 }
 
+/*
+ compute_lambda:
+ 
+ parameters:
+ char *seq, the reference sequence away from which a lambda will be computed
+ Sub *sub, a substitution struct
+ double self, the rate of self-production of the consensus sequence
+ double t[4][4], a 4x4 matrix of content-independent error probabilities
+ 
+ returns:
+ the double lambda.
+ */
+double compute_lambda(Sub *sub, double self, double t[4][4]) {
+  int i;
+  int nti0, nti1;
+  double lambda;
+  
+  if(!sub) { // NULL Sub, outside Kmer threshold
+    return 0.0;
+  }
+//  printf("CL-Key(%i): %s\n", sub->nsubs, ntstr(sub->key));
+  lambda = self;
+  for(i=0; i < sub->nsubs; i++) {
+    nti0 = (int)sub->nt0[i] - 1;
+    nti1 = (int)sub->nt1[i] - 1;
+//    printf("%c->%c: %.4e/%.4e = %.4e\n", ntstr(sub->nt0)[i], ntstr(sub->nt1)[i], t[nti0][nti1], t[nti0][nti0], t[nti0][nti1]/t[nti0][nti0]);
+    
+    if(nti0 < 0 || nti0 > 6) { printf("%i!", nti0); }
+    if(nti1 < 0 || nti1 > 6) { printf("%i!", nti1); }
+    
+//    printf("%i:%.2e, ", i, lambda);
+    lambda = lambda * t[nti0][nti1] / t[nti0][nti0];
+  }
+
+  if(lambda < 0 || lambda > 1) { printf("ERROR: OVERUNDERFLOW OF LAMBDA: %.4e\n", lambda); }
+
+  if(lambda==0.0) { // UNDERFLOW TO ZERO
+    printf("COMPUTE_LAMBDA: ZEROFLOW OF LAMBDA (%i): %.4e\n", sub->nsubs, lambda);
+  }
+  
+  return lambda;
+}
+
+/* get_self:
+ Gets the self-transition probabilty for a sequence under a transition matrix.
+ */
+double get_self(char *seq, double err[4][4]) {
+  int i, nti;
+  double self = 1.;
+  for(i=0;i<strlen(seq);i++, seq++) {
+    nti = (*seq - 1);
+    if(nti==0 || nti==1 || nti==2 || nti==3) { // A,C,G or T. Not N or -.
+      self = self*err[nti][nti];
+    }
+  }
+  if(self==0.0) { // UNDERFLOW TO ZERO
+    printf("Warning: get_self underflowed to zero.\n");
+  }
+  
+  return self;
+}
+
 /* WORK IN PROGRESS
 Rcpp::NumericVector sampleProbs(std::vector<double> errs, std::vector<int> nnt, int32_t nsam) {
   // binom draw of #A errors, #C errors, #G errors and #T errors
