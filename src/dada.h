@@ -11,7 +11,7 @@
 //#include <gsl/gsl_cdf.h>
 #include "strmap.h" // an ANSI C hash table
 
-#define TRACKING 1
+#define TRACKING 0
 #define MAXMAXD 18
 #define TARGET_RAW -1
 #define ALIGN_SQUAWK 100000
@@ -22,6 +22,7 @@
 #define KEY_BUFSIZE 2000
 #define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
 #define HASHOCC 20
+#define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 #define KMER_SIZE 6
 #define NERRS 12
 #define TRUE  1
@@ -175,6 +176,8 @@ void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
 void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD);
+double get_pA(Fam *fam, Bi *bi);
+double get_pS(Fam *fam, Bi *bi, B *b);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 double get_self(char *seq, double err[4][4]);
 

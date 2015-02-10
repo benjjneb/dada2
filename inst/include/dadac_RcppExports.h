@@ -24,25 +24,6 @@ namespace dadac {
         }
     }
 
-    inline Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD) {
-        typedef SEXP(*Ptr_getProbs)(SEXP,SEXP,SEXP);
-        static Ptr_getProbs p_getProbs = NULL;
-        if (p_getProbs == NULL) {
-            validateSignature("Rcpp::DataFrame(*getProbs)(Rcpp::NumericMatrix,std::vector<int>,int)");
-            p_getProbs = (Ptr_getProbs)R_GetCCallable("dadac", "dadac_getProbs");
-        }
-        RObject __result;
-        {
-            RNGScope __rngScope;
-            __result = p_getProbs(Rcpp::wrap(err), Rcpp::wrap(nnt), Rcpp::wrap(maxD));
-        }
-        if (__result.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (__result.inherits("try-error"))
-            throw Rcpp::exception(as<std::string>(__result).c_str());
-        return Rcpp::as<Rcpp::DataFrame >(__result);
-    }
-
 }
 
 #endif // __dadac_RcppExports_h__

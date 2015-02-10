@@ -49,7 +49,6 @@ dada <- function(uniques,
       stop("dada: Invalid uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
   }
-
   
   if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {
     stop("dada: Invalid error matrix.")

@@ -13,7 +13,6 @@
 #define RAWBUF 50
 #define FAMBUF 50
 #define CLUSTBUF 50
-#define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 
 /* private function declarations */
 Raw *raw_new(char *seq, int reads);
@@ -652,80 +651,15 @@ void b_shuffle(B *b) {
 */
 void b_p_update(B *b) {
   int i, f;
-  size_t ifirst, imid, ilast;
-  double mu, pval, norm;
   Fam *fam;
   for(i=0;i<b->nclust;i++) {
     for(f=0;f<b->bi[i]->nfam;f++) {
       fam = b->bi[i]->fam[f];
-
-      // Calculate abundance pval
-      if(fam->reads < 1) {
-        printf("Warning: No or negative reads (%i) in fam %i.\n", fam->reads, f);
-        pval=1.;
-      } 
-      else if(fam->reads == 1) {   // Singleton. No abundance pval.
-        pval=1.;
-      } 
-      else if(!(fam->sub)) { // Outside kmer threshhold
-        pval=0.;
-      } 
-      else if(fam->sub->nsubs == 0) { // Cluster center
-        pval=1.;
-      }
-      else if(fam->lambda == 0) { // Zero expected reads of this fam
-        pval = 0.;
-      } else { // Calculate abundance pval.
-        // mu is the expected number of reads for this fam
-        mu = fam->lambda * b->bi[i]->reads;
-        
-        // Calculate norm (since conditioning on sequence being present).
-        norm = (1.0 - exp(-mu));
-        if(norm < TAIL_APPROX_CUTOFF) {
-          norm = mu - 0.5*pow(mu,2.);    // Assumption: TAIL_APPROX_CUTOFF is small enough to terminate taylor expansion here
-        }
-        
-        // Calculate pval from poisson cdf.
-        if(IMPLEMENTATION == 'R') {
-          Rcpp::IntegerVector n_repeats(1);
-          n_repeats(0) = fam->reads-1;
-          Rcpp::NumericVector res = Rcpp::ppois(n_repeats, mu, false);  // lower.tail = false
-          pval = Rcpp::as<double>(res);
-        }          
-/*      else { // C implementation
-          double gslval = 1 - gsl_cdf_poisson_P(reads-1, mu);
-          double minval = (pval < gslval) ? pval : gslval;
-          if( fabs(pval-gslval)/minval > 1e-5 && fabs(pval-gslval) > 1e-25 ) {
-            Rcpp::Rcout << "Pval disagreement (gsl/R) for mu=" << mu << " and n=" << reads-1 << ": " << gslval << ", " << pval << "\n";
-          }
-        }  // THIS MUST BE CHANGED. DOES NOT LIMIT APPROPRIATELY!!!! */
-        
-        pval = pval/norm;
-      }
-      fam->p = pval; // Assign abundance pval
+      fam->p =  get_pA(fam, b->bi[i]);
       
-      if(b->use_singletons) {
-        // Calculate singleton pval (pS) from cluster lookup
-        if(fam->lambda >= b->lams[0]) {  // fam->lambda bigger than all lambdas in lookup
-          fam->pS = 1.0;
-        }
-        else if(fam->lambda <= b->lams[b->nlam-1]) { // fam->lam smaller than all lams in lookup
-          fam->pS = (1.0 - b->cdf[b->nlam-1]) * b->bi[i]->reads;
-        }
-        else { // Find lam in the lookup and assign pS
-          ifirst = 0;
-          ilast = b->nlam-1;
-          while((ilast-ifirst) > 1) {
-            imid = (ifirst+ilast)/2;
-            if(b->lams[imid] > fam->lambda) {
-              ifirst = imid;
-            } else {
-              ilast = imid;
-            }
-          }
-          fam->pS = (1.0 - b->cdf[ifirst]);
-        }
-      } // if(b->use_singletons)
+      if(b->use_singletons) { // Calculate singleton pval (pS) from cluster lookup
+        fam->pS = get_pS(fam, b->bi[i], b);
+      }
       
     } // for(f=0;f<b->bi[i]->nfam;f++)
   } // for(i=0;i<b->nclust;i++)
@@ -806,6 +740,7 @@ int b_bud(B *b) {
   }
 
   // Bonferroni correct the singleton pval by the number of fams and compare to OmegaS
+  // Should this really be corrected by the total number of _reads_?
   // DADA_ML MATCH: minp*b->nclust*b->bi[i]->reads < b->omegaS
   if(minp*totfams < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
     fam = bi_pop_fam(b->bi[mini], minf);

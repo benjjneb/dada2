@@ -1,20 +1,95 @@
+/*
+Pval.cpp contains the functions related to calculating the abundance and singleton pvals in DADA.
+*/
+
 #include <Rcpp.h>
 #include "dada.h"
 
 // [[Rcpp::interfaces(r, cpp)]]
 
-int ipow(int base, int exp)
-{
-    int result = 1;
-    while (exp)
-    {
-        if (exp & 1)
-            result *= base;
-        exp >>= 1;
-        base *= base;
+// Calculate abundance pval for given reads and expected number of reads
+double calc_pA(int reads, double E_reads) {
+  double norm, pval=1.;
+  
+  // Calculate norm (since conditioning on sequence being present).
+  norm = (1.0 - exp(-E_reads));
+  if(norm < TAIL_APPROX_CUTOFF) {
+    norm = E_reads - 0.5*E_reads*E_reads; 
+    // Assumption: TAIL_APPROX_CUTOFF is small enough to terminate taylor expansion at 2nd order
+  }
+  
+  // Calculate pval from poisson cdf.
+  if(IMPLEMENTATION == 'R') {
+    Rcpp::IntegerVector n_repeats(1);
+    n_repeats(0) = reads-1;
+    Rcpp::NumericVector res = Rcpp::ppois(n_repeats, E_reads, false);  // lower.tail = false
+    pval = Rcpp::as<double>(res);
+  }          
+/*      else { // C implementation
+    double gslval = 1 - gsl_cdf_poisson_P(reads-1, mu);
+    double minval = (pval < gslval) ? pval : gslval;
+    if( fabs(pval-gslval)/minval > 1e-5 && fabs(pval-gslval) > 1e-25 ) {
+      Rcpp::Rcout << "Pval disagreement (gsl/R) for mu=" << mu << " and n=" << reads-1 << ": " << gslval << ", " << pval << "\n";
     }
+  }  // THIS MUST BE CHANGED. DOES NOT LIMIT APPROPRIATELY!!!! */
+  
+  pval = pval/norm;
+  return pval;
+}
 
-    return result;
+// Find abundance pval from a Fam in a Bi
+double get_pA(Fam *fam, Bi *bi) {
+  double E_reads, norm, pval = 1.;
+  
+  if(fam->reads < 1) {
+    printf("Warning: No or negative reads (%i) in fam.\n", fam->reads);
+    pval=1.;
+  } 
+  else if(fam->reads == 1) {   // Singleton. No abundance pval.
+    pval=1.;
+  } 
+  else if(!(fam->sub)) { // Outside kmer threshhold
+    pval=0.;
+  } 
+  else if(fam->sub->nsubs == 0) { // Cluster center
+    pval=1.;
+  }
+  else if(fam->lambda == 0) { // Zero expected reads of this fam
+    pval = 0.;
+  } else { // Calculate abundance pval.
+    // E_reads is the expected number of reads for this fam
+    E_reads = fam->lambda * bi->reads;
+    pval = calc_pA(fam->reads, E_reads);
+  }
+  return pval;
+}
+
+// Find singleton pval for a Fam in a Bi, also have to pass in B for lambda/cdf lookup
+double get_pS(Fam *fam, Bi *bi, B *b) {
+  size_t ifirst, imid, ilast;
+  double pval;
+
+  // Calculate singleton pval (pS) from cluster lookup
+  if(fam->lambda >= b->lams[0]) {  // fam->lambda bigger than all lambdas in lookup
+    pval = 1.0;
+  }
+  else if(fam->lambda <= b->lams[b->nlam-1]) { // fam->lam smaller than all lams in lookup
+    pval = (1.0 - b->cdf[b->nlam-1]);
+  }
+  else { // Find lam in the lookup and assign pS
+    ifirst = 0;
+    ilast = b->nlam-1;
+    while((ilast-ifirst) > 1) {
+      imid = (ifirst+ilast)/2;
+      if(b->lams[imid] > fam->lambda) {
+        ifirst = imid;
+      } else {
+        ilast = imid;
+      }
+    }
+    pval = (1.0 - b->cdf[ifirst]);
+  }
+  return pval;
 }
 
 void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD) {
@@ -73,7 +148,6 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
             n = n*nopen[i/3]/(j+1.0);
             nopen[i/3]--; // one fewer of that base available for future errors
             // going below zero no prob, since the times zero makes everything zero
-            // IS IT THE EXCHANGEABILITY OF THE BASE DESTINATION CLASSES?
           }
         }
       }
@@ -106,17 +180,14 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
 
   // Sort probs in descending order and create pval vector
   std::sort(probs.rbegin(), probs.rend());   // note: reverse iterators -> decreasing sort
-  // For some reason this (very slightly) changes the cumulative sum (~10^-15 difference)!?
-  // Could be a precision issue? Yep, double's have 15-17 digit significand precision.
+  // Note that the 15-17 digit significand precision of doubles sets a limit on the precision of the 1-cdf tail.
 
-//  std::vector<double> ns;
   ps.resize(0);
   cdf.resize(0);
   double cum = 0;
   for(index=0;index < probs.size();index++) {
     cum += (probs[index].first * probs[index].second);
     ps.push_back(probs[index].first);
-//    ns.push_back(probs[index].second);
     cdf.push_back(cum);
   }
 
@@ -129,15 +200,11 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
     if(ps[index] <= min_p) { break; }
   }
   ps.resize(index);
-//  ns.resize(index);
   cdf.resize(index);
 }
 
-
-// void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD)
-
 // [[Rcpp::export]]
-Rcpp::DataFrame getProbs(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD) {
+Rcpp::DataFrame getSingletonCDF(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD) {
   int i, j;
   // Copy err into a C style array
   if(err.nrow() != 4 || err.ncol() != 4) {

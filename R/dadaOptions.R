@@ -9,7 +9,7 @@ assign("MAX_CONSIST", 25, envir = dada_opts)
 assign("SCORE_MATRIX", matrix(c(5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5),
                               nrow=4, byrow=TRUE), envir = dada_opts)
 assign("GAP_PENALTY", -8, envir = dada_opts)
-assign("BAND_SIZE", 50, envir = dada_opts)
+assign("BAND_SIZE", 20, envir = dada_opts)
 
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
 # define KMER_SIZE 6 # Hard-coded. This seems to be close to optimal for DNA.
