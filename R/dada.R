@@ -78,10 +78,12 @@ dada <- function(uniques,
     err <- cur$trans + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
     err <- t(apply(err, 1, function(x) x/sum(x)))  # apply returns a transposed result
     for(i in seq(length(uniques))) {
-      res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, score, gap_penalty,
-                        get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
-                        get("OMEGA_A", envir=dada_opts), 
-                        get("USE_SINGLETONS", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
+      res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, 
+                          get("SCORE_MATRIX", envir=dada_opts), get("GAP_PENALTY", envir=dada_opts),
+                          get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
+                          get("BAND_SIZE", envir=dada_opts),
+                          get("OMEGA_A", envir=dada_opts), 
+                          get("USE_SINGLETONS", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
       denoised[[i]] <- res$genotypes
       trans <- trans + res$trans  
     }
