@@ -45,10 +45,11 @@ dada <- function(uniques,
         stop("dada: Invalid uniques vector. Must be integer valued.")
       }
     }
-    if(!(all(sapply(names(uniques), function(x) nchar(gsub("[ACGT]", "", x))==0, USE.NAMES=FALSE)))) {
-      stop("dada: Invalid uniques vector. Names must be sequences made up of A/C/G/T.")
+    if(!(all(sapply(names(uniques[[i]]), function(x) nchar(gsub("[ACGT]", "", x))==0, USE.NAMES=FALSE)))) {
+      stop("dada: Invalid uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
   }
+
   
   if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {
     stop("dada: Invalid error matrix.")
