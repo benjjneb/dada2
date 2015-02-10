@@ -29,6 +29,7 @@ dada <- function(uniques,
                  err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow=4, byrow=T),
                  self_consist = FALSE) {
   
+  call <- sys.call(1)
   if(!is.list(uniques)) { # If a single vector, make into a length 1 list
     uniques <- list(uniques)
   }
@@ -95,9 +96,9 @@ dada <- function(uniques,
     warning("dada: Self-consistency loop terminated before convergence.")
   }
   
+  # Construct dada return object
   # Convert cur$genotypes to the named integer vector being used as the uniques format
   rval = list()
-  rval$trans <- cur$trans
   rval$genotypes <- list()
   for(i in seq(length(uniques))) {
     foo <- as.integer(cur$genotypes[[i]]$abundance)
@@ -109,12 +110,17 @@ dada <- function(uniques,
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
   }
+
+  rval$trans <- cur$trans
+  rval$err <- err
   
   # Store all the options in the return object
   opts <- ls(dada_opts)
   ropts <- lapply(opts, function(x) get(x, envir=dada_opts))
   names(ropts) <- opts
   rval$opts <- ropts
+  
+  rval$call <- call
   
   rval
 }
