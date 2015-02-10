@@ -211,10 +211,10 @@ double compute_lambda(Sub *sub, double self, double t[4][4]) {
 double get_self(char *seq, double err[4][4]) {
   int i, nti;
   double self = 1.;
-  for(i=0;i<strlen(seq);i++, seq++) {
-    nti = (*seq - 1);
+  for(i=0;i<strlen(seq);i++) {
+    nti = ((int) seq[i]) - 1;
     if(nti==0 || nti==1 || nti==2 || nti==3) { // A,C,G or T. Not N or -.
-      self = self*err[nti][nti];
+      self = self * err[nti][nti];
     }
   }
   if(self==0.0) { // UNDERFLOW TO ZERO

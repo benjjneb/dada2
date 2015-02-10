@@ -11,8 +11,9 @@
 //#include <gsl/gsl_cdf.h>
 #include "strmap.h" // an ANSI C hash table
 
+#define TRACKING 1
 #define MAXMAXD 18
-#define TARGET_RAW 0
+#define TARGET_RAW -1
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0

@@ -370,6 +370,7 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
     // Iterate over maxDs until going far enough to call significant singletons
     // Approximating Bonferonni correction by nraw (in place of total fams)
     // i.e. most significant possible pS* = (1.0 - temp_cdf.back()) * b->nraw
+    // DADA_ML MATCH: maxD = 10
     int maxD=8;
     std::vector<double> temp_lambdas;
     std::vector<double> temp_cdf;
@@ -486,7 +487,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size) {
         b->bi[i]->sub[index] = sub;
         lambda = compute_lambda(sub, b->bi[i]->self, b->err);  // WHERE IS SELF SET!??  -- IN BI_CONSENSUS_UPDATE
         b->bi[i]->lambda[index] = lambda;
-//        if(index == TARGET_RAW) printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]);
+        if(index == TARGET_RAW) printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]);
       }
       b->bi[i]->update_lambda = FALSE;
     } // if(b->bi[i]->update_lambda)
@@ -583,9 +584,9 @@ void b_e_update(B *b) {
   for(int i=0; i < b->nclust; i++) {
     for(int index=0; index < b->nraw; index++) {
       b->bi[i]->e[index] = b->bi[i]->lambda[index]*b->bi[i]->reads;
-//      if(index == TARGET_RAW) {
-//        printf("E_%i(TARG|r=%i) = %.3e; ", i, b->bi[i]->reads, b->bi[i]->e[index]);
-//      }
+      if(index == TARGET_RAW) {
+        printf("E_%i(TARG|r=%i) = %.3e; ", i, b->bi[i]->reads, b->bi[i]->e[index]);
+      }
     }
   }
 }
@@ -630,7 +631,6 @@ void b_shuffle(B *b) {
                   index, i, b->bi[i]->center->index, get_self(b->raw[index]->seq, b->err), ibest, \
                   b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
                   b->bi[ibest]->e[index], b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
-              printf("%s\n", ntstr(b->raw[index]->seq));
             }
           } else {
             raw = bi_pop_raw(b->bi[i], f, r);
@@ -723,7 +723,7 @@ void b_p_update(B *b) {
               ilast = imid;
             }
           }
-          fam->pS = (1.0 - b->cdf[ifirst]) * b->bi[i]->reads;
+          fam->pS = (1.0 - b->cdf[ifirst]);
         }
       } // if(b->use_singletons)
       
@@ -774,7 +774,7 @@ int b_bud(B *b) {
     }
 
     if(tVERBOSE) { 
-      printf("\nNew cluster from C%iF%i: p*=%.3e\n", mini, minf, minp*totfams);
+      printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e\n", fam->center->index, mini, minf, minp*totfams);
     }
     
     bi_consensus_update(b->bi[i], b->err);
@@ -806,8 +806,8 @@ int b_bud(B *b) {
   }
 
   // Bonferroni correct the singleton pval by the number of fams and compare to OmegaS
-  // CHANGED TO MATCH MATLAB CODE>>>>>>>>>> REVIEW THIS
-  if(minp*b->nclust < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
+  // DADA_ML MATCH: minp*b->nclust*b->bi[i]->reads < b->omegaS
+  if(minp*totfams < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
     
@@ -817,7 +817,7 @@ int b_bud(B *b) {
     }
 
     if(tVERBOSE) { 
-      printf("\nNew cluster from C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", mini, minf, minp*b->nclust, fam->lambda);
+      printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, minp*b->nclust, fam->lambda);
     }
     
     bi_consensus_update(b->bi[i], b->err);

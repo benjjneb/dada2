@@ -160,6 +160,38 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     }
   }
   
+  if(TRACKING) { // Extra output if tracking certain raw indices
+    int t, i, f, r, totfams=0;
+    Raw *raw; Fam *fam; Bi *bi;
+    int track[] = {2165, 2194};
+    int ntrack = 2;
+
+    for(i=0;i<bb->nclust;i++) { totfams += bb->bi[i]->nfam; }
+
+    // iterate over tracked indices
+    for(t=0;t<ntrack;t++) {
+      // find this index in the clustering object
+      for(i=0;i<bb->nclust;i++) {
+        for(f=0;f<bb->bi[i]->nfam;f++) {
+          for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
+            if(bb->bi[i]->fam[f]->raw[r]->index == track[t]) { // Found it
+              bi = bb->bi[i];
+              fam = bi->fam[f];
+              raw = fam->raw[r];
+              printf("Raw %i in C%i: reads=%i, lam=%.2e, E=%.2e\n", track[t], i, raw->reads, bi->lambda[track[t]], bi->e[track[t]]);
+              printf("  C%i: reads=%i, center-ind=%i, center-reads=%i, self=%.4e\n", i, bi->reads, bi->center->index, bi->center->reads, bi->self);
+              printf("  F%i: fam-reads=%i, lambda=%.4e, p=%.4e, p*=%.4e\n", f, fam->reads, fam->lambda, fam->p, fam->p * totfams);
+              printf("  Subs relative to cluster center: %s\n", bb->bi[i]->sub[track[t]]->key);
+              printf("R:%s\n", ntstr(raw->seq));
+              printf("C:%s\n\n", ntstr(bi->seq));
+            }
+          }
+        }
+      }
+      
+    } // for(t=0;t<track.size();t++)
+  }
+  
   b_free(bb);
   Rcpp::DataFrame df_genotypes = Rcpp::DataFrame::create(_["sequence"] = oseqs, _["abundance"]  = oabunds);
   return Rcpp::List::create(_["genotypes"] = df_genotypes, _["trans"] = otrans);
