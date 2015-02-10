@@ -419,6 +419,8 @@ void b_init(B *b) {
   
   // Add the one cluster
   b_add_bi(b, bi_new(b->nraw));
+  strcpy(b->bi[0]->birth_type, "I");
+  b->bi[0]->birth_pval = 0.0;
 
   // Add all raws to that cluster
   for (int index=0; index<b->nraw; index++) {
@@ -583,9 +585,6 @@ void b_e_update(B *b) {
   for(int i=0; i < b->nclust; i++) {
     for(int index=0; index < b->nraw; index++) {
       b->bi[i]->e[index] = b->bi[i]->lambda[index]*b->bi[i]->reads;
-      if(index == TARGET_RAW) {
-        printf("E_%i(TARG|r=%i) = %.3e; ", i, b->bi[i]->reads, b->bi[i]->e[index]);
-      }
     }
   }
 }
@@ -675,6 +674,7 @@ int b_bud(B *b) {
   int i, f, r;
   int mini, minf, totfams, minreads;
   double minp = 1.0, minlam=1.0;
+  double pA=1.0, pS=1.0;
   Fam *fam;
 
   // Find i, f indices and value of minimum pval.
@@ -698,9 +698,12 @@ int b_bud(B *b) {
   
   // Bonferroni correct the abundance pval by the number of fams and compare to OmegaA
   // (quite conservative, although probably unimportant given the abundance model issues)
-  if(minp*totfams < b->omegaA && mini >= 0 && minf >= 0) {  // A significant abundance pval
+  pA = minp*totfams;
+  if(pA < b->omegaA && mini >= 0 && minf >= 0) {  // A significant abundance pval
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
+    strcpy(b->bi[i]->birth_type, "A");
+    b->bi[i]->birth_pval = pA;
     
     // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {
@@ -708,7 +711,7 @@ int b_bud(B *b) {
     }
 
     if(tVERBOSE) { 
-      printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e\n", fam->center->index, mini, minf, minp*totfams);
+      printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e\n", fam->center->index, mini, minf, pA);
     }
     
     bi_consensus_update(b->bi[i], b->err);
@@ -742,9 +745,12 @@ int b_bud(B *b) {
   // Bonferroni correct the singleton pval by the number of fams and compare to OmegaS
   // Should this really be corrected by the total number of _reads_?
   // DADA_ML MATCH: minp*b->nclust*b->bi[i]->reads < b->omegaS
-  if(minp*totfams < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
+  pS = minp*totfams;
+  if(pS < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
+    strcpy(b->bi[i]->birth_type, "S");
+    b->bi[i]->birth_pval = pS;
     
     // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {
@@ -752,7 +758,7 @@ int b_bud(B *b) {
     }
 
     if(tVERBOSE) { 
-      printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, minp*b->nclust, fam->lambda);
+      printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, pS, fam->lambda);
     }
     
     bi_consensus_update(b->bi[i], b->err);
@@ -909,30 +915,6 @@ void b_get_trans_matrix(B *b, int32_t obs[4][4]) {
     }
   } // for(i=0;i<b->nclust;i++)
 }
-
-
-char **b_get_seqs(B *b) {
-  int i;
-  char **seqs = (char **) malloc(b->nclust * sizeof(char *));
-  for(i=0;i<b->nclust;i++) {
-    seqs[i] = (char *) malloc((strlen(b->bi[i]->seq)+1) * sizeof(char));
-    ntcpy(seqs[i], b->bi[i]->seq);
-  }
-  return seqs;
-}
-
-int *b_get_abunds(B *b) {
-  int i;
-  int *abunds = (int *) malloc(b->nclust * sizeof(int));
-  for(i=0;i<b->nclust;i++) {
-    abunds[i] = b->bi[i]->reads;
-  }
-  return abunds;
-}
-
-
-
-
 
 
 

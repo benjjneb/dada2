@@ -141,22 +141,30 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   uniques_free(uniques);
   
   // Extract output from B object
-  char **ostrs = b_get_seqs(bb);
-  int *oabs = b_get_abunds(bb);
-  int32_t trans[4][4];
-  b_get_trans_matrix(bb, trans);
+  char **oseqs = (char **) malloc(bb->nclust * sizeof(char *));
+  for(i=0;i<bb->nclust;i++) {
+    oseqs[i] = (char *) malloc((strlen(bb->bi[i]->seq)+1) * sizeof(char));
+    ntcpy(oseqs[i], bb->bi[i]->seq);
+  }
+
+  int32_t otrans[4][4];
+  b_get_trans_matrix(bb, otrans);
   
   // Convert to R objects and return
-  Rcpp::CharacterVector oseqs;
-  Rcpp::NumericVector oabunds(bb->nclust);
+  Rcpp::CharacterVector Rseqs;
+  Rcpp::NumericVector Rabunds(bb->nclust);
+  Rcpp::NumericVector Rbirth_pvals(bb->nclust);
+  Rcpp::CharacterVector Rbirth_types;
   for(i=0;i<bb->nclust;i++) {
-    oseqs.push_back(std::string(ostrs[i]));
-    oabunds[i] = oabs[i];
+    Rseqs.push_back(std::string(oseqs[i]));
+    Rabunds[i] = bb->bi[i]->reads;
+    Rbirth_pvals[i] = bb->bi[i]->birth_pval;
+    Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
   }
-  Rcpp::IntegerMatrix otrans(4, 4);  // R INTS ARE SIGNED 32 BIT
+  Rcpp::IntegerMatrix Rtrans(4, 4);  // R INTS ARE SIGNED 32 BIT
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      otrans(i,j) = trans[i][j];
+      Rtrans(i,j) = otrans[i][j];
     }
   }
   
@@ -191,10 +199,17 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
       
     } // for(t=0;t<track.size();t++)
   }
-  
+
+  // Free memory
+  for(i=0;i<bb->nclust;i++) {
+    free(oseqs[i]);
+  }
+  free(oseqs);
   b_free(bb);
-  Rcpp::DataFrame df_genotypes = Rcpp::DataFrame::create(_["sequence"] = oseqs, _["abundance"]  = oabunds);
-  return Rcpp::List::create(_["genotypes"] = df_genotypes, _["trans"] = otrans);
+  
+  // Organize return List  
+  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["birth_pval"] = Rbirth_pvals, _["birth_type"] = Rbirth_types);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["trans"] = Rtrans);
 }
 
 B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS) {

@@ -90,6 +90,8 @@ typedef struct {
   double *lambda; // Array of lambdas with all raws.
   double *e;   // Array of expected read numbers with all raws.
   size_t totraw; // number of total raws in the clustering
+  char birth_type[2]; // encoding of how this Bi was created: "I": Initial cluster, "A": Abundance pval, "S": Singleton pval
+  double birth_pval; // the Bonferonni-corrected pval that led to this cluster being initialized
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).
