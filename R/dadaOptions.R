@@ -1,11 +1,11 @@
 
 dada_opts <- new.env()
-assign("OMEGA_A", 0.01, envir = dada_opts)
+assign("OMEGA_A", 1e-4, envir = dada_opts)
 assign("USE_SINGLETONS", TRUE, envir=dada_opts)
 assign("OMEGA_S", 0.01, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.5, envir = dada_opts)
-assign("MAX_CONSIST", 25, envir = dada_opts)
+assign("MAX_CONSIST", 10, envir = dada_opts)
 assign("SCORE_MATRIX", matrix(c(5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5),
                               nrow=4, byrow=TRUE), envir = dada_opts)
 assign("GAP_PENALTY", -8, envir = dada_opts)

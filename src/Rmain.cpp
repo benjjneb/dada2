@@ -38,7 +38,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::NumericVector band_size,
                         Rcpp::NumericVector omegaA, 
                         Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS) {
-  int i, j, len1, len2, nrow, ncol;
+  int i, j, f, s, len1, len2, nrow, ncol;
+  Fam *fam;
   
   // Load the seqs/abundances into a Uniques struct
   len1 = seqs.size();
@@ -140,16 +141,13 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS);
   uniques_free(uniques);
   
-  // Extract output from B object
+  // Extract output from Bi objects
   char **oseqs = (char **) malloc(bb->nclust * sizeof(char *));
   for(i=0;i<bb->nclust;i++) {
     oseqs[i] = (char *) malloc((strlen(bb->bi[i]->seq)+1) * sizeof(char));
     ntcpy(oseqs[i], bb->bi[i]->seq);
   }
 
-  int32_t otrans[4][4];
-  b_get_trans_matrix(bb, otrans);
-  
   // Convert to R objects and return
   Rcpp::CharacterVector Rseqs;
   Rcpp::NumericVector Rabunds(bb->nclust);
@@ -161,6 +159,37 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     Rbirth_pvals[i] = bb->bi[i]->birth_pval;
     Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
   }
+
+
+  // Get error (or substitution) statistics
+  int32_t otrans[4][4];
+  b_get_trans_matrix(bb, otrans);
+  
+  int32_t nts_by_pos[SEQLEN] = {0};
+  int32_t subs_by_pos[SEQLEN] = {0};
+  for(i=0;i<bb->nclust;i++) {
+    for(j=0;j<strlen(bb->bi[i]->seq);j++) {
+      nts_by_pos[j] += bb->bi[i]->reads;
+    }
+    for(f=0;f<bb->bi[i]->nfam;f++) {
+      fam = bb->bi[i]->fam[f];
+      if(fam->sub) { // not a NULL sub
+        for(s=0;s<fam->sub->nsubs;s++) {
+          subs_by_pos[fam->sub->pos[s]]+=fam->reads;
+        }
+      }
+    }
+  }
+  Rcpp::NumericVector Rnts_by_pos;
+  Rcpp::NumericVector Rsubs_by_pos;
+  for(i=0;i<SEQLEN;i++) {
+    if(nts_by_pos[i]==0) { break; }
+    else {
+      Rnts_by_pos.push_back(nts_by_pos[i]);
+      Rsubs_by_pos.push_back(subs_by_pos[i]);
+    }
+  }
+  
   Rcpp::IntegerMatrix Rtrans(4, 4);  // R INTS ARE SIGNED 32 BIT
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
@@ -209,7 +238,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   
   // Organize return List  
   Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["birth_pval"] = Rbirth_pvals, _["birth_type"] = Rbirth_types);
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["trans"] = Rtrans);
+  Rcpp::DataFrame df_subs = Rcpp::DataFrame::create(_["nts"] = Rnts_by_pos, _["subs"]  = Rsubs_by_pos);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["substitutions"] = df_subs, _["trans"] = Rtrans);
 }
 
 B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS) {

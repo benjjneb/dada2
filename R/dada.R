@@ -55,29 +55,14 @@ dada <- function(uniques,
   }
   if(any(err==0)) warning("dada: Zero in error matrix.")
 
-  prev <- NULL
-  clustering <- list()
-  trans <- matrix(0, nrow=4, ncol=4)
-  nconsist <- 1
-  for(i in seq(length(uniques))) {
-    res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, 
-                        get("SCORE_MATRIX", envir=dada_opts), get("GAP_PENALTY", envir=dada_opts),
-                        get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
-                        get("BAND_SIZE", envir=dada_opts),
-                        get("OMEGA_A", envir=dada_opts), 
-                        get("USE_SINGLETONS", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
-    clustering[[i]] <- res$clustering
-    trans <- trans + res$trans
-  }
-  cur = list(clustering=clustering, trans=trans)
-    
-  while(self_consist && !identical(cur, prev) && nconsist < get("MAX_CONSIST", envir=dada_opts)) {
-    cat(".")
-    prev <- cur
+  cur <- NULL
+  nconsist <- 0
+  
+  repeat{
     clustering <- list()
+    substitutions <- list()
     trans <- matrix(0, nrow=4, ncol=4)
-    err <- cur$trans + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
-    err <- t(apply(err, 1, function(x) x/sum(x)))  # apply returns a transposed result
+    prev <- cur
     for(i in seq(length(uniques))) {
       res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, 
                           get("SCORE_MATRIX", envir=dada_opts), get("GAP_PENALTY", envir=dada_opts),
@@ -86,11 +71,21 @@ dada <- function(uniques,
                           get("OMEGA_A", envir=dada_opts), 
                           get("USE_SINGLETONS", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
       clustering[[i]] <- res$clustering
-      trans <- trans + res$trans  
+      substitutions[[i]] <- res$substitutions
+      trans <- trans + res$trans
     }
-    cur = list(clustering=clustering, trans=trans)
+    cur = trans # The only thing that changes is err which is set by trans, so this is sufficient
+    
+    if((!self_consist) || identical(cur, prev) || (nconsist >= get("MAX_CONSIST", envir=dada_opts))) {
+      break
+    }
+    
+    err <- trans + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
+    err <- t(apply(err, 1, function(x) x/sum(x)))  # apply returns a transposed result
     nconsist <- nconsist+1
-  }
+    cat(".")
+  } # repeat
+
   cat("\n")
   if(self_consist && nconsist == get("MAX_CONSIST", envir=dada_opts)) {
     warning("dada: Self-consistency loop terminated before convergence.")
@@ -100,21 +95,24 @@ dada <- function(uniques,
   # Convert cur$genotypes to the named integer vector being used as the uniques format
   rval = list()
   rval$genotypes <- list()
-  rval$clustering <- list()
   for(i in seq(length(uniques))) {
-    rval$genotypes[[i]] <- as.integer(cur$clustering[[i]]$abundance)
-    names(rval$genotypes[[i]]) <- cur$clustering[[i]]$sequence
-    rval$clustering <- cur$clustering
+    rval$genotypes[[i]] <- as.integer(clustering[[i]]$abundance)
+    names(rval$genotypes[[i]]) <- clustering[[i]]$sequence
   }
+  rval$clustering <- clustering
+  rval$substitutions <- substitutions
+  
   if(length(rval$genotypes)==1) { # one sample, return a naked uniques vector
     rval$genotypes <- rval$genotypes[[1]]
     rval$clustering <- rval$clustering[[1]]
+    rval$substitutions <- rval$substitutions[[1]]
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
     names(rval$clustering) <- names(uniques)
+    names(rval$substitutions) <- names(uniques)
   }
 
-  rval$trans <- cur$trans
+  rval$subs <- trans
   rval$err <- err
   
   # Store all the options in the return object
