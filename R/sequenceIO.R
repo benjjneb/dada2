@@ -39,7 +39,7 @@
 #' test3 = dereplicateFastqReads(testFile, 100, TRUE)
 #' all.equal(test1, test2[names(test1)])
 #' all.equal(test1, test3[names(test1)])
-dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE, sample = NULL, sample_subseq = c(1,1)){
+dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
   # require("ShortRead")
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
@@ -49,10 +49,6 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE, sample = NULL, s
   # `yield` is the method for returning the next chunk from the stream.
   # Use `fq` as the "current chunk"
   suppressWarnings(fq <- yield(f))
-  # Subset to those from the requested sample
-  if(!is.null(sample)) {
-    fq <- fq[subseq(fq@id, sample_subseq[[1]], sample_subseq[[2]]) == sample]
-  }
   # Calculate the dereplicated counts for the first chunk
   derepCounts = tables(fq, n = Inf)$top
   # This loop will stop if/when the end of the file is already reached.
@@ -60,12 +56,6 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE, sample = NULL, s
   while( length(suppressWarnings(fq <- yield(f))) ){
     # A little loop protection
     idrep = alreadySeen = NULL
-
-    # Subset to those from the requested sample
-    if(!is.null(sample)) {
-      fq <- fq[subseq(fq@id, sample_subseq[[1]], sample_subseq[[2]]) == sample]
-    }
-    
     # Dot represents one turn inside the chunking loop.
     if(verbose){
       message(".", appendLF = FALSE)
@@ -90,11 +80,137 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE, sample = NULL, s
             sum(derepCounts),
             " total sequences read.")
   }
+  close(f)
   return(derepCounts)
 }
 ################################################################################
+#' Read and Dereplicate a Fastq file containing multiple samples.
+#' 
+#' This is a custom interface to \code{\link{FastqStreamer}} 
+#' for dereplicating amplicon sequences from a multi-sample fastq or fastq.gz file.
+#' This function relies heavily on the \code{\link[ShortRead]{tables}} method.
+#'
+#' @param fl (Required). Character.
+#'  The file path to the fastq or fastq.gz file.
+#' 
+#' @param samsubseq (Required). A \code{numeric(2)} specifying the substring
+#'  of the id field that will be used to split the fastq reads into samples.
+#' 
+#' @param n (Optional). A \code{numeric(1)} indicating
+#'  the maximum number of records (reads) to parse and dereplicate
+#'  at any one time. This controls the peak memory requirement.
+#'  Defaults is \code{1e6}, one-million reads.
+#'  See \code{\link{FastqStreamer}} for details on this parameter,
+#'  which is passed on.
+#' 
+#' @param verbose (Optional). A \code{logical(1)} indicating
+#'  whether to throw any standard R \code{\link{message}}s 
+#'  on the intermittent and final status of the dereplication.
+#'  Default is \code{FALSE}, no messages.
+#'
+#' @return Named integer vector. Named by sequence, valued by number of occurence.
+#'
+#' @seealso \code{\link{replicateReads}}, \code{\link{removeReadsWithNs}}, 
+#' \code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
+#'
+#' @export
+#' @import ShortRead 
+#' 
+dereplicateMultiSampleFastqReads <- function(fl, samsubseq, n = 1e6, verbose = FALSE){
+  # require("ShortRead")
+  if(verbose){
+    message("Dereplicating multi-sample sequences in Fastq file: ", fl, appendLF = TRUE)
+    message("Identifying the sample IDs---", appendLF = TRUE)
+  }
+  
+  ## Initial iteration through file to identify the unique sample IDs
+  f <- FastqStreamer(fl, n = n)
+  totReads <- 0
+  # `yield` is the method for returning the next chunk from the stream.
+  # Use `fq` as the "current chunk"
+  suppressWarnings(fq <- yield(f))
+  totReads <- totReads + length(fq)
+  # Extract the sample ids
+  samids <- subseq(fq@id, samsubseq[[1]], samsubseq[[2]])
+  # Find all unique samples in the first chunk
+  samids = unique(samids)
+  # This loop will stop if/when the end of the file is already reached.
+  # If end is already reached, this loop is skipped altogether.
+  while( length(suppressWarnings(fq <- yield(f))) ){
+    totReads <- totReads + length(fq)
+    # Extract the sample ids
+    newsamids <- subseq(fq@id, samsubseq[[1]], samsubseq[[2]])
+    # Dot represents one turn inside the chunking loop.
+    if(verbose){ message(".", appendLF = FALSE) }
+
+    samids <- unique(c(samids, unique(newsamids)))
+  }
+  if(verbose){
+    message("Encountered ",
+            length(samids),
+            " unique sample IDs from ",
+            totReads,
+            " total sequences read.")
+  }
+  close(f)
+  samids <- as(samids, "character")
+  if(verbose){
+    message("Dereplicating the sequences by sample---", appendLF = TRUE)
+  }
+
+  # Initialize output list
+  derepSamples <- vector("list", length(samids))
+  names(derepSamples) <- samids
+  ## Second iteration through file to dereplicate 
+  f <- FastqStreamer(fl, n = n)
+  # `yield` is the method for returning the next chunk from the stream.
+  # Use `fq` as the "current chunk"
+  suppressWarnings(fq <- yield(f))
+  # Calculate the dereplicated counts for the first chunk
+  for(sam in samids) {
+    derepSamples[[sam]] = tables(fq[subseq(fq@id,1,10) == sam], n = Inf)$top  # WHAT HAPPENS WHEN YOU TABLES ON A ZERO LENGTH XSTRINGSET?
+  }
+  # This loop will stop if/when the end of the file is already reached.
+  # If end is already reached, this loop is skipped altogether.
+  while( length(suppressWarnings(fq <- yield(f))) ){
+    # A little loop protection
+    idrep = alreadySeen = NULL
+    # Dot represents one turn inside the chunking loop.
+    if(verbose){
+      message(".", appendLF = FALSE)
+    }
+    for(sam in samids) {
+      idrep <- tables(fq[subseq(fq@id,1,10) == sam], n = Inf)$top
+      # identify sequences already present in `derepCounts`
+      alreadySeen = names(idrep) %in% names(derepSamples[[sam]])
+      # Sum these values, if any
+      if(any(alreadySeen)){
+        sqnms = names(idrep)[alreadySeen]
+        derepSamples[[sam]][sqnms] <- derepCounts[sqnms] + idrep[sqnms]
+      }
+      # Concatenate the remainder to `derepCounts`, if any
+      if(!all(alreadySeen)){
+        derepSamples[[sam]] <- c(derepSamples[[sam]], idrep[!alreadySeen])
+      }
+    }
+  }
+  if(verbose){
+    message("Encountered ??",
+            " unique sequences in ",
+            length(samids),
+            " samples from ",
+            totReads,
+            " total sequences read.")
+  }
+  close(f)
+  return(derepSamples)
+}
+################################################################################
 #' Load .uniques file
-#' Basically a wrapper for read.table customized for .uniques format
+#' 
+#' This is a custom interface for read.table customized for loading .uniques format
+#'  files. The .uniques format is a delimited text file (tab-delimited by default)
+#'  with the abundance in column 1 and the ASCII sequence in column 2.
 #'
 #' @param fl (Required). \code{character(1)}.
 #'  The file path to the .uniques file,
@@ -107,7 +223,7 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE, sample = NULL, s
 #' 
 #' @param ... (Optional). Additional arguments passed on to \code{\link[utils]{read.table}}.
 #'
-#' @return Named integer vector. Named by sequence, valued by number of occurence.
+#' @return Named integer vector. Named by sequence, valued by abundance.
 #'
 #' @export
 #' 

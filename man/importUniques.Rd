@@ -2,8 +2,7 @@
 % Please edit documentation in R/sequenceIO.R
 \name{importUniques}
 \alias{importUniques}
-\title{Load .uniques file
-Basically a wrapper for read.table customized for .uniques format}
+\title{Load .uniques file}
 \usage{
 importUniques(fl, colClasses = c("integer", "character"), ...)
 }
@@ -20,10 +19,11 @@ importUniques(fl, colClasses = c("integer", "character"), ...)
 \item{...}{(Optional). Additional arguments passed on to \code{\link[utils]{read.table}}.}
 }
 \value{
-Named integer vector. Named by sequence, valued by number of occurence.
+Named integer vector. Named by sequence, valued by abundance.
 }
 \description{
-Load .uniques file
-Basically a wrapper for read.table customized for .uniques format
+This is a custom interface for read.table customized for loading .uniques format
+ files. The .uniques format is a delimited text file (tab-delimited by default)
+ with the abundance in column 1 and the ASCII sequence in column 2.
 }
 
