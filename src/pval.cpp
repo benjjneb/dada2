@@ -249,26 +249,20 @@ double compute_lambda(Sub *sub, double self, double t[4][4]) {
   if(!sub) { // NULL Sub, outside Kmer threshold
     return 0.0;
   }
-//  printf("CL-Key(%i): %s\n", sub->nsubs, ntstr(sub->key));
+
   lambda = self;
   for(i=0; i < sub->nsubs; i++) {
     nti0 = (int)sub->nt0[i] - 1;
     nti1 = (int)sub->nt1[i] - 1;
-//    printf("%c->%c: %.4e/%.4e = %.4e\n", ntstr(sub->nt0)[i], ntstr(sub->nt1)[i], t[nti0][nti1], t[nti0][nti0], t[nti0][nti1]/t[nti0][nti0]);
     
     if(nti0 < 0 || nti0 > 6) { printf("%i!", nti0); }
     if(nti1 < 0 || nti1 > 6) { printf("%i!", nti1); }
     
-//    printf("%i:%.2e, ", i, lambda);
     lambda = lambda * t[nti0][nti1] / t[nti0][nti0];
   }
 
   if(lambda < 0 || lambda > 1) { printf("ERROR: OVERUNDERFLOW OF LAMBDA: %.4e\n", lambda); }
 
-  if(lambda==0.0) { // UNDERFLOW TO ZERO
-    printf("COMPUTE_LAMBDA: ZEROFLOW OF LAMBDA (%i): %.4e\n", sub->nsubs, lambda);
-  }
-  
   return lambda;
 }
 

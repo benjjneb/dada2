@@ -178,6 +178,7 @@ void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
 void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD);
+double calc_pA(int reads, double E_reads);
 double get_pA(Fam *fam, Bi *bi);
 double get_pS(Fam *fam, Bi *bi, B *b);
 double compute_lambda(Sub *sub, double self, double t[4][4]);

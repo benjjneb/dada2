@@ -39,7 +39,7 @@
 #' test3 = dereplicateFastqReads(testFile, 100, TRUE)
 #' all.equal(test1, test2[names(test1)])
 #' all.equal(test1, test3[names(test1)])
-dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
+dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE, sample = NULL, sample_subseq = c(1,1)){
   # require("ShortRead")
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
@@ -49,6 +49,10 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
   # `yield` is the method for returning the next chunk from the stream.
   # Use `fq` as the "current chunk"
   suppressWarnings(fq <- yield(f))
+  # Subset to those from the requested sample
+  if(!is.null(sample)) {
+    fq <- fq[subseq(fq@id, sample_subseq[[1]], sample_subseq[[2]]) == sample]
+  }
   # Calculate the dereplicated counts for the first chunk
   derepCounts = tables(fq, n = Inf)$top
   # This loop will stop if/when the end of the file is already reached.
@@ -56,6 +60,12 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
   while( length(suppressWarnings(fq <- yield(f))) ){
     # A little loop protection
     idrep = alreadySeen = NULL
+
+    # Subset to those from the requested sample
+    if(!is.null(sample)) {
+      fq <- fq[subseq(fq@id, sample_subseq[[1]], sample_subseq[[2]]) == sample]
+    }
+    
     # Dot represents one turn inside the chunking loop.
     if(verbose){
       message(".", appendLF = FALSE)

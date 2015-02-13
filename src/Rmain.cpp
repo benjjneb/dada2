@@ -39,6 +39,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::NumericVector omegaA, 
                         Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS) {
   int i, j, f, s, len1, len2, nrow, ncol;
+  double tote;
   Fam *fam;
   
   // Load the seqs/abundances into a Uniques struct
@@ -153,11 +154,21 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   Rcpp::NumericVector Rabunds(bb->nclust);
   Rcpp::NumericVector Rbirth_pvals(bb->nclust);
   Rcpp::CharacterVector Rbirth_types;
+  Rcpp::NumericVector Rpvals(bb->nclust);
+
   for(i=0;i<bb->nclust;i++) {
     Rseqs.push_back(std::string(oseqs[i]));
     Rabunds[i] = bb->bi[i]->reads;
     Rbirth_pvals[i] = bb->bi[i]->birth_pval;
     Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
+    
+    tote = 0.0;
+    for(j=0;j<bb->nclust;j++) {
+      if(i != j) {
+        tote += bb->bi[j]->e[bb->bi[i]->center->index];
+      }
+    }
+    Rpvals[i] = calc_pA(1+bb->bi[i]->reads, tote);
   }
 
 
@@ -237,7 +248,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   b_free(bb);
   
   // Organize return List  
-  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["birth_pval"] = Rbirth_pvals, _["birth_type"] = Rbirth_types);
+  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals);
   Rcpp::DataFrame df_subs = Rcpp::DataFrame::create(_["nts"] = Rnts_by_pos, _["subs"]  = Rsubs_by_pos);
   return Rcpp::List::create(_["clustering"] = df_clustering, _["substitutions"] = df_subs, _["trans"] = Rtrans);
 }
