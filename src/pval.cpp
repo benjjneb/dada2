@@ -39,7 +39,7 @@ double calc_pA(int reads, double E_reads) {
 
 // Find abundance pval from a Fam in a Bi
 double get_pA(Fam *fam, Bi *bi) {
-  double E_reads, norm, pval = 1.;
+  double E_reads, pval = 1.;
   
   if(fam->reads < 1) {
     printf("Warning: No or negative reads (%i) in fam.\n", fam->reads);
@@ -201,6 +201,119 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
   }
   ps.resize(index);
   cdf.resize(index);
+}
+
+void b_make_pS_lookup(B *b) {
+  static double err[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+  static int ave_nnt[4] = {0, 0, 0, 0};
+  static double *lams = NULL;   // the lookup table
+  static double *cdf = NULL;    // the lookup table
+  static int nlam = 0;          // the lookup table
+  static double omegaS = 0.0;
+  int i, j, nti;
+  int new_ave_nnt[4];
+  size_t index;
+  
+  // Error and exit if requested OmegaS would exceed or near double precision
+  if(b->reads * DBL_PRECISION > b->omegaS) {
+    printf("Error: Doubles not precise enough to meet requested OmegaS.\n");
+    printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
+    
+    b_free(b);
+    Rcpp::stop("Cannot meet requsted OmegaS\n");
+    // exit(EXIT_FAILURE);
+  }    
+
+  // Calculate average sequence nnt
+  // RIGHT NOW THIS IS THE AVERAGE OVER RAWS NOT OVER READS: RIGHT CHOICE?????
+  double tot_nnt[] = {0.0,0.0,0.0,0.0};
+  for (index = 0; index < b->nraw; index++) {
+    for(i=0;i<strlen(b->raw[index]->seq);i++) {
+      nti = ((int) b->raw[index]->seq[i]) - 1;
+      if(nti == 0 || nti == 1 || nti ==2 || nti == 3) {
+        tot_nnt[nti]++;
+      }
+    }
+  }
+  int nnt=0;
+  int del_ave_nnt = 0;
+  for(nti=0;nti<4;nti++) {
+    new_ave_nnt[nti] = (int) (0.4999 + tot_nnt[nti]/b->nraw);
+    del_ave_nnt += abs(new_ave_nnt[nti] - ave_nnt[nti]);
+    nnt += new_ave_nnt[nti];
+  }
+  
+  int err_diffs = 0;
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      if(err[i][j] != b->err[i][j]) { err_diffs++; }
+    }
+  }
+  
+  // Check if lookup parameters are same as last time, and if so use the stored lookup
+  if(lams && cdf) {  // Already a lookup stored (not NULL)
+    if(err_diffs == 0 && b->omegaS == omegaS && del_ave_nnt < nnt/10) { // same enough
+      b->lams = lams;
+      b->cdf = cdf;
+      b->nlam = nlam;
+      printf("Reusing psingle lookup.\n");
+      return;
+    } else {
+      if(err_diffs == 0 && b->omegaS == omegaS && del_ave_nnt >= nnt/10) {
+        printf("Difference because of del_ave_nnt = %i\n", del_ave_nnt);
+      }
+      free(lams);
+      free(cdf);
+    }
+  }
+  
+  // Making a new lookup, so store the new params
+  printf("Making new psingle lookup.\n");
+  omegaS = b->omegaS;
+  for(i=0;i<4;i++) {
+    ave_nnt[i] = new_ave_nnt[i];
+    for(j=0;j<4;j++) {
+      err[i][j] = b->err[i][j];
+    }
+  }
+
+  // Iterate over maxDs until going far enough to call significant singletons
+  // Approximating Bonferonni correction by nraw (in place of total fams)
+  // i.e. most significant possible pS* = (1.0 - temp_cdf.back()) * b->nraw
+  // DADA_ML MATCH: maxD = 10
+  int maxD=8;
+  std::vector<double> temp_lambdas;
+  std::vector<double> temp_cdf;
+  do {
+    maxD+=2;
+    getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
+  } while((1.0 - temp_cdf.back()) * b->reads > b->omegaS && maxD < MAXMAXD);
+  
+  // Warn if couldnt make lookup big enough to get OmegaS
+  if((1.0 - temp_cdf.back()) * b->reads > b->omegaS) {
+    printf("Warning: Cannot calculate singleton pvals small enough to meet requested OmegaS.\n");
+    printf("         Running DADA with singletons turned off.\n");
+    b->lams = NULL;
+    b->cdf = NULL;
+    b->use_singletons = false;
+    return;
+  }
+  
+  // Copy into C style arrays
+  // Kind of silly, at some point might be worthwhile doing the full C++ conversion
+  if(tVERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
+  lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
+  cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
+  nlam = temp_lambdas.size();
+  for(index=0;index<nlam;index++) {
+    lams[index] = temp_lambdas[index];
+    cdf[index] = temp_cdf[index];
+  }
+  
+  // Assign to the B object
+  b->lams = lams;
+  b->cdf = cdf;
+  b->nlam = nlam;
 }
 
 // [[Rcpp::export]]

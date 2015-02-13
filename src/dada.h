@@ -23,6 +23,7 @@
 #define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
 #define HASHOCC 20
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
+#define DBL_PRECISION 1e-15 // precision of doubles
 #define KMER_SIZE 6
 #define NERRS 12
 #define TRUE  1
@@ -177,6 +178,7 @@ Sub *sub_new(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_km
 void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
+void b_make_pS_lookup(B *b);
 void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD);
 double calc_pA(int reads, double E_reads);
 double get_pA(Fam *fam, Bi *bi);

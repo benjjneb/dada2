@@ -339,68 +339,15 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
   }
   free(seq);
 
+  // Create the (for now) solitary lookup table from lambda -> pS
+  // Use the average sequence composition
+  // Pval lookup depends on sequence composition when the error matrix
+  //   is not uniform, but this dependence is not super-strong normally.
+  // However, we very much need the sequences to be all close to the same
+  //   length for this to be valid!!!!
   if(b->use_singletons) {
-    // Create the (for now) solitary lookup table from lambda -> pS
-    // Use the average sequence composition
-    // Pval lookup depends on sequence composition when the error matrix
-    //   is not uniform, but this dependence is not super-strong normally.
-    // However, we very much need the sequences to be all close to the same
-    //   length for this to be valid!!!!
-    
-    // Error and exit if requested OmegaS would exceed or near double precision
-    double DBL_PREC = 1e-15;
-    if(b->reads * DBL_PREC > b->omegaS) {
-      printf("Error: Doubles not precise enough to meet requested OmegaS.\n");
-      printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
-      for(index=0;index<b->nraw;index++) { raw_free(b->raw[index]); }
-      free(b->raw);
-      free(b->bi);
-      free(b);
-      Rcpp::stop("Cannot meet requsted OmegaS\n");
-//      exit(EXIT_FAILURE);
-    }    
-    
-    // Calculate average sequence nnt
-    int ave_nnt[4];
-    for(nti=0;nti<4;nti++) {
-      ave_nnt[nti] = (int) (0.499 + tot_nnt[nti]/b->nraw);
-    }
-  
-    // Iterate over maxDs until going far enough to call significant singletons
-    // Approximating Bonferonni correction by nraw (in place of total fams)
-    // i.e. most significant possible pS* = (1.0 - temp_cdf.back()) * b->nraw
-    // DADA_ML MATCH: maxD = 10
-    int maxD=8;
-    std::vector<double> temp_lambdas;
-    std::vector<double> temp_cdf;
-    do {
-      maxD+=2;
-      getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
-    } while((1.0 - temp_cdf.back()) * b->reads > b->omegaS && maxD < MAXMAXD);
-    
-    // Error and exit if couldnt make lookup big enough to get OmegaS
-    if((1.0 - temp_cdf.back()) * b->reads > b->omegaS) {
-      printf("Error: Cannot calculate singleton pvals small enough to meet requested OmegaS.\n");
-      printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
-      for(index=0;index<b->nraw;index++) { raw_free(b->raw[index]); }
-      free(b->raw);
-      free(b->bi);
-      free(b);
-      Rcpp::stop("Cannot meet requsted OmegaS\n");
-//      exit(EXIT_FAILURE);
-    }
-    
-    // Copy into C style arrays
-    // Kind of silly, at some point might be worthwhile doing the full C++ conversion
-    if(tVERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
-    b->lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
-    b->cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
-    b->nlam = temp_lambdas.size();
-    for(index=0;index<b->nlam;index++) {
-      b->lams[index] = temp_lambdas[index];
-      b->cdf[index] = temp_cdf[index];
-    }
-  } // if(b->use_singletons)
+    b_make_pS_lookup(b);
+  }
 
   // Initialize with one cluster/one-family containing all the raws.
   b_init(b);
@@ -441,15 +388,16 @@ void b_free(B *b) {
   for(int i=0;i<b->nclust;i++) { bi_free(b->bi[i]); }
   free(b->bi);
 
-  for (int index = 0; index < b->nraw; index++) {
+  for (size_t index = 0; index < b->nraw; index++) {
     raw_free(b->raw[index]);
   }
   free(b->raw);
   
-  if(b->use_singletons) {
-    free(b->lams);
-    free(b->cdf);
-  }
+// This is now to be taken care of (except on ultimate exit) in the create lookup function.
+//  if(b->use_singletons) {
+//    if(b->lams) { free(b->lams); }
+//    if(b->cdf)  { free(b->cdf); }
+//  }
 
   free(b);
 }
