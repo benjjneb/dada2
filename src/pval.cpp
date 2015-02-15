@@ -256,11 +256,11 @@ void b_make_pS_lookup(B *b) {
       b->lams = lams;
       b->cdf = cdf;
       b->nlam = nlam;
-      printf("Reusing psingle lookup.\n");
+      if(tVERBOSE) { printf("Reusing psingle lookup.\n"); }
       return;
     } else {
       if(err_diffs == 0 && b->omegaS == omegaS && del_ave_nnt >= nnt/10) {
-        printf("Difference because of del_ave_nnt = %i\n", del_ave_nnt);
+        if(tVERBOSE) { printf("Difference because of del_ave_nnt = %i\n", del_ave_nnt); }
       }
       free(lams);
       free(cdf);
@@ -268,7 +268,7 @@ void b_make_pS_lookup(B *b) {
   }
   
   // Making a new lookup, so store the new params
-  printf("Making new psingle lookup.\n");
+  if(tVERBOSE) { printf("Making new psingle lookup.\n"); }
   omegaS = b->omegaS;
   for(i=0;i<4;i++) {
     ave_nnt[i] = new_ave_nnt[i];

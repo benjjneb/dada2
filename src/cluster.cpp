@@ -370,13 +370,13 @@ void b_init(B *b) {
   b->bi[0]->birth_pval = 0.0;
 
   // Add all raws to that cluster
-  for (int index=0; index<b->nraw; index++) {
+  for (size_t index=0; index<b->nraw; index++) {
     bi_shove_raw(b->bi[0], b->raw[index]);
   }
 
   bi_census(b->bi[0]);
   b_consensus_update(b); // Makes cluster consensus sequence
-  b_lambda_update(b, FALSE, 1., 0);
+  b_lambda_update(b, FALSE, 1., 0); // REVISIT
   b_e_update(b);
   if(VERBOSE) { printf("b_init - exit\n"); }
 }
@@ -420,13 +420,15 @@ int b_add_bi(B *b, Bi *bi) {
  updated consensus sequences. 
 */
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size) {
-  int i, index;
+  int i;
+  size_t index;
   double lambda;
-  Sub *sub; // stores Sub structs
+  Sub *sub;
+  
   for (i = 0; i < b->nclust; i++) {
     if(b->bi[i]->update_lambda) {   // consensus sequence for Bi[i] has changed
       // update alignments and lambda of all raws to this sequence
-      if(tVERBOSE) printf("C%iLU:", i);
+      if(tVERBOSE) { printf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
         // get sub object
         sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, band_size);
@@ -439,22 +441,26 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size) {
         if(index == TARGET_RAW) printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]);
       }
       b->bi[i]->update_lambda = FALSE;
+      if(!b->bi[i]->update_fam) {
+        printf("Warning: Lambda updated but update_fam flag not set in C%i\n", i);
+        b->bi[i]->update_fam = TRUE;
+      }
     } // if(b->bi[i]->update_lambda)
   }
   b_e_update(b);
 }
 
-/* b_fam_update(B *b):
+/* bi_fam_update(Bi *bi, ...):
    Creates and allocates new fams based on the sub between each raw and the
    cluster consensus.
   Currently completely destructive of old fams.
    */
 void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen) {
-  int foo, f, r, result, r_c;
+  int f, r, result, r_c;
   Sub *sub;
   char buf[10];
   
-  sm_delete(bi->sm);   // May want to do better here at some point for performance
+  sm_delete(bi->sm);
   bi->sm = sm_new(HASHOCC);
   bi_census(bi);
   
@@ -489,15 +495,15 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
     result = sm_exists(bi->sm, sub->key);
 
     if (result == 0) {                  // Handle value not found
-      foo = bi_add_fam(bi, fam_new());
-      fam_add_raw(bi->fam[foo], raws[r_c]);
-      bi->fam[foo]->sub = sub;                   // Sub set on new fam formation.
-      sprintf(buf, "%i", foo); // strmap only takes strings as values
+      f = bi_add_fam(bi, fam_new());
+      fam_add_raw(bi->fam[f], raws[r_c]);
+      bi->fam[f]->sub = sub;                   // Sub set on new fam formation.
+      sprintf(buf, "%i", f); // strmap only takes strings as values
       sm_put(bi->sm, sub->key, buf);
     } else {                            // Joining existing family
       sm_get(bi->sm, sub->key, buf, sizeof(buf));
-      foo = atoi(buf);
-      fam_add_raw(bi->fam[foo], raws[r_c]);
+      f = atoi(buf);
+      fam_add_raw(bi->fam[f], raws[r_c]);
     }
   }
   
@@ -522,7 +528,7 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
 void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
-      if(tVERBOSE) printf("C%iFU:", i);
+      if(tVERBOSE) { printf("C%iFU:", i); }
       bi_fam_update(b->bi[i], b->err, b->score, b->gap_pen);
     }
   }
@@ -854,11 +860,13 @@ void b_get_trans_matrix(B *b, int32_t obs[4][4]) {
     // Move counts corresponding to each substitution with the fams
     for(f=0;f<b->bi[i]->nfam;f++) {
       fam = b->bi[i]->fam[f];
-      for(s=0;s<fam->sub->nsubs;s++) { // ASSUMING SUB IS NOT NULL!
-        nti0 = (int) (fam->sub->nt0[s]-1);
-        nti1 = (int) (fam->sub->nt1[s]-1);
-        obs[nti0][nti0] -= fam->reads;
-        obs[nti0][nti1] += fam->reads;
+      if(fam->sub) { // Not NULL sub
+        for(s=0;s<fam->sub->nsubs;s++) {
+          nti0 = (int) (fam->sub->nt0[s]-1);
+          nti1 = (int) (fam->sub->nt1[s]-1);
+          obs[nti0][nti0] -= fam->reads;
+          obs[nti0][nti1] += fam->reads;
+        }
       }
     }
   } // for(i=0;i<b->nclust;i++)

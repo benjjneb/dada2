@@ -47,8 +47,8 @@ dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cut
 #' @return DataFrame.
 #'
 #' @export
-calibrate_kmers <- function(seqs, score, gap, band, max_aligns) {
-    .Call('dadac_calibrate_kmers', PACKAGE = 'dadac', seqs, score, gap, band, max_aligns)
+evaluate_kmers <- function(seqs, score, gap, band, max_aligns) {
+    .Call('dadac_evaluate_kmers', PACKAGE = 'dadac', seqs, score, gap, band, max_aligns)
 }
 
 #' Quantify the number of alignments altered by banding at the given BAND_SIZE.

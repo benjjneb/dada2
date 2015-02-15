@@ -17,7 +17,7 @@
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
-#define tVERBOSE 1
+#define tVERBOSE 0
 #define BUFFER_SIZE 1250
 #define KEY_BUFSIZE 2000
 #define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
