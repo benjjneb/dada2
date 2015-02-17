@@ -23,7 +23,6 @@ void fam_free(Fam *fam);
 void bi_free(Bi *bi);
 
 Raw *raw_new(char *seq, int reads);
-void bi_census(Bi *bi);
 int b_add_bi(B *b, Bi *bi);
 Bi *bi_new(int totraw);
 Raw *bi_pop_raw(Bi *bi, int f, int r);
@@ -44,7 +43,6 @@ void fam_consensus_update(Fam *fam);
 void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size);
 double get_self(char *seq, double err[4][4]);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
-Sub *al2subs(char **al);
 
 /*
  raw_new:
@@ -230,6 +228,7 @@ void bi_add_raw(Bi *bi, Raw *raw) {
 Bi *bi_new(int totraw) {
   Bi *bi = (Bi *) malloc(sizeof(Bi));
   bi->seq = (char *) malloc(SEQLEN);
+  strcpy(bi->seq, "");
   bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *));
   bi->maxfam = FAMBUF;
   bi->sub = (Sub **) malloc(totraw * sizeof(Sub *));

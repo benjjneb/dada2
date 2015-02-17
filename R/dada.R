@@ -27,7 +27,7 @@
 #'
 dada <- function(uniques,
                  err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow=4, byrow=T),
-                 self_consist = FALSE) {
+                 self_consist = FALSE, ...) {
   
   call <- sys.call(1)
   if(!is.list(uniques)) { # If a single vector, make into a length 1 list
@@ -42,35 +42,50 @@ dada <- function(uniques,
         uniques[[i]] <- as.integer(uniques[[i]])
         names(uniques[[i]]) <- nms
       } else {
-        stop("dada: Invalid uniques vector. Must be integer valued.")
+        stop("Invalid uniques vector. Must be integer valued.")
       }
     }
     if(!(all(sapply(names(uniques[[i]]), function(x) nchar(gsub("[ACGT]", "", x))==0, USE.NAMES=FALSE)))) {
-      stop("dada: Invalid uniques vector. Names must be sequences made up only of A/C/G/T.")
+      stop("Invalid uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
   }
   
   if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {
-    stop("dada: Invalid error matrix.")
+    stop("Invalid error matrix.")
   }
-  if(any(err==0)) warning("dada: Zero in error matrix.")
-
-  cur <- NULL
-  nconsist <- 0
+  if(any(err==0)) warning("Zero in error matrix.")
   
+  # Read in default opts and then replace with any that were passed in to the function
+  opts <- get_dada_opt()
+  args <- list(...)
+  for(opnm in names(args)) {
+    if(opnm %in% names(opts)) {
+      opts[[opnm]] <- args[[opnm]]
+    } else {
+      warning(opnm, " is not a valid DADA option.")
+    }
+  }
+
+  # Initialize
+  cur <- NULL
+  nconsist <- 1
+  errs <- list()
+  # The main loop, run once, or repeat until error rate repeats if self_consist=T
   repeat{
     clustering <- list()
     substitutions <- list()
     trans <- matrix(0, nrow=4, ncol=4)
     prev <- cur
+    errs[[nconsist]] <- err
+
     for(i in seq(length(uniques))) {
-      cat("Sample ", i, "\n")
+      cat("Sample", i, "-", sum(uniques[[i]]), "reads in", length(uniques[[i]]), "unique sequences.\n")
       res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, 
-                          get("SCORE_MATRIX", envir=dada_opts), get("GAP_PENALTY", envir=dada_opts),
-                          get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
-                          get("BAND_SIZE", envir=dada_opts),
-                          get("OMEGA_A", envir=dada_opts), 
-                          get("USE_SINGLETONS", envir=dada_opts), get("OMEGA_S", envir=dada_opts))
+                          opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
+                          opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
+                          opts[["BAND_SIZE"]],
+                          opts[["OMEGA_A"]], 
+                          opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]])
       clustering[[i]] <- res$clustering
       substitutions[[i]] <- res$substitutions
       trans <- trans + res$trans
@@ -117,15 +132,18 @@ dada <- function(uniques,
     names(rval$substitutions) <- names(uniques)
   }
 
+  # Return the error rate(s) used as well as the final sub matrix and estimated error matrix
+  if(self_consist) { # Did a self-consist loop
+    rval$err <- errs
+  } else {
+    rval$err <- err
+  }
   rval$subs <- trans
-  rval$err <- err
+  rval$err_out <- trans + 1
+  rval$err_out <- t(apply(rval$err_out, 1, function(x) x/sum(x)))
   
-  # Store all the options in the return object
-  opts <- ls(dada_opts)
-  ropts <- lapply(opts, function(x) get(x, envir=dada_opts))
-  names(ropts) <- opts
-  rval$opts <- ropts
-  
+  # Store the call and the options that were used in the return object
+  rval$opts <- opts
   rval$call <- call
   
   rval

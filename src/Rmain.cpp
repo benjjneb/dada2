@@ -220,6 +220,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
 
 B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS) {
   int newi = 0, round = 1;
+  double inflation = 1.0;
+  size_t index;
   B *bb;
   bb = b_new(uniques, err, score, gap_pen, omegaA, use_singletons, omegaS, band_size); // New cluster with all sequences in 1 bi and 1 fam
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
@@ -230,6 +232,15 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
     if(tVERBOSE) printf("C: ----------- Round %i -----------\n", round++);
     b_consensus_update(bb);
     b_lambda_update(bb, use_kmers, kdist_cutoff);
+
+    // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
+    if((int) (bb->bi[newi]->center->reads/bb->bi[newi]->self) > bb->bi[newi]->reads) {
+      inflation = (bb->bi[newi]->center->reads/bb->bi[newi]->self)/bb->bi[newi]->reads;
+      for(index=0;index<bb->nraw;index++) {
+        bb->bi[newi]->e[index] = bb->bi[newi]->e[index] * inflation;
+      }
+    }
+
     b_shuffle(bb);
     
     b_consensus_update(bb);
