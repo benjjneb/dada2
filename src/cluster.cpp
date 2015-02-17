@@ -553,8 +553,9 @@ void b_e_update(B *b) {
  move each sequence to the bi that produces the highest expected
  number of that sequence. The center of a Bi cannot leave.
 */
-void b_shuffle(B *b) {
+bool b_shuffle(B *b) {
   int ibest, index;
+  bool shuffled = false;
   Raw *raw;
   double e, maxe;
   // Iterate over raws via clusters/fams
@@ -591,18 +592,19 @@ void b_shuffle(B *b) {
                   b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
                   b->bi[ibest]->e[index], b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
             }
-          } else {
+          } else { // Moving raw
             raw = bi_pop_raw(b->bi[i], f, r);
             bi_shove_raw(b->bi[ibest], raw);
             b->bi[i]->update_fam = TRUE;
             b->bi[ibest]->update_fam = TRUE;  // DUPLICATIVE FLAGGING FROM SHOVE_RAW FUNCTION
+            shuffled = true;
             if(VERBOSE) { printf("shuffle: Raw %i from C%i to C%i (%.4e -> %.4e)\n", index, i, ibest, b->bi[i]->e[index], b->bi[ibest]->e[index]); }
           }  
         }
       } //End loop(s) over raws (r).
     } // End loop over fams (f).
   } // End loop over clusters (i).
-
+  return shuffled;
 }
 
 /* b_p_update:

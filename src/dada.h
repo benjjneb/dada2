@@ -28,6 +28,7 @@
 #define NERRS 12
 #define TRUE  1
 #define FALSE 0
+#define MAX_SHUFFLE 10
 
 
 /* -------------------------------------------
@@ -146,7 +147,7 @@ void uniques_free(Uniques *uniques);
 B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size);
 void b_free(B *b);
 void b_init(B *b);
-void b_shuffle(B *b);
+bool b_shuffle(B *b);
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff);
 void b_fam_update(B *b);
 void b_consensus_update(B *b);
