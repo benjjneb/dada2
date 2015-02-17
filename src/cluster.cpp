@@ -704,10 +704,9 @@ int b_bud(B *b) {
     }
   }
 
-  // Bonferroni correct the singleton pval by the number of fams and compare to OmegaS
-  // Should this really be corrected by the total number of _reads_?
+  // Bonferroni correct the singleton pval by the number of reads and compare to OmegaS
   // DADA_ML MATCH: minp*b->nclust*b->bi[i]->reads < b->omegaS
-  pS = minp*totfams;
+  pS = minp * b->reads;
   if(pS < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
