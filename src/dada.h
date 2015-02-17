@@ -17,7 +17,7 @@
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
-#define tVERBOSE 0
+#define tVERBOSE 1
 #define BUFFER_SIZE 1250
 #define KEY_BUFSIZE 2000
 #define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
@@ -80,6 +80,7 @@ typedef struct {
   Raw *center; // representative raw for the cluster (corresponds to seq)
   int nraw;    // number of raws in Bi
   int reads;   // number of reads in this cluster
+  int i;       // the cluster number in the total clustering
   Fam **fam;   // Array of pointers to child fams.
   int nfam;    // number of fams in Bi
   int maxfam;  // number of fams currently allocated for in **fam
@@ -101,6 +102,7 @@ typedef struct {
   int nraw;
   int reads;
   int maxclust;
+  int band_size;
   double err[4][4];
   double score[4][4];
   double gap_pen;
@@ -141,11 +143,11 @@ void uniques_sequence(Uniques *uniques, int n, char *seq);
 void uniques_free(Uniques *uniques);
 
 // methods implemented in cluster.c
-B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS);
+B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size);
 void b_free(B *b);
 void b_init(B *b);
 void b_shuffle(B *b);
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size);
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff);
 void b_fam_update(B *b);
 void b_consensus_update(B *b);
 void b_e_update(B *b);

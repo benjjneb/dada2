@@ -7,7 +7,6 @@ using namespace Rcpp;
 //' @importFrom Rcpp evalCpp
 
 B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS);
-void test_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -132,12 +131,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   double c_omegaS = as<double>(omegaS);
 
-  // TESTING diversion
-  if(TESTING) {
-    test_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff);
-    return Rcpp::List::create();
-  }
-  
   // Run DADA
   B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS);
   uniques_free(uniques);
@@ -228,7 +221,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
 B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS) {
   int newi = 0, round = 1;
   B *bb;
-  bb = b_new(uniques, err, score, gap_pen, omegaA, use_singletons, omegaS); // New cluster with all sequences in 1 bi and 1 fam
+  bb = b_new(uniques, err, score, gap_pen, omegaA, use_singletons, omegaS, band_size); // New cluster with all sequences in 1 bi and 1 fam
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
   newi = b_bud(bb);
@@ -236,21 +229,17 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
   while(newi) {
     if(tVERBOSE) printf("C: ----------- Round %i -----------\n", round++);
     b_consensus_update(bb);
-    b_lambda_update(bb, use_kmers, kdist_cutoff, band_size);
+    b_lambda_update(bb, use_kmers, kdist_cutoff);
     b_shuffle(bb);
     
     b_consensus_update(bb);
-    b_lambda_update(bb, use_kmers, kdist_cutoff, band_size);
+    b_lambda_update(bb, use_kmers, kdist_cutoff);
     b_fam_update(bb); // must have lambda_update before fam_update
 
     b_p_update(bb);
     newi = b_bud(bb);
   }
   return bb;
-}
-
-void test_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff) {
-  return;
 }
 
 //------------------------------------------------------------------

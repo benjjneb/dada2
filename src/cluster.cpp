@@ -41,7 +41,7 @@ Fam *bi_pop_fam(Bi *bi, int f);
 void bi_census(Bi *bi);
 void bi_consensus_update(Bi *bi, double err[4][4]);
 void fam_consensus_update(Fam *fam);
-void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen);
+void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size);
 double get_self(char *seq, double err[4][4]);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 Sub *al2subs(char **al);
@@ -295,7 +295,7 @@ void bi_census(Bi *bi) {
  The constructor for the B object. Takes in a Uniques object.
  Places all sequences into the same family within one cluster.
 */
-B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS) {
+B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size) {
   int i, j, nti;
   size_t index;
 
@@ -312,6 +312,7 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
   b->omegaA = omegaA;
   b->use_singletons = use_singletons;
   b->omegaS = omegaS;
+  b->band_size = band_size;
   
   // Copy the error and score matrices
   for(i=0;i<4;i++) {
@@ -376,7 +377,7 @@ void b_init(B *b) {
 
   bi_census(b->bi[0]);
   b_consensus_update(b); // Makes cluster consensus sequence
-  b_lambda_update(b, FALSE, 1., 0); // REVISIT
+  b_lambda_update(b, FALSE, 1.0);
   b_e_update(b);
   if(VERBOSE) { printf("b_init - exit\n"); }
 }
@@ -411,6 +412,7 @@ int b_add_bi(B *b, Bi *bi) {
     b->maxclust+=CLUSTBUF;
   }
   b->bi[b->nclust] = bi;
+  bi->i = b->nclust;
   return(b->nclust++);
 }
 
@@ -419,7 +421,7 @@ int b_add_bi(B *b, Bi *bi) {
  updates the alignments and lambda of all raws to Bi with
  updated consensus sequences. 
 */
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size) {
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
   int i;
   size_t index;
   double lambda;
@@ -431,7 +433,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size) {
       if(tVERBOSE) { printf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
         // get sub object
-        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, band_size);
+        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
         
         // Store sub and lambda in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
@@ -455,7 +457,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, int band_size) {
    cluster consensus.
   Currently completely destructive of old fams.
    */
-void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen) {
+void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size) {
   int f, r, result, r_c;
   Sub *sub;
   char buf[10];
@@ -482,18 +484,24 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
   for(f=0;f<bi->nfam;f++) { fam_free(bi->fam[f]); }
   bi->nfam = 0;
   
+  // Guarantee that non-NULL sub objects exist for all raws to the cluster center
+  // NULL subs can occur (rarely) with kmers if cluster center changes (in shuffle) and 
+  //    now exceeds kmerdist to anothe raw in the cluster
+  for(r_c=0;r_c<bi->nraw;r_c++) {
+    if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
+      if(tVERBOSE) { printf("Warning: bi_fam_update hit a null sub.\n"); }
+      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., band_size);
+    }
+  }
+  
   // Construct hash from raw->sub->key to new fam index.
   // Make fams, that contain all raws with the same substitution pattern.
   for(r_c=0;r_c<bi->nraw;r_c++) {
     // Make hash key from substitutions
     sub = bi->sub[raws[r_c]->index];
-    // Place raw in fams.
-    if(!sub) { // Protect from null subs, but this should never arise...
-      printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN.\n");
-      sub = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., 0);
-    }
     result = sm_exists(bi->sm, sub->key);
 
+    // Place raw in fams.
     if (result == 0) {                  // Handle value not found
       f = bi_add_fam(bi, fam_new());
       fam_add_raw(bi->fam[f], raws[r_c]);
@@ -513,8 +521,8 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen)
     sub = bi->sub[bi->fam[f]->center->index];
 
     if(!sub) { // Protect from null subs, but this should never arise...
-      printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN (2).\n");
-      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., 0);
+      printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
+      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size);
     }
 
     bi->fam[f]->sub = sub;
@@ -529,10 +537,9 @@ void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
       if(tVERBOSE) { printf("C%iFU:", i); }
-      bi_fam_update(b->bi[i], b->err, b->score, b->gap_pen);
+      bi_fam_update(b->bi[i], b->err, b->score, b->gap_pen, b->band_size);
     }
   }
-  
 }
 
 void b_e_update(B *b) {
@@ -567,18 +574,19 @@ void b_shuffle(B *b) {
           }
         }
         
-        // Check to see if a cluster was assigned, complain if not.
-        if(ibest == -99) {  // Shouldn't see this
-          printf("Warning: Failed to assign raw %i to cluster. Defaulting to no move.\n", index);
-          printf("\t (e_i=%.4e, lam_i=%.4e).\n", b->bi[i]->e[index], b->bi[i]->lambda[index]);
+        // Check to see if a cluster was assigned
+        if(ibest == -99) {  // Shouldn't see this unless still in C0 (from initialization)
           ibest=i;
+          if(i != 0) {
+            printf("Warning: Failed to assign raw %i to cluster. Defaulting to no move.\n", index);
+          }
         }
         
         // If different, move the raw to the new bi
         if(ibest != i) {
           if(index == b->bi[i]->center->index) {  // Check if center
-            printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
             if(tVERBOSE) {
+              printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
               printf("Attempted: Raw %i from C%i (center=%i, self=%.2e) to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (lam=%.2e,n=%i))\n", \
                   index, i, b->bi[i]->center->index, get_self(b->raw[index]->seq, b->err), ibest, \
                   b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \

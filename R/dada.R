@@ -64,6 +64,7 @@ dada <- function(uniques,
     trans <- matrix(0, nrow=4, ncol=4)
     prev <- cur
     for(i in seq(length(uniques))) {
+      cat("Sample ", i, "\n")
       res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, 
                           get("SCORE_MATRIX", envir=dada_opts), get("GAP_PENALTY", envir=dada_opts),
                           get("USE_KMERS", envir=dada_opts), get("KDIST_CUTOFF", envir=dada_opts),
@@ -87,8 +88,12 @@ dada <- function(uniques,
   } # repeat
 
   cat("\n")
-  if(self_consist && nconsist == get("MAX_CONSIST", envir=dada_opts)) {
-    warning("dada: Self-consistency loop terminated before convergence.")
+  if(self_consist) {
+    if(nconsist == get("MAX_CONSIST", envir=dada_opts)) {
+      warning("dada: Self-consistency loop terminated before convergence.")
+    } else {
+      cat("\nConvergence after ", nconsist, " rounds.\n")
+    }
   }
   
   # Construct dada return object
