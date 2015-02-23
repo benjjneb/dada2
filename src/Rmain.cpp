@@ -1,12 +1,11 @@
 #include "dada.h"
 #include <Rcpp.h>
-#define OMEGA_A 0.01
 
 using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS);
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -36,7 +35,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::LogicalVector use_kmers, Rcpp::NumericVector kdist_cutoff,
                         Rcpp::NumericVector band_size,
                         Rcpp::NumericVector omegaA, 
-                        Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS) {
+                        Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS,
+                        Rcpp::NumericVector maxClust) {
   int i, j, f, s, len1, len2, nrow, ncol;
   double tote;
   Fam *fam;
@@ -131,8 +131,15 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   double c_omegaS = as<double>(omegaS);
 
+  len1 = maxClust.size();
+  if(len1 != 1) {
+    Rcpp::Rcout << "C: MaxClust not length 1:" << len1 << "\n";
+    return R_NilValue;
+  }
+  int c_max_clust = as<int>(maxClust);
+
   // Run DADA
-  B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS);
+  B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust);
   uniques_free(uniques);
 
   // Extract output from Bi objects
@@ -175,19 +182,24 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     }
   }
   
-  int32_t nts_by_pos[SEQLEN] = {0};
-  int32_t subs_by_pos[SEQLEN] = {0};
+  // Move this into a function
+  int32_t nts_by_pos[1+4][SEQLEN] = {0};
+  int32_t subs_by_pos[1+16][SEQLEN] = {0};
+  int sub_ind;
   
   for(i=0;i<bb->nclust;i++) {
     for(j=0;j<strlen(bb->bi[i]->seq);j++) {
-      nts_by_pos[j] += bb->bi[i]->reads;
+      nts_by_pos[0][j] += bb->bi[i]->reads;
+      nts_by_pos[(int) bb->bi[i]->seq[j]][j] += bb->bi[i]->reads;
     }
     
     for(f=0;f<bb->bi[i]->nfam;f++) {
       fam = bb->bi[i]->fam[f];
       if(fam->sub) { // not a NULL sub
         for(s=0;s<fam->sub->nsubs;s++) {
-          subs_by_pos[fam->sub->pos[s]]+=fam->reads;
+          subs_by_pos[0][fam->sub->pos[s]] += fam->reads;
+          sub_ind = 1 + 4* ((int) fam->sub->nt0[s] - 1) + ((int) fam->sub->nt1[s] - 1);
+          subs_by_pos[sub_ind][fam->sub->pos[s]] += fam->reads;
         }
       } else {  // Fams should never have NULL subs
         printf("Warning: Output fam C%iF%i had a NULL sub.\n", i, f);
@@ -196,12 +208,57 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   
   Rcpp::NumericVector Rnts_by_pos;
+  Rcpp::NumericVector RAs_by_pos;
+  Rcpp::NumericVector RCs_by_pos;
+  Rcpp::NumericVector RGs_by_pos;
+  Rcpp::NumericVector RTs_by_pos;
+  
   Rcpp::NumericVector Rsubs_by_pos;
+  Rcpp::NumericVector RAAs_by_pos;
+  Rcpp::NumericVector RACs_by_pos;
+  Rcpp::NumericVector RAGs_by_pos;
+  Rcpp::NumericVector RATs_by_pos;
+  Rcpp::NumericVector RCAs_by_pos;
+  Rcpp::NumericVector RCCs_by_pos;
+  Rcpp::NumericVector RCGs_by_pos;
+  Rcpp::NumericVector RCTs_by_pos;
+  Rcpp::NumericVector RGAs_by_pos;
+  Rcpp::NumericVector RGCs_by_pos;
+  Rcpp::NumericVector RGGs_by_pos;
+  Rcpp::NumericVector RGTs_by_pos;
+  Rcpp::NumericVector RTAs_by_pos;
+  Rcpp::NumericVector RTCs_by_pos;
+  Rcpp::NumericVector RTGs_by_pos;
+  Rcpp::NumericVector RTTs_by_pos;
   for(i=0;i<SEQLEN;i++) {
     if(nts_by_pos[i]==0) { break; }
     else {
-      Rnts_by_pos.push_back(nts_by_pos[i]);
-      Rsubs_by_pos.push_back(subs_by_pos[i]);
+      Rnts_by_pos.push_back(nts_by_pos[0][i]);
+      RAs_by_pos.push_back(nts_by_pos[1][i]);
+      RCs_by_pos.push_back(nts_by_pos[2][i]);
+      RGs_by_pos.push_back(nts_by_pos[3][i]);
+      RTs_by_pos.push_back(nts_by_pos[4][i]);
+      
+      Rsubs_by_pos.push_back(subs_by_pos[0][i]);
+      RAAs_by_pos.push_back(nts_by_pos[1][i] - subs_by_pos[2][i] - subs_by_pos[3][i] - subs_by_pos[4][i]);
+      RACs_by_pos.push_back(subs_by_pos[2][i]);
+      RAGs_by_pos.push_back(subs_by_pos[3][i]);
+      RATs_by_pos.push_back(subs_by_pos[4][i]);
+
+      RCAs_by_pos.push_back(subs_by_pos[5][i]);
+      RCCs_by_pos.push_back(nts_by_pos[2][i] - subs_by_pos[5][i] - subs_by_pos[7][i] - subs_by_pos[8][i]);
+      RCGs_by_pos.push_back(subs_by_pos[7][i]);
+      RCTs_by_pos.push_back(subs_by_pos[8][i]);
+
+      RGAs_by_pos.push_back(subs_by_pos[9][i]);
+      RGCs_by_pos.push_back(subs_by_pos[10][i]);
+      RGGs_by_pos.push_back(nts_by_pos[3][i] - subs_by_pos[9][i] - subs_by_pos[10][i] - subs_by_pos[12][i]);
+      RGTs_by_pos.push_back(subs_by_pos[12][i]);
+      
+      RTAs_by_pos.push_back(subs_by_pos[13][i]);
+      RTCs_by_pos.push_back(subs_by_pos[14][i]);
+      RTGs_by_pos.push_back(subs_by_pos[15][i]);
+      RTTs_by_pos.push_back(nts_by_pos[4][i] - subs_by_pos[13][i] - subs_by_pos[14][i] - subs_by_pos[15][i]);
     }
   }
   
@@ -214,23 +271,32 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   
   // Organize return List  
   Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals);
-  Rcpp::DataFrame df_subs = Rcpp::DataFrame::create(_["nts"] = Rnts_by_pos, _["subs"]  = Rsubs_by_pos);
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["substitutions"] = df_subs, _["trans"] = Rtrans);
+  Rcpp::DataFrame df_subs = Rcpp::DataFrame::create(_["nts"] = Rnts_by_pos, _["subs"] = Rsubs_by_pos, 
+          _["A"] = RAs_by_pos, _["C"] = RCs_by_pos, _["G"] = RGs_by_pos, _["T"] = RTs_by_pos,
+          _["A2C"] = RACs_by_pos, _["A2G"] = RAGs_by_pos, _["A2T"] = RATs_by_pos, 
+          _["C2A"] = RCAs_by_pos, _["C2G"] = RCGs_by_pos, _["C2T"] = RCTs_by_pos,
+          _["G2A"] = RGAs_by_pos, _["G2C"] = RGCs_by_pos, _["G2T"] = RGTs_by_pos,
+          _["T2A"] = RTAs_by_pos, _["T2C"] = RTCs_by_pos, _["T2G"] = RTGs_by_pos);  // Max 20 cols in Rcpp::DataFrame::create
+
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subs, _["trans"] = Rtrans);
 }
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS) {
-  int newi = 0, round = 1, nshuffle = 0;
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust) {
+  int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;
   size_t index;
+  
   B *bb;
   bb = b_new(uniques, err, score, gap_pen, omegaA, use_singletons, omegaS, band_size); // New cluster with all sequences in 1 bi and 1 fam
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
-  newi = b_bud(bb);
+//  newi = b_bud(bb);
   
-  while(newi) {
-    if(tVERBOSE) printf("C: ----------- Round %i -----------\n", round++);
+  if(max_clust < 1) { max_clust = bb->nraw; }
+  
+  while( (bb->nclust < max_clust) && (newi = b_bud(bb)) ) {
+    if(tVERBOSE) printf("----------- New Cluster C%i -----------\n", newi);
     b_consensus_update(bb);
     b_lambda_update(bb, use_kmers, kdist_cutoff);
     
@@ -256,164 +322,8 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
     
     b_fam_update(bb); // must have lambda_update before fam_update
     b_p_update(bb);
-    newi = b_bud(bb);
+//    newi = b_bud(bb);
   }
   return bb;
 }
-
-//------------------------------------------------------------------
-//' Generate the kmer-distance and the alignment distance from the
-//'   given set of sequences. 
-//'
-//' @param seqs (Required). Character.
-//'  A vector containing all unique sequences in the data set.
-//'  Only A/C/G/T allowed.
-//' 
-//' @param score (Required). Numeric matrix (4x4).
-//' The score matrix used during the alignment.
-//'
-//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
-//'
-//' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
-//' pairwise alignments to do.
-//'
-//' @return DataFrame.
-//'
-//' @export
-// [[Rcpp::export]]
-Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, int band, size_t max_aligns) {
-  int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
-  char *seq1, *seq2;
-  double c_gap = as<double>(gap);
-  double c_score[4][4];
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      c_score[i][j] = score(i,j);
-    }
-  }
-  nseqs = seqs.size();
-  
-  // Find the kdist/align-dist for max_aligns sequence comparisons
-  if(max_aligns < (nseqs * (nseqs-1)/2)) { // More potential comparisons than max
-    double foo = 2 * sqrt((double) max_aligns);
-    n_iters = (int) foo + 2; // n_iters * (n_iters-1)/2 > max_aligns
-    stride = nseqs/n_iters;
-  } else {
-    max_aligns = (nseqs * (nseqs-1)/2);
-    n_iters = nseqs;
-    stride = 1;
-  }
-
-  size_t npairs = 0;
-  Rcpp::NumericVector adist(max_aligns);
-  Rcpp::NumericVector kdist(max_aligns);
-  Sub *sub;
-  int *kv1;
-  int *kv2;
-
-  for(i=0;i<nseqs;i=i+stride) {
-    seq1 = intstr(seqs[i].c_str());
-    len1 = strlen(seq1);
-    kv1 = get_kmer(seq1, KMER_SIZE);
-    for(j=i+1;j<nseqs;j=j+stride) {
-      seq2 = intstr(seqs[j].c_str());
-      len2 = strlen(seq2);
-      kv2 = get_kmer(seq2, KMER_SIZE);
-
-      minlen = (len1 < len2 ? len1 : len2);
-
-      sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, c_gap, band));
-      adist[npairs] = ((double) sub->nsubs)/((double) minlen);
-      
-      kdist[npairs] = kmer_dist(kv1, len1, kv2, len2, KMER_SIZE);
-      npairs++;
-      free(kv2);
-      free(seq2);
-      if(npairs >= max_aligns) { break; }
-    }
-    free(kv1);
-    free(seq1);
-    if(npairs >= max_aligns) { break; }
-  }
-  
-  if(npairs != max_aligns) {
-    Rcpp::Rcout << "Warning: Failed to reach requested number of alignments.\n";
-  }
-  return Rcpp::DataFrame::create(_["align"] = adist, _["kmer"] = kdist);
-}
-
-
-//------------------------------------------------------------------
-//' Quantify the number of alignments altered by banding at the given BAND_SIZE.
-//'
-//' @param seqs (Required). Character.
-//'  A vector containing all unique sequences in the data set.
-//'  Only A/C/G/T allowed.
-//' 
-//' @param score (Required). Numeric matrix (4x4).
-//' The score matrix used during the alignment.
-//'
-//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
-//' 
-//' @param band_size (Required). A \code{numeric(1)} giving the band size to consider.
-//'
-//' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
-//' pairwise alignments to do.
-//'
-//' @return DataFrame.
-//'
-//' @export
-// [[Rcpp::export]]
-Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, size_t max_aligns) {
-  int i, j, n_iters, stride, nseqs, len1 = 0, len2 = 0;
-  char *seq1, *seq2;
-//  double c_gap = as<double>(gap);
-  double c_score[4][4];
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      c_score[i][j] = score(i,j);
-    }
-  }
-  nseqs = seqs.size();
-
-  // Find the kdist/align-dist for max_aligns sequence comparisons
-  if(max_aligns < (nseqs * (nseqs-1)/2)) { // More potential comparisons than max
-    double foo = 2 * sqrt((double) max_aligns);
-    n_iters = (int) foo + 2; // n_iters * (n_iters-1)/2 > max_aligns
-    stride = nseqs/n_iters;
-  } else {
-    max_aligns = (nseqs * (nseqs-1)/2);
-    n_iters = nseqs;
-    stride = 1;
-  }
-
-  size_t npairs = 0;
-  size_t differ = 0;
-  Sub *sub, *sub_band;
-
-  for(i=0;i<nseqs;i=i+stride) {
-    seq1 = intstr(seqs[i].c_str());
-    len1 = strlen(seq1);
-    for(j=i+1;j<nseqs;j=j+stride) {
-      seq2 = intstr(seqs[j].c_str());
-      len2 = strlen(seq2);
-
-      sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, 0));
-      sub_band = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, band_size));
-      
-      if(strcmp(sub->key, sub_band->key) != 0) { // different strings
-        if(tVERBOSE) { printf("\n%s\n%s\n", sub->key, sub_band->key); }
-        differ++;
-      }
-      
-      npairs++;
-      free(seq2);
-      if(npairs >= max_aligns) { break; }
-    }
-    free(seq1);
-    if(npairs >= max_aligns) { break; }
-  }
-  return Rcpp::DataFrame::create(_["nalign"] = npairs, _["ndiff"] = differ);
-}
-
 

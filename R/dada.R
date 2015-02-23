@@ -73,7 +73,7 @@ dada <- function(uniques,
   # The main loop, run once, or repeat until error rate repeats if self_consist=T
   repeat{
     clustering <- list()
-    substitutions <- list()
+    subpos <- list()
     trans <- matrix(0, nrow=4, ncol=4)
     prev <- cur
     errs[[nconsist]] <- err
@@ -85,9 +85,10 @@ dada <- function(uniques,
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
                           opts[["OMEGA_A"]], 
-                          opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]])
+                          opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]],
+                          opts[["MAX_CLUST"]])
       clustering[[i]] <- res$clustering
-      substitutions[[i]] <- res$substitutions
+      subpos[[i]] <- res$subpos
       trans <- trans + res$trans
     }
     cur = trans # The only thing that changes is err which is set by trans, so this is sufficient
@@ -120,16 +121,16 @@ dada <- function(uniques,
     names(rval$genotypes[[i]]) <- clustering[[i]]$sequence
   }
   rval$clustering <- clustering
-  rval$substitutions <- substitutions
+  rval$subpos <- subpos
   
   if(length(rval$genotypes)==1) { # one sample, return a naked uniques vector
     rval$genotypes <- rval$genotypes[[1]]
     rval$clustering <- rval$clustering[[1]]
-    rval$substitutions <- rval$substitutions[[1]]
+    rval$subpos <- rval$subpos[[1]]
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
     names(rval$clustering) <- names(uniques)
-    names(rval$substitutions) <- names(uniques)
+    names(rval$subpos) <- names(uniques)
   }
 
   # Return the error rate(s) used as well as the final sub matrix and estimated error matrix
