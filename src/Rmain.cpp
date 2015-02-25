@@ -291,7 +291,6 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
   bb = b_new(uniques, err, score, gap_pen, omegaA, use_singletons, omegaS, band_size); // New cluster with all sequences in 1 bi and 1 fam
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
-//  newi = b_bud(bb);
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
@@ -322,7 +321,6 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
     
     b_fam_update(bb); // must have lambda_update before fam_update
     b_p_update(bb);
-//    newi = b_bud(bb);
   }
   return bb;
 }

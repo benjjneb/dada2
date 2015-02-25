@@ -638,6 +638,7 @@ int b_bud(B *b) {
   int mini, minf, totfams, minreads;
   double minp = 1.0, minlam=1.0;
   double pA=1.0, pS=1.0;
+  double fold;
   Fam *fam;
 
   // Find i, f indices and value of minimum pval.
@@ -674,7 +675,11 @@ int b_bud(B *b) {
     }
 
     if(tVERBOSE) { 
-      printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e\n", fam->center->index, mini, minf, pA);
+      printf("\nNew cluster from Raw %i in C%iF%i: ", fam->center->index, mini, minf);
+      fold = ((double) fam->reads)/b->bi[mini]->e[fam->center->index];
+      printf(" p*=%.3e, n/E(n)=%.1e (%.1e fold per sub)\n", pA, fold, fold/fam->sub->nsubs);
+      printf("Reads: %i, E: %.2e, Nsubs: %i\n", fam->reads, b->bi[mini]->e[fam->center->index], fam->sub->nsubs);
+      printf("%s\n", ntstr(fam->sub->key));
     }
     
     bi_consensus_update(b->bi[i], b->err);

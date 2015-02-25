@@ -1,0 +1,54 @@
+
+#' @export
+strdiff <- function(s1, s2) {
+  xx = unlist(strsplit(s1,""))
+  yy = unlist(strsplit(s2,""))
+  dd <- which(xx != yy)
+  data.frame(pos=dd,nt0=xx[dd],nt1=yy[dd])
+}
+
+#' @export
+showSubPos <- function(subpos, ...) {
+  require(ggplot2)
+  require(gridExtra)
+  subpos$pos <- seq(nrow(subpos))
+  subpos <- subpos[1:match(0,subpos$nts)-1,]
+  p <- ggplot(data=subpos, aes(x=pos))
+  pA <- p + geom_line(aes(y=A2C/(1+A)), color="red") + geom_line(aes(y=A2G/(1+A)), color="orange") + geom_line(aes(y=A2T/(1+A)), color="blue") + ylab("Subs at As")
+  pC <- p + geom_line(aes(y=C2A/(1+C)), color="grey") + geom_line(aes(y=C2G/(1+C)), color="orange") + geom_line(aes(y=C2T/(1+C)), color="blue") + ylab("Subs at Cs")
+  pG <- p + geom_line(aes(y=G2A/(1+G)), color="grey") + geom_line(aes(y=G2C/(1+G)), color="red") + geom_line(aes(y=G2T/(1+G)), color="blue") + ylab("Subs at Gs")
+  pT <- p + geom_line(aes(y=T2A/(1+T)), color="grey") + geom_line(aes(y=T2C/(1+T)), color="red") + geom_line(aes(y=T2G/(1+T)), color="orange") + ylab("Subs at Ts")
+  pAll <- p + geom_line(aes(y=subs/nts)) + ylab("Sub rate (all nts)")
+  grid.arrange(pAll, pAll, pA, pC, pG, pT, nrow=3, ...)
+}
+
+#' @export
+getIll <- function(fn, remove_singletons = FALSE) {
+  if(is.numeric(fn)) {
+    fn <- paste0("~/Desktop/Illumina/metaID-", fn, "_R1.fastq.gz")
+  }
+  ill <- dereplicateFastqReads(fn)
+  ill <- filterNs(ill)
+  if(remove_singletons) { ill <- ill[ill>1] }
+  ill
+}
+
+#' @export
+filterNs <- function(unqs) { # For now all Ns must be removed
+  acgts <- sapply(names(unqs), function(x) nchar(gsub("[ACGT]", "", x))==0)
+  unqs[acgts]  
+}
+
+#' @export
+subseqUniques <- function(unqs, start, end) {
+  subnms <- subseq(names(unqs), start, end)
+  newNames <- unique(subnms)
+  newUniques <- as.integer(rep(0,length(newNames)))
+  names(newUniques) <- newNames
+  for(i in seq(length(unqs))) {
+    newnm <- subnms[[i]]
+    newUniques[[newnm]] <- newUniques[[newnm]] + unqs[[i]]
+  }
+  newUniques[sapply(names(newUniques), function(nm) nchar(nm) == (end-start+1))]
+}
+
