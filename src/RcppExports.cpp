@@ -47,8 +47,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // dada_uniques
-Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::LogicalVector use_kmers, Rcpp::NumericVector kdist_cutoff, Rcpp::NumericVector band_size, Rcpp::NumericVector omegaA, Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS, Rcpp::NumericVector maxClust);
-RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP use_singletonsSEXP, SEXP omegaSSEXP, SEXP maxClustSEXP) {
+Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::LogicalVector use_kmers, Rcpp::NumericVector kdist_cutoff, Rcpp::NumericVector band_size, Rcpp::NumericVector omegaA, Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS, Rcpp::NumericVector maxClust, Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming);
+RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP use_singletonsSEXP, SEXP omegaSSEXP, SEXP maxClustSEXP, SEXP minFoldSEXP, SEXP minHammingSEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
@@ -65,7 +65,9 @@ BEGIN_RCPP
         Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type use_singletons(use_singletonsSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericVector >::type omegaS(omegaSSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericVector >::type maxClust(maxClustSEXP );
-        Rcpp::List __result = dada_uniques(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust);
+        Rcpp::traits::input_parameter< Rcpp::NumericVector >::type minFold(minFoldSEXP );
+        Rcpp::traits::input_parameter< Rcpp::NumericVector >::type minHamming(minHammingSEXP );
+        Rcpp::List __result = dada_uniques(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);

@@ -368,6 +368,8 @@ void b_init(B *b) {
   b_add_bi(b, bi_new(b->nraw));
   strcpy(b->bi[0]->birth_type, "I");
   b->bi[0]->birth_pval = 0.0;
+  b->bi[0]->birth_fold = 1.0;
+  b->bi[0]->birth_e = b->reads;
 
   // Add all raws to that cluster
   for (size_t index=0; index<b->nraw; index++) {
@@ -633,12 +635,13 @@ void b_p_update(B *b) {
  Returns index of new cluster, or 0 if no new cluster added.
 */
 
-int b_bud(B *b) {
+int b_bud(B *b, double min_fold, int min_hamming) {
   int i, f, r;
   int mini, minf, totfams, minreads;
   double minp = 1.0, minlam=1.0;
   double pA=1.0, pS=1.0;
   double fold;
+  int hamming;
   Fam *fam;
 
   // Find i, f indices and value of minimum pval.
@@ -646,16 +649,29 @@ int b_bud(B *b) {
   for(i=0;i<b->nclust;i++) {
     for(f=0; f<b->bi[i]->nfam; f++) {
       totfams++;
-      if(b->bi[i]->fam[f]->p < minp) { // Most significant
-        mini = i; minf = f;
-        minp = b->bi[i]->fam[f]->p;
-        minreads = b->bi[i]->fam[f]->reads;
-      } 
-      else if((b->bi[i]->fam[f]->p == minp) && (b->bi[i]->fam[f]->reads > minreads)) {
-        // Ties occur at p=0 (underflow). In that case choose the fam with most reads.
-        mini = i; minf = f;
-        minp = b->bi[i]->fam[f]->p;
-        minreads = b->bi[i]->fam[f]->reads;
+      fam = b->bi[i]->fam[f];
+      
+      // Calculate the fold over-abundnace and the hamming distance to this fam
+      fold = ((double) fam->reads)/b->bi[i]->e[fam->center->index];
+      if(fam->sub) {
+        hamming = fam->sub->nsubs;
+      } else { 
+        printf("Warning: Fam has null sub in b_bud.\n");
+        hamming = 1; // An unmotivated default here
+      }
+      
+      if(fold >= min_fold && hamming >= min_hamming) {  // Only those passing the hamming/fold screens can be budded
+        if(b->bi[i]->fam[f]->p < minp) { // Most significant
+          mini = i; minf = f;
+          minp = b->bi[i]->fam[f]->p;
+          minreads = b->bi[i]->fam[f]->reads;
+        } 
+        else if((b->bi[i]->fam[f]->p == minp) && (b->bi[i]->fam[f]->reads > minreads)) {
+          // Ties occur at p=0 (underflow). In that case choose the fam with most reads.
+          mini = i; minf = f;
+          minp = b->bi[i]->fam[f]->p;
+          minreads = b->bi[i]->fam[f]->reads;
+        }
       }
     }
   }
@@ -668,6 +684,9 @@ int b_bud(B *b) {
     i = b_add_bi(b, bi_new(b->nraw));
     strcpy(b->bi[i]->birth_type, "A");
     b->bi[i]->birth_pval = pA;
+    b->bi[i]->birth_fold = fam->reads/b->bi[mini]->e[fam->center->index];
+    b->bi[i]->birth_e = b->bi[mini]->e[fam->center->index];
+
     
     // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {
@@ -718,6 +737,8 @@ int b_bud(B *b) {
     i = b_add_bi(b, bi_new(b->nraw));
     strcpy(b->bi[i]->birth_type, "S");
     b->bi[i]->birth_pval = pS;
+    b->bi[i]->birth_fold = fam->reads/b->bi[mini]->e[fam->center->index];
+    b->bi[i]->birth_e = b->bi[mini]->e[fam->center->index];
     
     // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {

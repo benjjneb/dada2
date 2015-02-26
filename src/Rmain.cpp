@@ -5,7 +5,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust);
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -36,7 +36,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::NumericVector band_size,
                         Rcpp::NumericVector omegaA, 
                         Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS,
-                        Rcpp::NumericVector maxClust) {
+                        Rcpp::NumericVector maxClust,
+                        Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming) {
   int i, j, f, s, len1, len2, nrow, ncol;
   double tote;
   Fam *fam;
@@ -78,68 +79,43 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
       c_err[i][j] = err(i,j);
     }
   }
-  
-  // Copy gap into a C double
-  len1 = gap.size();
-  if(len1 != 1) {
-    Rcpp::Rcout << "C: Gap penalty not length 1:" << len1 << "\n";
-    return R_NilValue;
-  }
+
+  // Check rest of params for Length-One-ness and make into C versions
+  if(gap.size() != 1) { Rcpp::Rcout << "C: Gap penalty not length 1\n"; return R_NilValue; }
   double c_gap = as<double>(gap);
   
   // Copy use kmers into a C++ bool
-  len1 = use_kmers.size();
-  if(len1 != 1) {
-    Rcpp::Rcout << "C: Use_kmers not length 1:" << len1 << "\n";
-    return R_NilValue;
-  }
+  if(use_kmers.size() != 1) { Rcpp::Rcout << "C: Use_kmers not length 1\n"; return R_NilValue; }
   bool c_use_kmers = as<bool>(use_kmers);
 
   // Copy kdist_cutoff into a C double
-  len1 = kdist_cutoff.size();
-  if(len1 != 1) {
-    Rcpp::Rcout << "C: Kdist cutoff not length 1:" << len1 << "\n";
-    return R_NilValue;
-  }
+  if(kdist_cutoff.size() != 1) { Rcpp::Rcout << "C: Kdist cutoff not length 1\n"; return R_NilValue; }
   double c_kdist_cutoff = as<double>(kdist_cutoff);
 
-  len1 = band_size.size();
-  if(len1 != 1) {
-    Rcpp::Rcout << "C: Band_size not length 1:" << len1 << "\n";
-    return R_NilValue;
-  }
+  if(band_size.size() != 1) { Rcpp::Rcout << "C: Band_size not length 1\n"; return R_NilValue; }
   int c_band_size = as<int>(band_size);
 
-  len1 = omegaA.size();
-  if(len1 != 1) {
-    Rcpp::Rcout << "C: OmegaA not length 1:" << len1 << "\n";
-    return R_NilValue;
-  }
+  if(omegaA.size() != 1) { Rcpp::Rcout << "C: OmegaA not length 1\n"; return R_NilValue; }
   double c_omegaA = as<double>(omegaA);
 
-  len1 = use_singletons.size();
-  if(len1 != 1) {
-    Rcpp::Rcout << "C: use_singletons not length 1:" << len1 << "\n";
-    return R_NilValue;
-  }
+  if(use_singletons.size() != 1) { Rcpp::Rcout << "C: use_singletons not length 1\n"; return R_NilValue; }
   bool c_use_singletons = as<bool>(use_singletons);
 
-  len1 = omegaS.size();
-  if(len1 != 1) {
-    Rcpp::Rcout << "C: OmegaS not length 1:" << len1 << "\n";
-    return R_NilValue;
-  }
+  if(omegaS.size() != 1) { Rcpp::Rcout << "C: OmegaS not length 1\n"; return R_NilValue; }
   double c_omegaS = as<double>(omegaS);
 
-  len1 = maxClust.size();
-  if(len1 != 1) {
-    Rcpp::Rcout << "C: MaxClust not length 1:" << len1 << "\n";
-    return R_NilValue;
-  }
+  if(maxClust.size() != 1) { Rcpp::Rcout << "C: MaxClust not length 1\n"; return R_NilValue; }
   int c_max_clust = as<int>(maxClust);
 
+  if(minFold.size() != 1) { Rcpp::Rcout << "C: MinFold not length 1\n"; return R_NilValue; }
+  double c_min_fold = as<double>(minFold);
+
+  if(minHamming.size() != 1) { Rcpp::Rcout << "C: MinHamming not length 1\n"; return R_NilValue; }
+  int c_min_hamming = as<int>(minHamming);
+
+
   // Run DADA
-  B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust);
+  B *bb = run_dada(uniques, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming);
   uniques_free(uniques);
 
   // Extract output from Bi objects
@@ -153,6 +129,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   Rcpp::CharacterVector Rseqs;
   Rcpp::NumericVector Rabunds(bb->nclust);
   Rcpp::NumericVector Rbirth_pvals(bb->nclust);
+  Rcpp::NumericVector Rbirth_folds(bb->nclust);
+  Rcpp::NumericVector Rbirth_es(bb->nclust);
   Rcpp::CharacterVector Rbirth_types;
   Rcpp::NumericVector Rpvals(bb->nclust);
 
@@ -160,6 +138,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     Rseqs.push_back(std::string(oseqs[i]));
     Rabunds[i] = bb->bi[i]->reads;
     Rbirth_pvals[i] = bb->bi[i]->birth_pval;
+    Rbirth_folds[i] = bb->bi[i]->birth_fold;
+    Rbirth_es[i] = bb->bi[i]->birth_e;
     Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
     
     tote = 0.0;
@@ -270,7 +250,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   b_free(bb);
   
   // Organize return List  
-  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals);
+  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_e"] = Rbirth_es);
   Rcpp::DataFrame df_subs = Rcpp::DataFrame::create(_["nts"] = Rnts_by_pos, _["subs"] = Rsubs_by_pos, 
           _["A"] = RAs_by_pos, _["C"] = RCs_by_pos, _["G"] = RGs_by_pos, _["T"] = RTs_by_pos,
           _["A2C"] = RACs_by_pos, _["A2G"] = RAGs_by_pos, _["A2T"] = RATs_by_pos, 
@@ -281,7 +261,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subs, _["trans"] = Rtrans);
 }
 
-B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust) {
+B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;
@@ -294,7 +274,7 @@ B *run_dada(Uniques *uniques, double score[4][4], double err[4][4], double gap_p
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
-  while( (bb->nclust < max_clust) && (newi = b_bud(bb)) ) {
+  while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming)) ) {
     if(tVERBOSE) printf("----------- New Cluster C%i -----------\n", newi);
     b_consensus_update(bb);
     b_lambda_update(bb, use_kmers, kdist_cutoff);

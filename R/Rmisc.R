@@ -52,3 +52,19 @@ subseqUniques <- function(unqs, start, end) {
   newUniques[sapply(names(newUniques), function(nm) nchar(nm) == (end-start+1))]
 }
 
+#' @export
+mergeUniques <- function(unqsList, ...) {
+  if(!is.list(unqsList) && length(list(...))>=1) {
+    unqsList = list(unqsList, unlist(unname(list(...))))
+  }
+  concat <- c(unlist(unqsList))
+  unqs <- unique(names(concat))
+  mrg <- as.integer(rep(0, length(unqs)))
+  names(mrg) <- unqs
+  # Probably a better way to do this than for loop...
+  for(i in seq(length(concat))) {
+    unq <- names(concat)[[i]]
+    mrg[[unq]] <- mrg[[unq]] + concat[[i]]
+  }
+  mrg
+}

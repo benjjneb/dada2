@@ -86,7 +86,8 @@ dada <- function(uniques,
                           opts[["BAND_SIZE"]],
                           opts[["OMEGA_A"]], 
                           opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]],
-                          opts[["MAX_CLUST"]])
+                          opts[["MAX_CLUST"]],
+                          opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]])
       clustering[[i]] <- res$clustering
       subpos[[i]] <- res$subpos
       trans <- trans + res$trans

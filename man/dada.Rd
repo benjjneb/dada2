@@ -8,7 +8,7 @@
 \usage{
 dada(uniques, err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003,
   0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow = 4,
-  byrow = T), self_consist = FALSE)
+  byrow = T), self_consist = FALSE, ...)
 }
 \arguments{
 \item{uniques}{(Required). Named integer vector or list of named integer vectors.

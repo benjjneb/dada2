@@ -11,9 +11,10 @@ assign("SCORE_MATRIX", matrix(c(5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5, -4, -4,
 assign("GAP_PENALTY", -8, envir = dada_opts)
 assign("BAND_SIZE", 20, envir = dada_opts)
 assign("MAX_CLUST", 0, envir=dada_opts)
+assign("MIN_FOLD", 1, envir=dada_opts)
+assign("MIN_HAMMING", 1, envir=dada_opts)
 
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
-# define KMER_SIZE 6 # Hard-coded. This seems to be close to optimal for DNA.
 
 ################################################################################
 #' Set DADA options

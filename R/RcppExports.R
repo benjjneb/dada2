@@ -70,8 +70,8 @@ NULL
 #' @return List.
 #'
 #' @export
-dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust) {
-    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust)
+dada_uniques <- function(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming) {
+    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming)
 }
 
 # Register entry points for exported C++ functions

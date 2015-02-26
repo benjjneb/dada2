@@ -95,6 +95,8 @@ typedef struct {
   size_t totraw; // number of total raws in the clustering
   char birth_type[2]; // encoding of how this Bi was created: "I": Initial cluster, "A": Abundance pval, "S": Singleton pval
   double birth_pval; // the Bonferonni-corrected pval that led to this cluster being initialized
+  double birth_fold; // the multiple of expectations at birth
+  double birth_e; // the expected number of reads at birth
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).
@@ -155,7 +157,7 @@ void b_e_update(B *b);
 void b_p_update(B *b);
 void b_update_err(B *b, double err[4][4]);
 void b_get_trans_matrix(B *b, int32_t obs[4][4]);
-int b_bud(B *b);
+int b_bud(B *b, double min_fold, int min_hamming);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
 
