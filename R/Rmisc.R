@@ -27,7 +27,7 @@ getIll <- function(fn, remove_singletons = FALSE) {
   if(is.numeric(fn)) {
     fn <- paste0("~/Desktop/Illumina/metaID-", fn, "_R1.fastq.gz")
   }
-  ill <- dereplicateFastqReads(fn)
+  ill <- derepFastq(fn)
   ill <- filterNs(ill)
   if(remove_singletons) { ill <- ill[ill>1] }
   ill

@@ -39,7 +39,7 @@
 #' test3 = dereplicateFastqReads(testFile, 100, TRUE)
 #' all.equal(test1, test2[names(test1)])
 #' all.equal(test1, test3[names(test1)])
-dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
+derepFastq <- function(fl, n = 1e6, verbose = FALSE){
   # require("ShortRead")
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
@@ -116,7 +116,7 @@ dereplicateFastqReads <- function(fl, n = 1e6, verbose = FALSE){
 #' @export
 #' @import ShortRead 
 #' 
-dereplicateMultiSampleFastqReads <- function(fl, samsubseq, n = 1e6, verbose = FALSE){
+derepMultiSampleFastq <- function(fl, samsubseq, n = 1e6, verbose = FALSE){
   # require("ShortRead")
   if(verbose){
     message("Dereplicating multi-sample sequences in Fastq file: ", fl, appendLF = TRUE)
@@ -204,6 +204,69 @@ dereplicateMultiSampleFastqReads <- function(fl, samsubseq, n = 1e6, verbose = F
   }
   close(f)
   return(derepSamples)
+}
+###
+#' Internal function to replicate tables functionality while also returning ave quals
+#' 
+qtables <- function(x) {
+  srt <- srsort(x) # sorts based on sread -- necessary?
+  rnk <- srrank(srt) # integer vec of ranks, ties take top rank
+  unq <- unique(rnk)
+  uniques <- tabulate(rnk)[unq]  # much faster than table
+  names(uniques) <- as.character(sread(srt)[unq])
+  qmat <- as(quality(srt), "matrix")
+  qmat <- rowsum(qmat, rnk)
+  rownames(qmat) <- names(uniques)
+  list(uniques=uniques, cum_quals=qmat)
+}
+################################################################################
+#' Read and Dereplicate a Fastq file. Also returns average Q score for each unique.
+#' 
+#' @export
+derepFastqWithQual <- function(fl, n = 1e6, verbose = FALSE){
+  require("ShortRead")
+  if(verbose){
+    message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
+  }
+
+  f <- FastqStreamer(fl, n = n)
+  suppressWarnings(fq <- yield(f))
+  out <- qtables(fq)
+  derepCounts <- out$uniques
+  derepQuals <- out$cum_quals
+  while( length(suppressWarnings(fq <- yield(f))) ){
+    # A little loop protection
+    idrep = alreadySeen = NULL
+    # Dot represents one turn inside the chunking loop.
+    if(verbose){
+      message(".", appendLF = FALSE)
+    }
+    out <- qtables(fq, n = Inf)
+    idrep <- out$uniques
+    # identify sequences already present in `derepCounts`
+    alreadySeen = names(idrep) %in% names(derepCounts)
+    # Sum these values, if any
+    if(any(alreadySeen)){
+      sqnms = names(idrep)[alreadySeen]
+      derepCounts[sqnms] <- derepCounts[sqnms] + idrep[sqnms]
+      derepQuals[sqnms,] <- derepQuals[sqnms,] + out$cum_quals[sqnms,]
+    }
+    # Concatenate the remainder to `derepCounts`, if any
+    if(!all(alreadySeen)){
+      derepCounts <- c(derepCounts, idrep[!alreadySeen])
+      derepQuals <- rbind(derepQuals, out$cum_quals[!alreadySeen,])
+    }
+  }
+  derepQuals <- derepQuals/derepCounts # Change to average quals
+  if(verbose){
+    message("Encountered ",
+            length(derepCounts),
+            " unique sequences from ",
+            sum(derepCounts),
+            " total sequences read.")
+  }
+  close(f)
+  return(list(uniques=derepCounts, quals=derepQuals))
 }
 ################################################################################
 #' Load .uniques file

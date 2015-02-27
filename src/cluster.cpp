@@ -661,17 +661,12 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       }
       
       if(fold >= min_fold && hamming >= min_hamming) {  // Only those passing the hamming/fold screens can be budded
-        if(b->bi[i]->fam[f]->p < minp) { // Most significant
+        if((fam->p < minp) ||
+          ((fam->p == minp && fam->reads > minreads))) { // Most significant
           mini = i; minf = f;
-          minp = b->bi[i]->fam[f]->p;
-          minreads = b->bi[i]->fam[f]->reads;
+          minp = fam->p;
+          minreads = fam->reads;
         } 
-        else if((b->bi[i]->fam[f]->p == minp) && (b->bi[i]->fam[f]->reads > minreads)) {
-          // Ties occur at p=0 (underflow). In that case choose the fam with most reads.
-          mini = i; minf = f;
-          minp = b->bi[i]->fam[f]->p;
-          minreads = b->bi[i]->fam[f]->reads;
-        }
       }
     }
   }
@@ -715,16 +710,23 @@ int b_bud(B *b, double min_fold, int min_hamming) {
   mini=-999; minf=-999; minp=1.0; minlam = 1.0;
   for(i=0;i<b->nclust;i++) {
     for(f=0; f<b->bi[i]->nfam; f++) {
-      if(b->bi[i]->fam[f]->pS < minp) { // Most significant
-        mini = i; minf = f;
-        minp = b->bi[i]->fam[f]->pS;
-        minlam = b->bi[i]->fam[f]->lambda;
-      } 
-      else if((b->bi[i]->fam[f]->pS == minp) && (b->bi[i]->fam[f]->lambda < minlam)) {
-        // Ties occur at the most sig possible pS. In that case choose the lowers lambda.
-        mini = i; minf = f;
-        minp = b->bi[i]->fam[f]->pS;
-        minlam = b->bi[i]->fam[f]->lambda;
+      // Calculate the fold over-abundance and the hamming distance to this fam
+      fam = b->bi[i]->fam[f];
+      fold = ((double) fam->reads)/b->bi[i]->e[fam->center->index];
+      if(fam->sub) {
+        hamming = fam->sub->nsubs;
+      } else { 
+        printf("Warning: Fam has null sub in b_bud.\n");
+        hamming = 1; // An unmotivated default here
+      }
+      
+      if(fold >= min_fold && hamming >= min_hamming) {  // Hamming/fold screen
+        if((fam->pS < minp) ||
+          ((fam->pS == minp) && (fam->lambda < minlam))){ // Most significant
+          mini = i; minf = f;
+          minp = fam->pS;
+          minlam = fam->lambda;
+        } 
       }
     }
   }
