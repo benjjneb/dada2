@@ -25,8 +25,6 @@ Uniques *uniques_from_vectors(std::vector< std::string > strings, std::vector< i
     strcpy(uniques->unique[i].seq, strings[i].c_str());
     nt2int(uniques->unique[i].seq, uniques->unique[i].seq);
     uniques->unique[i].reads = abundances[i];
-//    char* c = new char[s.length() + 1];
-//    strcpy(c, s.c_str());
   }
   
   return uniques;

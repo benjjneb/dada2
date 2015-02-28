@@ -221,7 +221,7 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
  */
 Sub *al2subs(char **al) {
   int i, i0, bytes;
-  size_t align_length;
+  int align_length;
   char *al0, *al1; /* dummy pointers to the sequences in the alignment */
   
   /* define dummy pointers to positions/nucleotides/keys */
@@ -230,7 +230,7 @@ Sub *al2subs(char **al) {
   char *pnt1;
   char *pkey;
   
-  size_t key_size = 0; /* key buffer bytes written*/
+  int key_size = 0; /* key buffer bytes written*/
   
   if(!al) { // Null alignment (outside kmer thresh) -> Null sub
     Sub *sub = NULL;
@@ -242,7 +242,7 @@ Sub *al2subs(char **al) {
   sub->pos = (int *) malloc(strlen(al[0]) * sizeof(int));
   sub->nt0 = (char *) malloc(strlen(al[0]));
   sub->nt1 = (char *) malloc(strlen(al[0]));
-  sub->key = (char *) malloc(KEY_BUFSIZE);
+  sub->key = (char *) malloc(6*strlen(al[0])); // Will break if seqs get into the many thousands
   sub->nsubs=0;
   
   /* traverse the alignment and record substitutions while building the hash key*/
@@ -279,7 +279,7 @@ Sub *al2subs(char **al) {
   sub->nt0 = (char *) realloc(sub->nt0, sub->nsubs);
   sub->nt1 = (char *) realloc(sub->nt1, sub->nsubs);
   sub->key = (char *) realloc(sub->key, strlen(sub->key) + 1); /* +1 necessary for the "\0" */
-  //  printf("Key %i\t%i\t%s\n", key_size, strlen(sub->key), ntstr(sub->key));
+//  printf("Key %i\t%i\t%s\n", key_size, strlen(sub->key), ntstr(sub->key));
   
   if(VERBOSE && sub->nsubs>150) {
     printf("AL2SUBS: Many subs (%i) \n", sub->nsubs);
@@ -287,14 +287,28 @@ Sub *al2subs(char **al) {
   return sub;
 }
 
-// Wrapper for al2subs(raw_align(...)) that manages memory
-Sub *sub_new(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band) {
+// Wrapper for al2subs(raw_align(...)) that manages memory and quality scores
+Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band, bool use_quals) {
+  int s;
   char **al;
   Sub *sub;
 
-  al = raw_align(raw1, raw2, score, gap_p, use_kmers, kdist_cutoff, band);
+  al = raw_align(raw0, raw1, score, gap_p, use_kmers, kdist_cutoff, band);
   sub = al2subs(al);
-  
+
+  if(sub) {
+    sub->q0 = NULL;
+    sub->q1 = NULL;
+    if(use_quals) {
+      sub->q0 = (double *) malloc(sub->nsubs * sizeof(double));
+      sub->q1 = (double *) malloc(sub->nsubs * sizeof(double));
+      for(s=0;s<sub->nsubs;s++) {
+        sub->q0[s] = raw0->qual[sub->pos[s]];
+        sub->q1[s] = raw0->qual[sub->pos[s]];
+      }
+    }
+  }
+
   if(al) { // not a NULL align
     free(al[0]);
     free(al[1]);
@@ -311,6 +325,8 @@ void sub_free(Sub *sub) {
     free(sub->nt1);
     free(sub->nt0);
     free(sub->pos);
+    if(sub->q0) { free(sub->q0); }
+    if(sub->q1) { free(sub->q1); }
     free(sub);
   }
 }

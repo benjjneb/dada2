@@ -1,7 +1,7 @@
 
 dada_opts <- new.env()
 assign("OMEGA_A", 1e-4, envir = dada_opts)
-assign("USE_SINGLETONS", TRUE, envir=dada_opts)
+assign("USE_SINGLETONS", FALSE, envir=dada_opts)
 assign("OMEGA_S", 0.01, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.5, envir = dada_opts)
@@ -13,6 +13,7 @@ assign("BAND_SIZE", 20, envir = dada_opts)
 assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
+assign("USE_QUALS", FALSE, envir=dada_opts)
 
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
 

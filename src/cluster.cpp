@@ -18,11 +18,9 @@
 Raw *raw_new(char *seq, int reads);
 Fam *fam_new();
 Bi *bi_new(int totraw);
-void raw_free(Raw *raw);
 void fam_free(Fam *fam);
 void bi_free(Bi *bi);
 
-Raw *raw_new(char *seq, int reads);
 int b_add_bi(B *b, Bi *bi);
 Bi *bi_new(int totraw);
 Raw *bi_pop_raw(Bi *bi, int f, int r);
@@ -40,7 +38,7 @@ Fam *bi_pop_fam(Bi *bi, int f);
 void bi_census(Bi *bi);
 void bi_consensus_update(Bi *bi, double err[4][4]);
 void fam_consensus_update(Fam *fam);
-void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size);
+void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size, bool use_quals);
 double get_self(char *seq, double err[4][4]);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 
@@ -52,6 +50,23 @@ Raw *raw_new(char *seq, int reads) {
   Raw *raw = (Raw *) malloc(sizeof(Raw));
   raw->seq = (char *) malloc(strlen(seq)+1);
   strcpy(raw->seq, seq);
+  raw->qual = NULL;
+  raw->kmer = get_kmer(seq, KMER_SIZE);
+  raw->reads = reads;
+  return raw;
+}
+
+// raw_qual_new: A constructor for Raw objects with quals
+Raw *raw_qual_new(char *seq, double *qual, int reads) {
+  int seqlen = strlen(seq);
+  Raw *raw = (Raw *) malloc(sizeof(Raw));
+  raw->seq = (char *) malloc(seqlen+1);
+  strcpy(raw->seq, seq);
+  raw->qual = NULL;
+  if(qual) {
+    raw->qual = (double *) malloc(seqlen * sizeof(double));
+    for(int i=0;i<seqlen;i++) { raw->qual[i] = qual[i]; }
+  }
   raw->kmer = get_kmer(seq, KMER_SIZE);
   raw->reads = reads;
   return raw;
@@ -59,6 +74,7 @@ Raw *raw_new(char *seq, int reads) {
 
 void raw_free(Raw *raw) {
   free(raw->seq);
+  if(raw->qual) { free(raw->qual); }
   free(raw->kmer);
   free(raw);  
 }
@@ -294,7 +310,7 @@ void bi_census(Bi *bi) {
  The constructor for the B object. Takes in a Uniques object.
  Places all sequences into the same family within one cluster.
 */
-B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size) {
+B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals) {
   int i, j, nti;
   size_t index;
 
@@ -306,12 +322,14 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
   // Initialize basic values
   b->nclust = 0;
   b->reads = 0;
-  b->nraw = uniques_nseqs(uniques);
+///  b->nraw = uniques_nseqs(uniques);
+  b->nraw = nraw;
   b->gap_pen = gap_pen;
   b->omegaA = omegaA;
   b->use_singletons = use_singletons;
   b->omegaS = omegaS;
   b->band_size = band_size;
+  b->use_quals = use_quals;
   
   // Copy the error and score matrices
   for(i=0;i<4;i++) {
@@ -322,22 +340,25 @@ B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen,
   }
 
   // Allocate the list of raws and then create them all.
-  char *seq = (char *) malloc(SEQLEN);
+///  char *seq = (char *) malloc(SEQLEN);
   double tot_nnt[] = {0.0,0.0,0.0,0.0};
-  b->raw = (Raw **) malloc(b->nraw * sizeof(Raw *));
+///  b->raw = (Raw **) malloc(b->nraw * sizeof(Raw *));
+  b->raw = raws;
   for (index = 0; index < b->nraw; index++) {
-    uniques_sequence(uniques, index, (char *) seq);
-    for(i=0;i<strlen(seq);i++) {
-      nti = ((int) seq[i]) - 1;
+///    uniques_sequence(uniques, index, (char *) seq);
+///    for(i=0;i<strlen(seq);i++) {
+    for(i=0;i<strlen(b->raw[index]->seq);i++) {
+///      nti = ((int) seq[i]) - 1;
+      nti = ((int) b->raw[index]->seq[i]) - 1;
       if(nti == 0 || nti == 1 || nti ==2 || nti == 3) {
         tot_nnt[nti]++;
       }
     }
-    b->raw[index] = raw_new(seq, uniques_reads(uniques, index));
+///    b->raw[index] = raw_new(seq, uniques_reads(uniques, index));
     b->raw[index]->index = index;
     b->reads += b->raw[index]->reads;
   }
-  free(seq);
+///  free(seq);
 
   // Create the (for now) solitary lookup table from lambda -> pS
   // Use the average sequence composition
@@ -390,11 +411,6 @@ void b_free(B *b) {
   for(int i=0;i<b->nclust;i++) { bi_free(b->bi[i]); }
   free(b->bi);
 
-  for (size_t index = 0; index < b->nraw; index++) {
-    raw_free(b->raw[index]);
-  }
-  free(b->raw);
-  
 // This is now to be taken care of (except on ultimate exit) in the create lookup function.
 //  if(b->use_singletons) {
 //    if(b->lams) { free(b->lams); }
@@ -434,7 +450,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
       if(tVERBOSE) { printf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
         // get sub object
-        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
+        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size, b->use_quals);
         
         // Store sub and lambda in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
@@ -458,7 +474,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
    cluster consensus.
   Currently completely destructive of old fams.
    */
-void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size) {
+void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size, bool use_quals) {
   int f, r, result, r_c;
   Sub *sub;
   char buf[10];
@@ -491,7 +507,7 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
       if(tVERBOSE) { printf("Warning: bi_fam_update hit a null sub.\n"); }
-      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., band_size);
+      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., band_size, use_quals);
     }
   }
   
@@ -523,7 +539,7 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
 
     if(!sub) { // Protect from null subs, but this should never arise...
       printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
-      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size);
+      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size, use_quals);
     }
 
     bi->fam[f]->sub = sub;
@@ -538,7 +554,7 @@ void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
       if(tVERBOSE) { printf("C%iFU:", i); }
-      bi_fam_update(b->bi[i], b->err, b->score, b->gap_pen, b->band_size);
+      bi_fam_update(b->bi[i], b->err, b->score, b->gap_pen, b->band_size, b->use_quals);
     }
   }
 }
@@ -689,10 +705,19 @@ int b_bud(B *b, double min_fold, int min_hamming) {
     }
 
     if(tVERBOSE) { 
+      double qave = 0.0;
+      if(fam->center->qual) {
+        for(int s=0;s<fam->sub->nsubs;s++) {
+          for(int r=0;r<fam->nraw;r++) {
+            qave += (fam->raw[r]->reads * fam->raw[r]->qual[fam->sub->pos[s]]);
+          }
+        }
+        qave = qave/((double)fam->sub->nsubs * fam->reads);
+      }
       printf("\nNew cluster from Raw %i in C%iF%i: ", fam->center->index, mini, minf);
       fold = ((double) fam->reads)/b->bi[mini]->e[fam->center->index];
       printf(" p*=%.3e, n/E(n)=%.1e (%.1e fold per sub)\n", pA, fold, fold/fam->sub->nsubs);
-      printf("Reads: %i, E: %.2e, Nsubs: %i\n", fam->reads, b->bi[mini]->e[fam->center->index], fam->sub->nsubs);
+      printf("Reads: %i, E: %.2e, Nsubs: %i, Ave Qsub:%.1f\n", fam->reads, b->bi[mini]->e[fam->center->index], fam->sub->nsubs, qave);
       printf("%s\n", ntstr(fam->sub->key));
     }
     
@@ -865,48 +890,6 @@ void b_update_err(B *b, double err[4][4]) {
   }
 }
 
-// Function to get the number of transitions observed for each possible nt combo
-void b_get_trans_matrix(B *b, int32_t obs[4][4]) {
-  int nti0, nti1, i, j, f, s;
-  int32_t total = 0; // Will be used to check for overflows
-  int32_t prev;
-  Fam *fam;
-  
-  // Initialize obs - no pseudocounts
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      obs[i][j] = 0;
-    }
-  }
-  
-  // Count up all observed transitions
-  for(i=0;i<b->nclust;i++) {
-    // Initially add all counts to the no-error slots
-    for(j=0;j<strlen(b->bi[i]->seq);j++) {
-      nti0 = (int) (b->bi[i]->seq[j] - 1);
-      obs[nti0][nti0] += b->bi[i]->reads;
-      
-      prev = total;
-      total += b->bi[i]->reads;
-      if(total < prev) { // OVERFLOW
-        printf("OVERFLOW IN b_get_trans_matrix!!!!!!\n");
-      }
-    }
-    
-    // Move counts corresponding to each substitution with the fams
-    for(f=0;f<b->bi[i]->nfam;f++) {
-      fam = b->bi[i]->fam[f];
-      if(fam->sub) { // Not NULL sub
-        for(s=0;s<fam->sub->nsubs;s++) {
-          nti0 = (int) (fam->sub->nt0[s]-1);
-          nti1 = (int) (fam->sub->nt1[s]-1);
-          obs[nti0][nti0] -= fam->reads;
-          obs[nti0][nti1] += fam->reads;
-        }
-      }
-    }
-  } // for(i=0;i<b->nclust;i++)
-}
 
 
 

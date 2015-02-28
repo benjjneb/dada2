@@ -1,7 +1,8 @@
 #' filterFastq implements most of fastq_filter from usearch...
 #' 
 #' @export
-filterFastq <- function(fn, fout, maxN = 0, truncQ = "#", truncLen = 0, trimLeft = 0, minQ = 0, n = 1e6, verbose = FALSE){
+fastqFilter <- function(fn, fout, maxN = 0, truncQ = "#", truncLen = 0, trimLeft = 0, minQ = 0, n = 1e6, verbose = FALSE){
+  # See also filterFastq in the ShortRead package
   if(trimLeft <= 0) { 
     start = 1 
   } else { 

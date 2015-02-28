@@ -19,8 +19,7 @@
 #define VERBOSE 0
 #define tVERBOSE 1
 #define BUFFER_SIZE 1250
-#define KEY_BUFSIZE 2000
-#define SEQLEN 900 // Buffer size for DNA sequences read in from uniques files
+#define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
 #define HASHOCC 20
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 #define DBL_PRECISION 1e-15 // precision of doubles
@@ -47,12 +46,15 @@ typedef struct {
   int *pos;    // sequence position of the substitition
   char *nt0;   // nt in reference seq
   char *nt1;   // different nt in aligned seq
+  double *q0;  // quality score in reference seq
+  double *q1;  // quality score in aligned seq
   char *key;   // string of all subs: concatenation of "%c%d%c," % nt0,pos,nt1
 } Sub;
 
 // Raw: Container for each unique sequence/abundance
 typedef struct {
   char *seq;   // the sequence, stored as C-string with A=1,C=2,G=3,T=4
+  double *qual; // the average quality scores at each position for this unique
   int *kmer;   // the kmer vector of this sequence
   int reads;   // number of reads of this unique sequence
   int index;   // The index of this Raw in b->raw[index]
@@ -112,6 +114,7 @@ typedef struct {
   double omegaA;
   bool use_singletons;
   double omegaS;
+  bool use_quals;
   double *lams;
   double *cdf;
   size_t nlam;
@@ -146,7 +149,10 @@ void uniques_sequence(Uniques *uniques, int n, char *seq);
 void uniques_free(Uniques *uniques);
 
 // methods implemented in cluster.c
-B *b_new(Uniques *uniques, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size);
+B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals);
+Raw *raw_new(char *seq, int reads);
+Raw *raw_qual_new(char *seq, double *qual, int reads);
+void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle(B *b);
@@ -156,7 +162,6 @@ void b_consensus_update(B *b);
 void b_e_update(B *b);
 void b_p_update(B *b);
 void b_update_err(B *b, double err[4][4]);
-void b_get_trans_matrix(B *b, int32_t obs[4][4]);
 int b_bud(B *b, double min_fold, int min_hamming);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
@@ -179,7 +184,7 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool us
 int *get_kmer(char *seq, int k);
 double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
 Sub *al2subs(char **al);
-Sub *sub_new(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmer, double kdist_cutoff, int band);
+Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band, bool use_quals);
 void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
@@ -190,5 +195,10 @@ double get_pA(Fam *fam, Bi *bi);
 double get_pS(Fam *fam, Bi *bi, B *b);
 double compute_lambda(Sub *sub, double self, double t[4][4]);
 double get_self(char *seq, double err[4][4]);
+
+// methods implemented in error.cpp
+void b_get_trans_matrix(B *b, int32_t obs[4][4]);
+Rcpp::DataFrame b_get_positional_subs(B *b);
+Rcpp::DataFrame b_get_quality_subs(B *b);
 
 #endif

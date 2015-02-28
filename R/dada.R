@@ -25,13 +25,27 @@
 #'   
 #' @export
 #'
-dada <- function(uniques,
+dada <- function(uniques, quals=NULL,
                  err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow=4, byrow=T),
                  self_consist = FALSE, ...) {
   
   call <- sys.call(1)
-  if(!is.list(uniques)) { # If a single vector, make into a length 1 list
-    uniques <- list(uniques)
+  # Read in default opts and then replace with any that were passed in to the function
+  opts <- get_dada_opt()
+  args <- list(...)
+  for(opnm in names(args)) {
+    if(opnm %in% names(opts)) {
+      opts[[opnm]] <- args[[opnm]]
+    } else {
+      warning(opnm, " is not a valid DADA option.")
+    }
+  }
+  
+  # If a single vector, make into a length 1 list
+  if(!is.list(uniques)) { uniques <- list(uniques) }
+  if(opts$USE_QUALS) {
+    if(is.null(quals)) { stop("Must provide quals if USE_QUALS is TRUE.") }
+    if(!is.list(quals)) { quals <- list(quals) }
   }
   
   # Validate uniques vector(s)
@@ -49,23 +63,28 @@ dada <- function(uniques,
       stop("Invalid uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
   }
+
+  # Validate quals matrix(es)
+  if(opts$USE_QUALS) {
+    if(length(uniques) != length(quals)) { stop("Must be a qual matrix for each uniques vector.") }
+    for(i in seq(length(uniques))) {
+      if(nrow(quals[[i]]) != length(uniques[[i]])) {
+        stop("Qual matrices must have one row for each unique.")
+      }
+      if(any(sapply(names(uniques), nchar) > ncol(quals[[i]]))) {
+        stop("Qual matrices must have at least as many columns as the sequence length.")
+      }
+      if(min(quals[[i]]) < 0 || max(quals[[i]] > 40)) {
+        stop("Invalid quality matrix. Quality values must be between 0 and 40.")
+      }
+    }
+  }
   
   if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {
     stop("Invalid error matrix.")
   }
   if(any(err==0)) warning("Zero in error matrix.")
   
-  # Read in default opts and then replace with any that were passed in to the function
-  opts <- get_dada_opt()
-  args <- list(...)
-  for(opnm in names(args)) {
-    if(opnm %in% names(opts)) {
-      opts[[opnm]] <- args[[opnm]]
-    } else {
-      warning(opnm, " is not a valid DADA option.")
-    }
-  }
-
   # Initialize
   cur <- NULL
   nconsist <- 1
@@ -74,22 +93,27 @@ dada <- function(uniques,
   repeat{
     clustering <- list()
     subpos <- list()
+    subqual <- list()
     trans <- matrix(0, nrow=4, ncol=4)
     prev <- cur
     errs[[nconsist]] <- err
 
     for(i in seq(length(uniques))) {
+      if(is.null(quals)) { qi <- matrix(0, nrow=0, ncol=0) }
+      else { qi <- t(quals[[i]]) } # Need transpose so that sequences are columns
       cat("Sample", i, "-", sum(uniques[[i]]), "reads in", length(uniques[[i]]), "unique sequences.\n")
-      res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, 
+      res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, qi, 
                           opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
                           opts[["OMEGA_A"]], 
                           opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]],
                           opts[["MAX_CLUST"]],
-                          opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]])
+                          opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
+                          opts[["USE_QUALS"]])
       clustering[[i]] <- res$clustering
       subpos[[i]] <- res$subpos
+      subqual[[i]] <- res$subqual
       trans <- trans + res$trans
     }
     cur = trans # The only thing that changes is err which is set by trans, so this is sufficient
@@ -123,15 +147,18 @@ dada <- function(uniques,
   }
   rval$clustering <- clustering
   rval$subpos <- subpos
+  rval$subqual <- subqual
   
   if(length(rval$genotypes)==1) { # one sample, return a naked uniques vector
     rval$genotypes <- rval$genotypes[[1]]
     rval$clustering <- rval$clustering[[1]]
     rval$subpos <- rval$subpos[[1]]
+    rval$subqual <- rval$subqual[[1]]
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
     names(rval$clustering) <- names(uniques)
     names(rval$subpos) <- names(uniques)
+    names(rval$subqual) <- names(uniques)
   }
 
   # Return the error rate(s) used as well as the final sub matrix and estimated error matrix
