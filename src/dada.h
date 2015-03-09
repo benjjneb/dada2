@@ -28,6 +28,8 @@
 #define TRUE  1
 #define FALSE 0
 #define MAX_SHUFFLE 10
+#define QMIN 0
+#define QMAX 40
 
 
 /* -------------------------------------------
@@ -43,7 +45,8 @@ typedef std::pair<double, double> Prob;
  Note: positions will be 0-indexed in the alignment */
 typedef struct {
   int nsubs;   // number of substitions
-  int *pos;    // sequence position of the substitition
+  int *pos;    // sequence position of the substitition: index in the reference seq
+  int *pos1;   // sequence position of the substitition: index in the aligned seq
   char *nt0;   // nt in reference seq
   char *nt1;   // different nt in aligned seq
   double *q0;  // quality score in reference seq
@@ -193,7 +196,7 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
 double calc_pA(int reads, double E_reads);
 double get_pA(Fam *fam, Bi *bi);
 double get_pS(Fam *fam, Bi *bi, B *b);
-double compute_lambda(Sub *sub, double self, double t[4][4]);
+double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals);
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp

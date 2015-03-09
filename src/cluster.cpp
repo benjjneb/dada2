@@ -39,8 +39,6 @@ void bi_census(Bi *bi);
 void bi_consensus_update(Bi *bi, double err[4][4]);
 void fam_consensus_update(Fam *fam);
 void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size, bool use_quals);
-double get_self(char *seq, double err[4][4]);
-double compute_lambda(Sub *sub, double self, double t[4][4]);
 
 /*
  raw_new:
@@ -455,7 +453,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
         // Store sub and lambda in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
         b->bi[i]->sub[index] = sub;
-        lambda = compute_lambda(sub, b->bi[i]->self, b->err);  // WHERE IS SELF SET!??  -- IN BI_CONSENSUS_UPDATE
+        lambda = compute_lambda(sub, b->bi[i]->self, b->err, b->use_quals);  // WHERE IS SELF SET!??  -- IN BI_CONSENSUS_UPDATE
         b->bi[i]->lambda[index] = lambda;
         if(index == TARGET_RAW) printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]);
       }
@@ -543,7 +541,8 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
     }
 
     bi->fam[f]->sub = sub;
-    bi->fam[f]->lambda = compute_lambda(sub, bi->self, err);
+    // IDEALLY THIS WOULD NOT BE HERE, ONLY NECESSARY IF NEW SUB MADE?
+    bi->fam[f]->lambda = compute_lambda(sub, bi->self, err, use_quals);
   }
   if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
   free(raws);
@@ -605,10 +604,10 @@ bool b_shuffle(B *b) {
           if(index == b->bi[i]->center->index) {  // Check if center
             if(tVERBOSE) {
               printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
-              printf("Attempted: Raw %i from C%i (center=%i, self=%.2e) to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (lam=%.2e,n=%i))\n", \
-                  index, i, b->bi[i]->center->index, get_self(b->raw[index]->seq, b->err), ibest, \
+              printf("Attempted: Raw %i from C%i (center=%i) to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
+                  index, i, b->bi[i]->center->index, ibest, \
                   b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
-                  b->bi[ibest]->e[index], b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
+                  b->bi[ibest]->e[index], b->bi[ibest]->sub[index]->key, b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
             }
           } else { // Moving raw
             raw = bi_pop_raw(b->bi[i], f, r);

@@ -111,6 +111,11 @@ dada <- function(uniques, quals=NULL,
                           opts[["MAX_CLUST"]],
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]])
+      
+      # Augment the returns
+      res$clustering$ham <- sapply(res$clustering$sequence, function(x) nrow(strdiff(res$clustering$sequence[[1]], x)))
+      
+      # List the returns
       clustering[[i]] <- res$clustering
       subpos[[i]] <- res$subpos
       subqual[[i]] <- res$subqual

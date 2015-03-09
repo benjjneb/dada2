@@ -354,27 +354,37 @@ Rcpp::DataFrame getSingletonCDF(Rcpp::NumericMatrix err, std::vector<int> nnt, i
  returns:
  the double lambda.
  */
-double compute_lambda(Sub *sub, double self, double t[4][4]) {
-  int i;
-  int nti0, nti1;
-  double lambda;
+double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
+  int s, nti0, nti1;
+  double lambda, trans, qual;
   
   if(!sub) { // NULL Sub, outside Kmer threshold
     return 0.0;
   }
 
   lambda = self;
-  for(i=0; i < sub->nsubs; i++) {
-    nti0 = (int)sub->nt0[i] - 1;
-    nti1 = (int)sub->nt1[i] - 1;
+  for(s=0; s < sub->nsubs; s++) {
+    nti0 = (int)sub->nt0[s] - 1;
+    nti1 = (int)sub->nt1[s] - 1;
+    trans = t[nti0][nti1] / t[nti0][nti0];
     
-    if(nti0 < 0 || nti0 > 6) { printf("%i!", nti0); }
-    if(nti1 < 0 || nti1 > 6) { printf("%i!", nti1); }
+    if(use_quals) {
+      if(!sub->q1) {
+        printf("Warning: Missing quality information when computing lambda.\n");
+      }
+      else {     // Incorporate the quality scores. HACKY FOR NOW
+        qual = sub->q1[s];
+        if(qual<36) {
+          trans = trans * pow(10.0, (36.0-qual)/6.5);
+        }
+        if(trans > 0.33) { trans = 0.33; } // capping at 0.33 because?
+      }
+    }
     
-    lambda = lambda * t[nti0][nti1] / t[nti0][nti0];
+    lambda = lambda * trans;
   }
 
-  if(lambda < 0 || lambda > 1) { printf("ERROR: OVERUNDERFLOW OF LAMBDA: %.4e\n", lambda); }
+  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow OF lambda: %.4e\n", lambda); }
 
   return lambda;
 }

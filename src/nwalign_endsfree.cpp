@@ -220,16 +220,16 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
  differs from al[0]
  */
 Sub *al2subs(char **al) {
-  int i, i0, bytes;
+  int i, i0, i1, bytes;
   int align_length;
+  int is_nt0, is_nt1;
   char *al0, *al1; /* dummy pointers to the sequences in the alignment */
   
   /* define dummy pointers to positions/nucleotides/keys */
-  int *ppos;
-  char *pnt0;
-  char *pnt1;
+//  int *ppos;
+//  char *pnt0;
+//  char *pnt1;
   char *pkey;
-  
   int key_size = 0; /* key buffer bytes written*/
   
   if(!al) { // Null alignment (outside kmer thresh) -> Null sub
@@ -240,34 +240,43 @@ Sub *al2subs(char **al) {
   // create Sub obect and initialize memory
   Sub *sub = (Sub *) malloc(sizeof(Sub));
   sub->pos = (int *) malloc(strlen(al[0]) * sizeof(int));
+  sub->pos1 = (int *) malloc(strlen(al[1]) * sizeof(int));
   sub->nt0 = (char *) malloc(strlen(al[0]));
   sub->nt1 = (char *) malloc(strlen(al[0]));
   sub->key = (char *) malloc(6*strlen(al[0])); // Will break if seqs get into the many thousands
   sub->nsubs=0;
   
   /* traverse the alignment and record substitutions while building the hash key*/
-  ppos = sub->pos;
-  pnt0 = sub->nt0;
-  pnt1 = sub->nt1;
+//  ppos = sub->pos;
+//  pnt0 = sub->nt0;
+//  pnt1 = sub->nt1;
   pkey = sub->key;
   
-  i0 = -1; al0 = al[0]; al1 = al[1];
+  i0 = -1; i1 = -1;
+  al0 = al[0]; al1 = al[1];
   align_length = strlen(al[0]);
   for(i=0;i<align_length;i++) {
-    if((al0[i] == 1) || (al0[i] == 2) || (al0[i] == 3) || (al0[i] == 4) || (al0[i] == 5)) { // a nt (non-gap) in the seq0
-      i0++;
-      if((al1[i] == 1) || (al1[i] == 2) || (al1[i] == 3) || (al1[i] == 4) || (al1[i] == 5)) { // a nt (non-gap) in seq1
-        if((al0[i] != al1[i]) && (al0[i] != 5) && (al1[i] != 5)) { // substitution, discounting N's
-          *ppos = i0;
-          *pnt0 = al0[i];
-          *pnt1 = al1[i];
-          bytes = sprintf(pkey,"%c%d%c,",*pnt0,i0,*pnt1);
-          
-          ppos++; pnt0++; pnt1++;
-          key_size += bytes;
-          pkey += bytes;
-          sub->nsubs++;
-        }
+    is_nt0 = ((al0[i] == 1) || (al0[i] == 2) || (al0[i] == 3) || (al0[i] == 4) || (al0[i] == 5)); // A/C/G/T/N (non-gap) in seq0
+    is_nt1 = ((al1[i] == 1) || (al1[i] == 2) || (al1[i] == 3) || (al1[i] == 4) || (al1[i] == 5)); // A/C/G/T/N (non-gap) in seq1
+    if(is_nt0) { i0++; }
+    if(is_nt1) { i1++; }
+
+    if(is_nt0 && is_nt1) { // Possible sub
+      if((al0[i] != al1[i]) && (al0[i] != 5) && (al1[i] != 5)) { // Ns don't make subs
+        sub->pos[sub->nsubs] = i0;
+        sub->pos1[sub->nsubs] = i1;
+        sub->nt0[sub->nsubs] = al0[i];
+        sub->nt1[sub->nsubs] = al1[i];
+        
+//        *ppos = i0;
+//        *pnt0 = al0[i];
+//        *pnt1 = al1[i];
+//        ppos++; pnt0++; pnt1++;
+
+        bytes = sprintf(pkey,"%c%d%c,",al0[i],i0,al1[i]);
+        key_size += bytes;
+        pkey += bytes;
+        sub->nsubs++;
       }
     }
   }
@@ -304,7 +313,7 @@ Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_km
       sub->q1 = (double *) malloc(sub->nsubs * sizeof(double));
       for(s=0;s<sub->nsubs;s++) {
         sub->q0[s] = raw0->qual[sub->pos[s]];
-        sub->q1[s] = raw0->qual[sub->pos[s]];
+        sub->q1[s] = raw1->qual[sub->pos1[s]];
       }
     }
   }

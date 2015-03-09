@@ -4,8 +4,9 @@
 \alias{dada_uniques}
 \title{Run DADA on the provided unique sequences/abundance pairs.}
 \usage{
-dada_uniques(seqs, abundances, err, score, gap, use_kmers, kdist_cutoff,
-  band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming)
+dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff,
+  band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming,
+  useQuals)
 }
 \arguments{
 \item{seqs}{(Required). Character.

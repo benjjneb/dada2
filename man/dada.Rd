@@ -6,9 +6,9 @@
  with their abundances, and returns the sample genotypes paired with their abundances
  inferred by the Divisive Amplicon Denoising Algorithm (Rosen, Callahan, Fisher, Holmes 2012).}
 \usage{
-dada(uniques, err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003,
-  0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow = 4,
-  byrow = T), self_consist = FALSE, ...)
+dada(uniques, quals = NULL, err = matrix(c(0.991, 0.003, 0.003, 0.003,
+  0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003,
+  0.991), nrow = 4, byrow = T), self_consist = FALSE, ...)
 }
 \arguments{
 \item{uniques}{(Required). Named integer vector or list of named integer vectors.

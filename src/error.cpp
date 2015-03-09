@@ -5,10 +5,107 @@ using namespace Rcpp;
 // [[Rcpp::interfaces(r, cpp)]]
 
 Rcpp::DataFrame b_get_quality_subs(B *b) {
-  int i, f, r, s, pos, qual;
+  int i, f, r, s, pos, qual, nti0, nti1, sub_ind;
   Sub *sub;
   Raw *raw;
-  Rcpp::NumericVector qq(41);
+  
+  // Storage for counts for each qual and each nti->ntj
+  int32_t nts_by_qual[1 + 4][QMAX-QMIN+1] = {0};
+  int32_t subs_by_qual[1 + 16][QMAX-QMIN+1] = {0};
+  
+  if(b->use_quals) {
+    for(i=0;i<b->nclust;i++) {
+      for(f=0;f<b->bi[i]->nfam;f++) {
+        for(r=0;r<b->bi[i]->fam[f]->nraw;r++) {
+          raw = b->bi[i]->fam[f]->raw[r];
+          sub = b->bi[i]->sub[raw->index]; // Using sub-specific raw for eventual pos1
+          for(pos=0;pos<strlen(raw->seq);pos++) {
+            nti1 = (int) (raw->seq[pos] - 1);
+            qual = round(raw->qual[pos]);
+            nts_by_qual[0][qual-QMIN] += raw->reads;
+            nts_by_qual[1+nti1][qual-QMIN] += raw->reads;
+            // NOTE: This _should_ be incrementing nti0, the source nt, but we dont know what
+            // that is yet. This is corrected for subs below for subs (where they differ).
+          }
+          if(sub) {
+            for(s=0;s<sub->nsubs;s++) {
+              nti0 = (int) (sub->nt0[s]-1);
+              nti1 = (int) (sub->nt1[s]-1);
+              qual = round(raw->qual[sub->pos1[s]]);
+              if(qual != round(sub->q1[s])) {
+                printf("Warning: Different quals: %i, %i\n", qual, round(sub->q1[s]));
+              }
+              // Record the sub
+              subs_by_qual[0][qual-QMIN] += raw->reads;
+              sub_ind = 1 + 4*nti0 + nti1;
+              subs_by_qual[sub_ind][qual-QMIN] += raw->reads;
+              // Correct the source nt
+              nts_by_qual[1+nti1][qual-QMIN] -= raw->reads;
+              nts_by_qual[1+nti0][qual-QMIN] += raw->reads;
+            }
+          }
+        } // for(r=0;b->bi[i]->fam[f]->nraw)
+      } // for(f=0;f<bb->bi[i]->nfam;f++)
+    }
+  } // if(b->use_quals)
+
+  Rcpp::NumericVector Rnts_by_qual;
+  Rcpp::NumericVector RAs_by_qual;
+  Rcpp::NumericVector RCs_by_qual;
+  Rcpp::NumericVector RGs_by_qual;
+  Rcpp::NumericVector RTs_by_qual;
+  
+  Rcpp::NumericVector Rsubs_by_qual;
+  Rcpp::NumericVector RAAs_by_qual;
+  Rcpp::NumericVector RACs_by_qual;
+  Rcpp::NumericVector RAGs_by_qual;
+  Rcpp::NumericVector RATs_by_qual;
+  Rcpp::NumericVector RCAs_by_qual;
+  Rcpp::NumericVector RCCs_by_qual;
+  Rcpp::NumericVector RCGs_by_qual;
+  Rcpp::NumericVector RCTs_by_qual;
+  Rcpp::NumericVector RGAs_by_qual;
+  Rcpp::NumericVector RGCs_by_qual;
+  Rcpp::NumericVector RGGs_by_qual;
+  Rcpp::NumericVector RGTs_by_qual;
+  Rcpp::NumericVector RTAs_by_qual;
+  Rcpp::NumericVector RTCs_by_qual;
+  Rcpp::NumericVector RTGs_by_qual;
+  Rcpp::NumericVector RTTs_by_qual;
+  for(i=0;i<QMAX-QMIN+1;i++) {
+    Rnts_by_qual.push_back(nts_by_qual[0][i]);
+    RAs_by_qual.push_back(nts_by_qual[1][i]);
+    RCs_by_qual.push_back(nts_by_qual[2][i]);
+    RGs_by_qual.push_back(nts_by_qual[3][i]);
+    RTs_by_qual.push_back(nts_by_qual[4][i]);
+    
+    Rsubs_by_qual.push_back(subs_by_qual[0][i]);
+    RAAs_by_qual.push_back(nts_by_qual[1][i] - subs_by_qual[2][i] - subs_by_qual[3][i] - subs_by_qual[4][i]);
+    RACs_by_qual.push_back(subs_by_qual[2][i]);
+    RAGs_by_qual.push_back(subs_by_qual[3][i]);
+    RATs_by_qual.push_back(subs_by_qual[4][i]);
+
+    RCAs_by_qual.push_back(subs_by_qual[5][i]);
+    RCCs_by_qual.push_back(nts_by_qual[2][i] - subs_by_qual[5][i] - subs_by_qual[7][i] - subs_by_qual[8][i]);
+    RCGs_by_qual.push_back(subs_by_qual[7][i]);
+    RCTs_by_qual.push_back(subs_by_qual[8][i]);
+
+    RGAs_by_qual.push_back(subs_by_qual[9][i]);
+    RGCs_by_qual.push_back(subs_by_qual[10][i]);
+    RGGs_by_qual.push_back(nts_by_qual[3][i] - subs_by_qual[9][i] - subs_by_qual[10][i] - subs_by_qual[12][i]);
+    RGTs_by_qual.push_back(subs_by_qual[12][i]);
+    
+    RTAs_by_qual.push_back(subs_by_qual[13][i]);
+    RTCs_by_qual.push_back(subs_by_qual[14][i]);
+    RTGs_by_qual.push_back(subs_by_qual[15][i]);
+    RTTs_by_qual.push_back(nts_by_qual[4][i] - subs_by_qual[13][i] - subs_by_qual[14][i] - subs_by_qual[15][i]);
+  }  
+
+  Rcpp::NumericVector qq(QMAX-QMIN+1);
+  for(i=QMIN;i<=QMAX;i++) { qq[i-QMIN] = i; }
+
+  
+/*  Rcpp::NumericVector qq(41);
   for(i=0;i<=40;i++) { qq[i] = i; }
   Rcpp::NumericVector n_unq(41);
   Rcpp::NumericVector n_read(41);
@@ -36,9 +133,15 @@ Rcpp::DataFrame b_get_quality_subs(B *b) {
         } // for(r=0;b->bi[i]->fam[f]->nraw)
       }
     } // for(i=0;i<b->nclust;i++)
-  }
+  }*/
+  Rcpp::DataFrame df_subs = Rcpp::DataFrame::create(_["AveQ"]= qq, _["nts"] = Rnts_by_qual, _["subs"] = Rsubs_by_qual, 
+      _["A"] = RAs_by_qual, _["C"] = RCs_by_qual, _["G"] = RGs_by_qual, _["T"] = RTs_by_qual,
+      _["A2C"] = RACs_by_qual, _["A2G"] = RAGs_by_qual, _["A2T"] = RATs_by_qual, 
+      _["C2A"] = RCAs_by_qual, _["C2G"] = RCGs_by_qual, _["C2T"] = RCTs_by_qual,
+      _["G2A"] = RGAs_by_qual, _["G2C"] = RGCs_by_qual, _["G2T"] = RGTs_by_qual,
+      _["T2A"] = RTAs_by_qual, _["T2C"] = RTCs_by_qual, _["T2G"] = RTGs_by_qual);  // Max 20 cols in Rcpp::DataFrame::create
   
-  return(Rcpp::DataFrame::create(_["AveQ"]= qq, _["nUnq"] = n_unq, _["nRead"] = n_read, _["nUnqSub"] = n_unq_sub, _["nReadSub"] = n_read_sub));
+  return(df_subs);
 }
 
 // Function to get the number of transitions observed for each possible nt combo
