@@ -220,11 +220,32 @@ qtables <- function(x) {
   list(uniques=uniques, cum_quals=qmat)
 }
 ################################################################################
-#' Read and Dereplicate a Fastq file. Also returns average Q score for each unique.
+#' Read and Dereplicate a Fastq, and return average Q score for each unique.
 #' 
+#' @param fl (Required). Character.
+#'  The file path to the fastq or fastq.gz file.
+#' 
+#' @param n (Optional). A \code{numeric(1)} indicating
+#'  the maximum number of records (reads) to parse and dereplicate
+#'  at any one time. This controls the peak memory requirement.
+#'  Defaults is \code{1e6}, one-million reads.
+#'  See \code{\link{FastqStreamer}} for details on this parameter,
+#'  which is passed on.
+#' 
+#' @param verbose (Optional). A \code{logical(1)} indicating
+#'  whether to throw any standard R \code{\link{message}}s 
+#'  on the intermittent and final status of the dereplication.
+#'  Default is \code{FALSE}, no messages.
+#'
+#' @return A two-element list with \code{uniques}, 
+#'  named integer vector. Named by sequence, valued by number of occurence;
+#'  and `quals` the average quality of the dereplicated sequences.
+#'
+#' @import ShortRead
+#'
 #' @export
+#'
 derepFastqWithQual <- function(fl, n = 1e6, verbose = FALSE){
-  require("ShortRead")
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
   }
