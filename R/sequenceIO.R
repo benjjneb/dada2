@@ -206,7 +206,7 @@ derepMultiSampleFastq <- function(fl, samsubseq, n = 1e6, verbose = FALSE){
   return(derepSamples)
 }
 ###
-#' Internal function to replicate tables functionality while also returning ave quals
+#' Internal function to replicate tables functionality while also returning average quals
 #' 
 qtables <- function(x) {
   srt <- srsort(x) # sorts based on sread -- necessary?
@@ -262,7 +262,7 @@ derepFastqWithQual <- function(fl, n = 1e6, verbose = FALSE){
     if(verbose){
       message(".", appendLF = FALSE)
     }
-    out <- qtables(fq, n = Inf)
+    out <- qtables(fq)
     idrep <- out$uniques
     # identify sequences already present in `derepCounts`
     alreadySeen = names(idrep) %in% names(derepCounts)
