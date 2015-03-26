@@ -65,7 +65,7 @@ dada <- function(uniques, quals=NULL,
   }
 
   # Validate quals matrix(es)
-  if(opts$USE_QUALS) {
+  if(!is.null(quals)) {
     if(length(uniques) != length(quals)) { stop("Must be a qual matrix for each uniques vector.") }
     for(i in seq(length(uniques))) {
       if(nrow(quals[[i]]) != length(uniques[[i]])) {
@@ -92,6 +92,7 @@ dada <- function(uniques, quals=NULL,
   # The main loop, run once, or repeat until error rate repeats if self_consist=T
   repeat{
     clustering <- list()
+    clusterquals <- list()
     subpos <- list()
     subqual <- list()
     trans <- matrix(0, nrow=4, ncol=4)
@@ -117,6 +118,7 @@ dada <- function(uniques, quals=NULL,
       
       # List the returns
       clustering[[i]] <- res$clustering
+      clusterquals[[i]] <- t(res$clusterquals) # make sequences rows and positions columns
       subpos[[i]] <- res$subpos
       subqual[[i]] <- res$subqual
       trans <- trans + res$trans
@@ -151,17 +153,20 @@ dada <- function(uniques, quals=NULL,
     names(rval$genotypes[[i]]) <- clustering[[i]]$sequence
   }
   rval$clustering <- clustering
+  rval$clusterquals <- clusterquals
   rval$subpos <- subpos
   rval$subqual <- subqual
   
   if(length(rval$genotypes)==1) { # one sample, return a naked uniques vector
     rval$genotypes <- rval$genotypes[[1]]
     rval$clustering <- rval$clustering[[1]]
+    rval$clusterquals <- rval$clusterquals[[1]]
     rval$subpos <- rval$subpos[[1]]
     rval$subqual <- rval$subqual[[1]]
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
     names(rval$clustering) <- names(uniques)
+    names(rval$clusterquals) <- names(uniques)
     names(rval$subpos) <- names(uniques)
     names(rval$subqual) <- names(uniques)
   }

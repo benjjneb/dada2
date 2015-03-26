@@ -17,7 +17,7 @@
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
-#define tVERBOSE 0
+#define tVERBOSE 1
 #define BUFFER_SIZE 1250
 #define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
 #define HASHOCC 20
@@ -45,8 +45,8 @@ typedef std::pair<double, double> Prob;
  Note: positions will be 0-indexed in the alignment */
 typedef struct {
   int nsubs;   // number of substitions
+  int *map;    // map of the sequence position in the ref seq to that in the aligned seq
   int *pos;    // sequence position of the substitition: index in the reference seq
-  int *pos1;   // sequence position of the substitition: index in the aligned seq
   char *nt0;   // nt in reference seq
   char *nt1;   // different nt in aligned seq
   double *q0;  // quality score in reference seq

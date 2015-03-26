@@ -52,14 +52,13 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   int nraw = len1;
   
-  if(useQuals.size() != 1) { Rcpp::Rcout << "C: UseQuals not length 1\n"; return R_NilValue; }
-  bool c_use_quals = as<bool>(useQuals);
-
   // Turn quals matrix into a c-style 1D array c_quals
   // column-by-column storage
   double *c_quals = NULL;
   int qlen = 0;
-  if(c_use_quals) {
+  bool has_quals = false;
+  if(quals.nrow() > 0) {
+    has_quals = true;
     qlen = quals.nrow();
     std::vector<double> cpp_quals = Rcpp::as<std::vector<double> >(quals);
     c_quals = &cpp_quals[0];
@@ -72,7 +71,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     seq = (char *) malloc(seqs[index].length() + 1);
     strcpy(seq, seqs[index].c_str());
     nt2int(seq, seq);
-    if(c_use_quals) {
+    if(has_quals) {
       raws[index] = raw_qual_new(seq, &c_quals[qlen*index], abundances[index]);
     } else {
       raws[index] = raw_new(seq, abundances[index]);
@@ -142,6 +141,9 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   if(minHamming.size() != 1) { Rcpp::Rcout << "C: MinHamming not length 1\n"; return R_NilValue; }
   int c_min_hamming = as<int>(minHamming);
 
+  if(useQuals.size() != 1) { Rcpp::Rcout << "C: UseQuals not length 1\n"; return R_NilValue; }
+  bool c_use_quals = as<bool>(useQuals);
+
 
   // Run DADA
   B *bb = run_dada(raws, nraw, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals);
@@ -193,6 +195,43 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   Rcpp::DataFrame df_subpos = b_get_positional_subs(bb);
   Rcpp::DataFrame df_subqual = b_get_quality_subs(bb);
   
+  // Get output average qualities
+  Rcpp::NumericMatrix Rquals(qlen, bb->nclust);
+  double qq;
+  int f, r, nreads, pos0, pos1;
+  Sub *sub;
+  Raw *raw;
+  if(has_quals) {
+    for(i=0;i<bb->nclust;i++) {
+      len1 = strlen(bb->bi[i]->seq);
+      if(len1 > qlen) {
+        if(tVERBOSE) { printf("Warning: C%i sequence too long for output q matrix (%i vs. %i).\n", i, len1, qlen); }
+        len1 = qlen;
+      }
+      for(pos0=0;pos0<len1;pos0++) {
+        qq=0.0;
+        nreads=0;
+        for(f=0;f<bb->bi[i]->nfam;f++) {
+          for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
+            raw = bb->bi[i]->fam[f]->raw[r];
+            sub = bb->bi[i]->sub[raw->index];
+            if(sub) {
+              pos1 = sub->map[pos0];
+              if(pos1 == -999) { // Gap
+                continue;
+              }
+              nreads += raw->reads;
+              qq += (raw->qual[pos1] * raw->reads);
+            } else {
+              printf("Warning: No sub for R%i in C%i\n", r, i);
+            }
+          }
+        }
+        Rquals(pos0,i) = qq/nreads;
+      } // for(pos0=0;pos0<len1;pos0++)
+    }
+  }
+  
   // Free memory
   for(i=0;i<bb->nclust;i++) {
     free(oseqs[i]);
@@ -206,7 +245,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   
   // Organize return List  
   Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_e"] = Rbirth_es);
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
 }
 
 B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {

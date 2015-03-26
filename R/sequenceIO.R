@@ -237,8 +237,8 @@ qtables <- function(x) {
 #'  on the intermittent and final status of the dereplication.
 #'  Default is \code{FALSE}, no messages.
 #'
-#' @return A two-element list with \code{uniques}, 
-#'  named integer vector. Named by sequence, valued by number of occurence;
+#' @return A two-element list with `uniques`, an
+#'  integer vector named by sequence and valued by number of occurence;
 #'  and `quals` the average quality of the dereplicated sequences.
 #'
 #' @import ShortRead
@@ -292,7 +292,7 @@ derepFastqWithQual <- function(fl, n = 1e6, verbose = FALSE){
 ################################################################################
 #' Load .uniques file
 #' 
-#' This is a custom interface for read.table customized for loading .uniques format
+#' This is a custom interface to read.table for loading .uniques format
 #'  files. The .uniques format is a delimited text file (tab-delimited by default)
 #'  with the abundance in column 1 and the ASCII sequence in column 2.
 #'

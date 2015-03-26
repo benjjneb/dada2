@@ -5,9 +5,9 @@ using namespace Rcpp;
 // [[Rcpp::interfaces(r, cpp)]]
 
 Rcpp::DataFrame b_get_quality_subs(B *b) {
-  int i, f, r, s, pos, qual, nti0, nti1, sub_ind;
+  int i, f, r, s, pos0, pos1, qual, nti0, nti1, sub_ind;
   Sub *sub;
-  Raw *raw;
+  Raw *raw, *center;
   
   // Storage for counts for each qual and each nti->ntj
   int32_t nts_by_qual[1 + 4][QMAX-QMIN+1] = {0};
@@ -15,35 +15,39 @@ Rcpp::DataFrame b_get_quality_subs(B *b) {
   
   if(b->use_quals) {
     for(i=0;i<b->nclust;i++) {
+      center = b->bi[i]->center;
       for(f=0;f<b->bi[i]->nfam;f++) {
         for(r=0;r<b->bi[i]->fam[f]->nraw;r++) {
           raw = b->bi[i]->fam[f]->raw[r];
-          sub = b->bi[i]->sub[raw->index]; // Using sub-specific raw for eventual pos1
-          for(pos=0;pos<strlen(raw->seq);pos++) {
-            nti1 = (int) (raw->seq[pos] - 1);
-            qual = round(raw->qual[pos]);
-            nts_by_qual[0][qual-QMIN] += raw->reads;
-            nts_by_qual[1+nti1][qual-QMIN] += raw->reads;
-            // NOTE: This _should_ be incrementing nti0, the source nt, but we dont know what
-            // that is yet. This is corrected for subs below for subs (where they differ).
+          sub = b->bi[i]->sub[raw->index]; // The sub object includes the map between the center and the raw positions
+          if(!sub) {
+            printf("Warning: No sub for R%i in C%i.\n", r, i);
+            continue;
           }
-          if(sub) {
-            for(s=0;s<sub->nsubs;s++) {
-              nti0 = (int) (sub->nt0[s]-1);
-              nti1 = (int) (sub->nt1[s]-1);
-              qual = round(raw->qual[sub->pos1[s]]);
-              if(qual != round(sub->q1[s])) {
-                printf("Warning: Different quals: %i, %i\n", qual, round(sub->q1[s]));
-              }
-              // Record the sub
-              subs_by_qual[0][qual-QMIN] += raw->reads;
-              sub_ind = 1 + 4*nti0 + nti1;
-              subs_by_qual[sub_ind][qual-QMIN] += raw->reads;
-              // Correct the source nt
-              nts_by_qual[1+nti1][qual-QMIN] -= raw->reads;
-              nts_by_qual[1+nti0][qual-QMIN] += raw->reads;
+          
+          for(pos0=0;pos0<strlen(center->seq);pos0++) {
+            pos1 = sub->map[pos0];
+            if(pos1 == -999) { // A gap in the aligned seq
+              continue; // Gaps excluded from the model
             }
+            nti0 = (int) (center->seq[pos0] - 1);
+            nti1 = (int) (raw->seq[pos1] - 1);
+            qual = round(raw->qual[pos1]);
+            // And record these counts
+            nts_by_qual[0][qual-QMIN] += raw->reads;
+            nts_by_qual[1+nti0][qual-QMIN] += raw->reads;
           }
+          
+          for(s=0;s<sub->nsubs;s++) {
+            nti0 = (int) (sub->nt0[s]-1);
+            nti1 = (int) (sub->nt1[s]-1);
+            qual = round(sub->q1[s]);
+            // Record the sub
+            subs_by_qual[0][qual-QMIN] += raw->reads;
+            sub_ind = 1 + 4*nti0 + nti1;
+            subs_by_qual[sub_ind][qual-QMIN] += raw->reads;
+          }
+          
         } // for(r=0;b->bi[i]->fam[f]->nraw)
       } // for(f=0;f<bb->bi[i]->nfam;f++)
     }

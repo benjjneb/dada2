@@ -239,17 +239,14 @@ Sub *al2subs(char **al) {
   
   // create Sub obect and initialize memory
   Sub *sub = (Sub *) malloc(sizeof(Sub));
+  sub->map = (int *) malloc(strlen(al[0]) * sizeof(int));
   sub->pos = (int *) malloc(strlen(al[0]) * sizeof(int));
-  sub->pos1 = (int *) malloc(strlen(al[1]) * sizeof(int));
   sub->nt0 = (char *) malloc(strlen(al[0]));
   sub->nt1 = (char *) malloc(strlen(al[0]));
   sub->key = (char *) malloc(6*strlen(al[0])); // Will break if seqs get into the many thousands
   sub->nsubs=0;
   
   /* traverse the alignment and record substitutions while building the hash key*/
-//  ppos = sub->pos;
-//  pnt0 = sub->nt0;
-//  pnt1 = sub->nt1;
   pkey = sub->key;
   
   i0 = -1; i1 = -1;
@@ -261,10 +258,18 @@ Sub *al2subs(char **al) {
     if(is_nt0) { i0++; }
     if(is_nt1) { i1++; }
 
+    // Record to map
+    if(is_nt0) {
+      if(is_nt1) { 
+        sub->map[i0] = i1;
+      } else {
+        sub->map[i0] = -999; // Indicates gap
+      }
+    }
+
     if(is_nt0 && is_nt1) { // Possible sub
       if((al0[i] != al1[i]) && (al0[i] != 5) && (al1[i] != 5)) { // Ns don't make subs
         sub->pos[sub->nsubs] = i0;
-        sub->pos1[sub->nsubs] = i1;
         sub->nt0[sub->nsubs] = al0[i];
         sub->nt1[sub->nsubs] = al1[i];
         
@@ -313,7 +318,7 @@ Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_km
       sub->q1 = (double *) malloc(sub->nsubs * sizeof(double));
       for(s=0;s<sub->nsubs;s++) {
         sub->q0[s] = raw0->qual[sub->pos[s]];
-        sub->q1[s] = raw1->qual[sub->pos1[s]];
+        sub->q1[s] = raw1->qual[sub->map[sub->pos[s]]];
       }
     }
   }
@@ -334,6 +339,7 @@ void sub_free(Sub *sub) {
     free(sub->nt1);
     free(sub->nt0);
     free(sub->pos);
+    free(sub->map);
     if(sub->q0) { free(sub->q0); }
     if(sub->q1) { free(sub->q1); }
     free(sub);
