@@ -41,6 +41,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming,
                         Rcpp::LogicalVector useQuals) {
   int i, j, len1, len2, nrow, ncol;
+  int f, r, nzeros, nones;
   size_t index;
   double tote;
   
@@ -158,20 +159,59 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   // Convert to R objects and return
   Rcpp::CharacterVector Rseqs;
   Rcpp::NumericVector Rabunds(bb->nclust);
+  Rcpp::NumericVector Rzeros(bb->nclust);
+  Rcpp::NumericVector Rones(bb->nclust); 
+  Rcpp::NumericVector Rraws(bb->nclust); 
+  Rcpp::NumericVector Rfams(bb->nclust); 
   Rcpp::NumericVector Rbirth_pvals(bb->nclust);
   Rcpp::NumericVector Rbirth_folds(bb->nclust);
+  Rcpp::NumericVector Rbirth_hams(bb->nclust);
   Rcpp::NumericVector Rbirth_es(bb->nclust);
   Rcpp::CharacterVector Rbirth_types;
+  Rcpp::NumericVector Rbirth_qaves(bb->nclust);
   Rcpp::NumericVector Rpvals(bb->nclust);
 
   for(i=0;i<bb->nclust;i++) {
+    // The basics
     Rseqs.push_back(std::string(oseqs[i]));
     Rabunds[i] = bb->bi[i]->reads;
+    
+    // Extra info on the clusters
+    nzeros = 0; nones = 0;
+    for(f=0;f<bb->bi[i]->nfam;f++) {
+      if(bb->bi[i]->fam[f]->sub) {
+        if(bb->bi[i]->fam[f]->sub->nsubs == 0) { nzeros += bb->bi[i]->fam[f]->reads; }
+        if(bb->bi[i]->fam[f]->sub->nsubs == 1) { nones += bb->bi[i]->fam[f]->reads; }
+      }
+    }
+    Rzeros[i] = nzeros;
+    Rones[i] = nones;
+    Rraws[i] = bb->bi[i]->nraw;
+    Rfams[i] = bb->bi[i]->nfam;
+    
+    // Record information from the cluster's birth
     Rbirth_pvals[i] = bb->bi[i]->birth_pval;
     Rbirth_folds[i] = bb->bi[i]->birth_fold;
+    if(bb->bi[i]->birth_sub) { Rbirth_hams[i] = bb->bi[i]->birth_sub->nsubs; }
+    else { Rbirth_hams[i] = NA_REAL; }
     Rbirth_es[i] = bb->bi[i]->birth_e;
     Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
+
+    // Make qave column
+    Sub *sub;
+    if(has_quals) {
+      double qave = 0.0;
+      sub = bb->bi[i]->birth_sub;
+      if(sub) {
+        for(int s=0;s<sub->nsubs;s++) {
+          qave += (sub->q1[s]);
+        }
+        qave = qave/((double)sub->nsubs);
+      }
+      Rbirth_qaves[i] = qave;
+    }
     
+    // Calculate post-hoc pval
     tote = 0.0;
     for(j=0;j<bb->nclust;j++) {
       if(i != j) {
@@ -198,7 +238,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   // Get output average qualities
   Rcpp::NumericMatrix Rquals(qlen, bb->nclust);
   double qq;
-  int f, r, nreads, pos0, pos1;
+  int nreads, pos0, pos1;
   Sub *sub;
   Raw *raw;
   if(has_quals) {
@@ -244,7 +284,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   free(raws);
   
   // Organize return List  
-  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_e"] = Rbirth_es);
+  // This is crashing with more than 12 columns created...?
+  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["nfam"] = Rfams, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves);
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
 }
 

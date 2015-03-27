@@ -102,6 +102,7 @@ typedef struct {
   double birth_pval; // the Bonferonni-corrected pval that led to this cluster being initialized
   double birth_fold; // the multiple of expectations at birth
   double birth_e; // the expected number of reads at birth
+  Sub *birth_sub; // the Sub object at birth
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).

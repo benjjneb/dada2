@@ -696,7 +696,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
     b->bi[i]->birth_pval = pA;
     b->bi[i]->birth_fold = fam->reads/b->bi[mini]->e[fam->center->index];
     b->bi[i]->birth_e = b->bi[mini]->e[fam->center->index];
-
+    b->bi[i]->birth_sub = fam->sub;
     
     // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {
@@ -765,6 +765,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
     b->bi[i]->birth_pval = pS;
     b->bi[i]->birth_fold = fam->reads/b->bi[mini]->e[fam->center->index];
     b->bi[i]->birth_e = b->bi[mini]->e[fam->center->index];
+    b->bi[i]->birth_sub = fam->sub;
     
     // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {
