@@ -138,7 +138,7 @@ Rcpp::DataFrame b_get_quality_subs(B *b) {
       }
     } // for(i=0;i<b->nclust;i++)
   }*/
-  Rcpp::DataFrame df_subs = Rcpp::DataFrame::create(_["AveQ"]= qq, _["nts"] = Rnts_by_qual, _["subs"] = Rsubs_by_qual, 
+  Rcpp::DataFrame df_subs = Rcpp::DataFrame::create(_["qave"]= qq, _["nts"] = Rnts_by_qual, _["subs"] = Rsubs_by_qual, 
       _["A"] = RAs_by_qual, _["C"] = RCs_by_qual, _["G"] = RGs_by_qual, _["T"] = RTs_by_qual,
       _["A2C"] = RACs_by_qual, _["A2G"] = RAGs_by_qual, _["A2T"] = RATs_by_qual, 
       _["C2A"] = RCAs_by_qual, _["C2G"] = RCGs_by_qual, _["C2T"] = RCTs_by_qual,

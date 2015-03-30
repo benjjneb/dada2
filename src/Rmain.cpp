@@ -272,6 +272,50 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     }
   }
   
+  /*
+  // Get output average qualities -- Long form data frame
+  std::vector< std::string > long_nt0s;
+  std::vector< std::string > long_nt1s;
+  std::vector< double > long_qaves;
+  std::vector< int > long_abunds;
+  std::vector< int > long_subpos;
+  char nt0, nt1;
+  char buf[2];
+  char map_nt[5] = {'\0', 'A', 'C', 'G', 'T'};
+  for(i=0;i<bb->nclust;i++) {
+    for(pos0=0;pos0<strlen(bb->bi[i]->seq);pos0++) {
+      for(f=0;f<bb->bi[i]->nfam;f++) {
+        for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
+          raw = bb->bi[i]->fam[f]->raw[r];
+          sub = bb->bi[i]->sub[raw->index];
+          if(sub) {
+            pos1 = sub->map[pos0];
+            if(pos1 == -999) { // Gap
+              continue;
+            }
+          } else {
+            printf("Warning: No sub for R%i in C%i\n", r, i);
+          }
+          nt0 = bb->bi[i]->seq[pos0];  // Remember these are 1=A, 2=C, 3=G, 4=T
+          nt1 = raw->seq[pos1];
+          sprintf(buf, "%c", map_nt[(int) nt0]);
+          long_nt0s.push_back(std::string(buf));
+          sprintf(buf, "%c", map_nt[(int) nt1]);
+          long_nt1s.push_back(std::string(buf));
+          if(has_quals) {
+            long_qaves.push_back(raw->qual[pos1]);
+          } else {
+            long_qaves.push_back(0.0);
+          }
+          long_abunds.push_back(raw->reads);
+          long_subpos.push_back(pos1);
+        }
+      }
+    } // for(pos0=0;pos0<len1;pos0++)
+  }
+  Rcpp::DataFrame df_sublong = Rcpp::DataFrame::create(_["nt0"] = long_nt0s, _["nt1"] = long_nt1s, _["reads"] = long_abunds, _["qave"] = long_qaves, _["pos"] = long_subpos);
+  */
+  
   // Free memory
   for(i=0;i<bb->nclust;i++) {
     free(oseqs[i]);
@@ -284,7 +328,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   free(raws);
   
   // Organize return List  
-  // This is crashing with more than 12 columns created...?
+  // This crashes when more than 12 columns created...?
   Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["nfam"] = Rfams, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves);
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
 }
