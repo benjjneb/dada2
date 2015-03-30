@@ -389,6 +389,48 @@ double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
   return lambda;
 }
 
+// This calls an R function to calculate lambda for the provided Raw given its sub object from a cluster center
+double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals) {
+  int s, pos1, nti0, nti1, len1;
+  double lambda, trans, qual;
+  
+  if(!sub) { // NULL Sub, outside Kmer threshold
+    return 0.0;
+  }
+  
+  // Make vector that indexes as integers the transitions at each position in seq1
+  // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
+  len1 = strlen(raw->seq);
+  std::vector<int> tvec(len1);
+  std::vector<double> qvec(len1);
+  for(pos1=0;pos1<len1;pos1++) {
+    nti1 = ((int) raw->seq[pos1]) - 1;
+    if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
+      tvec[pos1] = nti1*4 + nti1 + 1;
+    } else {
+      tvec[pos1] = 0; // Exclude (gap or N)
+    }
+    qvec[pos1] = raw->qual[pos1];
+  }
+  
+  // Now fix the ones where subs occurred
+  for(s=0;s<sub->nsubs;s++) {
+    pos1 = sub->map[sub->pos[s]];
+    nti0 = ((int) sub->nt0[s]) - 1;
+    nti1 = ((int) sub->nt1[s]) - 1;
+    if(sub->q1[s] != raw->qual[pos1]) {
+      printf("Qual mismatch!\n");
+    }
+    tvec[pos1] = nti0*4 + nti1 + 1;
+  }
+
+  lambda = Rcpp::as<double>(lamfun(tvec, qvec, use_quals));
+
+  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow OF lambda: %.4e\n", lambda); }
+
+  return lambda;
+}
+
 /* get_self:
  Gets the self-transition probabilty for a sequence under a transition matrix.
  */

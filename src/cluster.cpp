@@ -337,26 +337,18 @@ B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_
     }
   }
 
-  // Allocate the list of raws and then create them all.
-///  char *seq = (char *) malloc(SEQLEN);
   double tot_nnt[] = {0.0,0.0,0.0,0.0};
-///  b->raw = (Raw **) malloc(b->nraw * sizeof(Raw *));
   b->raw = raws;
   for (index = 0; index < b->nraw; index++) {
-///    uniques_sequence(uniques, index, (char *) seq);
-///    for(i=0;i<strlen(seq);i++) {
     for(i=0;i<strlen(b->raw[index]->seq);i++) {
-///      nti = ((int) seq[i]) - 1;
       nti = ((int) b->raw[index]->seq[i]) - 1;
       if(nti == 0 || nti == 1 || nti ==2 || nti == 3) {
         tot_nnt[nti]++;
       }
     }
-///    b->raw[index] = raw_new(seq, uniques_reads(uniques, index));
     b->raw[index]->index = index;
     b->reads += b->raw[index]->reads;
   }
-///  free(seq);
 
   // Create the (for now) solitary lookup table from lambda -> pS
   // Use the average sequence composition
@@ -537,10 +529,12 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
 
     if(!sub) { // Protect from null subs, but this should never arise...
       printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
+///!      exit(1);
       sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size, use_quals);
     }
-
+    
     bi->fam[f]->sub = sub;
+///!    bi->fam[f]->lambda = bi->lambda[bi->fam[f]->center->index];
     // IDEALLY THIS WOULD NOT BE HERE, ONLY NECESSARY IF NEW SUB MADE?
     bi->fam[f]->lambda = compute_lambda(sub, bi->self, err, use_quals);
   }

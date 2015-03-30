@@ -43,10 +43,8 @@ dada <- function(uniques, quals=NULL,
   
   # If a single vector, make into a length 1 list
   if(!is.list(uniques)) { uniques <- list(uniques) }
-  if(opts$USE_QUALS) {
-    if(is.null(quals)) { stop("Must provide quals if USE_QUALS is TRUE.") }
-    if(!is.list(quals)) { quals <- list(quals) }
-  }
+  if(opts$USE_QUALS && is.null(quals)) { stop("Must provide quals if USE_QUALS is TRUE.") }
+  if(!is.null(quals) && !is.list(quals)) { quals <- list(quals) }
   
   # Validate uniques vector(s)
   for(i in seq(length(uniques))) {
@@ -80,10 +78,26 @@ dada <- function(uniques, quals=NULL,
     }
   }
   
+  # Validate err matrix
   if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {
     stop("Invalid error matrix.")
   }
   if(any(err==0)) warning("Zero in error matrix.")
+  
+  # Make lambda function from err matrix
+  errvec = rep(1.0, 17)
+  for(i in seq(1, 4)) {
+    for(j in seq(1,4)) {
+      errvec[[4*(i-1) + j + 1]] <- err[[i,j]];
+    }
+  }
+  make_lamfun <- function(errvec) { 
+    lf <- function(tvec, qvec, use_quals) {
+      return(prod(errvec[tvec+1]))
+    }
+    return(lf)
+  }
+  lamfun <- make_lamfun(errvec)
   
   # Initialize
   cur <- NULL
@@ -101,7 +115,7 @@ dada <- function(uniques, quals=NULL,
 
     for(i in seq(length(uniques))) {
       if(is.null(quals)) { qi <- matrix(0, nrow=0, ncol=0) }
-      else { qi <- t(quals[[i]]) } # Need transpose so that sequences are columns
+      else { qi <- unname(t(quals[[i]])) } # Need transpose so that sequences are columns
       cat("Sample", i, "-", sum(uniques[[i]]), "reads in", length(uniques[[i]]), "unique sequences.\n")
       res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, qi, 
                           opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
@@ -111,7 +125,8 @@ dada <- function(uniques, quals=NULL,
                           opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]],
                           opts[["MAX_CLUST"]],
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
-                          opts[["USE_QUALS"]])
+                          opts[["USE_QUALS"]],
+                          lamfun)
       
       # Augment the returns
       # res$clustering$ham <- sapply(res$clustering$sequence, function(x) nrow(strdiff(res$clustering$sequence[[1]], x)))

@@ -5,7 +5,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals);
+B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, Rcpp::Function lamfun);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -39,7 +39,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS,
                         Rcpp::NumericVector maxClust,
                         Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming,
-                        Rcpp::LogicalVector useQuals) {
+                        Rcpp::LogicalVector useQuals,
+                        Rcpp::Function lamfun) {
   int i, j, len1, len2, nrow, ncol;
   int f, r, nzeros, nones;
   size_t index;
@@ -147,7 +148,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
 
 
   // Run DADA
-  B *bb = run_dada(raws, nraw, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals);
+  B *bb = run_dada(raws, nraw, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals, lamfun);
 
   // Extract output from Bi objects
   char **oseqs = (char **) malloc(bb->nclust * sizeof(char *));
@@ -194,7 +195,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     Rbirth_folds[i] = bb->bi[i]->birth_fold;
     if(bb->bi[i]->birth_sub) { Rbirth_hams[i] = bb->bi[i]->birth_sub->nsubs; }
     else { Rbirth_hams[i] = NA_REAL; }
-    Rbirth_es[i] = bb->bi[i]->birth_e;
+/*    Rbirth_es[i] = bb->bi[i]->birth_e;
     Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
 
     // Make qave column
@@ -218,8 +219,9 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
         tote += bb->bi[j]->e[bb->bi[i]->center->index];
       }
     }
-    Rpvals[i] = calc_pA(1+bb->bi[i]->reads, tote);
+    Rpvals[i] = calc_pA(1+bb->bi[i]->reads, tote);*/
   }
+  return R_NilValue;
 
   // Get error (or substitution) statistics
   int32_t otrans[4][4];
@@ -333,7 +335,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
 }
 
-B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {
+B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, Rcpp::Function lamfun) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;
@@ -341,6 +343,8 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double g
   
   B *bb;
   bb = b_new(raws, nraw, err, score, gap_pen, omegaA, use_singletons, omegaS, band_size, use_quals); // New cluster with all sequences in 1 bi and 1 fam
+//  b_lambda_update(bb, FALSE, 1.0); // Everyone gets aligned within the initial cluster, no KMER screen
+//  b_e_update(bb);
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
     

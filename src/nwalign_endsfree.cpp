@@ -239,7 +239,7 @@ Sub *al2subs(char **al) {
   
   // create Sub obect and initialize memory
   Sub *sub = (Sub *) malloc(sizeof(Sub));
-  sub->map = (int *) malloc(strlen(al[0]) * sizeof(int));
+  sub->map = (int *) malloc(strlen(al[0]) * sizeof(int));  // Taking up twice (len(al) rather than len(seq)) the memory needed
   sub->pos = (int *) malloc(strlen(al[0]) * sizeof(int));
   sub->nt0 = (char *) malloc(strlen(al[0]));
   sub->nt1 = (char *) malloc(strlen(al[0]));
