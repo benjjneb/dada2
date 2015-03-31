@@ -401,13 +401,6 @@ void b_init(B *b) {
 void b_free(B *b) {
   for(int i=0;i<b->nclust;i++) { bi_free(b->bi[i]); }
   free(b->bi);
-
-// This is now to be taken care of (except on ultimate exit) in the create lookup function.
-//  if(b->use_singletons) {
-//    if(b->lams) { free(b->lams); }
-//    if(b->cdf)  { free(b->cdf); }
-//  }
-
   free(b);
 }
 
@@ -530,14 +523,14 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
 
     if(!sub) { // Protect from null subs, but this should never arise...
       printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
-///!      exit(1);
+      exit(1);
       sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size, use_quals);
     }
     
     bi->fam[f]->sub = sub;
-///!    bi->fam[f]->lambda = bi->lambda[bi->fam[f]->center->index];
+    bi->fam[f]->lambda = bi->lambda[bi->fam[f]->center->index];
     // IDEALLY THIS WOULD NOT BE HERE, ONLY NECESSARY IF NEW SUB MADE?
-    bi->fam[f]->lambda = compute_lambda(sub, bi->self, err, use_quals);
+    // bi->fam[f]->lambda = compute_lambda(sub, bi->self, err, use_quals);
   }
   if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
   free(raws);
