@@ -64,6 +64,9 @@ Raw *raw_qual_new(char *seq, double *qual, int reads) {
   if(qual) {
     raw->qual = (double *) malloc(seqlen * sizeof(double));
     for(int i=0;i<seqlen;i++) { raw->qual[i] = qual[i]; }
+  } else {
+    printf("Error: NULL qual provided to raw_qual_new constructor.\n");
+    exit(1);
   }
   raw->kmer = get_kmer(seq, KMER_SIZE);
   raw->reads = reads;
@@ -107,7 +110,6 @@ void fam_free(Fam *fam) {
  Return index to raw in fam.
  */
 int fam_add_raw(Fam *fam, Raw *raw) {
-//  if(VERBOSE) { printf("\tfam_add_raw - enter (%i, %i)\n", fam->nraw, fam->maxraw); }
   if(fam->nraw >= fam->maxraw) {    // Extend Raw* buffer
     fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *));
     fam->maxraw+=RAWBUF;
@@ -449,7 +451,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
       if(tVERBOSE) { printf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
         // get sub object
-        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size, b->use_quals);
+        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
         
         // Store sub and lambda in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
@@ -506,7 +508,7 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
       if(tVERBOSE) { printf("Warning: bi_fam_update hit a null sub.\n"); }
-      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., band_size, use_quals);
+      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., band_size);
     }
   }
   
@@ -538,7 +540,7 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
 
     if(!sub) { // Protect from null subs, but this should never arise...
       printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
-      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size, use_quals);
+      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size);
     }
 
     bi->fam[f]->sub = sub;

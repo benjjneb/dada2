@@ -302,7 +302,7 @@ Sub *al2subs(char **al) {
 }
 
 // Wrapper for al2subs(raw_align(...)) that manages memory and quality scores
-Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band, bool use_quals) {
+Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band) {
   int s;
   char **al;
   Sub *sub;
@@ -313,7 +313,7 @@ Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_km
   if(sub) {
     sub->q0 = NULL;
     sub->q1 = NULL;
-    if(use_quals) {
+    if(raw0->qual && raw1->qual) {
       sub->q0 = (double *) malloc(sub->nsubs * sizeof(double));
       sub->q1 = (double *) malloc(sub->nsubs * sizeof(double));
       for(s=0;s<sub->nsubs;s++) {

@@ -171,6 +171,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   Rcpp::NumericVector Rbirth_qaves(bb->nclust);
   Rcpp::NumericVector Rpvals(bb->nclust);
 
+
   for(i=0;i<bb->nclust;i++) {
     // The basics
     Rseqs.push_back(std::string(oseqs[i]));
@@ -199,10 +200,11 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
 
     // Make qave column
     Sub *sub;
+    double qave;
     if(has_quals) {
-      double qave = 0.0;
+      qave = 0.0;
       sub = bb->bi[i]->birth_sub;
-      if(sub) {
+      if(sub && sub->q1) {
         for(int s=0;s<sub->nsubs;s++) {
           qave += (sub->q1[s]);
         }
@@ -330,6 +332,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   
   // Organize return List  
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
+///!  return Rcpp::List::create(_["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
 }
 
 B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {

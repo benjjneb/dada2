@@ -43,10 +43,8 @@ dada <- function(uniques, quals=NULL,
   
   # If a single vector, make into a length 1 list
   if(!is.list(uniques)) { uniques <- list(uniques) }
-  if(opts$USE_QUALS) {
-    if(is.null(quals)) { stop("Must provide quals if USE_QUALS is TRUE.") }
-    if(!is.list(quals)) { quals <- list(quals) }
-  }
+  if(opts$USE_QUALS && is.null(quals)) { stop("Must provide quals if USE_QUALS is TRUE.") }
+  if(!is.null(quals) && !is.list(quals)) { quals <- list(quals) }
   
   # Validate uniques vector(s)
   for(i in seq(length(uniques))) {
