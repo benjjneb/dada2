@@ -188,7 +188,7 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool us
 int *get_kmer(char *seq, int k);
 double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
 Sub *al2subs(char **al);
-Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band, bool use_quals);
+Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band);
 void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
