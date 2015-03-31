@@ -383,12 +383,13 @@ void b_init(B *b) {
   }
   b->nclust=0;
   
-  // Add the one cluster
+  // Add the one cluster and initialize its "birth" information
   b_add_bi(b, bi_new(b->nraw));
   strcpy(b->bi[0]->birth_type, "I");
   b->bi[0]->birth_pval = 0.0;
   b->bi[0]->birth_fold = 1.0;
   b->bi[0]->birth_e = b->reads;
+  b->bi[0]->birth_sub = NULL;
 
   // Add all raws to that cluster
   for (size_t index=0; index<b->nraw; index++) {
