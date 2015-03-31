@@ -191,12 +191,12 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     Rfams[i] = bb->bi[i]->nfam;
     
     // Record information from the cluster's birth
+    Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
     Rbirth_pvals[i] = bb->bi[i]->birth_pval;
     Rbirth_folds[i] = bb->bi[i]->birth_fold;
     if(bb->bi[i]->birth_sub) { Rbirth_hams[i] = bb->bi[i]->birth_sub->nsubs; }
     else { Rbirth_hams[i] = NA_REAL; }
-/*    Rbirth_es[i] = bb->bi[i]->birth_e;
-    Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
+    Rbirth_es[i] = bb->bi[i]->birth_e;
 
     // Make qave column
     Sub *sub;
@@ -216,12 +216,12 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     tote = 0.0;
     for(j=0;j<bb->nclust;j++) {
       if(i != j) {
-        tote += bb->bi[j]->e[bb->bi[i]->center->index];
+        tote += bb->bi[j]->e[bb->bi[i]->center->index];  // A bit concerned about wahts happening with C0 here (NaN in $pval)
       }
     }
-    Rpvals[i] = calc_pA(1+bb->bi[i]->reads, tote);*/
+    Rpvals[i] = calc_pA(1+bb->bi[i]->reads, tote); // better to have expected number of center sequence here?
   }
-  return R_NilValue;
+  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["nfam"] = Rfams, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves);
 
   // Get error (or substitution) statistics
   int32_t otrans[4][4];
@@ -330,8 +330,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   free(raws);
   
   // Organize return List  
-  // This crashes when more than 12 columns created...?
-  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"]  = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["nfam"] = Rfams, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves);
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
 }
 
