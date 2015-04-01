@@ -160,7 +160,7 @@ void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle(B *b);
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff);
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat);
 void b_fam_update(B *b);
 void b_consensus_update(B *b);
 void b_e_update(B *b);
@@ -198,6 +198,8 @@ double calc_pA(int reads, double E_reads);
 double get_pA(Fam *fam, Bi *bi);
 double get_pS(Fam *fam, Bi *bi, B *b);
 double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals);
+double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals);
+double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp

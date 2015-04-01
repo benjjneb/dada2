@@ -5,7 +5,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, Rcpp::Function lamfun);
+B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -39,8 +39,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS,
                         Rcpp::NumericVector maxClust,
                         Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming,
-                        Rcpp::LogicalVector useQuals,
-                        Rcpp::Function lamfun) {
+                        Rcpp::LogicalVector useQuals) {
   int i, j, len1, len2, nrow, ncol;
   int f, r, nzeros, nones;
   size_t index;
@@ -96,17 +95,20 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     }
   }
 
-  // Copy err into a C style array
+  ///! Copy err into a C style array
   nrow = err.nrow();
   ncol = err.ncol();
-  if(nrow != 4 || ncol != 4) {
+///!  if(nrow != 4 || ncol != 4) {
+  if(nrow != 16) {
     Rcpp::Rcout << "C: Error matrix malformed:" << nrow << ", " << ncol << "\n";
     return R_NilValue;
   }
+
   double c_err[4][4];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      c_err[i][j] = err(i,j);
+      c_err[i][j] = err(4*i+j,0);  ///! THIS IS KIND OF NONSENSE WHEN USING QUAL SCORES!
+      ///! WILL NEED TO FIX SINGLETON LOOKUP (OR JUST BAN IT) WHEN QUAL SCORES ARE ON
     }
   }
 
@@ -148,7 +150,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
 
 
   // Run DADA
-  B *bb = run_dada(raws, nraw, c_score, c_err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals, lamfun);
+  B *bb = run_dada(raws, nraw, c_score, c_err, err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals);
 
   // Extract output from Bi objects
   char **oseqs = (char **) malloc(bb->nclust * sizeof(char *));
@@ -336,7 +338,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
 ///!  return Rcpp::List::create(_["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
 }
 
-B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, Rcpp::Function lamfun) {
+B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;
@@ -344,8 +346,7 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double g
   
   B *bb;
   bb = b_new(raws, nraw, err, score, gap_pen, omegaA, use_singletons, omegaS, band_size, use_quals); // New cluster with all sequences in 1 bi and 1 fam
-//  b_lambda_update(bb, FALSE, 1.0); // Everyone gets aligned within the initial cluster, no KMER screen
-//  b_e_update(bb);
+  b_lambda_update(bb, FALSE, 1.0, errMat); // Everyone gets aligned within the initial cluster, no KMER screen
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
     
@@ -354,8 +355,8 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double g
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming)) ) {
     if(tVERBOSE) printf("----------- New Cluster C%i -----------\n", newi);
     b_consensus_update(bb);
-    b_lambda_update(bb, use_kmers, kdist_cutoff);
-    // SHOULD GET_SELF ALSO USE QUALS?? I KIND OF THINK NOT...
+    b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
+    // SHOULD GET_SELF ALSO USE QUALS??
     
     // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
     if((int) (bb->bi[newi]->center->reads/bb->bi[newi]->self) > bb->bi[newi]->reads) {
@@ -371,7 +372,7 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], double g
     do {
       shuffled = b_shuffle(bb);
       b_consensus_update(bb);
-      b_lambda_update(bb, use_kmers, kdist_cutoff);
+      b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
       if(tVERBOSE) { printf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
     

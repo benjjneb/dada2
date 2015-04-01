@@ -36,9 +36,9 @@ Raw *bi_pop_raw(Bi *bi, int f, int r);
 Fam *bi_pop_fam(Bi *bi, int f);
 
 void bi_census(Bi *bi);
-void bi_consensus_update(Bi *bi, double err[4][4]);
+void bi_consensus_update(Bi *bi);
 void fam_consensus_update(Fam *fam);
-void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size, bool use_quals);
+void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bool use_quals);
 
 /*
  raw_new:
@@ -322,7 +322,6 @@ B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_
   // Initialize basic values
   b->nclust = 0;
   b->reads = 0;
-///  b->nraw = uniques_nseqs(uniques);
   b->nraw = nraw;
   b->gap_pen = gap_pen;
   b->omegaA = omegaA;
@@ -392,8 +391,6 @@ void b_init(B *b) {
 
   bi_census(b->bi[0]);
   b_consensus_update(b); // Makes cluster consensus sequence
-  b_lambda_update(b, FALSE, 1.0);
-  b_e_update(b);
   if(VERBOSE) { printf("b_init - exit\n"); }
 }
 
@@ -424,7 +421,8 @@ int b_add_bi(B *b, Bi *bi) {
  updates the alignments and lambda of all raws to Bi with
  updated consensus sequences. 
 */
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
+///! void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::Function lamfun) {
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat) {
   int i;
   size_t index;
   double lambda;
@@ -438,12 +436,19 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
         // get sub object
         sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
         
-        // Store sub and lambda in the cluster object Bi
+        // Store sub in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
         b->bi[i]->sub[index] = sub;
-        lambda = compute_lambda(sub, b->bi[i]->self, b->err, b->use_quals);  // WHERE IS SELF SET!??  -- IN BI_CONSENSUS_UPDATE
+        
+        // Calculate lambda for that sub
+        ///! bi->self = get_self(bi->seq, err);
+        ///! lambda = compute_lambda(sub, b->bi[i]->self, b->err, b->use_quals);  // SELF USED TO BE SET IN BI_CONSENSUS_UPDATE
+        lambda = compute_lambda3(b->raw[index], sub, errMat, b->use_quals);
+        
+        // Store lambda and set self
         b->bi[i]->lambda[index] = lambda;
-        if(index == TARGET_RAW) printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]);
+        if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
+        if(index == TARGET_RAW) { printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
       }
       b->bi[i]->update_lambda = FALSE;
       if(!b->bi[i]->update_fam) {
@@ -460,7 +465,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
    cluster consensus.
   Currently completely destructive of old fams.
    */
-void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size, bool use_quals) {
+void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bool use_quals) {
   int f, r, result, r_c;
   Sub *sub;
   char buf[10];
@@ -489,11 +494,16 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
   
   // Guarantee that non-NULL sub objects exist for all raws to the cluster center
   // NULL subs can occur (rarely) with kmers if cluster center changes (in shuffle) and 
-  //    now exceeds kmerdist to anothe raw in the cluster
+  //    now exceeds kmerdist to another raw in the cluster
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
       if(tVERBOSE) { printf("Warning: bi_fam_update hit a null sub.\n"); }
       bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., band_size);
+      // DOESN'T UPDATE LAMBDA HERE, which seems fine, as its most "fair" that it keeps its 0 lambda from being outside kmerdist
+      ///! Check that lambda is in fact zero, warn otherwise.
+      if(bi->lambda[raws[r_c]->index] != 0) {
+        printf("Warning: Unexepected non-zero lambda %.2f for raw outside kmerdist in fam_update.\n", bi->lambda[raws[r_c]->index]);
+      }
     }
   }
   
@@ -524,15 +534,12 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
     sub = bi->sub[bi->fam[f]->center->index];
 
     if(!sub) { // Protect from null subs, but this should never arise...
-      printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
+      printf("Error: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
       exit(1);
-//      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size;
     }
     
     bi->fam[f]->sub = sub;
     bi->fam[f]->lambda = bi->lambda[bi->fam[f]->center->index];
-    // IDEALLY THIS WOULD NOT BE HERE, ONLY NECESSARY IF NEW SUB MADE?
-    // bi->fam[f]->lambda = compute_lambda(sub, bi->self, err, use_quals);
   }
   if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
   free(raws);
@@ -543,7 +550,7 @@ void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
       if(tVERBOSE) { printf("C%iFU:", i); }
-      bi_fam_update(b->bi[i], b->err, b->score, b->gap_pen, b->band_size, b->use_quals);
+      bi_fam_update(b->bi[i], b->score, b->gap_pen, b->band_size, b->use_quals);
     }
   }
 }
@@ -710,7 +717,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       printf("%s\n", ntstr(fam->sub->key));
     }
     
-    bi_consensus_update(b->bi[i], b->err);
+    bi_consensus_update(b->bi[i]);
     fam_free(fam);
     return i;
   }
@@ -766,7 +773,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, pS, fam->lambda);
     }
     
-    bi_consensus_update(b->bi[i], b->err);
+    bi_consensus_update(b->bi[i]);
     fam_free(fam);
     return i;
   }
@@ -808,7 +815,7 @@ void fam_consensus_update(Fam *fam) {
     Updates .center and .self
     Flags update_fam and update_lambda
 */
-void bi_consensus_update(Bi *bi, double err[4][4]) {
+void bi_consensus_update(Bi *bi) {
   int max_reads = 0;
   int f, r;
   int maxf = 0, maxr= 0;
@@ -832,7 +839,6 @@ void bi_consensus_update(Bi *bi, double err[4][4]) {
     }
     bi->center = bi->fam[maxf]->raw[maxr];
     strcpy(bi->seq,bi->fam[maxf]->raw[maxr]->seq);
-    bi->self = get_self(bi->seq, err);
   }
 }
 
@@ -841,7 +847,7 @@ void bi_consensus_update(Bi *bi, double err[4][4]) {
  */
 void b_consensus_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
-    bi_consensus_update(b->bi[i], b->err);
+    bi_consensus_update(b->bi[i]);
   }
 }
 

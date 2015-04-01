@@ -26,7 +26,8 @@
 #' @export
 #'
 dada <- function(uniques, quals=NULL,
-                 err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow=4, byrow=T),
+#                 err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow=4, byrow=T),
+                err = matrix(rep(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), each=41), nrow=16, byrow=T),
                  self_consist = FALSE, ...) {
   
   call <- sys.call(1)
@@ -79,25 +80,21 @@ dada <- function(uniques, quals=NULL,
   }
   
   # Validate err matrix
-  if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {
-    stop("Invalid error matrix.")
-  }
+  if(!( is.numeric(err) && nrow(err) == 16) && all(err>=0)) # && all.equal(rowSums(err), c(1,1,1,1)) )) 
+  { stop("Invalid error matrix.") }
   if(any(err==0)) warning("Zero in error matrix.")
+  # MAY WANT TO ADD BACK IN CHECKING FOR SUMS TO 1...
   
   # Make lambda function from err matrix
-  errvec = rep(1.0, 17)
-  for(i in seq(1, 4)) {
-    for(j in seq(1,4)) {
-      errvec[[4*(i-1) + j + 1]] <- err[[i,j]];
-    }
-  }
-  make_lamfun <- function(errvec) { 
+  # lamfun has three arguments: parm_mat: A numeric matrix with each row the parameters for the 
+  # LAMFUN WILL BE TURNED INTO A LOOKUP TABLE BASED ON A ROUNDING OF THE QUAL SCORE
+  make_lamfun <- function(err) { 
     lf <- function(tvec, qvec, use_quals) {
-      return(prod(errvec[tvec+1]))
+      return(prod(err[tvec+1,1]))
     }
     return(lf)
   }
-  lamfun <- make_lamfun(errvec)
+  lamfun <- make_lamfun(err)
   
   # Initialize
   cur <- NULL
@@ -125,8 +122,7 @@ dada <- function(uniques, quals=NULL,
                           opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]],
                           opts[["MAX_CLUST"]],
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
-                          opts[["USE_QUALS"]],
-                          lamfun)
+                          opts[["USE_QUALS"]])
       
       # Augment the returns
       # res$clustering$ham <- sapply(res$clustering$sequence, function(x) nrow(strdiff(res$clustering$sequence[[1]], x)))

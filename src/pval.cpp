@@ -406,11 +406,16 @@ double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals
   for(pos1=0;pos1<len1;pos1++) {
     nti1 = ((int) raw->seq[pos1]) - 1;
     if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
-      tvec[pos1] = nti1*4 + nti1 + 1;
+      tvec[pos1] = nti1*4 + nti1;
     } else {
-      tvec[pos1] = 0; // Exclude (gap or N)
+      printf("Error: Can't handle non ACGT sequences in CL2.\n");
+      exit(1);
     }
-    qvec[pos1] = raw->qual[pos1];
+    if(raw->qual) {
+      qvec[pos1] = raw->qual[pos1];
+    } else {
+      qvec[pos1] = QMAX;
+    }
   }
   
   // Now fix the ones where subs occurred
@@ -421,17 +426,76 @@ double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals
     if(sub->q1[s] != raw->qual[pos1]) {
       printf("Qual mismatch!\n");
     }
-    tvec[pos1] = nti0*4 + nti1 + 1;
+    tvec[pos1] = nti0*4 + nti1;
   }
 
   lambda = Rcpp::as<double>(lamfun(tvec, qvec, use_quals));
 
-  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow OF lambda: %.4e\n", lambda); }
+  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow of lambda: %.4e\n", lambda); }
 
   return lambda;
 }
 
-/* get_self:
+// This calculates lambda from a lookup table index by transition (row) and rounded qual score (col)
+double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals) {
+  ///! use_quals does nothing in this function, just here for backwards compatability for now
+  int s, pos1, nti0, nti1, len1;
+  double lambda, trans, qual;
+  
+  if(!sub) { // NULL Sub, outside Kmer threshold
+    return 0.0;
+  }
+  
+  // Make vector that indexes as integers the transitions at each position in seq1
+  // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
+  len1 = strlen(raw->seq);
+  std::vector<int> tvec(len1);
+  std::vector<double> qvec(len1);
+  std::vector<int> qind(len1);
+  for(pos1=0;pos1<len1;pos1++) {
+    nti1 = ((int) raw->seq[pos1]) - 1;
+    if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
+      tvec[pos1] = nti1*4 + nti1;
+    } else {
+      printf("Error: Can't handle non ACGT sequences in CL2.\n");
+      exit(1);
+    }
+    if(raw->qual) {
+      qvec[pos1] = raw->qual[pos1];
+    } else {
+      qvec[pos1] = QMAX;
+    }
+    // Turn q-score into the index in the array
+    qind[pos1] = round((errMat.ncol()-1) * (qvec[pos1]-QMIN)/((double) QMAX-QMIN));
+    if( qind[pos1] > (errMat.ncol()-1) ) {
+      printf("Error: rounded quality score (%i) exceeded err lookup table.\n", qind[pos1]);
+      exit(1);
+    }
+  }
+  
+  // Now fix the ones where subs occurred
+  for(s=0;s<sub->nsubs;s++) {
+    pos1 = sub->map[sub->pos[s]];
+    nti0 = ((int) sub->nt0[s]) - 1;
+    nti1 = ((int) sub->nt1[s]) - 1;
+    if(sub->q1[s] != raw->qual[pos1]) {
+      printf("Qual mismatch!\n");
+    }
+    tvec[pos1] = nti0*4 + nti1;
+  }
+
+  // And calculate lambda
+  lambda = 1.0;
+  for(pos1=0;pos1<len1;pos1++) {
+    lambda = lambda * errMat(tvec[pos1], qind[pos1]);
+  }
+
+  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow of lambda: %.4e\n", lambda); }
+
+  return lambda;
+}
+
+/* get_self: DEPRECATED
  Gets the self-transition probabilty for a sequence under a transition matrix.
  */
 double get_self(char *seq, double err[4][4]) {
