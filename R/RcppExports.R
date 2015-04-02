@@ -51,27 +51,12 @@ evaluate_band <- function(seqs, score, gap, band_size, max_aligns) {
 NULL
 
 #' Run DADA on the provided unique sequences/abundance pairs. 
-#'
-#' @param seqs (Required). Character.
-#'  A vector containing all unique sequences in the data set.
-#'  Only A/C/G/T/N/- allowed. Ungapped sequences recommended.
 #' 
-#' @param abundances (Required). Numeric.
-#'  A vector of the number of reads of each unique seuqences.
-#'  NAs not tolerated. Must be same length as the seqs vector.
-#'
-#' @param err (Required). Numeric matrix (4x4).
-#'
-#' @param score (Required). Numeric matrix (4x4).
-#' The score matrix used during the alignment.
-#'
-#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
-#'
 #' @return List.
 #'
 #' @export
-dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming, useQuals) {
-    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming, useQuals)
+dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming, useQuals, qMin, qMax) {
+    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming, useQuals, qMin, qMax)
 }
 
 # Register entry points for exported C++ functions

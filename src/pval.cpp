@@ -203,6 +203,7 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
   cdf.resize(index);
 }
 
+// I AM BROKEN RIGHT NOW BECAUSE OF CHANGE IN ERR MATRIX STUFF!!!!!!!!!
 void b_make_pS_lookup(B *b) {
   static double err[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
   static int ave_nnt[4] = {0, 0, 0, 0};
@@ -246,7 +247,7 @@ void b_make_pS_lookup(B *b) {
   int err_diffs = 0;
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      if(err[i][j] != b->err[i][j]) { err_diffs++; }
+///!      if(err[i][j] != b->err[i][j]) { err_diffs++; }
     }
   }
   
@@ -273,7 +274,7 @@ void b_make_pS_lookup(B *b) {
   for(i=0;i<4;i++) {
     ave_nnt[i] = new_ave_nnt[i];
     for(j=0;j<4;j++) {
-      err[i][j] = b->err[i][j];
+///!      err[i][j] = b->err[i][j];
     }
   }
 
@@ -286,7 +287,7 @@ void b_make_pS_lookup(B *b) {
   std::vector<double> temp_cdf;
   do {
     maxD+=2;
-    getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
+///!    getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
   } while((1.0 - temp_cdf.back()) * b->reads > b->omegaS && maxD < MAXMAXD);
   
   // Warn if couldnt make lookup big enough to get OmegaS

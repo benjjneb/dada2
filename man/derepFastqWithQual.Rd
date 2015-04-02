@@ -2,11 +2,32 @@
 % Please edit documentation in R/sequenceIO.R
 \name{derepFastqWithQual}
 \alias{derepFastqWithQual}
-\title{Read and Dereplicate a Fastq file. Also returns average Q score for each unique.}
+\title{Read and Dereplicate a Fastq, and return average Q score for each unique.}
 \usage{
 derepFastqWithQual(fl, n = 1e+06, verbose = FALSE)
 }
+\arguments{
+\item{fl}{(Required). Character.
+ The file path to the fastq or fastq.gz file.}
+
+\item{n}{(Optional). A \code{numeric(1)} indicating
+ the maximum number of records (reads) to parse and dereplicate
+ at any one time. This controls the peak memory requirement.
+ Defaults is \code{1e6}, one-million reads.
+ See \code{\link{FastqStreamer}} for details on this parameter,
+ which is passed on.}
+
+\item{verbose}{(Optional). A \code{logical(1)} indicating
+ whether to throw any standard R \code{\link{message}}s
+ on the intermittent and final status of the dereplication.
+ Default is \code{FALSE}, no messages.}
+}
+\value{
+A two-element list with `uniques`, an
+ integer vector named by sequence and valued by number of occurence;
+ and `quals` the average quality of the dereplicated sequences.
+}
 \description{
-Read and Dereplicate a Fastq file. Also returns average Q score for each unique.
+Read and Dereplicate a Fastq, and return average Q score for each unique.
 }
 

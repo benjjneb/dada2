@@ -6,9 +6,10 @@
  with their abundances, and returns the sample genotypes paired with their abundances
  inferred by the Divisive Amplicon Denoising Algorithm (Rosen, Callahan, Fisher, Holmes 2012).}
 \usage{
-dada(uniques, quals = NULL, err = matrix(c(0.991, 0.003, 0.003, 0.003,
+dada(uniques, quals = NULL, err = matrix(rep(c(0.991, 0.003, 0.003, 0.003,
   0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003,
-  0.991), nrow = 4, byrow = T), self_consist = FALSE, ...)
+  0.991), each = 41), nrow = 16, byrow = T), err_model = NULL,
+  self_consist = FALSE, ...)
 }
 \arguments{
 \item{uniques}{(Required). Named integer vector or list of named integer vectors.
@@ -18,10 +19,26 @@ dada(uniques, quals = NULL, err = matrix(c(0.991, 0.003, 0.003, 0.003,
  A list of such vectors can be provided, in which case the error model will be
    shared across these samples when denoising.}
 
-\item{err}{(Optional). 4x4 numeric matrix.
- The matrix of estimated error rates from one nucleotide to another.
- err[i,j] = Prob(j in sequence | i in sample genotype).
- A=1, C=2, G=3, T=4 for indexing. Rows required to sum to 1.}
+\item{quals}{(Optional). Numeric matrix containing average quality scores for each unique at each position.
+ The quals matrix has a row for each corresponding unique in the uniques vector, and a column for each
+ sequence position. So nrow(quals) == length(uniques) and ncol(quals) == nchar(uniques[[foo]]).}
+
+\item{err}{(Optional). 16xN numeric matrix.
+ The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
+ Rows correspond to the 16 possible transitions (t_ij) indexed as so...
+   1:A->A,  2:A->C,  3:A->G,  4:A->T,  5:C->A,  6:C->C,  7:C->G,  8:C->T,
+   9:G->A, 10:G->C, 11:G->G, 12:G->T, 13:T->A, 14:T->C, 15:T->G, 16:T->T
+
+ If USE_QUALS = TRUE, the columns correspond to a linear interpolation of quality score from QMIN and QMAX, eg. seq(QMIN, QMAX, by=QSTEP).
+   err[t_ij, round((q_ave-QMIN)/QSTEP) + 1] = Prob(j in sequence | i in sample genotype and q_ave).
+
+ If USE_QUALS = FALSE, the matrix must have only one column, which corresponds to the estimated error rate for that transition.
+   err[t_ij, 1] = Prob(j in sequence | i in sample genotype).}
+
+\item{err_model}{(Optional). A parameterized function that predicts error rates from a given transition type and quality score.
+  If USE_QUALS = TRUE,
+
+  If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).}
 
 \item{self_consist}{(Optional). \code{logical(1)}
  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat

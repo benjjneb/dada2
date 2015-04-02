@@ -30,6 +30,7 @@
 #define MAX_SHUFFLE 10
 #define QMIN 0
 #define QMAX 40
+#define QSTEP 1
 
 
 /* -------------------------------------------
@@ -112,7 +113,7 @@ typedef struct {
   int reads;
   int maxclust;
   int band_size;
-  double err[4][4];
+//  double err[4][4];
   double score[4][4];
   double gap_pen;
   double omegaA;
@@ -153,7 +154,7 @@ void uniques_sequence(Uniques *uniques, int n, char *seq);
 void uniques_free(Uniques *uniques);
 
 // methods implemented in cluster.c
-B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals);
+B *b_new(Raw **raws, int nraw, double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals);
 Raw *raw_new(char *seq, int reads);
 Raw *raw_qual_new(char *seq, double *qual, int reads);
 void raw_free(Raw *raw);
@@ -165,7 +166,6 @@ void b_fam_update(B *b);
 void b_consensus_update(B *b);
 void b_e_update(B *b);
 void b_p_update(B *b);
-void b_update_err(B *b, double err[4][4]);
 int b_bud(B *b, double min_fold, int min_hamming);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
@@ -198,7 +198,6 @@ double calc_pA(int reads, double E_reads);
 double get_pA(Fam *fam, Bi *bi);
 double get_pS(Fam *fam, Bi *bi, B *b);
 double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals);
-double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals);
 double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
 double get_self(char *seq, double err[4][4]);
 
@@ -206,5 +205,7 @@ double get_self(char *seq, double err[4][4]);
 void b_get_trans_matrix(B *b, int32_t obs[4][4]);
 Rcpp::DataFrame b_get_positional_subs(B *b);
 Rcpp::DataFrame b_get_quality_subs(B *b);
+Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax);
+Rcpp::DataFrame get_sublong(B *b, bool has_quals);
 
 #endif

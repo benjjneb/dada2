@@ -2,11 +2,11 @@
 % Please edit documentation in R/sequenceIO.R
 \name{qtables}
 \alias{qtables}
-\title{Internal function to replicate tables functionality while also returning ave quals}
+\title{Internal function to replicate tables functionality while also returning average quals}
 \usage{
 qtables(x)
 }
 \description{
-Internal function to replicate tables functionality while also returning ave quals
+Internal function to replicate tables functionality while also returning average quals
 }
 

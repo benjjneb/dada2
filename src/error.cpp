@@ -4,6 +4,108 @@ using namespace Rcpp;
 
 // [[Rcpp::interfaces(r, cpp)]]
 
+Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax) {
+  int i, f, r, pos0, pos1, qual, nti0, nti1;
+  int t_ij;
+  Sub *sub;
+  Raw *raw, *center;
+  int ncol;
+  
+  if(has_quals) { ncol = qmax-qmin+1; }
+  else { ncol = 1; }
+  
+  if(ncol<=0) {
+    printf("Error: Invalid QMAX/QMIN combination.\n");
+    exit(1);
+  }
+  
+  // Storage for counts for each qual and each nti->ntj
+  Rcpp::IntegerMatrix transMat(16, ncol);
+
+  for(i=0;i<b->nclust;i++) {
+    center = b->bi[i]->center;
+    for(f=0;f<b->bi[i]->nfam;f++) {
+      for(r=0;r<b->bi[i]->fam[f]->nraw;r++) {
+        raw = b->bi[i]->fam[f]->raw[r];
+        sub = b->bi[i]->sub[raw->index]; // The sub object includes the map between the center and the raw positions
+        if(!sub) {
+          printf("Warning: No sub for R%i in C%i.\n", r, i);
+          continue;
+        }
+        
+        for(pos0=0;pos0<strlen(center->seq);pos0++) {
+          pos1 = sub->map[pos0];
+          if(pos1 == -999) { // A gap in the aligned seq
+            continue; // Gaps excluded from the model
+          }
+          nti0 = (int) (center->seq[pos0] - 1);
+          nti1 = (int) (raw->seq[pos1] - 1);
+          qual = round(raw->qual[pos1]);  // Need to change round here if qsteps implemented
+          // And record these counts
+          t_ij = (4*nti0)+nti1;
+          if(has_quals) {
+            transMat(t_ij, qual) += raw->reads;
+          } else { 
+            transMat(t_ij, 0) += raw->reads; 
+          }
+        } // for(pos0=0;pos0<strlen(center->seq);pos0++)
+      } // for(r=0;b->bi[i]->fam[f]->nraw)
+    } // for(f=0;f<b->bi[i]->nfam;f++)
+  } // for(i=0;i<b->nclust;i++)
+  
+  return(transMat);
+}
+
+Rcpp::DataFrame get_sublong(B *b, bool has_quals) {
+  int i, f, r, pos0, pos1;
+  Raw *raw;
+  Sub *sub;
+  // Get output average qualities -- Long form data frame
+  std::vector< std::string > long_nt0s;
+  std::vector< std::string > long_nt1s;
+  std::vector< double > long_qaves;
+  std::vector< int > long_abunds;
+  std::vector< int > long_subpos;
+  char nt0, nt1;
+  char buf[2];
+  char map_nt[5] = {'\0', 'A', 'C', 'G', 'T'};
+  for(i=0;i<b->nclust;i++) {
+    for(pos0=0;pos0<strlen(b->bi[i]->seq);pos0++) {
+      for(f=0;f<b->bi[i]->nfam;f++) {
+        for(r=0;r<b->bi[i]->fam[f]->nraw;r++) {
+          raw = b->bi[i]->fam[f]->raw[r];
+          sub = b->bi[i]->sub[raw->index];
+          if(sub) {
+            pos1 = sub->map[pos0];
+            if(pos1 == -999) { // Gap
+              continue;
+            }
+          } else {
+            printf("Warning: No sub for R%i in C%i\n", r, i);
+          }
+          nt0 = b->bi[i]->seq[pos0];  // Remember these are 1=A, 2=C, 3=G, 4=T
+          nt1 = raw->seq[pos1];
+          sprintf(buf, "%c", map_nt[(int) nt0]);
+          long_nt0s.push_back(std::string(buf));
+          sprintf(buf, "%c", map_nt[(int) nt1]);
+          long_nt1s.push_back(std::string(buf));
+          if(has_quals) {
+            long_qaves.push_back(raw->qual[pos1]);
+          } else {
+            long_qaves.push_back(0.0);
+          }
+          long_abunds.push_back(raw->reads);
+          long_subpos.push_back(pos1);
+        }
+      }
+    } // for(pos0=0;pos0<len1;pos0++)
+  }
+  
+  Rcpp::DataFrame df_sublong = Rcpp::DataFrame::create(_["nt0"] = long_nt0s, _["nt1"] = long_nt1s, _["reads"] = long_abunds, _["qave"] = long_qaves, _["pos"] = long_subpos);
+  return(df_sublong);
+}
+
+
 Rcpp::DataFrame b_get_quality_subs(B *b) {
   int i, f, r, s, pos0, pos1, qual, nti0, nti1, sub_ind;
   Sub *sub;
@@ -49,7 +151,7 @@ Rcpp::DataFrame b_get_quality_subs(B *b) {
           }
           
         } // for(r=0;b->bi[i]->fam[f]->nraw)
-      } // for(f=0;f<bb->bi[i]->nfam;f++)
+      } // for(f=0;f<b->bi[i]->nfam;f++)
     }
   } // if(b->use_quals)
 
@@ -217,7 +319,7 @@ Rcpp::DataFrame b_get_positional_subs(B *b) {
       } else {  // Fams should never have NULL subs
         printf("Warning: Output fam C%iF%i had a NULL sub.\n", i, f);
       }
-    } // for(f=0;f<bb->bi[i]->nfam;f++)
+    } // for(f=0;f<b->bi[i]->nfam;f++)
   }
   
   Rcpp::NumericVector Rnts_by_pos;
@@ -281,4 +383,39 @@ Rcpp::DataFrame b_get_positional_subs(B *b) {
       _["G2A"] = RGAs_by_pos, _["G2C"] = RGCs_by_pos, _["G2T"] = RGTs_by_pos,
       _["T2A"] = RTAs_by_pos, _["T2C"] = RTCs_by_pos, _["T2G"] = RTGs_by_pos);  // Max 20 cols in Rcpp::DataFrame::create
   return(df_subs);
+}
+
+void b_update_err(B *b, double err[4][4]) { // DEPRECATED
+  int nti0, nti1, i, j, f, s;
+  Fam *fam;
+  int32_t counts[4] = {4, 4, 4, 4};  // PSEUDOCOUNTS
+  int32_t obs[4][4] = {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}};
+  
+  // Count up all observed transitions
+  for(i=0;i<b->nclust;i++) {
+    // Initially add all counts to the no-error slots
+    for(j=0;j<strlen(b->bi[i]->seq);j++) {
+      nti0 = (int) (b->bi[i]->seq[j] - 1);
+      counts[nti0] += b->bi[i]->reads;
+      obs[nti0][nti0] += b->bi[i]->reads;
+    }
+    
+    // Move counts corresponding to each substitution with the fams
+    for(f=0;f<b->bi[i]->nfam;f++) {
+      fam = b->bi[i]->fam[f];
+      for(s=0;s<fam->sub->nsubs;s++) { // ASSUMING SUB IS NOT NULL!!
+        nti0 = fam->sub->nt0[s]-1;
+        nti1 = fam->sub->nt1[s]-1;
+        obs[nti0][nti0] -= fam->reads;
+        obs[nti0][nti1] += fam->reads;
+      }
+    }
+  } // for(i=0;i<b->nclust;i++)
+  
+  // Calculate observed error rates and place in err
+  for(nti0=0;nti0<4;nti0++) {
+    for(nti1=0;nti1<4;nti1++) {
+      err[nti0][nti1] = ((double) obs[nti0][nti1]) / ((double) counts[nti0]);
+    }
+  }
 }

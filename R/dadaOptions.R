@@ -14,6 +14,8 @@ assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("USE_QUALS", FALSE, envir=dada_opts)
+assign("QMIN", 0, envir=dada_opts) # NOT PASSED IN YET
+assign("QMAX", 40, envir=dada_opts) # NOT PASSED IN YET
 
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
 

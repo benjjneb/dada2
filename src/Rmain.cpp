@@ -5,26 +5,11 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals);
+B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
-//'
-//' @param seqs (Required). Character.
-//'  A vector containing all unique sequences in the data set.
-//'  Only A/C/G/T/N/- allowed. Ungapped sequences recommended.
 //' 
-//' @param abundances (Required). Numeric.
-//'  A vector of the number of reads of each unique seuqences.
-//'  NAs not tolerated. Must be same length as the seqs vector.
-//'
-//' @param err (Required). Numeric matrix (4x4).
-//'
-//' @param score (Required). Numeric matrix (4x4).
-//' The score matrix used during the alignment.
-//'
-//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
-//'
 //' @return List.
 //'
 //' @export
@@ -39,7 +24,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS,
                         Rcpp::NumericVector maxClust,
                         Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming,
-                        Rcpp::LogicalVector useQuals) {
+                        Rcpp::LogicalVector useQuals,
+                        int qMin, int qMax) {
   int i, j, len1, len2, nrow, ncol;
   int f, r, nzeros, nones;
   size_t index;
@@ -95,22 +81,21 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     }
   }
 
-  ///! Copy err into a C style array
   nrow = err.nrow();
   ncol = err.ncol();
-///!  if(nrow != 4 || ncol != 4) {
   if(nrow != 16) {
     Rcpp::Rcout << "C: Error matrix malformed:" << nrow << ", " << ncol << "\n";
     return R_NilValue;
   }
 
-  double c_err[4][4];
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      c_err[i][j] = err(4*i+j,0);  ///! THIS IS KIND OF NONSENSE WHEN USING QUAL SCORES!
-      ///! WILL NEED TO FIX SINGLETON LOOKUP (OR JUST BAN IT) WHEN QUAL SCORES ARE ON
-    }
-  }
+///! Copy err into a C style array
+//  double c_err[4][4];
+//  for(i=0;i<4;i++) {
+//    for(j=0;j<4;j++) {
+//      c_err[i][j] = err(4*i+j,0);  ///! THIS IS KIND OF NONSENSE WHEN USING QUAL SCORES!
+//      ///! WILL NEED TO FIX SINGLETON LOOKUP (OR JUST BAN IT) WHEN QUAL SCORES ARE ON
+//    }
+//  }
 
   // Check rest of params for Length-One-ness and make into C versions
   if(gap.size() != 1) { Rcpp::Rcout << "C: Gap penalty not length 1\n"; return R_NilValue; }
@@ -150,7 +135,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
 
 
   // Run DADA
-  B *bb = run_dada(raws, nraw, c_score, c_err, err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals);
+  B *bb = run_dada(raws, nraw, c_score, err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals);
 
   // Extract output from Bi objects
   char **oseqs = (char **) malloc(bb->nclust * sizeof(char *));
@@ -239,7 +224,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   
   Rcpp::DataFrame df_subpos = b_get_positional_subs(bb);
-  Rcpp::DataFrame df_subqual = b_get_quality_subs(bb);
+  Rcpp::IntegerMatrix transMat = b_get_quality_subs2(bb, has_quals, qMin, qMax);
   
   // Get output average qualities
   Rcpp::NumericMatrix Rquals(qlen, bb->nclust);
@@ -278,50 +263,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     }
   }
   
-  /*
-  // Get output average qualities -- Long form data frame
-  std::vector< std::string > long_nt0s;
-  std::vector< std::string > long_nt1s;
-  std::vector< double > long_qaves;
-  std::vector< int > long_abunds;
-  std::vector< int > long_subpos;
-  char nt0, nt1;
-  char buf[2];
-  char map_nt[5] = {'\0', 'A', 'C', 'G', 'T'};
-  for(i=0;i<bb->nclust;i++) {
-    for(pos0=0;pos0<strlen(bb->bi[i]->seq);pos0++) {
-      for(f=0;f<bb->bi[i]->nfam;f++) {
-        for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
-          raw = bb->bi[i]->fam[f]->raw[r];
-          sub = bb->bi[i]->sub[raw->index];
-          if(sub) {
-            pos1 = sub->map[pos0];
-            if(pos1 == -999) { // Gap
-              continue;
-            }
-          } else {
-            printf("Warning: No sub for R%i in C%i\n", r, i);
-          }
-          nt0 = bb->bi[i]->seq[pos0];  // Remember these are 1=A, 2=C, 3=G, 4=T
-          nt1 = raw->seq[pos1];
-          sprintf(buf, "%c", map_nt[(int) nt0]);
-          long_nt0s.push_back(std::string(buf));
-          sprintf(buf, "%c", map_nt[(int) nt1]);
-          long_nt1s.push_back(std::string(buf));
-          if(has_quals) {
-            long_qaves.push_back(raw->qual[pos1]);
-          } else {
-            long_qaves.push_back(0.0);
-          }
-          long_abunds.push_back(raw->reads);
-          long_subpos.push_back(pos1);
-        }
-      }
-    } // for(pos0=0;pos0<len1;pos0++)
-  }
-  Rcpp::DataFrame df_sublong = Rcpp::DataFrame::create(_["nt0"] = long_nt0s, _["nt1"] = long_nt1s, _["reads"] = long_abunds, _["qave"] = long_qaves, _["pos"] = long_subpos);
-  */
-  
   // Free memory
   for(i=0;i<bb->nclust;i++) {
     free(oseqs[i]);
@@ -334,18 +275,17 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   free(raws);
   
   // Organize return List  
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
-///!  return Rcpp::List::create(_["subpos"] = df_subpos, _["subqual"] = df_subqual, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = transMat, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
 }
 
-B *run_dada(Raw **raws, int nraw, double score[4][4], double err[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {
+B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;
   size_t index;
   
   B *bb;
-  bb = b_new(raws, nraw, err, score, gap_pen, omegaA, use_singletons, omegaS, band_size, use_quals); // New cluster with all sequences in 1 bi and 1 fam
+  bb = b_new(raws, nraw, score, gap_pen, omegaA, use_singletons, omegaS, band_size, use_quals); // New cluster with all sequences in 1 bi and 1 fam
   b_lambda_update(bb, FALSE, 1.0, errMat); // Everyone gets aligned within the initial cluster, no KMER screen
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)

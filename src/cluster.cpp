@@ -6,8 +6,7 @@
  methods for "B" objects.
  The "B" object is the partition of a DNA data set into
  clusters that is updated until convergence during DADA's
- inner two loops. It does not include the current error model,
- which is updated after the covergence of "B".
+ inner two loops.
  */
 
 #define RAWBUF 50
@@ -310,7 +309,7 @@ void bi_census(Bi *bi) {
  The constructor for the B object. Takes in a Uniques object.
  Places all sequences into the same family within one cluster.
 */
-B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals) {
+B *b_new(Raw **raws, int nraw, double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals) {
   int i, j, nti;
   size_t index;
 
@@ -330,10 +329,9 @@ B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_
   b->band_size = band_size;
   b->use_quals = use_quals;
   
-  // Copy the error and score matrices
+  // Copy the score matrix
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      b->err[i][j] = err[i][j];
       b->score[i][j] = score[i][j];
     }
   }
@@ -683,7 +681,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
     }
   }
   
-  // Bonferroni correct the abundance pval by the number of fams and compare to OmegaA
+  // Bonferoni correct the abundance pval by the number of fams and compare to OmegaA
   // (quite conservative, although probably unimportant given the abundance model issues)
   pA = minp*totfams;
   if(pA < b->omegaA && mini >= 0 && minf >= 0) {  // A significant abundance pval
@@ -752,7 +750,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
     }
   }
 
-  // Bonferroni correct the singleton pval by the number of reads and compare to OmegaS
+  // Bonferoni correct the singleton pval by the number of reads and compare to OmegaS
   // DADA_ML MATCH: minp*b->nclust*b->bi[i]->reads < b->omegaS
   pS = minp * b->reads;
   if(pS < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
@@ -850,48 +848,4 @@ void b_consensus_update(B *b) {
     bi_consensus_update(b->bi[i]);
   }
 }
-
-void b_update_err(B *b, double err[4][4]) {
-  int nti0, nti1, i, j, f, s;
-  Fam *fam;
-  int32_t counts[4] = {4, 4, 4, 4};  // PSEUDOCOUNTS
-  int32_t obs[4][4] = {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}};
-  
-  // Count up all observed transitions
-  for(i=0;i<b->nclust;i++) {
-    // Initially add all counts to the no-error slots
-    for(j=0;j<strlen(b->bi[i]->seq);j++) {
-      nti0 = (int) (b->bi[i]->seq[j] - 1);
-      counts[nti0] += b->bi[i]->reads;
-      obs[nti0][nti0] += b->bi[i]->reads;
-    }
-    
-    // Move counts corresponding to each substitution with the fams
-    for(f=0;f<b->bi[i]->nfam;f++) {
-      fam = b->bi[i]->fam[f];
-      for(s=0;s<fam->sub->nsubs;s++) { // ASSUMING SUB IS NOT NULL!!
-        nti0 = fam->sub->nt0[s]-1;
-        nti1 = fam->sub->nt1[s]-1;
-        obs[nti0][nti0] -= fam->reads;
-        obs[nti0][nti1] += fam->reads;
-      }
-    }
-  } // for(i=0;i<b->nclust;i++)
-  
-  // Calculate observed error rates and place in err
-  for(nti0=0;nti0<4;nti0++) {
-    for(nti1=0;nti1<4;nti1++) {
-      err[nti0][nti1] = ((double) obs[nti0][nti1]) / ((double) counts[nti0]);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
 
