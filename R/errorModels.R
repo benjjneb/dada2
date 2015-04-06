@@ -35,19 +35,31 @@ showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE) {
   subdf$qave <- as.numeric(rownames(subdf))
   subdf[,nij] <- subdf[,nij]/(subdf[,paste0(nti,"2A")]+subdf[,paste0(nti,"2C")]+subdf[,paste0(nti,"2G")]+subdf[,paste0(nti,"2T")])
 
-  erridf <- dq$err_in
-  if(is.list(erridf)) erridf <- erridf[[1]]
-  erridf <- as.data.frame(t(erridf))
-  colnames(erridf) <- paste0(rep(ACGT, each=4), "2", ACGT)
-  rownames(erridf) <- seq(dq$opts$QMIN, dq$opts$QMAX, length.out=nrow(erridf))
-  erridf$qave <- as.numeric(rownames(erridf))
+  if(erri) {
+    erridf <- dq$err_in
+    if(is.list(erridf)) erridf <- erridf[[1]]
+    erridf <- as.data.frame(t(erridf))
+    colnames(erridf) <- paste0(rep(ACGT, each=4), "2", ACGT)
+    rownames(erridf) <- seq(dq$opts$QMIN, dq$opts$QMAX, length.out=nrow(erridf))
+    erridf$qave <- as.numeric(rownames(erridf))
+  }
   
-  errodf <- as.data.frame(t(dq$err_out))
-  errodf$qave <- as.numeric(rownames(errodf))
+  if(!("err_out" %in% ls(dq))) erro <- FALSE
+  if(erro) {
+    errodf <- as.data.frame(t(dq$err_out))
+    errodf$qave <- as.numeric(rownames(errodf))
+  }
   
   p <- ggplot(data=subdf, aes_string(x="qave", y=paste0("log10(",nij,")")))
   p <- p + geom_point()
   if(erri) p <- p + geom_line(data=erridf)
   if(erro) p <- p + geom_line(data=errodf, linetype="dashed")
   return(p)
+}
+
+#' @export
+inflateErr <- function(err, mult) {
+  t_errs <- c("A2C", "A2G", "A2T", "C2A", "C2G", "C2T", "G2A", "G2C", "G2T", "T2A", "T2C", "T2G")
+  err[t_errs,] <- err[t_errs,] * mult
+  return(err)
 }
