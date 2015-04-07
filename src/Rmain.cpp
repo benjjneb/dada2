@@ -14,7 +14,7 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abundances,
+Rcpp::List dada_uniques(Rcpp::CharacterVector seqs,  Rcpp::IntegerVector abundances,
                         Rcpp::NumericMatrix err,
                         Rcpp::NumericMatrix quals,
                         Rcpp::NumericMatrix score, Rcpp::NumericVector gap,
@@ -27,9 +27,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::LogicalVector useQuals,
                         int qMin, int qMax) {
 
-  //Rcpp::CharacterVector seqs, Rcpp::IntegerVector abunds,
-
-  int i, j, len1, len2, nrow, ncol;
+  int i, j, pos, len1, len2, nrow, ncol;
   int f, r, nzeros, nones;
   size_t index;
   double tote;
@@ -42,37 +40,47 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
   int nraw = len1;
     
-//  std::vector<string> cpp_seqs = Rcpp::as<std::vector<string> >(seqs);
+  std::vector<std::string> cpp_seqs(nraw);
+  std::vector<int> cpp_abunds(nraw);
+  for(i=0;i<nraw;i++) {
+    cpp_seqs[i] = std::string(seqs[i]);
+    cpp_abunds[i] = abundances[i];
+  }
 //  std::vector<int> cpp_abunds = Rcpp::as<std::vector<int> >(abunds);
   
   // Turn quals matrix into a c-style 1D array c_quals
-  // column-by-column storage
+  // Each sequence is a COLUMN, each row is a POSITION
   double *c_quals = NULL;
   int qlen = 0;
   bool has_quals = false;
   if(quals.nrow() > 0) {
     has_quals = true;
     qlen = quals.nrow();
-    std::vector<double> cpp_quals = Rcpp::as<std::vector<double> >(quals);
-    c_quals = &cpp_quals[0];
+///    std::vector<double> cpp_quals = Rcpp::as<std::vector<double> >(quals);
+///    c_quals = &cpp_quals[0];
   }
 
   // Make the raws (uniques)
   char seq[SEQLEN];
+  double qual[SEQLEN];
   Raw **raws = (Raw **) malloc(nraw * sizeof(Raw *)); //E
   if (raws == NULL)  Rcpp::stop("Memory allocation failed!\n");
 
   for (index = 0; index < nraw; index++) {
-    strcpy(seq, seqs[index].c_str());
+    strcpy(seq, cpp_seqs[index].c_str());
     nt2int(seq, seq);
+    for(pos=0;pos<strlen(seq);pos++) {
+      qual[pos] = quals(pos, index);
+    }
     if(has_quals) {
-      raws[index] = raw_qual_new(seq, &c_quals[qlen*index], abundances[index]);
+///      raws[index] = raw_qual_new(seq, &c_quals[qlen*index], cpp_abunds[index]);
+      raws[index] = raw_qual_new(seq, qual, cpp_abunds[index]);
     } else {
-      raws[index] = raw_new(seq, abundances[index]);
+      raws[index] = raw_new(seq, cpp_abunds[index]);
     }
     raws[index]->index = index;
   }
-
+  
   // Copy score into a C style array
   nrow = score.nrow();
   ncol = score.ncol();

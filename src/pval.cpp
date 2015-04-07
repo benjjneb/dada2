@@ -425,9 +425,6 @@ double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals
     pos1 = sub->map[sub->pos[s]];
     nti0 = ((int) sub->nt0[s]) - 1;
     nti1 = ((int) sub->nt1[s]) - 1;
-    if(sub->q1[s] != raw->qual[pos1]) {
-      printf("Qual mismatch!\n");
-    }
     tvec[pos1] = nti0*4 + nti1;
   }
 
@@ -441,7 +438,7 @@ double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals
 // This calculates lambda from a lookup table index by transition (row) and rounded qual score (col)
 double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals) {
   ///! use_quals does nothing in this function, just here for backwards compatability for now
-  int s, pos1, nti0, nti1, len1;
+  int s, pos0, pos1, nti0, nti1, len1;
   double lambda, trans, qual;
   
   if(!sub) { // NULL Sub, outside Kmer threshold
@@ -451,36 +448,45 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
   // Make vector that indexes as integers the transitions at each position in seq1
   // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
   len1 = strlen(raw->seq);
-  std::vector<int> tvec(len1);
-  std::vector<double> qvec(len1);
-  std::vector<int> qind(len1);
+  int *tvec = (int *) malloc(len1*sizeof(int));
+  double *qvec = (double *) malloc(len1*sizeof(double));
+  int *qind = (int *) malloc(len1*sizeof(int));
+  if (tvec == NULL || qvec == NULL || qind == NULL)  Rcpp::stop("Memory allocation failed!\n");
+
   for(pos1=0;pos1<len1;pos1++) {
     nti1 = ((int) raw->seq[pos1]) - 1;
     if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
       tvec[pos1] = nti1*4 + nti1;
     } else {
-      Rcpp::stop("Error: Can't handle non ACGT sequences in CL2.\n");
+      Rcpp::stop("Error: Can't handle non ACGT sequences in CL3.\n");
     }
     if(raw->qual) {
       qvec[pos1] = raw->qual[pos1];
+      // Turn q-score into the index in the array
+      qind[pos1] = round((errMat.ncol()-1) * (qvec[pos1]-QMIN)/((double) QMAX-QMIN));
     } else {
       qvec[pos1] = QMAX;
+      qind[pos1] = 0;
     }
-    // Turn q-score into the index in the array
-    qind[pos1] = round((errMat.ncol()-1) * (qvec[pos1]-QMIN)/((double) QMAX-QMIN));
+    
     if( qind[pos1] > (errMat.ncol()-1) ) {
       Rcpp::stop("Error: rounded quality score (%i) exceeded err lookup table.\n", qind[pos1]);
     }
   }
-  
+
   // Now fix the ones where subs occurred
   for(s=0;s<sub->nsubs;s++) {
+    pos0 = sub->pos[s];
+    if(pos0 < 0 || pos0 >= len1) {
+      Rcpp::stop("CL3: Bad pos0 (%i).\n", pos0);
+    }
     pos1 = sub->map[sub->pos[s]];
+    if(pos1 < 0 || pos1 >= len1) {
+      Rcpp::stop("CL3: Bad pos1 (%i).\n", pos1);
+    }
+    
     nti0 = ((int) sub->nt0[s]) - 1;
     nti1 = ((int) sub->nt1[s]) - 1;
-    if(sub->q1[s] != raw->qual[pos1]) {
-      printf("Qual mismatch!\n");
-    }
     tvec[pos1] = nti0*4 + nti1;
   }
 
@@ -491,6 +497,9 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
   }
 
   if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow of lambda: %.4e\n", lambda); }
+  free(tvec);
+  free(qvec);
+  free(qind);
 
   return lambda;
 }

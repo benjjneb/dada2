@@ -437,7 +437,6 @@ int b_add_bi(B *b, Bi *bi) {
  updates the alignments and lambda of all raws to Bi with
  updated consensus sequences. 
 */
-///! void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::Function lamfun) {
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat) {
   int i;
   size_t index;
@@ -451,22 +450,20 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
       for(index=0; index<b->nraw; index++) {
         // get sub object
         sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
-        ///! /*
      
         // Store sub in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
         b->bi[i]->sub[index] = sub;
         
         // Calculate lambda for that sub
-        ///! bi->self = get_self(bi->seq, err);
-        ///! lambda = compute_lambda(sub, b->bi[i]->self, b->err, b->use_quals);  // SELF USED TO BE SET IN BI_CONSENSUS_UPDATE
+        /// bi->self = get_self(bi->seq, err);
+        /// lambda = compute_lambda(sub, b->bi[i]->self, b->err, b->use_quals);  // SELF USED TO BE SET IN BI_CONSENSUS_UPDATE
         lambda = compute_lambda3(b->raw[index], sub, errMat, b->use_quals);
         
         // Store lambda and set self
         b->bi[i]->lambda[index] = lambda;
         if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
         if(index == TARGET_RAW) { printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
-        ///! */
       }
       b->bi[i]->update_lambda = FALSE;
       if(!b->bi[i]->update_fam) {
