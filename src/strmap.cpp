@@ -35,6 +35,7 @@
  *    along with strmap.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "strmap.h"
+#include "dada.h"
 // [[Rcpp::interfaces(cpp)]]
 
 typedef struct Pair Pair;
@@ -63,14 +64,16 @@ StrMap * sm_new(unsigned int capacity)
 {
 	StrMap *map;
 	
-	map = (StrMap *) malloc(sizeof(StrMap));
+	map = (StrMap *) malloc(sizeof(StrMap)); //E
 	if (map == NULL) {
+    Rcpp::stop("Memory allocation failed!\n"); //
 		return NULL;
 	}
 	map->count = capacity;
-	map->buckets = (Bucket *) malloc(map->count * sizeof(Bucket));
+	map->buckets = (Bucket *) malloc(map->count * sizeof(Bucket)); //E
 	if (map->buckets == NULL) {
 		free(map);
+    Rcpp::stop("Memory allocation failed!\n"); //
 		return NULL;
 	}
 	memset(map->buckets, 0, map->count * sizeof(Bucket));
@@ -189,8 +192,9 @@ int sm_put(StrMap *map, const char *key, const char *value)
 			/* If the new value is larger than the old value, re-allocate
 			 * space for the new larger value.
 			 */
-			tmp_value = (char *) realloc(pair->value, (value_len + 1) * sizeof(char));
+			tmp_value = (char *) realloc(pair->value, (value_len + 1) * sizeof(char)); //E
 			if (tmp_value == NULL) {
+        Rcpp::stop("Memory allocation failed!\n");
 				return 0;
 			}
 			pair->value = tmp_value;
@@ -200,13 +204,15 @@ int sm_put(StrMap *map, const char *key, const char *value)
 		return 1;
 	}
 	/* Allocate space for a new key and value */
-	new_key = (char *) malloc((key_len + 1) * sizeof(char));
+	new_key = (char *) malloc((key_len + 1) * sizeof(char)); //E
 	if (new_key == NULL) {
+    Rcpp::stop("Memory allocation failed!\n"); //
 		return 0;
 	}
-	new_value = (char *) malloc((value_len + 1) * sizeof(char));
+	new_value = (char *) malloc((value_len + 1) * sizeof(char)); //E
 	if (new_value == NULL) {
 		free(new_key);
+    Rcpp::stop("Memory allocation failed!\n"); //
 		return 0;
 	}
 	/* Create a key-value pair */
@@ -214,10 +220,11 @@ int sm_put(StrMap *map, const char *key, const char *value)
 		/* The bucket is empty, lazily allocate space for a single
 		 * key-value pair.
 		 */
-		bucket->pairs = (Pair *) malloc(sizeof(Pair));
+		bucket->pairs = (Pair *) malloc(sizeof(Pair)); //E
 		if (bucket->pairs == NULL) {
 			free(new_key);
 			free(new_value);
+      Rcpp::stop("Memory allocation failed!\n"); //
 			return 0;
 		}
 		bucket->count = 1;
@@ -226,10 +233,11 @@ int sm_put(StrMap *map, const char *key, const char *value)
 		/* The bucket wasn't empty but no pair existed that matches the provided
 		 * key, so create a new key-value pair.
 		 */
-		tmp_pairs = (Pair *) realloc(bucket->pairs, (bucket->count + 1) * sizeof(Pair));
-		if (tmp_pairs == NULL) {
+		tmp_pairs = (Pair *) realloc(bucket->pairs, (bucket->count + 1) * sizeof(Pair)); //E
+		if (tmp_pairs == NULL) { //E
 			free(new_key);
 			free(new_value);
+      Rcpp::stop("Memory allocation failed!\n"); //
 			return 0;
 		}
 		bucket->pairs = tmp_pairs;

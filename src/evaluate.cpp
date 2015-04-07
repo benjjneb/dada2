@@ -49,8 +49,8 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, Rcpp::NumericMat
   Rcpp::NumericVector adist(max_aligns);
   Rcpp::NumericVector kdist(max_aligns);
   Sub *sub;
-  int *kv1;
-  int *kv2;
+  uint16_t *kv1;
+  uint16_t *kv2;
 
   for(i=0;i<nseqs;i=i+stride) {
     seq1 = intstr(seqs[i].c_str());

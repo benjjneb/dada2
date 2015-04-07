@@ -31,6 +31,7 @@
 #define QMIN 0
 #define QMAX 40
 #define QSTEP 1
+#define GAP_GLYPH 9999
 
 
 /* -------------------------------------------
@@ -46,8 +47,8 @@ typedef std::pair<double, double> Prob;
  Note: positions will be 0-indexed in the alignment */
 typedef struct {
   int nsubs;   // number of substitions
-  int *map;    // map of the sequence position in the ref seq to that in the aligned seq
-  int *pos;    // sequence position of the substitition: index in the reference seq
+  uint16_t *map;    // map of the sequence position in the ref seq to that in the aligned seq
+  uint16_t *pos;    // sequence position of the substitition: index in the reference seq
   char *nt0;   // nt in reference seq
   char *nt1;   // different nt in aligned seq
   double *q0;  // quality score in reference seq
@@ -59,7 +60,7 @@ typedef struct {
 typedef struct {
   char *seq;   // the sequence, stored as C-string with A=1,C=2,G=3,T=4
   double *qual; // the average quality scores at each position for this unique
-  int *kmer;   // the kmer vector of this sequence
+  uint16_t *kmer;   // the kmer vector of this sequence
   int reads;   // number of reads of this unique sequence
   int index;   // The index of this Raw in b->raw[index]
 } Raw;
@@ -185,8 +186,8 @@ void test_fun(int i);
 // method implemented in nwalign_endsfree.c
 char **nwalign_endsfree(char *s1, char *s2, double s[4][4], double gap_p, int band);
 char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmer, double kdist_cutoff, int band);
-int *get_kmer(char *seq, int k);
-double kmer_dist(int *kv1, int len1, int *kv2, int len2, int k);
+uint16_t *get_kmer(char *seq, int k);
+double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
 Sub *al2subs(char **al);
 Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band);
 void sub_free(Sub *sub);

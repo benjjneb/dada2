@@ -15,8 +15,7 @@ Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax
   else { ncol = 1; }
   
   if(ncol<=0) {
-    printf("Error: Invalid QMAX/QMIN combination.\n");
-    exit(1);
+    Rcpp::stop("Error: Invalid QMAX/QMIN combination.\n");
   }
   
   // Storage for counts for each qual and each nti->ntj
@@ -29,13 +28,13 @@ Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax
         raw = b->bi[i]->fam[f]->raw[r];
         sub = b->bi[i]->sub[raw->index]; // The sub object includes the map between the center and the raw positions
         if(!sub) {
-          printf("Warning: No sub for R%i in C%i.\n", r, i);
+          if(VERBOSE) { printf("Warning: No sub for R%i in C%i.\n", r, i); }
           continue;
         }
         
         for(pos0=0;pos0<strlen(center->seq);pos0++) {
           pos1 = sub->map[pos0];
-          if(pos1 == -999) { // A gap in the aligned seq
+          if(pos1 == GAP_GLYPH) { // A gap in the aligned seq
             continue; // Gaps excluded from the model
           }
           nti0 = (int) (center->seq[pos0] - 1);
@@ -77,11 +76,12 @@ Rcpp::DataFrame get_sublong(B *b, bool has_quals) {
           sub = b->bi[i]->sub[raw->index];
           if(sub) {
             pos1 = sub->map[pos0];
-            if(pos1 == -999) { // Gap
+            if(pos1 == GAP_GLYPH) { // Gap
               continue;
             }
           } else {
-            printf("Warning: No sub for R%i in C%i\n", r, i);
+            if(VERBOSE) { printf("Warning: No sub for R%i in C%i\n", r, i); }
+            continue;
           }
           nt0 = b->bi[i]->seq[pos0];  // Remember these are 1=A, 2=C, 3=G, 4=T
           nt1 = raw->seq[pos1];
@@ -123,13 +123,13 @@ Rcpp::DataFrame b_get_quality_subs(B *b) {
           raw = b->bi[i]->fam[f]->raw[r];
           sub = b->bi[i]->sub[raw->index]; // The sub object includes the map between the center and the raw positions
           if(!sub) {
-            printf("Warning: No sub for R%i in C%i.\n", r, i);
+            if(VERBOSE) { printf("Warning: No sub for R%i in C%i.\n", r, i); }
             continue;
           }
           
           for(pos0=0;pos0<strlen(center->seq);pos0++) {
             pos1 = sub->map[pos0];
-            if(pos1 == -999) { // A gap in the aligned seq
+            if(pos1 == GAP_GLYPH) { // A gap in the aligned seq
               continue; // Gaps excluded from the model
             }
             nti0 = (int) (center->seq[pos0] - 1);

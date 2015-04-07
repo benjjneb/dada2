@@ -87,11 +87,6 @@ void b_print(B *b) {
 void nt2int(char *oseq, const char *iseq) {
   int i, len = strlen(iseq);
 
-/*  if (len > sizeof iseq)
-    printf("nt2int: iseq input buffer shorter than seq\n");
-    len = sizeof iseq */
-/* DOESNT WORK, ISEQ NOT IN SCOPE FOR SIZEOF */
-
   for (i = 0; i < len; i++, iseq++, oseq++) {
     switch (*iseq) {
     case 'A':
@@ -114,7 +109,7 @@ void nt2int(char *oseq, const char *iseq) {
       break;
     default:
       printf("invalid character in input:%c.\n",*iseq);
-      exit(1);
+      *oseq = '\0';
     }
   }
   *oseq = '\0';
@@ -146,8 +141,6 @@ void int2nt(char *oseq, const char *iseq) {
       break;
     default:
       break;
-      // printf("invalid character in input:%c.\n",*iseq);
-      // exit(1);
     }
   }
   *oseq = '\0';
@@ -162,14 +155,18 @@ void ntcpy(char *oseq, const char *iseq) {
 
 /* Convenience function for diagnostic output. */
 char *ntstr(const char *iseq) {
-  char *oseq = (char *) malloc(strlen(iseq)+1);
+  char *oseq = (char *) malloc(strlen(iseq)+1); //E
+  if (oseq == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  
   ntcpy(oseq, iseq);
   return oseq;
 }
 
 /* Convenience function for diagnostic input. */
 char *intstr(const char *iseq) {
-  char *oseq = (char *) malloc(strlen(iseq)+1);
+  char *oseq = (char *) malloc(strlen(iseq)+1); //E
+  if (oseq == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  
   strcpy(oseq, iseq);
   nt2int(oseq, oseq);
   return oseq;

@@ -26,6 +26,9 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
                         Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming,
                         Rcpp::LogicalVector useQuals,
                         int qMin, int qMax) {
+
+  //Rcpp::CharacterVector seqs, Rcpp::IntegerVector abunds,
+
   int i, j, len1, len2, nrow, ncol;
   int f, r, nzeros, nones;
   size_t index;
@@ -38,6 +41,9 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
     return R_NilValue;
   }
   int nraw = len1;
+    
+//  std::vector<string> cpp_seqs = Rcpp::as<std::vector<string> >(seqs);
+//  std::vector<int> cpp_abunds = Rcpp::as<std::vector<int> >(abunds);
   
   // Turn quals matrix into a c-style 1D array c_quals
   // column-by-column storage
@@ -52,10 +58,11 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   }
 
   // Make the raws (uniques)
-  char *seq;
-  Raw **raws = (Raw **) malloc(nraw * sizeof(Raw *));
+  char seq[SEQLEN];
+  Raw **raws = (Raw **) malloc(nraw * sizeof(Raw *)); //E
+  if (raws == NULL)  Rcpp::stop("Memory allocation failed!\n");
+
   for (index = 0; index < nraw; index++) {
-    seq = (char *) malloc(seqs[index].length() + 1);
     strcpy(seq, seqs[index].c_str());
     nt2int(seq, seq);
     if(has_quals) {
@@ -64,9 +71,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
       raws[index] = raw_new(seq, abundances[index]);
     }
     raws[index]->index = index;
-    free(seq);
   }
-  
+
   // Copy score into a C style array
   nrow = score.nrow();
   ncol = score.ncol();
@@ -133,14 +139,16 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
   if(useQuals.size() != 1) { Rcpp::Rcout << "C: UseQuals not length 1\n"; return R_NilValue; }
   bool c_use_quals = as<bool>(useQuals);
 
-
   // Run DADA
   B *bb = run_dada(raws, nraw, c_score, err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals);
 
   // Extract output from Bi objects
-  char **oseqs = (char **) malloc(bb->nclust * sizeof(char *));
+  char **oseqs = (char **) malloc(bb->nclust * sizeof(char *)); //E
+  if (oseqs == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  
   for(i=0;i<bb->nclust;i++) {
-    oseqs[i] = (char *) malloc((strlen(bb->bi[i]->seq)+1) * sizeof(char));
+    oseqs[i] = (char *) malloc((strlen(bb->bi[i]->seq)+1) * sizeof(char)); //E
+    if (oseqs[i] == NULL)  Rcpp::stop("Memory allocation failed!\n");
     ntcpy(oseqs[i], bb->bi[i]->seq);
   }
 
@@ -248,13 +256,14 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector< int > abu
             sub = bb->bi[i]->sub[raw->index];
             if(sub) {
               pos1 = sub->map[pos0];
-              if(pos1 == -999) { // Gap
+              if(pos1 == GAP_GLYPH) { // Gap
                 continue;
               }
               nreads += raw->reads;
               qq += (raw->qual[pos1] * raw->reads);
             } else {
-              printf("Warning: No sub for R%i in C%i\n", r, i);
+//              if(tVERBOSE) { printf("Warning: No sub for R%i in C%i\n", r, i); }
+              if(VERBOSE) { printf("Warning: No sub for R%i in C%i\n", r, i); }
             }
           }
         }
@@ -289,7 +298,7 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
   b_lambda_update(bb, FALSE, 1.0, errMat); // Everyone gets aligned within the initial cluster, no KMER screen
   b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
-    
+  
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming)) ) {

@@ -44,8 +44,10 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bo
  The constructor for the Raw object.
  */
 Raw *raw_new(char *seq, int reads) {
-  Raw *raw = (Raw *) malloc(sizeof(Raw));
-  raw->seq = (char *) malloc(strlen(seq)+1);
+  Raw *raw = (Raw *) malloc(sizeof(Raw)); //E
+  if (raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  raw->seq = (char *) malloc(strlen(seq)+1); //E
+  if (raw->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(raw->seq, seq);
   raw->qual = NULL;
   raw->kmer = get_kmer(seq, KMER_SIZE);
@@ -56,16 +58,18 @@ Raw *raw_new(char *seq, int reads) {
 // raw_qual_new: A constructor for Raw objects with quals
 Raw *raw_qual_new(char *seq, double *qual, int reads) {
   int seqlen = strlen(seq);
-  Raw *raw = (Raw *) malloc(sizeof(Raw));
-  raw->seq = (char *) malloc(seqlen+1);
+  Raw *raw = (Raw *) malloc(sizeof(Raw)); //E
+  if (raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  raw->seq = (char *) malloc(seqlen+1); //E
+  if (raw->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(raw->seq, seq);
   raw->qual = NULL;
   if(qual) {
-    raw->qual = (double *) malloc(seqlen * sizeof(double));
+    raw->qual = (double *) malloc(seqlen * sizeof(double)); //E
+    if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed!\n");
     for(int i=0;i<seqlen;i++) { raw->qual[i] = qual[i]; }
   } else {
-    printf("Error: NULL qual provided to raw_qual_new constructor.\n");
-    exit(1);
+    Rcpp::stop("Error: NULL qual provided to raw_qual_new constructor.\n");
   }
   raw->kmer = get_kmer(seq, KMER_SIZE);
   raw->reads = reads;
@@ -83,9 +87,12 @@ void raw_free(Raw *raw) {
  The constructor for the Fam object.
  */
 Fam *fam_new() {
-  Fam *fam = (Fam *) malloc(sizeof(Fam));
-  fam->seq = (char *) malloc(SEQLEN);
-  fam->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *));
+  Fam *fam = (Fam *) malloc(sizeof(Fam)); //E
+  if (fam == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  fam->seq = (char *) malloc(SEQLEN); //E
+  if (fam->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  fam->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *)); //E
+  if (fam->raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
   fam->maxraw = RAWBUF;
   fam->nraw = 0;
   fam->reads = 0;
@@ -110,7 +117,8 @@ void fam_free(Fam *fam) {
  */
 int fam_add_raw(Fam *fam, Raw *raw) {
   if(fam->nraw >= fam->maxraw) {    // Extend Raw* buffer
-    fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *));
+    fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *)); //E
+    if (fam->raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
     fam->maxraw+=RAWBUF;
   }
 
@@ -241,17 +249,24 @@ void bi_add_raw(Bi *bi, Raw *raw) {
  The constructor for the Bi object.
  */
 Bi *bi_new(int totraw) {
-  Bi *bi = (Bi *) malloc(sizeof(Bi));
-  bi->seq = (char *) malloc(SEQLEN);
+  Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
+  if (bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  bi->seq = (char *) malloc(SEQLEN); //E
+  if (bi->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(bi->seq, "");
-  bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *));
+  bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *)); //E
+  if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->maxfam = FAMBUF;
-  bi->sub = (Sub **) malloc(totraw * sizeof(Sub *));
+  bi->sub = (Sub **) malloc(totraw * sizeof(Sub *)); //E
+  if (bi->sub == NULL)  Rcpp::stop("Memory allocation failed!\n");
   for(int i=0;i<totraw;i++) { bi->sub[i] = NULL; }   // Init to null pointers
-  bi->lambda = (double *) malloc(totraw * sizeof(double));
-  bi->e = (double *) malloc(totraw * sizeof(double));
+  bi->lambda = (double *) malloc(totraw * sizeof(double)); //E
+  if (bi->lambda == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  bi->e = (double *) malloc(totraw * sizeof(double)); //E
+  if (bi->e == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->totraw = totraw;
-  bi->sm = sm_new(HASHOCC);
+  bi->sm = sm_new(HASHOCC); //E
+  if (bi->sm == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->update_lambda = TRUE;
   bi->update_fam = TRUE;
   
@@ -281,7 +296,8 @@ void bi_free(Bi *bi) {
  */
 int bi_add_fam(Bi *bi, Fam *fam) {
   if(bi->nfam >= bi->maxfam) {    // Extend Fam* buffer
-    bi->fam = (Fam **) realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *));
+    bi->fam = (Fam **) realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *)); //E
+    if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed!\n");
     bi->maxfam+=FAMBUF;
   }
 
@@ -314,8 +330,10 @@ B *b_new(Raw **raws, int nraw, double score[4][4], double gap_pen, double omegaA
   size_t index;
 
   // Allocate memory
-  B *b = (B *) malloc(sizeof(B));
-  b->bi = (Bi **) malloc(CLUSTBUF * sizeof(Bi *));
+  B *b = (B *) malloc(sizeof(B)); //E
+  if (b == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  b->bi = (Bi **) malloc(CLUSTBUF * sizeof(Bi *)); //E
+  if (b->bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
   b->maxclust = CLUSTBUF;
   
   // Initialize basic values
@@ -389,7 +407,6 @@ void b_init(B *b) {
 
   bi_census(b->bi[0]);
   b_consensus_update(b); // Makes cluster consensus sequence
-  if(VERBOSE) { printf("b_init - exit\n"); }
 }
 
 /* b_free:
@@ -406,7 +423,8 @@ void b_free(B *b) {
  */
 int b_add_bi(B *b, Bi *bi) {
   if(b->nclust >= b->maxclust) {    // Extend Bi* buffer
-    b->bi = (Bi **) realloc(b->bi, (b->maxclust+CLUSTBUF) * sizeof(Bi *));
+    b->bi = (Bi **) realloc(b->bi, (b->maxclust+CLUSTBUF) * sizeof(Bi *)); //E
+    if (b->bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
     b->maxclust+=CLUSTBUF;
   }
   b->bi[b->nclust] = bi;
@@ -433,7 +451,8 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
       for(index=0; index<b->nraw; index++) {
         // get sub object
         sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
-        
+        ///! /*
+     
         // Store sub in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
         b->bi[i]->sub[index] = sub;
@@ -447,6 +466,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
         b->bi[i]->lambda[index] = lambda;
         if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
         if(index == TARGET_RAW) { printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
+        ///! */
       }
       b->bi[i]->update_lambda = FALSE;
       if(!b->bi[i]->update_fam) {
@@ -473,7 +493,8 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bo
   bi_census(bi);
   
   // Make list of pointers to the raws
-  Raw **raws = (Raw **) malloc(bi->nraw * sizeof(Raw *));
+  Raw **raws = (Raw **) malloc(bi->nraw * sizeof(Raw *)); //E
+  if (raws == NULL)  Rcpp::stop("Memory allocation failed!\n");
   r_c=0;
   for(f=0;f<bi->nfam;f++) {
     for(r=0;r<bi->fam[f]->nraw;r++) {
@@ -532,8 +553,7 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bo
     sub = bi->sub[bi->fam[f]->center->index];
 
     if(!sub) { // Protect from null subs, but this should never arise...
-      printf("Error: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
-      exit(1);
+      Rcpp::stop("Error: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
     }
     
     bi->fam[f]->sub = sub;

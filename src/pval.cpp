@@ -221,8 +221,7 @@ void b_make_pS_lookup(B *b) {
     printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
     
     b_free(b);
-    Rcpp::stop("Cannot meet requsted OmegaS\n");
-    // exit(EXIT_FAILURE);
+    Rcpp::stop("Cannot meet requested OmegaS\n");
   }    
 
   // Calculate average sequence nnt
@@ -303,8 +302,11 @@ void b_make_pS_lookup(B *b) {
   // Copy into C style arrays
   // Kind of silly, at some point might be worthwhile doing the full C++ conversion
   if(tVERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
-  lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
-  cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
+  lams = (double *) malloc(temp_lambdas.size() * sizeof(double)); //E
+  if (lams == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  cdf = (double *) malloc(temp_cdf.size() * sizeof(double)); //E
+  if (cdf == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  
   nlam = temp_lambdas.size();
   for(index=0;index<nlam;index++) {
     lams[index] = temp_lambdas[index];
@@ -409,8 +411,7 @@ double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals
     if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
       tvec[pos1] = nti1*4 + nti1;
     } else {
-      printf("Error: Can't handle non ACGT sequences in CL2.\n");
-      exit(1);
+      Rcpp::stop("Error: Can't handle non ACGT sequences in CL2.\n");
     }
     if(raw->qual) {
       qvec[pos1] = raw->qual[pos1];
@@ -458,8 +459,7 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
     if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
       tvec[pos1] = nti1*4 + nti1;
     } else {
-      printf("Error: Can't handle non ACGT sequences in CL2.\n");
-      exit(1);
+      Rcpp::stop("Error: Can't handle non ACGT sequences in CL2.\n");
     }
     if(raw->qual) {
       qvec[pos1] = raw->qual[pos1];
@@ -469,8 +469,7 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
     // Turn q-score into the index in the array
     qind[pos1] = round((errMat.ncol()-1) * (qvec[pos1]-QMIN)/((double) QMAX-QMIN));
     if( qind[pos1] > (errMat.ncol()-1) ) {
-      printf("Error: rounded quality score (%i) exceeded err lookup table.\n", qind[pos1]);
-      exit(1);
+      Rcpp::stop("Error: rounded quality score (%i) exceeded err lookup table.\n", qind[pos1]);
     }
   }
   
