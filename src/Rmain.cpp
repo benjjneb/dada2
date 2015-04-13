@@ -279,7 +279,17 @@ Rcpp::List dada_uniques(Rcpp::CharacterVector seqs,  Rcpp::IntegerVector abundan
       } // for(pos0=0;pos0<len1;pos0++)
     }
   }
-  
+
+  // Make map from uniques to cluster
+  Rcpp::IntegerVector Rmap(nraw);
+  for(i=0;i<bb->nclust;i++) {
+    for(f=0;f<bb->bi[i]->nfam;f++) {
+      for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
+        Rmap(bb->bi[i]->fam[f]->raw[r]->index) = i+1; // +1 for R 1-indexing
+      }
+    }
+  }
+
   // Free memory
   for(i=0;i<bb->nclust;i++) {
     free(oseqs[i]);
@@ -292,7 +302,7 @@ Rcpp::List dada_uniques(Rcpp::CharacterVector seqs,  Rcpp::IntegerVector abundan
   free(raws);
   
   // Organize return List  
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = transMat, _["trans"] = Rtrans, _["clusterquals"] = Rquals);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_subpos, _["subqual"] = transMat, _["trans"] = Rtrans, _["clusterquals"] = Rquals, _["map"] = Rmap);
 }
 
 B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {

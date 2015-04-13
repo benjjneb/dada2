@@ -118,8 +118,6 @@ dada <- function(uniques, quals=NULL,
     }
   }
   
-  # Validate QMAX/QMIN/QSTEP?
-  
   # Initialize
   cur <- NULL
   nconsist <- 1
@@ -131,6 +129,7 @@ dada <- function(uniques, quals=NULL,
     clusterquals <- list()
     subpos <- list()
     subqual <- list()
+    map <- list()
     prev <- cur
     errs[[nconsist]] <- err
 
@@ -157,6 +156,7 @@ dada <- function(uniques, quals=NULL,
       clusterquals[[i]] <- t(res$clusterquals) # make sequences rows and positions columns
       subpos[[i]] <- res$subpos
       subqual[[i]] <- res$subqual
+      map[[i]] <- res$map
       rownames(subqual[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
       if(!is.null(quals)) colnames(subqual[[i]]) <- seq(opts$QMIN, opts$QMAX)
     }
@@ -236,6 +236,7 @@ dada <- function(uniques, quals=NULL,
   rval$clusterquals <- clusterquals
   rval$subpos <- subpos
   rval$subqual <- subqual
+  rval$map <- map
   
   if(length(rval$genotypes)==1) { # one sample, return a naked uniques vector
     rval$genotypes <- rval$genotypes[[1]]
@@ -243,12 +244,14 @@ dada <- function(uniques, quals=NULL,
     rval$clusterquals <- rval$clusterquals[[1]]
     rval$subpos <- rval$subpos[[1]]
     rval$subqual <- rval$subqual[[1]]
+    rval$map <- rval$map[[1]]
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
     names(rval$clustering) <- names(uniques)
     names(rval$clusterquals) <- names(uniques)
     names(rval$subpos) <- names(uniques)
     names(rval$subqual) <- names(uniques)
+    names(rval$map) <- names(uniques)
   }
 
   # Return the error rate(s) used as well as the final sub matrix and estimated error matrix

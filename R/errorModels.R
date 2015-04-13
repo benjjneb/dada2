@@ -60,6 +60,6 @@ showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE) {
 #' @export
 inflateErr <- function(err, mult) {
   t_errs <- c("A2C", "A2G", "A2T", "C2A", "C2G", "C2T", "G2A", "G2C", "G2T", "T2A", "T2C", "T2G")
-  err[t_errs,] <- err[t_errs,] * mult
+  err[t_errs,] <- (err[t_errs,] * mult)/(1 + (mult-1) * err[t_errs,])
   return(err)
 }

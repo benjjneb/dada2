@@ -289,6 +289,105 @@ derepFastqWithQual <- function(fl, n = 1e6, verbose = FALSE){
   close(f)
   return(list(uniques=derepCounts, quals=derepQuals))
 }
+###
+#' Internal function to replicate tables functionality while also returning average quals and a map
+#' from reads to uniques
+#' 
+qtables2 <- function(x) {
+  # ranks are lexical rank
+  srt <- srsort(x) # map from rank to sequence/quality/id
+  rnk <- srrank(x) # map from read_i to rank (integer vec of ranks, ties take top rank)
+#  cat("Rnk:", rnk, "\n")
+  tab <- tabulate(rnk) # map from rank to abundance (much faster than table)
+#  cat("Tab:", tab, "\n")
+  
+  srtrnk <- srrank(srt)
+  #  unq <- unique(rnk)
+  unq <- unique(srtrnk)
+  uniques <- tab[unq] # abundance of each rank (value)
+  names(uniques) <- as.character(sread(srt)[unq]) # sequence of each unique (name)
+#  print(uniques)
+  
+  ##### BUG HERE?
+  rnk2unqi <- rep(seq(length(uniques)), tab[tab>0]) # map from rank to uniques index
+#  cat("Rnk2unqi:", rnk2unqi, "\n")
+  map <- rnk2unqi[rnk] # map from read index to unique index
+#  cat("Map:", map, "\n")
+  
+  # do matrices
+  qmat <- as(quality(srt), "matrix") # map from read_i to quality
+  qmat <- rowsum(qmat, srtrnk, reorder=FALSE)
+  rownames(qmat) <- names(uniques)
+  list(uniques=uniques, cum_quals=qmat, map=map)
+}
+#' @export
+#'
+derepFastqTest <- function(fl, n = 1e6, verbose = FALSE){
+  if(verbose){
+    message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
+  }
+  
+  f <- FastqStreamer(fl, n = n)
+  suppressWarnings(fq <- yield(f))
+  
+  ######################## >>>
+  out <- qtables2(fq)
+  ######################## <<<
+  
+  derepCounts <- out$uniques
+  derepQuals <- out$cum_quals
+  derepMap <- out$map
+#  print(derepCounts)
+#  cat("derepMap:", derepMap, "\n")
+  while( length(suppressWarnings(fq <- yield(f))) ){
+    # A little loop protection
+    newniques = alreadySeen = NULL
+    # Dot represents one turn inside the chunking loop.
+    if(verbose){
+      message(".", appendLF = FALSE)
+    }
+    ######################## >>>
+    out <- qtables2(fq)
+    ######################## <<<
+    # identify sequences already present in `derepCounts`
+    alreadySeen <- names(out$uniques) %in% names(derepCounts)
+#    print(alreadySeen)
+    # Sum these values, if any
+    if(any(alreadySeen)){
+#      cat("any\n")
+      sqnms = names(out$uniques)[alreadySeen]
+      derepCounts[sqnms] <- derepCounts[sqnms] + out$uniques[sqnms]
+      derepQuals[sqnms,] <- derepQuals[sqnms,] + out$cum_quals[sqnms,]
+#      print(derepCounts)
+    }
+    # Concatenate the remainder to `derepCounts`, if any
+    if(!all(alreadySeen)){
+#      cat("!all\n")
+      derepCounts <- c(derepCounts, out$uniques[!alreadySeen])
+      derepQuals <- rbind(derepQuals, out$cum_quals[!alreadySeen,,drop=FALSE])
+#      print(derepCounts)
+    }
+    ######################## >>>
+    new2old <- match(names(out$uniques), names(derepCounts)) # map from out$uniques index to derepCounts index
+#  map <- rnk2unqi[rnk] # map from read index to unique index
+#    cat("out$map", out$map, "\n")
+#    cat("new2old:", new2old, "\n")
+    if(any(is.na(new2old))) warning("Failed to properly extend uniques.")
+    derepMap <- c(derepMap, new2old[out$map])
+#    cat("derepMap:", derepMap, "\n")
+    ######################## <<<
+  }
+  derepQuals <- derepQuals/derepCounts # Change to average quals
+  if(verbose){
+    message("Encountered ",
+            length(derepCounts),
+            " unique sequences from ",
+            sum(derepCounts),
+            " total sequences read.")
+  }
+  close(f)
+  return(list(uniques=derepCounts, quals=derepQuals, map=derepMap))
+}
 ################################################################################
 #' Load .uniques file
 #' 
