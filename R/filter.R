@@ -1,22 +1,11 @@
-# TODO: Add EE or AveQ filtering.
-# TODO: Added paired filtering.
-
-#' filterFastq implements most of fastq_filter from usearch...
+#' fastqFilter implements most of fastq_filter from usearch...
 #' 
 #' @export
-fastqFilter <- function(fn, fout, maxN = 0, truncQ = "#", truncLen = 0, trimLeft = 0, minQ = 0, n = 1e6, verbose = FALSE){
+fastqFilter <- function(fn, fout, maxN = 0, truncQ = "#", truncLen = 0, trimLeft = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
   # See also filterFastq in the ShortRead package
-  if(trimLeft <= 0) { 
-    start = 1 
-  } else { 
-    start = trimLeft+1
-  } 
-  
-  if(truncLen <= 0 || truncLen < start) { 
-    end = NA
-  } else { 
-    end = truncLen 
-  }
+  start <- max(1, trimLeft + 1)
+  end <- truncLen
+  if(end < start) { end = NA }
   
   require("ShortRead")
   ## iterating over an entire file using fastq streaming
@@ -28,24 +17,30 @@ fastqFilter <- function(fn, fout, maxN = 0, truncQ = "#", truncLen = 0, trimLeft
   outseqs = 0
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
+    
+    ##### TESTING TESTING TESTING TAKE OUT LATER
+    narrow(id(fq),1,42)  ### FUCK NOT WORKING
     # Trim on truncQ ################## BEST TO MAKE THIS ROBUST TO Q ALPHABET
     fq <- trimTails(fq, 1, truncQ)
     # Filter any with less than required length
     if(!is.na(end)) { fq <- fq[width(fq) >= end] }
     # Trim left and truncate to truncLen
     fq <- narrow(fq, start = start, end = end)
-    # Filter based on minQ
-    fq <- fq[minQFilter(minQ)(fq)]
-    # Filter Ns
-    fq <- fq[nFilter(maxN)(fq)]
+
+    # Filter based on minQ and Ns and maxEE
+    keep <- rep(TRUE, length(fq))
+    keep <- keep & minQFilter(minQ)(fq)
+    keep <- keep & nFilter(maxN)(fq)
+    keep <- keep & maxEEFilter(maxEE)(fq)
+    fq <- fq[keep]
     
     outseqs <- outseqs + length(fq)
     
     if(first) {
-      writeFastq(fq, fout, "w")
+      writeFastq(fq, fout, "w", compress=compress)
       first=FALSE
     } else {
-      writeFastq(fq, fout, "a")
+      writeFastq(fq, fout, "a", compress=compress)
     }
   }
   
@@ -57,13 +52,13 @@ fastqFilter <- function(fn, fout, maxN = 0, truncQ = "#", truncLen = 0, trimLeft
 #' This filters paired read files, keeping only those reads which pass in both forward and reverse files
 #' 
 #' @export
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), n = 1e6, compress = TRUE, verbose = FALSE){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
   # Warning: This assumes that forward/reverse reads are paired by line
   # IT DOES NOT CHECK THE ID LINES
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
   
-  for(var in c("maxN", "truncQ", "truncLen", "trimLeft", "minQ")) {
+  for(var in c("maxN", "truncQ", "truncLen", "trimLeft", "minQ", "maxEE")) {
     if(length(get(var)) == 1) { # Double the 1 value to be the same for F and R
       assign(var, c(get(var), get(var)))
     }
@@ -91,14 +86,15 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
   inseqs = 0
   outseqs = 0
   while( length(suppressWarnings(fqF <- yield(fF))) && length(suppressWarnings(fqR <- yield(fR))) ){
-    if(length(fqF) != length(fqR)) stop("Mismatched forward and reverse sequence files(1): ", length(fqF), ", ", length(fqR), ".")
+    if(length(fqF) != length(fqR)) stop("Mismatched forward and reverse sequence files: ", length(fqF), ", ", length(fqR), ".")
     inseqs <- inseqs + length(fqF)
+    
     # Trim on truncQ ################## BEST TO MAKE THIS ROBUST TO Q ALPHABET
     rngF <- trimTails(fqF, 1, truncQ[[1]], ranges=TRUE)
     fqF <- narrow(fqF, 1, end(rngF)) # have to do it this way to avoid dropping the zero lengths
     rngR <- trimTails(fqR, 1, truncQ[[2]], ranges=TRUE)
     fqR <- narrow(fqR, 1, end(rngR)) # have to do it this way to avoid dropping the zero lengths
-    if(length(fqF) != length(fqR)) stop("Mismatched forward and reverse sequence files(2): ", length(fqF), ", ", length(fqR), ".")
+
     # Filter any with less than required length
     keep <- rep(TRUE, length(fqF))
     if(!is.na(endF)) { keep <- keep & (width(fqF) >= endF) }
@@ -108,15 +104,16 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
     # Trim left and truncate to truncLen
     fqF <- narrow(fqF, start = startF, end = endF)
     fqR <- narrow(fqR, start = startR, end = endR)
-    # Filter based on minQ and Ns
+    
+    # Filter based on minQ and Ns and maxEE
     keep <- rep(TRUE, length(fqF))
-    keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF)
-    keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqF)
+    keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF) & maxEEFilter(maxEE[[1]])(fqF)
+    keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqF) & maxEEFilter(maxEE[[2]])(fqF)
     fqF <- fqF[keep]
     fqR <- fqR[keep]
     
-    outseqs <- outseqs + length(fqF)
-    if(length(fqF) != length(fqR)) stop("Mismatched forward and reverse sequence files(3): ", length(fqF), ", ", length(fqR), ".")
+    if(length(fqF) != length(fqR)) stop("Filtering caused mismatch between forward and reverse sequence lists: ", length(fqF), ", ", length(fqR), ".")
+    outseqs <- outseqs + length(fqF)    
     
     if(first) {
       writeFastq(fqF, fout[[1]], "w", compress = compress)
@@ -133,12 +130,19 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
   }
 }
 
-
 minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
 {
   ShortRead:::.check_type_and_length(minQ, "numeric", 1)
   ShortRead:::srFilter(function(x) {
-    apply(as(quality(x), "matrix"), 1, function(qs) min(qs) >= minQ)
+    apply(as(quality(x), "matrix"), 1, function(qs) min(qs, na.rm=TRUE) >= minQ)
+  }, name = .name)
+}
+
+maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter") 
+{
+  ShortRead:::.check_type_and_length(maxEE, "numeric", 1)
+  ShortRead:::srFilter(function(x) {
+    apply(as(quality(x), "matrix"), 1, function(qs) sum(10^(-qs[!is.na(qs)]/10.0)) <= maxEE)
   }, name = .name)
 }
 

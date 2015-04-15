@@ -337,8 +337,6 @@ derepFastqTest <- function(fl, n = 1e6, verbose = FALSE){
   derepCounts <- out$uniques
   derepQuals <- out$cum_quals
   derepMap <- out$map
-#  print(derepCounts)
-#  cat("derepMap:", derepMap, "\n")
   while( length(suppressWarnings(fq <- yield(f))) ){
     # A little loop protection
     newniques = alreadySeen = NULL
@@ -351,30 +349,21 @@ derepFastqTest <- function(fl, n = 1e6, verbose = FALSE){
     ######################## <<<
     # identify sequences already present in `derepCounts`
     alreadySeen <- names(out$uniques) %in% names(derepCounts)
-#    print(alreadySeen)
     # Sum these values, if any
     if(any(alreadySeen)){
-#      cat("any\n")
       sqnms = names(out$uniques)[alreadySeen]
       derepCounts[sqnms] <- derepCounts[sqnms] + out$uniques[sqnms]
       derepQuals[sqnms,] <- derepQuals[sqnms,] + out$cum_quals[sqnms,]
-#      print(derepCounts)
     }
     # Concatenate the remainder to `derepCounts`, if any
     if(!all(alreadySeen)){
-#      cat("!all\n")
       derepCounts <- c(derepCounts, out$uniques[!alreadySeen])
       derepQuals <- rbind(derepQuals, out$cum_quals[!alreadySeen,,drop=FALSE])
-#      print(derepCounts)
     }
     ######################## >>>
     new2old <- match(names(out$uniques), names(derepCounts)) # map from out$uniques index to derepCounts index
-#  map <- rnk2unqi[rnk] # map from read index to unique index
-#    cat("out$map", out$map, "\n")
-#    cat("new2old:", new2old, "\n")
     if(any(is.na(new2old))) warning("Failed to properly extend uniques.")
     derepMap <- c(derepMap, new2old[out$map])
-#    cat("derepMap:", derepMap, "\n")
     ######################## <<<
   }
   derepQuals <- derepQuals/derepCounts # Change to average quals

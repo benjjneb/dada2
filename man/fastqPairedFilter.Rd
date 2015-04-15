@@ -5,8 +5,8 @@
 \title{This filters paired read files, keeping only those reads which pass in both forward and reverse files}
 \usage{
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c("#", "#"),
-  truncLen = c(0, 0), trimLeft = c(0, 0), minQ = c(0, 0), n = 1e+06,
-  verbose = FALSE)
+  truncLen = c(0, 0), trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf,
+  Inf), n = 1e+06, compress = TRUE, verbose = FALSE)
 }
 \description{
 This filters paired read files, keeping only those reads which pass in both forward and reverse files
