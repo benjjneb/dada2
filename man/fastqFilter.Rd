@@ -5,7 +5,8 @@
 \title{fastqFilter implements most of fastq_filter from usearch...}
 \usage{
 fastqFilter(fn, fout, maxN = 0, truncQ = "#", truncLen = 0,
-  trimLeft = 0, minQ = 0, maxEE = Inf, n = 1e+06, verbose = FALSE)
+  trimLeft = 0, minQ = 0, maxEE = Inf, n = 1e+06, compress = TRUE,
+  verbose = FALSE)
 }
 \description{
 fastqFilter implements most of fastq_filter from usearch...

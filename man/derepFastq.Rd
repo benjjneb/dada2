@@ -25,7 +25,10 @@ derepFastq(fl, n = 1e+06, verbose = FALSE)
  Default is \code{FALSE}, no messages.}
 }
 \value{
-Named integer vector. Named by sequence, valued by number of occurence.
+List.
+ $uniques: Named integer vector. Named by sequence, valued by number of occurence.
+ $quals: Matrix of average quality scores for each unique. Uniques are rows, positions are cols.
+ $map: Vector encoding the map between each read and the corresponding unique.
 }
 \description{
 This is a custom interface to \code{\link{FastqStreamer}}
