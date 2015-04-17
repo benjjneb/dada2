@@ -31,7 +31,7 @@ fastqFilter <- function(fn, fout, maxN = 0, truncQ = "#", truncLen = 0, trimLeft
     keep <- rep(TRUE, length(fq))
     keep <- keep & minQFilter(minQ)(fq)
     keep <- keep & nFilter(maxN)(fq)
-    keep <- keep & maxEEFilter(maxEE)(fq)
+    if(maxEE < Inf) keep <- keep & maxEEFilter(maxEE)(fq)
     fq <- fq[keep]
     
     outseqs <- outseqs + length(fq)
@@ -107,8 +107,10 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
     
     # Filter based on minQ and Ns and maxEE
     keep <- rep(TRUE, length(fqF))
-    keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF) & maxEEFilter(maxEE[[1]])(fqF)
-    keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqF) & maxEEFilter(maxEE[[2]])(fqF)
+    keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF)
+    if(maxEE[[1]] < Inf) keep <- keep & maxEEFilter(maxEE[[1]])(fqF)
+    keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqF)
+    if(maxEE[[2]] < Inf) keep <- keep & maxEEFilter(maxEE[[2]])(fqF)
     fqF <- fqF[keep]
     fqR <- fqR[keep]
     

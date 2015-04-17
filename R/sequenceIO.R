@@ -24,9 +24,9 @@
 #'  Default is \code{FALSE}, no messages.
 #'
 #' @return List. 
-#'  $uniques: Named integer vector. Named by sequence, valued by number of occurence.
-#'  $quals: Matrix of average quality scores for each unique. Uniques are rows, positions are cols.
-#'  $map: Vector encoding the map between each read and the corresponding unique.
+#'  $uniques: Named integer vector. Named by the unique sequence, valued by abundance.
+#'  $quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.
+#'  $map: Integer vector of the index of the unique (in $uniques) corresponding to each read.
 #'
 #' @seealso \code{\link{replicateReads}}, \code{\link{removeReadsWithNs}}, 
 #' \code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
@@ -50,9 +50,7 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE){
   f <- FastqStreamer(fl, n = n)
   suppressWarnings(fq <- yield(f))
   
-  ######################## >>>
   out <- qtables2(fq)
-  ######################## <<<
   
   derepCounts <- out$uniques
   derepQuals <- out$cum_quals
@@ -80,11 +78,9 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE){
       derepCounts <- c(derepCounts, out$uniques[!alreadySeen])
       derepQuals <- rbind(derepQuals, out$cum_quals[!alreadySeen,,drop=FALSE])
     }
-    ######################## >>>
     new2old <- match(names(out$uniques), names(derepCounts)) # map from out$uniques index to derepCounts index
     if(any(is.na(new2old))) warning("Failed to properly extend uniques.")
     derepMap <- c(derepMap, new2old[out$map])
-    ######################## <<<
   }
   derepQuals <- derepQuals/derepCounts # Change to average quals
   if(verbose){
@@ -141,6 +137,7 @@ importUniques <- function(fl, colClasses = c("integer", "character"), ...){
   return(rvec)
 }
 ################################################################################
+#  DEPRECATED DEPRECATED DEPRECATED
 #' Read and Dereplicate a Fastq file containing multiple samples.
 #' 
 #' This is a custom interface to \code{\link{FastqStreamer}} 
