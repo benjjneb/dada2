@@ -2,7 +2,7 @@
 #' Read and Dereplicate a Fastq file.
 #' 
 #' This is a custom interface to \code{\link{FastqStreamer}} 
-#' for dereplicating amplicon sequences from a fastq or fastq.gz file,
+#' for dereplicating amplicon sequences from a fastq or compressed fastq file,
 #' while also controlling peak memory requirement to support large files.
 #' This function relies heavily on the \code{\link[ShortRead]{tables}} method.
 #'
