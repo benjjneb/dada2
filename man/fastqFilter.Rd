@@ -2,12 +2,13 @@
 % Please edit documentation in R/filter.R
 \name{fastqFilter}
 \alias{fastqFilter}
-\title{filterFastq implements most of fastq_filter from usearch...}
+\title{fastqFilter implements most of fastq_filter from usearch...}
 \usage{
 fastqFilter(fn, fout, maxN = 0, truncQ = "#", truncLen = 0,
-  trimLeft = 0, minQ = 0, n = 1e+06, verbose = FALSE)
+  trimLeft = 0, minQ = 0, maxEE = Inf, n = 1e+06, compress = TRUE,
+  verbose = FALSE)
 }
 \description{
-filterFastq implements most of fastq_filter from usearch...
+fastqFilter implements most of fastq_filter from usearch...
 }
 

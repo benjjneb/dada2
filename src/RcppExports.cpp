@@ -47,14 +47,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // dada_uniques
-Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector< int > abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::LogicalVector use_kmers, Rcpp::NumericVector kdist_cutoff, Rcpp::NumericVector band_size, Rcpp::NumericVector omegaA, Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS, Rcpp::NumericVector maxClust, Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming, Rcpp::LogicalVector useQuals);
-RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP use_singletonsSEXP, SEXP omegaSSEXP, SEXP maxClustSEXP, SEXP minFoldSEXP, SEXP minHammingSEXP, SEXP useQualsSEXP) {
+Rcpp::List dada_uniques(Rcpp::CharacterVector seqs, Rcpp::IntegerVector abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::LogicalVector use_kmers, Rcpp::NumericVector kdist_cutoff, Rcpp::NumericVector band_size, Rcpp::NumericVector omegaA, Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS, Rcpp::NumericVector maxClust, Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming, Rcpp::LogicalVector useQuals, int qMin, int qMax);
+RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP use_singletonsSEXP, SEXP omegaSSEXP, SEXP maxClustSEXP, SEXP minFoldSEXP, SEXP minHammingSEXP, SEXP useQualsSEXP, SEXP qMinSEXP, SEXP qMaxSEXP) {
 BEGIN_RCPP
     SEXP __sexp_result;
     {
         Rcpp::RNGScope __rngScope;
-        Rcpp::traits::input_parameter< std::vector< std::string > >::type seqs(seqsSEXP );
-        Rcpp::traits::input_parameter< std::vector< int > >::type abundances(abundancesSEXP );
+        Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type seqs(seqsSEXP );
+        Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type abundances(abundancesSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type err(errSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type quals(qualsSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP );
@@ -69,7 +69,9 @@ BEGIN_RCPP
         Rcpp::traits::input_parameter< Rcpp::NumericVector >::type minFold(minFoldSEXP );
         Rcpp::traits::input_parameter< Rcpp::NumericVector >::type minHamming(minHammingSEXP );
         Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type useQuals(useQualsSEXP );
-        Rcpp::List __result = dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming, useQuals);
+        Rcpp::traits::input_parameter< int >::type qMin(qMinSEXP );
+        Rcpp::traits::input_parameter< int >::type qMax(qMaxSEXP );
+        Rcpp::List __result = dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming, useQuals, qMin, qMax);
         PROTECT(__sexp_result = Rcpp::wrap(__result));
     }
     UNPROTECT(1);

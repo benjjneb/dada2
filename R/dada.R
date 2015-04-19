@@ -9,29 +9,70 @@
 #'  A list of such vectors can be provided, in which case the error model will be 
 #'    shared across these samples when denoising.
 #'  
-#' @param err (Optional). 4x4 numeric matrix.
-#'  The matrix of estimated error rates from one nucleotide to another.
-#'  err[i,j] = Prob(j in sequence | i in sample genotype).
-#'  A=1, C=2, G=3, T=4 for indexing. Rows required to sum to 1.
+#' @param quals (Optional). Numeric matrix containing average quality scores for each unique at each position.
+#'  The quals matrix has a row for each corresponding unique in the uniques vector, and a column for each
+#'  sequence position. So nrow(quals) == length(uniques) and ncol(quals) == nchar(uniques[[foo]]).
+#'  
+#' @param err (Required). 16xN numeric matrix.
+#'  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
+#'  Rows correspond to the 16 possible transitions (t_ij) indexed as so... 
+#'    1:A->A,  2:A->C,  3:A->G,  4:A->T,  5:C->A,  6:C->C,  7:C->G,  8:C->T,
+#'    9:G->A, 10:G->C, 11:G->G, 12:G->T, 13:T->A, 14:T->C, 15:T->G, 16:T->T
+#'    
+#'  If USE_QUALS = TRUE, the columns correspond to a linear interpolation of quality score from QMIN and QMAX, eg. seq(QMIN, QMAX, by=QSTEP).
+#'    err[t_ij, round((q_ave-QMIN)/QSTEP) + 1] = Prob(j in sequence | i in sample genotype and q_ave).
+#'    
+#'  If USE_QUALS = FALSE, the matrix must have only one column, which corresponds to the estimated error rate for that transition.
+#'    err[t_ij, 1] = Prob(j in sequence | i in sample genotype).
+#'  
+#' @param err_function (Optional). Function.
+#'   If USE_QUALS = TRUE, err_function(dada()$trans_out) is computed and taken to be the new err matrix.
+#'    If self_consist = TRUE, the next iteration if the dada() algorithm will use this new err, and this
+#'    will continue until the loop terminates due to convergence (or by hitting MAX_CONSIST). If
+#'    self_consist=FALSE, err_function is only used to calculate return value $err_out, but otherwise
+#'    has no effect on the algorithm.
+#'   
+#'   If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).
 #'  
 #' @param self_consist (Optional). \code{logical(1)}
 #'  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat
 #'  the algorithm using the newly estimated error rates. This continues until convergence.
 #'
+#' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
+#'    eg. dada(unq, err=err_in, OMEGA_A=1e-50, MAX_CLUST=50) 
+#'
 #' @return List.
-#'  $genotypes: named integer vector of the denoised sample genotypes.
-#'  $trans: 4x4 integer matrix of the inferred substutions ("errors") between nts. 
-#'  $opts: A list of the dada_opts used for this function call.
+#'  $genotypes: Integer vector, named by sequence valued by abundance, of the denoised genotypes.
+#'  $clustering: An informative data.frame containing information on each cluster.
+#'  $quality: The average quality scores for each cluster (row) by position (col).
+#'  $map: Integer vector that maps the unique (index) to the cluster/genotype (value).
+#'  $birth_subs: A data.frame containing the substitutions at the birth of each new cluster.
+#'  $trans: The matrix of transitions by type (row), eg. A2A, A2C..., and quality score (col)
+#'          observed in the final output of the dada algorithm.
+#'  $trans_out: The matrix of transitions by type and quality, summed over all denoised samples.
+#'          Used to estimate $err_out. Identical to $trans if just one sample denoised.
+#'  $err_out: The err matrix estimated from the output of dada. NULL if err_function not provided.
+#'  $err_in: The err matrix used for this invocation of dada.
+#'  $opts: A list of the dada_opts used for this invocation of dada.
+#'  $uniques: The uniques vector(s) used for this invocation of dada.
+#'  $call: The function call used for this invocation of dada.
+#'   
+#'  If a list of uniques vectors was provided (i.e. multiple samples) then $genotypes, $clustering,
+#'    $quality, $map and $birth_subs are lists with entries corresponding to each provided uniques vector.
+#'  
+#'  If self_consist=TRUE, $err_in is a list of length the number of times through the self_consist
+#'    loop corresponding to the err used in each iteration. $err_out is the final estimated error rate.
 #'   
 #' @export
 #'
 dada <- function(uniques, quals=NULL,
-                 err = matrix(c(0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991), nrow=4, byrow=T),
+                 err,
+                 err_function = NULL,
                  self_consist = FALSE, ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
-  opts <- get_dada_opt()
+  opts <- getDadaOpt()
   args <- list(...)
   for(opnm in names(args)) {
     if(opnm %in% names(opts)) {
@@ -72,34 +113,52 @@ dada <- function(uniques, quals=NULL,
       if(any(sapply(names(uniques), nchar) > ncol(quals[[i]]))) {
         stop("Qual matrices must have at least as many columns as the sequence length.")
       }
-      if(min(quals[[i]]) < 0 || max(quals[[i]] > 40)) {
-        stop("Invalid quality matrix. Quality values must be between 0 and 40.")
+      if(min(quals[[i]]) < opts$QMIN || max(quals[[i]] > opts$QMAX)) {
+        stop("Invalid quality matrix. Quality values must be between QMIN and QMAX.")
       }
     }
   }
   
-  if(!( is.numeric(err) && dim(err) == c(4,4) && all(err>=0) && all.equal(rowSums(err), c(1,1,1,1)) )) {
-    stop("Invalid error matrix.")
-  }
+  # Validate err matrix
+  if(!( is.numeric(err) && nrow(err) == 16) && all(err>=0))
+  { stop("Invalid error matrix.") }
   if(any(err==0)) warning("Zero in error matrix.")
+  
+  # Validate err_model
+  if(!opts$USE_QUALS) {
+    if(!is.null(err_function)) warning("The err_function argument is ignored when USE_QUALS is FALSE.")
+    err_function = NULL  # NULL error function has different meaning depending on USE_QUALS
+  } else {
+    if(is.null(err_function)) { 
+      if(self_consist) {
+        stop("Must provide an error function if USE_QUALS and self_consist=TRUE.")
+      } else {
+        message("No error function provided, no post-dada error estimates ($err_out) will be inferred.") 
+      }
+    } else {
+      if(!is.function(err_function)) stop("Must provide a function for err_function.")
+#      if(any(names(formals(err_model)) != c("parms", "qave"))) stop("err_model must be a function of two named arguments: err_model(parms, qave).")
+    }
+  }
   
   # Initialize
   cur <- NULL
   nconsist <- 1
   errs <- list()
-  # The main loop, run once, or repeat until error rate repeats if self_consist=T
+  # The main loop, run once, or repeat until err repeats if self_consist=T
+
   repeat{
     clustering <- list()
     clusterquals <- list()
     subpos <- list()
-    subqual <- list()
-    trans <- matrix(0, nrow=4, ncol=4)
+    trans <- list()
+    map <- list()
     prev <- cur
     errs[[nconsist]] <- err
 
     for(i in seq(length(uniques))) {
       if(is.null(quals)) { qi <- matrix(0, nrow=0, ncol=0) }
-      else { qi <- t(quals[[i]]) } # Need transpose so that sequences are columns
+      else { qi <- unname(t(quals[[i]])) } # Need transpose so that sequences are columns
       cat("Sample", i, "-", sum(uniques[[i]]), "reads in", length(uniques[[i]]), "unique sequences.\n")
       res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, qi, 
                           opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
@@ -109,28 +168,45 @@ dada <- function(uniques, quals=NULL,
                           opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]],
                           opts[["MAX_CLUST"]],
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
-                          opts[["USE_QUALS"]])
+                          opts[["USE_QUALS"]],
+                          opts[["QMIN"]], opts[["QMAX"]])
       
       # Augment the returns
-      # res$clustering$ham <- sapply(res$clustering$sequence, function(x) nrow(strdiff(res$clustering$sequence[[1]], x)))
+      # res$clustering$ham_nln <- 
       
       # List the returns
       clustering[[i]] <- res$clustering
       clusterquals[[i]] <- t(res$clusterquals) # make sequences rows and positions columns
       subpos[[i]] <- res$subpos
-      subqual[[i]] <- res$subqual
-      trans <- trans + res$trans
+      trans[[i]] <- res$subqual
+      map[[i]] <- res$map
+      rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
+      if(!is.null(quals)) colnames(trans[[i]]) <- seq(opts$QMIN, opts$QMAX)  # Assumes C sides is returning one col for each integer from QMIN to QMAX
     }
-    cur = trans # The only thing that changes is err which is set by trans, so this is sufficient
+    # Accumulate the sub matrix
+    cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient
     
+    # Estimate the new error model (if applicable)
+    if(opts$USE_QUALS) {
+      if(is.null(err_function)) {
+        err <- NULL
+      } else {
+        err <- err_function(cur)
+      }
+    } else { # Not using quals, MLE estimate for each transition type
+      err <- cur + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
+      err[1:4,1] <- err[1:4,1]/sum(err[1:4,1])
+      err[5:8,1] <- err[5:8,1]/sum(err[5:8,1])
+      err[9:12,1] <- err[9:12,1]/sum(err[9:12,1])
+      err[13:16,1] <- err[13:16,1]/sum(err[13:16,1])
+    }
+
+    # Termination condition for self_consist loop
     if((!self_consist) || identical(cur, prev) || (nconsist >= get("MAX_CONSIST", envir=dada_opts))) {
       break
-    }
-    
-    err <- trans + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
-    err <- t(apply(err, 1, function(x) x/sum(x)))  # apply returns a transposed result
+    } 
     nconsist <- nconsist+1
-    cat(".")
+    cat(".")    
   } # repeat
 
   cat("\n")
@@ -151,35 +227,38 @@ dada <- function(uniques, quals=NULL,
     names(rval$genotypes[[i]]) <- clustering[[i]]$sequence
   }
   rval$clustering <- clustering
-  rval$clusterquals <- clusterquals
+  rval$quality <- clusterquals
   rval$subpos <- subpos
-  rval$subqual <- subqual
+  rval$trans <- trans
+  rval$map <- map
   
   if(length(rval$genotypes)==1) { # one sample, return a naked uniques vector
     rval$genotypes <- rval$genotypes[[1]]
     rval$clustering <- rval$clustering[[1]]
-    rval$clusterquals <- rval$clusterquals[[1]]
+    rval$quality <- rval$quality[[1]]
     rval$subpos <- rval$subpos[[1]]
-    rval$subqual <- rval$subqual[[1]]
+    rval$trans <- rval$trans[[1]]
+    rval$map <- rval$map[[1]]
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
     names(rval$clustering) <- names(uniques)
-    names(rval$clusterquals) <- names(uniques)
+    names(rval$quality) <- names(uniques)
     names(rval$subpos) <- names(uniques)
-    names(rval$subqual) <- names(uniques)
+    names(rval$trans) <- names(uniques)
+    names(rval$map) <- names(uniques)
   }
 
   # Return the error rate(s) used as well as the final sub matrix and estimated error matrix
   if(self_consist) { # Did a self-consist loop
-    rval$err <- errs
+    rval$err_in <- errs
   } else {
-    rval$err <- err
+    rval$err_in <- errs[[1]]
   }
-  rval$subs <- trans
-  rval$err_out <- trans + 1
-  rval$err_out <- t(apply(rval$err_out, 1, function(x) x/sum(x)))
+  rval$trans_out <- cur
+  rval$err_out <- err
   
-  # Store the call and the options that were used in the return object
+  # Store the call and the uniques and options that were used in the return object
+  rval$uniques <- uniques
   rval$opts <- opts
   rval$call <- call
   

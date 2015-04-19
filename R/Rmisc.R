@@ -8,7 +8,7 @@ strdiff <- function(s1, s2) {
 }
 
 #' @export
-rc <- function(x) toupper(do.call(paste0, as.list(rev(comp(s2c(x))))))
+rc <- function(x) as(reverseComplement(DNAString(x)), "character")
 
 #' @export
 hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))

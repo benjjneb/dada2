@@ -22,7 +22,7 @@ importUniques(fl, colClasses = c("integer", "character"), ...)
 Named integer vector. Named by sequence, valued by abundance.
 }
 \description{
-This is a custom interface for read.table customized for loading .uniques format
+This is a custom interface to read.table for loading .uniques format
  files. The .uniques format is a delimited text file (tab-delimited by default)
  with the abundance in column 1 and the ASCII sequence in column 2.
 }

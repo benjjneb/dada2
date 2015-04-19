@@ -6,8 +6,7 @@
  methods for "B" objects.
  The "B" object is the partition of a DNA data set into
  clusters that is updated until convergence during DADA's
- inner two loops. It does not include the current error model,
- which is updated after the covergence of "B".
+ inner two loops.
  */
 
 #define RAWBUF 50
@@ -36,17 +35,19 @@ Raw *bi_pop_raw(Bi *bi, int f, int r);
 Fam *bi_pop_fam(Bi *bi, int f);
 
 void bi_census(Bi *bi);
-void bi_consensus_update(Bi *bi, double err[4][4]);
+void bi_consensus_update(Bi *bi);
 void fam_consensus_update(Fam *fam);
-void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size, bool use_quals);
+void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bool use_quals);
 
 /*
  raw_new:
  The constructor for the Raw object.
  */
 Raw *raw_new(char *seq, int reads) {
-  Raw *raw = (Raw *) malloc(sizeof(Raw));
-  raw->seq = (char *) malloc(strlen(seq)+1);
+  Raw *raw = (Raw *) malloc(sizeof(Raw)); //E
+  if (raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  raw->seq = (char *) malloc(strlen(seq)+1); //E
+  if (raw->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(raw->seq, seq);
   raw->qual = NULL;
   raw->kmer = get_kmer(seq, KMER_SIZE);
@@ -57,16 +58,18 @@ Raw *raw_new(char *seq, int reads) {
 // raw_qual_new: A constructor for Raw objects with quals
 Raw *raw_qual_new(char *seq, double *qual, int reads) {
   int seqlen = strlen(seq);
-  Raw *raw = (Raw *) malloc(sizeof(Raw));
-  raw->seq = (char *) malloc(seqlen+1);
+  Raw *raw = (Raw *) malloc(sizeof(Raw)); //E
+  if (raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  raw->seq = (char *) malloc(seqlen+1); //E
+  if (raw->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(raw->seq, seq);
   raw->qual = NULL;
   if(qual) {
-    raw->qual = (double *) malloc(seqlen * sizeof(double));
+    raw->qual = (float *) malloc(seqlen * sizeof(float)); //E
+    if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed!\n");
     for(int i=0;i<seqlen;i++) { raw->qual[i] = qual[i]; }
   } else {
-    printf("Error: NULL qual provided to raw_qual_new constructor.\n");
-    exit(1);
+    Rcpp::stop("Error: NULL qual provided to raw_qual_new constructor.\n");
   }
   raw->kmer = get_kmer(seq, KMER_SIZE);
   raw->reads = reads;
@@ -84,9 +87,12 @@ void raw_free(Raw *raw) {
  The constructor for the Fam object.
  */
 Fam *fam_new() {
-  Fam *fam = (Fam *) malloc(sizeof(Fam));
-  fam->seq = (char *) malloc(SEQLEN);
-  fam->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *));
+  Fam *fam = (Fam *) malloc(sizeof(Fam)); //E
+  if (fam == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  fam->seq = (char *) malloc(SEQLEN); //E
+  if (fam->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  fam->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *)); //E
+  if (fam->raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
   fam->maxraw = RAWBUF;
   fam->nraw = 0;
   fam->reads = 0;
@@ -111,7 +117,8 @@ void fam_free(Fam *fam) {
  */
 int fam_add_raw(Fam *fam, Raw *raw) {
   if(fam->nraw >= fam->maxraw) {    // Extend Raw* buffer
-    fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *));
+    fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *)); //E
+    if (fam->raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
     fam->maxraw+=RAWBUF;
   }
 
@@ -242,17 +249,24 @@ void bi_add_raw(Bi *bi, Raw *raw) {
  The constructor for the Bi object.
  */
 Bi *bi_new(int totraw) {
-  Bi *bi = (Bi *) malloc(sizeof(Bi));
-  bi->seq = (char *) malloc(SEQLEN);
+  Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
+  if (bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  bi->seq = (char *) malloc(SEQLEN); //E
+  if (bi->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(bi->seq, "");
-  bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *));
+  bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *)); //E
+  if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->maxfam = FAMBUF;
-  bi->sub = (Sub **) malloc(totraw * sizeof(Sub *));
+  bi->sub = (Sub **) malloc(totraw * sizeof(Sub *)); //E
+  if (bi->sub == NULL)  Rcpp::stop("Memory allocation failed!\n");
   for(int i=0;i<totraw;i++) { bi->sub[i] = NULL; }   // Init to null pointers
-  bi->lambda = (double *) malloc(totraw * sizeof(double));
-  bi->e = (double *) malloc(totraw * sizeof(double));
+  bi->lambda = (double *) malloc(totraw * sizeof(double)); //E
+  if (bi->lambda == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  bi->e = (double *) malloc(totraw * sizeof(double)); //E
+  if (bi->e == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->totraw = totraw;
-  bi->sm = sm_new(HASHOCC);
+  bi->sm = sm_new(HASHOCC); //E
+  if (bi->sm == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->update_lambda = TRUE;
   bi->update_fam = TRUE;
   
@@ -282,7 +296,8 @@ void bi_free(Bi *bi) {
  */
 int bi_add_fam(Bi *bi, Fam *fam) {
   if(bi->nfam >= bi->maxfam) {    // Extend Fam* buffer
-    bi->fam = (Fam **) realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *));
+    bi->fam = (Fam **) realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *)); //E
+    if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed!\n");
     bi->maxfam+=FAMBUF;
   }
 
@@ -310,19 +325,20 @@ void bi_census(Bi *bi) {
  The constructor for the B object. Takes in a Uniques object.
  Places all sequences into the same family within one cluster.
 */
-B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals) {
+B *b_new(Raw **raws, int nraw, double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals) {
   int i, j, nti;
   size_t index;
 
   // Allocate memory
-  B *b = (B *) malloc(sizeof(B));
-  b->bi = (Bi **) malloc(CLUSTBUF * sizeof(Bi *));
+  B *b = (B *) malloc(sizeof(B)); //E
+  if (b == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  b->bi = (Bi **) malloc(CLUSTBUF * sizeof(Bi *)); //E
+  if (b->bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
   b->maxclust = CLUSTBUF;
   
   // Initialize basic values
   b->nclust = 0;
   b->reads = 0;
-///  b->nraw = uniques_nseqs(uniques);
   b->nraw = nraw;
   b->gap_pen = gap_pen;
   b->omegaA = omegaA;
@@ -331,34 +347,25 @@ B *b_new(Raw **raws, int nraw, double err[4][4], double score[4][4], double gap_
   b->band_size = band_size;
   b->use_quals = use_quals;
   
-  // Copy the error and score matrices
+  // Copy the score matrix
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      b->err[i][j] = err[i][j];
       b->score[i][j] = score[i][j];
     }
   }
 
-  // Allocate the list of raws and then create them all.
-///  char *seq = (char *) malloc(SEQLEN);
   double tot_nnt[] = {0.0,0.0,0.0,0.0};
-///  b->raw = (Raw **) malloc(b->nraw * sizeof(Raw *));
   b->raw = raws;
   for (index = 0; index < b->nraw; index++) {
-///    uniques_sequence(uniques, index, (char *) seq);
-///    for(i=0;i<strlen(seq);i++) {
     for(i=0;i<strlen(b->raw[index]->seq);i++) {
-///      nti = ((int) seq[i]) - 1;
       nti = ((int) b->raw[index]->seq[i]) - 1;
       if(nti == 0 || nti == 1 || nti ==2 || nti == 3) {
         tot_nnt[nti]++;
       }
     }
-///    b->raw[index] = raw_new(seq, uniques_reads(uniques, index));
     b->raw[index]->index = index;
     b->reads += b->raw[index]->reads;
   }
-///  free(seq);
 
   // Create the (for now) solitary lookup table from lambda -> pS
   // Use the average sequence composition
@@ -400,9 +407,6 @@ void b_init(B *b) {
 
   bi_census(b->bi[0]);
   b_consensus_update(b); // Makes cluster consensus sequence
-  b_lambda_update(b, FALSE, 1.0);
-  b_e_update(b);
-  if(VERBOSE) { printf("b_init - exit\n"); }
 }
 
 /* b_free:
@@ -411,13 +415,6 @@ void b_init(B *b) {
 void b_free(B *b) {
   for(int i=0;i<b->nclust;i++) { bi_free(b->bi[i]); }
   free(b->bi);
-
-// This is now to be taken care of (except on ultimate exit) in the create lookup function.
-//  if(b->use_singletons) {
-//    if(b->lams) { free(b->lams); }
-//    if(b->cdf)  { free(b->cdf); }
-//  }
-
   free(b);
 }
 
@@ -426,7 +423,8 @@ void b_free(B *b) {
  */
 int b_add_bi(B *b, Bi *bi) {
   if(b->nclust >= b->maxclust) {    // Extend Bi* buffer
-    b->bi = (Bi **) realloc(b->bi, (b->maxclust+CLUSTBUF) * sizeof(Bi *));
+    b->bi = (Bi **) realloc(b->bi, (b->maxclust+CLUSTBUF) * sizeof(Bi *)); //E
+    if (b->bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
     b->maxclust+=CLUSTBUF;
   }
   b->bi[b->nclust] = bi;
@@ -439,7 +437,7 @@ int b_add_bi(B *b, Bi *bi) {
  updates the alignments and lambda of all raws to Bi with
  updated consensus sequences. 
 */
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat) {
   int i;
   size_t index;
   double lambda;
@@ -452,13 +450,20 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
       for(index=0; index<b->nraw; index++) {
         // get sub object
         sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
-        
-        // Store sub and lambda in the cluster object Bi
+     
+        // Store sub in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
         b->bi[i]->sub[index] = sub;
-        lambda = compute_lambda(sub, b->bi[i]->self, b->err, b->use_quals);  // WHERE IS SELF SET!??  -- IN BI_CONSENSUS_UPDATE
+        
+        // Calculate lambda for that sub
+        /// bi->self = get_self(bi->seq, err);
+        /// lambda = compute_lambda(sub, b->bi[i]->self, b->err, b->use_quals);  // SELF USED TO BE SET IN BI_CONSENSUS_UPDATE
+        lambda = compute_lambda3(b->raw[index], sub, errMat, b->use_quals);
+        
+        // Store lambda and set self
         b->bi[i]->lambda[index] = lambda;
-        if(index == TARGET_RAW) printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]);
+        if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
+        if(index == TARGET_RAW) { printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
       }
       b->bi[i]->update_lambda = FALSE;
       if(!b->bi[i]->update_fam) {
@@ -475,7 +480,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff) {
    cluster consensus.
   Currently completely destructive of old fams.
    */
-void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen, int band_size, bool use_quals) {
+void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bool use_quals) {
   int f, r, result, r_c;
   Sub *sub;
   char buf[10];
@@ -485,7 +490,8 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
   bi_census(bi);
   
   // Make list of pointers to the raws
-  Raw **raws = (Raw **) malloc(bi->nraw * sizeof(Raw *));
+  Raw **raws = (Raw **) malloc(bi->nraw * sizeof(Raw *)); //E
+  if (raws == NULL)  Rcpp::stop("Memory allocation failed!\n");
   r_c=0;
   for(f=0;f<bi->nfam;f++) {
     for(r=0;r<bi->fam[f]->nraw;r++) {
@@ -504,11 +510,16 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
   
   // Guarantee that non-NULL sub objects exist for all raws to the cluster center
   // NULL subs can occur (rarely) with kmers if cluster center changes (in shuffle) and 
-  //    now exceeds kmerdist to anothe raw in the cluster
+  //    now exceeds kmerdist to another raw in the cluster
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
       if(tVERBOSE) { printf("Warning: bi_fam_update hit a null sub.\n"); }
       bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., band_size);
+      // DOESN'T UPDATE LAMBDA HERE, which seems fine, as its most "fair" that it keeps its 0 lambda from being outside kmerdist
+      ///! Check that lambda is in fact zero, warn otherwise.
+      if(bi->lambda[raws[r_c]->index] != 0) {
+        printf("Warning: Unexepected non-zero lambda %.2f for raw outside kmerdist in fam_update.\n", bi->lambda[raws[r_c]->index]);
+      }
     }
   }
   
@@ -539,13 +550,11 @@ void bi_fam_update(Bi *bi, double err[4][4], double score[4][4], double gap_pen,
     sub = bi->sub[bi->fam[f]->center->index];
 
     if(!sub) { // Protect from null subs, but this should never arise...
-      printf("Warning: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
-      sub = sub_new(bi->center, bi->fam[f]->center, score, gap_pen, FALSE, 1., band_size);
+      Rcpp::stop("Error: bi_fam_update hit a null sub. THIS SHOULDNT HAPPEN!!!!!\n");
     }
-
+    
     bi->fam[f]->sub = sub;
-    // IDEALLY THIS WOULD NOT BE HERE, ONLY NECESSARY IF NEW SUB MADE?
-    bi->fam[f]->lambda = compute_lambda(sub, bi->self, err, use_quals);
+    bi->fam[f]->lambda = bi->lambda[bi->fam[f]->center->index];
   }
   if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
   free(raws);
@@ -556,7 +565,7 @@ void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
       if(tVERBOSE) { printf("C%iFU:", i); }
-      bi_fam_update(b->bi[i], b->err, b->score, b->gap_pen, b->band_size, b->use_quals);
+      bi_fam_update(b->bi[i], b->score, b->gap_pen, b->band_size, b->use_quals);
     }
   }
 }
@@ -689,7 +698,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
     }
   }
   
-  // Bonferroni correct the abundance pval by the number of fams and compare to OmegaA
+  // Bonferoni correct the abundance pval by the number of fams and compare to OmegaA
   // (quite conservative, although probably unimportant given the abundance model issues)
   pA = minp*totfams;
   if(pA < b->omegaA && mini >= 0 && minf >= 0) {  // A significant abundance pval
@@ -723,7 +732,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       printf("%s\n", ntstr(fam->sub->key));
     }
     
-    bi_consensus_update(b->bi[i], b->err);
+    bi_consensus_update(b->bi[i]);
     fam_free(fam);
     return i;
   }
@@ -758,7 +767,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
     }
   }
 
-  // Bonferroni correct the singleton pval by the number of reads and compare to OmegaS
+  // Bonferoni correct the singleton pval by the number of reads and compare to OmegaS
   // DADA_ML MATCH: minp*b->nclust*b->bi[i]->reads < b->omegaS
   pS = minp * b->reads;
   if(pS < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
@@ -779,7 +788,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, pS, fam->lambda);
     }
     
-    bi_consensus_update(b->bi[i], b->err);
+    bi_consensus_update(b->bi[i]);
     fam_free(fam);
     return i;
   }
@@ -821,7 +830,7 @@ void fam_consensus_update(Fam *fam) {
     Updates .center and .self
     Flags update_fam and update_lambda
 */
-void bi_consensus_update(Bi *bi, double err[4][4]) {
+void bi_consensus_update(Bi *bi) {
   int max_reads = 0;
   int f, r;
   int maxf = 0, maxr= 0;
@@ -845,7 +854,6 @@ void bi_consensus_update(Bi *bi, double err[4][4]) {
     }
     bi->center = bi->fam[maxf]->raw[maxr];
     strcpy(bi->seq,bi->fam[maxf]->raw[maxr]->seq);
-    bi->self = get_self(bi->seq, err);
   }
 }
 
@@ -854,51 +862,7 @@ void bi_consensus_update(Bi *bi, double err[4][4]) {
  */
 void b_consensus_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
-    bi_consensus_update(b->bi[i], b->err);
+    bi_consensus_update(b->bi[i]);
   }
 }
-
-void b_update_err(B *b, double err[4][4]) {
-  int nti0, nti1, i, j, f, s;
-  Fam *fam;
-  int32_t counts[4] = {4, 4, 4, 4};  // PSEUDOCOUNTS
-  int32_t obs[4][4] = {{1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}};
-  
-  // Count up all observed transitions
-  for(i=0;i<b->nclust;i++) {
-    // Initially add all counts to the no-error slots
-    for(j=0;j<strlen(b->bi[i]->seq);j++) {
-      nti0 = (int) (b->bi[i]->seq[j] - 1);
-      counts[nti0] += b->bi[i]->reads;
-      obs[nti0][nti0] += b->bi[i]->reads;
-    }
-    
-    // Move counts corresponding to each substitution with the fams
-    for(f=0;f<b->bi[i]->nfam;f++) {
-      fam = b->bi[i]->fam[f];
-      for(s=0;s<fam->sub->nsubs;s++) { // ASSUMING SUB IS NOT NULL!!
-        nti0 = fam->sub->nt0[s]-1;
-        nti1 = fam->sub->nt1[s]-1;
-        obs[nti0][nti0] -= fam->reads;
-        obs[nti0][nti1] += fam->reads;
-      }
-    }
-  } // for(i=0;i<b->nclust;i++)
-  
-  // Calculate observed error rates and place in err
-  for(nti0=0;nti0<4;nti0++) {
-    for(nti1=0;nti1<4;nti1++) {
-      err[nti0][nti1] = ((double) obs[nti0][nti1]) / ((double) counts[nti0]);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
 

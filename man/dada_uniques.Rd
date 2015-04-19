@@ -6,23 +6,7 @@
 \usage{
 dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff,
   band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming,
-  useQuals)
-}
-\arguments{
-\item{seqs}{(Required). Character.
- A vector containing all unique sequences in the data set.
- Only A/C/G/T/N/- allowed. Ungapped sequences recommended.}
-
-\item{abundances}{(Required). Numeric.
- A vector of the number of reads of each unique seuqences.
- NAs not tolerated. Must be same length as the seqs vector.}
-
-\item{err}{(Required). Numeric matrix (4x4).}
-
-\item{score}{(Required). Numeric matrix (4x4).
-The score matrix used during the alignment.}
-
-\item{gap}{(Required). A \code{numeric(1)} giving the gap penalty for alignment.}
+  useQuals, qMin, qMax)
 }
 \value{
 List.

@@ -203,6 +203,7 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
   cdf.resize(index);
 }
 
+// I AM BROKEN RIGHT NOW BECAUSE OF CHANGE IN ERR MATRIX STUFF!!!!!!!!!
 void b_make_pS_lookup(B *b) {
   static double err[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
   static int ave_nnt[4] = {0, 0, 0, 0};
@@ -220,8 +221,7 @@ void b_make_pS_lookup(B *b) {
     printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
     
     b_free(b);
-    Rcpp::stop("Cannot meet requsted OmegaS\n");
-    // exit(EXIT_FAILURE);
+    Rcpp::stop("Cannot meet requested OmegaS\n");
   }    
 
   // Calculate average sequence nnt
@@ -246,7 +246,7 @@ void b_make_pS_lookup(B *b) {
   int err_diffs = 0;
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      if(err[i][j] != b->err[i][j]) { err_diffs++; }
+///!      if(err[i][j] != b->err[i][j]) { err_diffs++; }
     }
   }
   
@@ -273,7 +273,7 @@ void b_make_pS_lookup(B *b) {
   for(i=0;i<4;i++) {
     ave_nnt[i] = new_ave_nnt[i];
     for(j=0;j<4;j++) {
-      err[i][j] = b->err[i][j];
+///!      err[i][j] = b->err[i][j];
     }
   }
 
@@ -286,7 +286,7 @@ void b_make_pS_lookup(B *b) {
   std::vector<double> temp_cdf;
   do {
     maxD+=2;
-    getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
+///!    getCDF(temp_lambdas, temp_cdf, b->err, ave_nnt, maxD);
   } while((1.0 - temp_cdf.back()) * b->reads > b->omegaS && maxD < MAXMAXD);
   
   // Warn if couldnt make lookup big enough to get OmegaS
@@ -302,8 +302,11 @@ void b_make_pS_lookup(B *b) {
   // Copy into C style arrays
   // Kind of silly, at some point might be worthwhile doing the full C++ conversion
   if(tVERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
-  lams = (double *) malloc(temp_lambdas.size() * sizeof(double));
-  cdf = (double *) malloc(temp_cdf.size() * sizeof(double));
+  lams = (double *) malloc(temp_lambdas.size() * sizeof(double)); //E
+  if (lams == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  cdf = (double *) malloc(temp_cdf.size() * sizeof(double)); //E
+  if (cdf == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  
   nlam = temp_lambdas.size();
   for(index=0;index<nlam;index++) {
     lams[index] = temp_lambdas[index];
@@ -389,7 +392,119 @@ double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
   return lambda;
 }
 
-/* get_self:
+// This calls an R function to calculate lambda for the provided Raw given its sub object from a cluster center
+double compute_lambda2(Raw *raw, Sub *sub, Rcpp::Function lamfun, bool use_quals) {
+  int s, pos1, nti0, nti1, len1;
+  double lambda, trans, qual;
+  
+  if(!sub) { // NULL Sub, outside Kmer threshold
+    return 0.0;
+  }
+  
+  // Make vector that indexes as integers the transitions at each position in seq1
+  // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
+  len1 = strlen(raw->seq);
+  std::vector<int> tvec(len1);
+  std::vector<double> qvec(len1);
+  for(pos1=0;pos1<len1;pos1++) {
+    nti1 = ((int) raw->seq[pos1]) - 1;
+    if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
+      tvec[pos1] = nti1*4 + nti1;
+    } else {
+      Rcpp::stop("Error: Can't handle non ACGT sequences in CL2.\n");
+    }
+    if(raw->qual) {
+      qvec[pos1] = raw->qual[pos1];
+    } else {
+      qvec[pos1] = QMAX;
+    }
+  }
+  
+  // Now fix the ones where subs occurred
+  for(s=0;s<sub->nsubs;s++) {
+    pos1 = sub->map[sub->pos[s]];
+    nti0 = ((int) sub->nt0[s]) - 1;
+    nti1 = ((int) sub->nt1[s]) - 1;
+    tvec[pos1] = nti0*4 + nti1;
+  }
+
+  lambda = Rcpp::as<double>(lamfun(tvec, qvec, use_quals));
+
+  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow of lambda: %.4e\n", lambda); }
+
+  return lambda;
+}
+
+// This calculates lambda from a lookup table index by transition (row) and rounded qual score (col)
+double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals) {
+  ///! use_quals does nothing in this function, just here for backwards compatability for now
+  int s, pos0, pos1, nti0, nti1, len1;
+  double lambda, trans, qual;
+  
+  if(!sub) { // NULL Sub, outside Kmer threshold
+    return 0.0;
+  }
+  
+  // Make vector that indexes as integers the transitions at each position in seq1
+  // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
+  len1 = strlen(raw->seq);
+  int *tvec = (int *) malloc(len1*sizeof(int));
+  double *qvec = (double *) malloc(len1*sizeof(double));
+  int *qind = (int *) malloc(len1*sizeof(int));
+  if (tvec == NULL || qvec == NULL || qind == NULL)  Rcpp::stop("Memory allocation failed!\n");
+
+  for(pos1=0;pos1<len1;pos1++) {
+    nti1 = ((int) raw->seq[pos1]) - 1;
+    if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
+      tvec[pos1] = nti1*4 + nti1;
+    } else {
+      Rcpp::stop("Error: Can't handle non ACGT sequences in CL3.\n");
+    }
+    if(raw->qual) {
+      qvec[pos1] = raw->qual[pos1];
+      // Turn q-score into the index in the array
+      qind[pos1] = round((errMat.ncol()-1) * (qvec[pos1]-QMIN)/((double) QMAX-QMIN));
+    } else {
+      qvec[pos1] = QMAX;
+      qind[pos1] = 0;
+    }
+    
+    if( qind[pos1] > (errMat.ncol()-1) ) {
+      Rcpp::stop("Error: rounded quality score (%i) exceeded err lookup table.\n", qind[pos1]);
+    }
+  }
+
+  // Now fix the ones where subs occurred
+  for(s=0;s<sub->nsubs;s++) {
+    pos0 = sub->pos[s];
+    if(pos0 < 0 || pos0 >= len1) {
+      Rcpp::stop("CL3: Bad pos0 (%i).\n", pos0);
+    }
+    pos1 = sub->map[sub->pos[s]];
+    if(pos1 < 0 || pos1 >= len1) {
+      Rcpp::stop("CL3: Bad pos1 (%i).\n", pos1);
+    }
+    
+    nti0 = ((int) sub->nt0[s]) - 1;
+    nti1 = ((int) sub->nt1[s]) - 1;
+    tvec[pos1] = nti0*4 + nti1;
+  }
+
+  // And calculate lambda
+  lambda = 1.0;
+  for(pos1=0;pos1<len1;pos1++) {
+    lambda = lambda * errMat(tvec[pos1], qind[pos1]);
+  }
+
+  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow of lambda: %.4e\n", lambda); }
+  free(tvec);
+  free(qvec);
+  free(qind);
+
+  return lambda;
+}
+
+/* get_self: DEPRECATED
  Gets the self-transition probabilty for a sequence under a transition matrix.
  */
 double get_self(char *seq, double err[4][4]) {
