@@ -6,9 +6,7 @@
  with their abundances, and returns the sample genotypes paired with their abundances
  inferred by the Divisive Amplicon Denoising Algorithm (Rosen, Callahan, Fisher, Holmes 2012).}
 \usage{
-dada(uniques, quals = NULL, err = matrix(rep(c(0.991, 0.003, 0.003, 0.003,
-  0.003, 0.991, 0.003, 0.003, 0.003, 0.003, 0.991, 0.003, 0.003, 0.003, 0.003,
-  0.991), each = 41), nrow = 16, byrow = T), err_model = NULL,
+dada(uniques, quals = NULL, err, err_function = NULL,
   self_consist = FALSE, ...)
 }
 \arguments{
@@ -23,7 +21,7 @@ dada(uniques, quals = NULL, err = matrix(rep(c(0.991, 0.003, 0.003, 0.003,
  The quals matrix has a row for each corresponding unique in the uniques vector, and a column for each
  sequence position. So nrow(quals) == length(uniques) and ncol(quals) == nchar(uniques[[foo]]).}
 
-\item{err}{(Optional). 16xN numeric matrix.
+\item{err}{(Required). 16xN numeric matrix.
  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
  Rows correspond to the 16 possible transitions (t_ij) indexed as so...
    1:A->A,  2:A->C,  3:A->G,  4:A->T,  5:C->A,  6:C->C,  7:C->G,  8:C->T,
@@ -35,20 +33,44 @@ dada(uniques, quals = NULL, err = matrix(rep(c(0.991, 0.003, 0.003, 0.003,
  If USE_QUALS = FALSE, the matrix must have only one column, which corresponds to the estimated error rate for that transition.
    err[t_ij, 1] = Prob(j in sequence | i in sample genotype).}
 
-\item{err_model}{(Optional). A parameterized function that predicts error rates from a given transition type and quality score.
-  If USE_QUALS = TRUE,
+\item{err_function}{(Optional). Function.
+  If USE_QUALS = TRUE, err_function(dada()$trans_out) is computed and taken to be the new err matrix.
+   If self_consist = TRUE, the next iteration if the dada() algorithm will use this new err, and this
+   will continue until the loop terminates due to convergence (or by hitting MAX_CONSIST). If
+   self_consist=FALSE, err_function is only used to calculate return value $err_out, but otherwise
+   has no effect on the algorithm.
 
   If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).}
 
 \item{self_consist}{(Optional). \code{logical(1)}
  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat
  the algorithm using the newly estimated error rates. This continues until convergence.}
+
+\item{...}{(Optional). All dada_opts can be passed in as arguments to the dada() function.
+   eg. dada(unq, err=err_in, OMEGA_A=1e-50, MAX_CLUST=50)}
 }
 \value{
 List.
- $genotypes: named integer vector of the denoised sample genotypes.
- $trans: 4x4 integer matrix of the inferred substutions ("errors") between nts.
- $opts: A list of the dada_opts used for this function call.
+ $genotypes: Integer vector, named by sequence valued by abundance, of the denoised genotypes.
+ $clustering: An informative data.frame containing information on each cluster.
+ $quality: The average quality scores for each cluster (row) by position (col).
+ $map: Integer vector that maps the unique (index) to the cluster/genotype (value).
+ $birth_subs: A data.frame containing the substitutions at the birth of each new cluster.
+ $trans: The matrix of transitions by type (row), eg. A2A, A2C..., and quality score (col)
+         observed in the final output of the dada algorithm.
+ $trans_out: The matrix of transitions by type and quality, summed over all denoised samples.
+         Used to estimate $err_out. Identical to $trans if just one sample denoised.
+ $err_out: The err matrix estimated from the output of dada. NULL if err_function not provided.
+ $err_in: The err matrix used for this invocation of dada.
+ $opts: A list of the dada_opts used for this invocation of dada.
+ $uniques: The uniques vector(s) used for this invocation of dada.
+ $call: The function call used for this invocation of dada.
+
+ If a list of uniques vectors was provided (i.e. multiple samples) then $genotypes, $clustering,
+   $quality, $map and $birth_subs are lists with entries corresponding to each provided uniques vector.
+
+ If self_consist=TRUE, $err_in is a list of length the number of times through the self_consist
+   loop corresponding to the err used in each iteration. $err_out is the final estimated error rate.
 }
 \description{
 The dada function takes as input the unique sequences in an amplicon sequencing sample paired

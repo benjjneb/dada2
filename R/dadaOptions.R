@@ -1,8 +1,8 @@
 
 dada_opts <- new.env()
-assign("OMEGA_A", 1e-4, envir = dada_opts)
+assign("OMEGA_A", 1e-40, envir = dada_opts)
 assign("USE_SINGLETONS", FALSE, envir=dada_opts)
-assign("OMEGA_S", 0.01, envir = dada_opts)
+assign("OMEGA_S", 1e-3, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.5, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
@@ -29,9 +29,11 @@ assign("QMAX", 40, envir=dada_opts) # NOT PASSED IN YET
 #'  option and value must have the same length.
 #'  WARNING: DATA TYPE CONSISTENCY IS NOT CURRENTLY CHECKED!!
 #' 
+#' @seealso \code{\link{getDadaOpt}}
+#'
 #' @export
 #'
-set_dada_opt <- function(option, value) {
+setDadaOpt <- function(option, value) {
   if(!all(option %in% ls(dada_opts))) {
     stop(paste("Invalid DADA option:", option))
   }
@@ -41,10 +43,10 @@ set_dada_opt <- function(option, value) {
   }
 
   for(i in seq(length(option))) {
-    if(class(get_dada_opt(option[[i]])) != class(value[[i]]))
+    if(class(getDadaOpt(option[[i]])) != class(value[[i]]))
     {
       stop(paste0("Value provided for option ", option[[i]], " has different class (", class(value[[i]]), 
-                  ") then current option value (", class(get_dada_opt(option[[i]])), ")"))
+                  ") then current option value (", class(getDadaOpt(option[[i]])), ")"))
     }
     assign(option[[i]], value[[i]], envir=dada_opts)
   }
@@ -70,9 +72,11 @@ set_dada_opt <- function(option, value) {
 #' @return Named list of option/value pairs.
 #'  Returns NULL if an invalid option is requested.
 #' 
+#' @seealso \code{\link{setDadaOpt}}
+#'
 #' @export
 #'
-get_dada_opt <- function(option = NULL) {
+getDadaOpt <- function(option = NULL) {
   if(is.null(option)) option <- ls(dada_opts)
   
   if(!all(option %in% ls(dada_opts))) {

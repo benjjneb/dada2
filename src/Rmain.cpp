@@ -296,7 +296,7 @@ Rcpp::List dada_uniques(Rcpp::CharacterVector seqs,  Rcpp::IntegerVector abundan
         buf[0] = bb->bi[i]->birth_sub->nt1[s];
         int2nt(buf, buf);
         bs_nt1.push_back(std::string(buf));
-        if(has_qual) {
+        if(has_quals) {
           bs_qual.push_back(bb->bi[i]->birth_sub->q1[s]);
         } else {
           bs_qual.push_back(Rcpp::NumericVector::get_na());

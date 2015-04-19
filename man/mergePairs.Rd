@@ -2,11 +2,43 @@
 % Please edit documentation in R/paired.R
 \name{mergePairs}
 \alias{mergePairs}
-\title{Function to merge DADA-denoised paired end reads}
+\title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
-mergePairs(dqF, mapF, dqR, mapR, minOverlap = 20)
+mergePairs(dadaF, mapF, dadaR, mapR, minOverlap = 20)
+}
+\arguments{
+\item{dadaF}{(Required). Output of dada() function.
+ The output list returned by the dada() function on the forward reads.}
+
+\item{mapF}{(Required). An integer vector map from read index to unique index.
+ The map returned by derepFastq() for the forward reads.}
+
+\item{dadaR}{(Required). Output of dada() function.
+ The output list returned by the dada() function on the reverse reads.}
+
+\item{mapR}{(Required). An integer vector map from read index to unique index.
+ The map returned by derepFastq() for the reverse reads.}
+
+\item{minOverlap}{(Optional). A \code{numeric(1)} of the minimum overlap
+ required for merging the forward and reverse reads. Default is 20.}
+}
+\value{
+Dataframe.
+ $forward: The index of the forward denoised sequence.
+ $reverse: The index of the reverse denoised sequence.
+ $match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
+         FALSE otherwise.
+ $abundance: Number of reads corresponding to this forward/reverse combination.
+ $sequence: The merged sequence if match=TRUE. Otherwise an empty sequence, i.e. "";
 }
 \description{
-Function to merge DADA-denoised paired end reads
+This function takes the output of dada() and the map from read to unique index
+returned by derepFastq()$map for both the forward and reverse data set. It attempts
+to merge each pair of reads, rejecting any which do not perfectly overlap.
+Note: This function assumes that the fastq files for the forward and reverse reads
+were in the same order.
+}
+\seealso{
+\code{\link{derepFastq}}, \code{\link{dada}}
 }
 

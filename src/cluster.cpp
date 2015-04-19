@@ -65,7 +65,7 @@ Raw *raw_qual_new(char *seq, double *qual, int reads) {
   strcpy(raw->seq, seq);
   raw->qual = NULL;
   if(qual) {
-    raw->qual = (double *) malloc(seqlen * sizeof(double)); //E
+    raw->qual = (float *) malloc(seqlen * sizeof(float)); //E
     if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed!\n");
     for(int i=0;i<seqlen;i++) { raw->qual[i] = qual[i]; }
   } else {

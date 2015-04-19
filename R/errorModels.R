@@ -1,3 +1,49 @@
+#' Make function that accepts the output transitions matrix from DADA ($subqual)
+#'  and returns inferred error rates for each transition type (t_ij) and quality
+#'  
+#' @export
+makeErrfun <- function(err_model, init_params, inflation=1.0) {
+  errfun <- function(trans, init = init_params) {
+    qq <- as.numeric(colnames(trans))
+    est <- matrix(0, nrow=0, ncol=length(qq))
+    for(nti in c("A","C","G","T")) {
+      for(ntj in c("A","C","G","T")) {
+        if(nti != ntj) {
+          x <- qq
+          numer <- trans[paste0(nti,"2",ntj),]
+          denom <- colSums(trans[paste0(nti,"2",c("A","C","G","T")),])
+          # Determine which entries to keep, no zeros or NAs or low-outlier denoms
+          outs <- 10^(boxplot.stats(log10(denom[denom>0]))$out)
+          outs <- outs[outs<median(denom)] # low outliers
+          keep <- !(is.na(numer) | is.na(denom) | denom==0 | (denom %in% outs))
+          x <- x[keep]
+          y <- (numer[keep]+1)/(4+denom[keep]) # Pseudocounts... REVISIT
+          mod.tp <- optim(init, makeLoglsqObj(err_model,x,y))
+          pred <- err_model(mod.tp$par, qq)
+          est <- rbind(est, pred)
+        } # if(nti != ntj)
+      } # for(ntj in c("A","C","G","T"))
+    } # for(nti in c("A","C","G","T"))
+    
+    # Expand the err matrix with the self-transition probs
+    err <- rbind(1-colSums(est[1:3,]), est[1:3,],
+                 est[4,], 1-colSums(est[4:6,]), est[5:6,],
+                 est[7:8,], 1-colSums(est[7:9,]), est[9,],
+                 est[10:12,], 1-colSums(est[10:12,]))
+    rownames(err) <- paste0(rep(c("A","C","G","T"), each=4), "2", c("A","C","G","T"))
+    colnames(err) <- colnames(trans)
+    
+    # Inflate
+    err <- inflateErr(err, inflation, FALSE)
+    # Return
+    return(err)
+  } # errfun <- function(trans, init = init_params)
+}
+
+#' An error model for the dependence of error rates on quality in Illumina data.
+#' 
+#' A piecewise linear model with three segments. The first and third segments are flat.
+#' 
 #' @export
 threepiece <- function(parms, qave) {
   if(!(is.numeric(parms) && length(parms) == 4)) {
@@ -14,24 +60,26 @@ threepiece <- function(parms, qave) {
   return(pred)
 }
 
-#' @export
-make_log10_lsq_obj <- function(err_model, qave, obs) {
+# Suggested parameters to initialize threepiece with when using optim().
+tp_init_parms <- c(-1, 20, 35, -4)
+
+#' Creates an objective function suitable for optim().
+#'   Sums the square errors after taking the log transform.
+makeLoglsqObj <- function(err_model, qave, obs) {
   objfun <- function(parms) {
     pred <- err_model(parms, qave)
-    return(sum((log10(pred)-log10(obs))^2))
+    return(sum((log(pred)-log(obs))^2))
   }
   return(objfun)
 }
-# might need to step the log
-
-tp_init_parms <- c(-1, 20, 35, -4)
 
 #' @export
 showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE) {
+  require(ggplot2)
   ACGT <- c("A", "C", "G", "T")
   tij <- 4*(which(ACGT==nti)-1) + which(ACGT==ntj)
   nij <- paste0(nti,"2",ntj)
-  subdf <- as.data.frame(t(dq$subqual))
+  subdf <- as.data.frame(t(dq$trans_out))
   subdf$qave <- as.numeric(rownames(subdf))
   subdf[,nij] <- subdf[,nij]/(subdf[,paste0(nti,"2A")]+subdf[,paste0(nti,"2C")]+subdf[,paste0(nti,"2G")]+subdf[,paste0(nti,"2T")])
 
@@ -57,9 +105,14 @@ showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE) {
   return(p)
 }
 
-#' @export
-inflateErr <- function(err, mult) {
+#' Function that inflates an error rate matrix by a specified factor. Accounts for saturation.
+#'   new_err_rate <- err_rate * inflate / (1 + (inflate-1) * err_rate)
+inflateErr <- function(err, inflation=1.0, inflateNonSubs = FALSE) {
   t_errs <- c("A2C", "A2G", "A2T", "C2A", "C2G", "C2T", "G2A", "G2C", "G2T", "T2A", "T2C", "T2G")
-  err[t_errs,] <- (err[t_errs,] * mult)/(1 + (mult-1) * err[t_errs,])
+  err[t_errs,] <- (err[t_errs,] * inflation)/(1 + (inflation-1) * err[t_errs,])
+  if(inflateNonSubs) { # Also inflate the non-substitution probabilities
+    t_nonsubs <- c("A2A", "C2C", "G2G", "T2T")
+    err[t_nonsubs,] <- (err[t_nonsubs,] * inflation)/(1 + (inflation-1) * err[t_nonsubs,])
+  }
   return(err)
 }

@@ -28,8 +28,7 @@
 #'  $quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.
 #'  $map: Integer vector of the index of the unique (in $uniques) corresponding to each read.
 #'
-#' @seealso \code{\link{replicateReads}}, \code{\link{removeReadsWithNs}}, 
-#' \code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
+#' @seealso \code{\link{replicateReads}}
 #'
 #' @export
 #' @import ShortRead 
@@ -62,9 +61,7 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE){
     if(verbose){
       message(".", appendLF = FALSE)
     }
-    ######################## >>>
     out <- qtables2(fq)
-    ######################## <<<
     # identify sequences already present in `derepCounts`
     alreadySeen <- names(out$uniques) %in% names(derepCounts)
     # Sum these values, if any

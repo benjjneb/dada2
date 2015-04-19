@@ -59,7 +59,7 @@ typedef struct {
 // Raw: Container for each unique sequence/abundance
 typedef struct {
   char *seq;   // the sequence, stored as C-string with A=1,C=2,G=3,T=4
-  double *qual; // the average quality scores at each position for this unique
+  float *qual; // the average quality scores at each position for this unique
   uint16_t *kmer;   // the kmer vector of this sequence
   int reads;   // number of reads of this unique sequence
   int index;   // The index of this Raw in b->raw[index]

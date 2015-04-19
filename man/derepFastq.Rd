@@ -26,13 +26,13 @@ derepFastq(fl, n = 1e+06, verbose = FALSE)
 }
 \value{
 List.
- $uniques: Named integer vector. Named by sequence, valued by number of occurence.
- $quals: Matrix of average quality scores for each unique. Uniques are rows, positions are cols.
- $map: Vector encoding the map between each read and the corresponding unique.
+ $uniques: Named integer vector. Named by the unique sequence, valued by abundance.
+ $quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.
+ $map: Integer vector of the index of the unique (in $uniques) corresponding to each read.
 }
 \description{
 This is a custom interface to \code{\link{FastqStreamer}}
-for dereplicating amplicon sequences from a fastq or fastq.gz file,
+for dereplicating amplicon sequences from a fastq or compressed fastq file,
 while also controlling peak memory requirement to support large files.
 This function relies heavily on the \code{\link[ShortRead]{tables}} method.
 }
@@ -46,7 +46,6 @@ all.equal(test1, test2[names(test1)])
 all.equal(test1, test3[names(test1)])
 }
 \seealso{
-\code{\link{replicateReads}}, \code{\link{removeReadsWithNs}},
-\code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
+\code{\link{replicateReads}}
 }
 
