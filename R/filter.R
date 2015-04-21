@@ -1,13 +1,52 @@
-#' fastqFilter implements most of fastq_filter from usearch...
+#' fastqFilter filters and trims fastq files.
+#' 
+#' fastqFilter takes an input fastq file (can be compressed) and filters it based on several
+#' user-definable criteria, and outputs those reads which pass the filter, and their associated
+#' qualities, to a new fastq file (also can be compressed). Several functions in the ShortRead
+#' package are leveraged to do this filtering.
+#' 
+#' fastqFilter replicates most of the functionality of the fastq_filter command in usearch
+#' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). 
+#' 
+#' @param fn (Required). A character string naming the path to the fastq file, or an R connection.
+#'   
+#' @param fout (Required). A character string naming the path to the output file, or an R connection.
+#' 
+#' @param truncQ (Optional). Truncate reads at the first instance of a quality score less than
+#'    or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
+#'    sequence in Illumina 1.8+.
+#'  
+#' @param truncLen (Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
+#'    this are discarded.
+#'  
+#' @param trimLeft (Optional). Remove trimLeft nucleotides from the start of each read. If both
+#'    truncLen and trimLeft are used, all filtered reads will have length truncLen-trimLeft.
+#'  
+#' @param maxN (Optional). After truncation, sequences with more than maxN Ns will be discarded.
+#'    Default is 0. Currently dada() does not allow Ns.
+#'  
+#' @param minQ (Optional). After truncation, reads contain a quality score below minQ will be discarded.
+#'
+#' @param maxEE (Optional). After truncation, reads with higher than maxEE "expected errors" will be discarded.
+#'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
+#'  
+#' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
+#'  This controls the peak memory requirement so that very large fastq files are supported. 
+#'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
+#'
+#' @param compress (Optional). A \code{logical(1)} indicating whether the output should be gz compressed.
+#' 
+#' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
+#'    
+#' @seealso \code{\link{FastqStreamer}}, \code{\link{srFilter}}, \code{\link{trimTails}}
 #' 
 #' @export
-fastqFilter <- function(fn, fout, maxN = 0, truncQ = "#", truncLen = 0, trimLeft = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
+fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
   # See also filterFastq in the ShortRead package
   start <- max(1, trimLeft + 1)
   end <- truncLen
   if(end < start) { end = NA }
   
-  require("ShortRead")
   ## iterating over an entire file using fastq streaming
   f <- FastqStreamer(fn, n = n)
   on.exit(close(f))

@@ -74,7 +74,7 @@ makeLoglsqObj <- function(err_model, qave, obs) {
 }
 
 #' @export
-showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE) {
+showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE, ...) {
   require(ggplot2)
   ACGT <- c("A", "C", "G", "T")
   tij <- 4*(which(ACGT==nti)-1) + which(ACGT==ntj)
@@ -98,7 +98,7 @@ showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE) {
     errodf$qave <- as.numeric(rownames(errodf))
   }
   
-  p <- ggplot(data=subdf, aes_string(x="qave", y=paste0("log10(",nij,")")))
+  p <- ggplot(data=subdf, aes_string(x="qave", y=paste0("log10(",nij,")")), ...)
   p <- p + geom_point()
   if(erri) p <- p + geom_line(data=erridf)
   if(erro) p <- p + geom_line(data=errodf, linetype="dashed")
@@ -107,6 +107,7 @@ showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE) {
 
 #' Function that inflates an error rate matrix by a specified factor. Accounts for saturation.
 #'   new_err_rate <- err_rate * inflate / (1 + (inflate-1) * err_rate)
+#' @export
 inflateErr <- function(err, inflation=1.0, inflateNonSubs = FALSE) {
   t_errs <- c("A2C", "A2G", "A2T", "C2A", "C2G", "C2T", "G2A", "G2C", "G2T", "T2A", "T2C", "T2G")
   err[t_errs,] <- (err[t_errs,] * inflation)/(1 + (inflation-1) * err[t_errs,])

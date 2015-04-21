@@ -7,6 +7,10 @@
 #' a second parent sequence. If an exact bimera is found (no mismatches are
 #' allowed and positions must line up exactly) TRUE is returned, otherwise FALSE.
 #' 
+#' WARNING: This is a very simplistic bimera checker that does no alignment and
+#' allows no mismatches. While it seems to perform well on DADA denoised Illumina
+#' data, more caution is warranted for 454 data where alignment may be necessary.
+#' 
 #' @param sq (Required). A \code{character(1)}.
 #'  The sequence being evaluated as a possible bimera.
 #' 
@@ -19,6 +23,8 @@
 #'
 #' @return \code{logical(1)}.
 #'  TRUE if sq is an exact bimera of two of the parents. Otherwise FALSE.
+#'
+#' @seealso \code{\link{isBimeraDenovo}}
 #'
 #' @export
 #' @import Biostrings 
@@ -36,6 +42,54 @@ isBimera <- function(sq, parents, verbose=FALSE) {
     cat("Sequence has min hamming distance of", min_ham, "to a parent, and", min_bi_ham, "to a bimera:", (min_bi_ham == 0 && min_ham > 0), "\n")
   }
   return(min_bi_ham == 0 && min_ham > 0)
+}
+##########  SEEE srdistance {ShortRead}  for possible more efficient implementation?
+
+################################################################################
+#' Identify bimeras de-novo from collections of unique sequences.
+#' 
+#' This function is a wrapper around isBimera for collections of DADA denoised
+#' sequences. Each sequence is evaluated against a set of "parents" drawn from the
+#' sequence collection that are sufficiently more abundant than the sequence
+#' being evaluated.
+#' 
+#' @param unqs (Required). A named integer vector or data.frame with "sequence" and "abundance" cols.
+#'   This contains the sequences (and corresponding abundances) to be checked for bimeras.
+#'   
+#' @param minFoldParentOverAbundance (Optional). A \code{numeric(1)}. Default is 10.
+#'   Only sequences at least this much-fold more abundant than a sequence can be its "parents".
+#'   
+#' @param minParentAbundance (Optional). A \code{numeric(1)}. Default is 100.
+#'   Only sequences at least this abundant can be "parents".
+#' 
+#' @seealso \code{\link{isBimera}}
+#' 
+#' @export
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 10, minParentAbundance = 100, verbose=FALSE) {
+  if(is.data.frame(unqs) && "sequence" %in% colnames(unqs) && "abundance" %in% colnames(unqs)) {
+    seqs <- unqs$sequence
+    abunds <- unqs$abundance
+  } else if(is.integer(unqs) && !is.null(names(unqs))) {
+    seqs <- names(unqs)
+    abunds <- unname(unqs)
+  } else {
+    stop("Improper input: Requires named integer vector or $clustering data.frame.")
+  }
+  
+  loopFun <- function(sq, abund) {
+    pars <- seqs[(abunds>(minFoldParentOverAbundance*abund) & abunds>minParentAbundance)]
+    if(length(pars) == 0) {
+      if(verbose) print("No possible parents.")
+      return(FALSE)
+    } else if (length(pars) == 1) {
+      if(verbose) print("Only one possible parent.")
+      return(FALSE)
+    } else {
+      isBimera(sq, pars, verbose)
+    }
+  }
+  bims <- mapply(loopFun, seqs, abunds)
+  return(bims)
 }
 
 # DEPRECATED: USES SEQINR, BUT A BIT FASTER THAN NEW VERSION

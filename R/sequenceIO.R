@@ -279,3 +279,15 @@ qtables2 <- function(x) {
   rownames(qmat) <- names(uniques)
   list(uniques=uniques, cum_quals=qmat, map=map)
 }
+
+##########
+#' Write a uniques vector to a FASTA file
+#' 
+#' Basically a wrapper for writeFastq in the ShortRead package. Format is suitable for uchime.
+#' 
+#' @export
+#' 
+uniquesToFasta <- function(unqs, fout, mode="w") {
+  ids <- paste0("sq", seq(1, length(unqs)), ";size=", unname(unqs), ";")
+  writeFasta(ShortRead(DNAStringSet(names(unqs)), BStringSet(ids)), fout, mode)
+}
