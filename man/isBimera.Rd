@@ -28,4 +28,12 @@ left side is made up of one parent sequence, and the right-side made up of
 a second parent sequence. If an exact bimera is found (no mismatches are
 allowed and positions must line up exactly) TRUE is returned, otherwise FALSE.
 }
+\details{
+WARNING: This is a very simplistic bimera checker that does no alignment and
+allows no mismatches. While it seems to perform well on DADA denoised Illumina
+data, more caution is warranted for 454 data where alignment may be necessary.
+}
+\seealso{
+\code{\link{isBimeraDenovo}}
+}
 

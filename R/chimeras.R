@@ -65,6 +65,7 @@ isBimera <- function(sq, parents, verbose=FALSE) {
 #' @seealso \code{\link{isBimera}}
 #' 
 #' @export
+#' 
 isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 10, minParentAbundance = 100, verbose=FALSE) {
   if(is.data.frame(unqs) && "sequence" %in% colnames(unqs) && "abundance" %in% colnames(unqs)) {
     seqs <- unqs$sequence

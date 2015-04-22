@@ -159,7 +159,11 @@ dada <- function(uniques, quals=NULL,
     for(i in seq(length(uniques))) {
       if(is.null(quals)) { qi <- matrix(0, nrow=0, ncol=0) }
       else { qi <- unname(t(quals[[i]])) } # Need transpose so that sequences are columns
-      cat("Sample", i, "-", sum(uniques[[i]]), "reads in", length(uniques[[i]]), "unique sequences.\n")
+      if(nconsist == 1) {
+        cat("Sample", i, "-", sum(uniques[[i]]), "reads in", length(uniques[[i]]), "unique sequences.\n")
+      } else {
+        cat("   Consist step", nconsist, "\n")
+      }
       res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, qi, 
                           opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
@@ -206,7 +210,6 @@ dada <- function(uniques, quals=NULL,
       break
     } 
     nconsist <- nconsist+1
-    cat(".")    
   } # repeat
 
   cat("\n")
