@@ -57,8 +57,6 @@ fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
     
-    ##### TESTING TESTING TESTING TAKE OUT LATER
-    narrow(id(fq),1,42)  ### FUCK NOT WORKING
     # Trim on truncQ ################## BEST TO MAKE THIS ROBUST TO Q ALPHABET
     fq <- trimTails(fq, 1, truncQ)
     # Filter any with less than required length

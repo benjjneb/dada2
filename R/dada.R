@@ -234,7 +234,8 @@ dada <- function(uniques, quals=NULL,
   rval$subpos <- subpos
   rval$trans <- trans
   rval$map <- map
-  
+  rval$uniques <- uniques
+
   if(length(rval$genotypes)==1) { # one sample, return a naked uniques vector
     rval$genotypes <- rval$genotypes[[1]]
     rval$clustering <- rval$clustering[[1]]
@@ -242,6 +243,7 @@ dada <- function(uniques, quals=NULL,
     rval$subpos <- rval$subpos[[1]]
     rval$trans <- rval$trans[[1]]
     rval$map <- rval$map[[1]]
+    rval$uniques <- rval$uniques[[1]]
   } else { # keep names if it is a list
     names(rval$genotypes) <- names(uniques)
     names(rval$clustering) <- names(uniques)
@@ -260,8 +262,7 @@ dada <- function(uniques, quals=NULL,
   rval$trans_out <- cur
   rval$err_out <- err
   
-  # Store the call and the uniques and options that were used in the return object
-  rval$uniques <- uniques
+  # Store the call and the options that were used in the return object
   rval$opts <- opts
   rval$call <- call
   
