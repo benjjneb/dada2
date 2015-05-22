@@ -3,8 +3,12 @@
 #include "dada.h"
 // [[Rcpp::interfaces(cpp)]]
 
+/************* KMERS *****************
+ * Current Kmer implementation assumes A/C/G/T only.
+ */
+
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
-  int n_kmer = 2 << (2*k);
+  int n_kmer = 2 << (2*k); // 4^k kmers
   uint16_t dotsum = 0;
   double dot = 0.0;
   
@@ -12,9 +16,6 @@ double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
     dotsum += (kv1[i] < kv2[i] ? kv1[i] : kv2[i]);
   }
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
-  
-//  if(dot < 0 || dot > 1) { printf("Bad dot: %.4e\n", dot); }
-
   return (1. - dot);
 }
 
@@ -24,11 +25,11 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
   size_t kmer = 0;
   size_t n_kmers = (2 << (2*k));  // 4^k kmers
   uint16_t *kvec = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
-  if (kvec == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (kvec == NULL)  Rcpp::stop("Memory allocation failed.");
   for(kmer=0;kmer<n_kmers;kmer++) { kvec[kmer] = 0; }
 
   if(len <=0 || len > SEQLEN) {
-    printf("Unexpected sequence length: %d\n", len);
+    Rcpp::stop("Unexpected sequence length.");
   }
 
   for(i=0; i<len-k; i++) {
@@ -36,7 +37,7 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
     for(j=i; j<i+k; j++) {
       nti = ((int) seq[j]) - 1; // Change 1s, 2s, 3s, 4s, to 0/1/2/3
       if(nti != 0 && nti != 1 && nti != 2 && nti != 3) {
-        printf("Unexpected nucleotide: %d\n", seq[j]);
+        Rcpp::stop("Unexpected nucleotide.");
         kmer = 999999;
         break;
       }
@@ -48,13 +49,17 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
     // to also reflect the reduction from the N's/-'s
     if(kmer == 999999) { ; } 
     else if(kmer >= n_kmers) {
-      printf("Kmer index out of range!\n");
+      Rcpp::stop("Kmer index out of range.");
     } else { // Valid kmer
       kvec[kmer]++;
     }
   }
   return kvec;
 }
+
+/************* ALIGNMENT *****************
+ * Banded Needleman Wunsch
+ */
 
 char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band) {
   char **al;
@@ -80,36 +85,28 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
   int l, r;
   size_t len1 = strlen(s1);
   size_t len2 = strlen(s2);
-  double d[len1 + 1][len2 + 1]; /* d: DP matrix */
-  int p[len1 + 1][len2 + 1]; /* backpointer matrix with 1 for diagonal, 2 for left, 3 for up. */  
+  double d[len1 + 1][len2 + 1]; // d: DP matrix
+  int p[len1 + 1][len2 + 1]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
   double diag, left, up;
-  
-  int is_nt = 0;
-  if(VERBOSE) {
-    for(i=0;i<strlen(s1);i++) {
-      if(s1[i] > 6) { is_nt=1; }
-    }
-    if(is_nt) { printf("NT STR IN ALIGN\n"); }
-  }
-  
-  /* Fill out left columns of d, p. */
+    
+  // Fill out left columns of d, p.
   for (i = 0; i <= len1; i++) {
-    d[i][0] = 0; /* ends-free gap */
+    d[i][0] = 0; // ends-free gap
     p[i][0] = 3;
   }
   
-  /* Fill out top rows of d, p. */
+  // Fill out top rows of d, p.
   for (j = 0; j <= len2; j++) {
-    d[0][j] = 0; /* ends-free gap */
+    d[0][j] = 0; // ends-free gap
     p[0][j] = 2;
   }
   
   for (j = 0; j <= len2; j++) {
-    d[0][j] = 0; /* ends-free gap */
+    d[0][j] = 0; // ends-free gap
     p[0][j] = 2;
   }
 
-  /* Fill out band boundaries of d. */
+  // Fill out band boundaries of d.
   if(band) {
     for(i=0;i<=len1;i++) {
       if(i-band-1 >= 0) { d[i][i-band-1] = -999; }
@@ -117,7 +114,7 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
     }
   }
   
-  /* Fill out the body of the DP matrix. */
+  // Fill out the body of the DP matrix.
   for (i = 1; i <= len1; i++) {
     if(band) {
       l = i-band; if(l < 1) { l = 1; }
@@ -125,22 +122,22 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
     } else { l=1; r=len2; }
 
     for (j = l; j <= r; j++) {
-      /* Score for the left move. */
+      // Score for the left move.
       if (i == len1)
-        left = d[i][j-1]; /* Ends-free gap. */
+        left = d[i][j-1]; // Ends-free gap.
       else
         left = d[i][j-1] + gap_p;
       
-      /* Score for the up move. */
+      // Score for the up move.
       if (j == len2) 
-        up = d[i-1][j]; /* Ends-free gap. */
+        up = d[i-1][j]; // Ends-free gap.
       else
         up = d[i-1][j] + gap_p;
 
-      /* Score for the diagonal move. */
+      // Score for the diagonal move.
       diag = d[i-1][j-1] + score[s1[i-1]-1][s2[j-1]-1];
       
-      /* Break ties and fill in d,p. */
+      // Break ties and fill in d,p.
       if (up >= diag && up >= left) {
         d[i][j] = up;
         p[i][j] = 3;
@@ -154,14 +151,14 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
     }
   }
     
-  /* Allocate memory to alignment strings. */
+  // Allocate memory to alignment strings.
   char **al = (char **) malloc( 2 * sizeof(char *) ); //E
-  if (al == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (al == NULL)  Rcpp::stop("Memory allocation failed.");
   al[0] = (char *) calloc( len1 + len2 + 1, sizeof(char)); //initialize to max possible length //E
   al[1] = (char *) calloc( len1 + len2 + 1, sizeof(char)); //E
-  if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed.");
 
-  /* Trace back over p to form the alignment. */
+  // Trace back over p to form the alignment.
   size_t len_al = 0;
   i = len1;
   j = len2;  
@@ -181,7 +178,7 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
       al[1][len_al] = 6;
       break;
     default:
-      printf("NWALIGN: OOR p[%i][%i] = %i\n", i, j, p[i][j]);
+      Rcpp::stop("N-W Align out of range.");
     }
     len_al++;
   }
@@ -189,12 +186,12 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
   al[1][len_al] = '\0';
   
   
-  /* Remove empty tails of strings. */
+  // Remove empty tails of strings.
   al[0] = (char *) realloc(al[0],len_al+1); //E
   al[1] = (char *) realloc(al[1],len_al+1); //E
-  if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed.");
   
-  // Reverse the alignment strings. // why?
+  // Reverse the alignment strings.
   char temp;
   for (i = 0, j = len_al - 1; i <= j; i++, j--) {
     temp = al[0][i];
@@ -211,6 +208,12 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
   return al;
 }
 
+/************* SUBS *****************
+ * Compressed storage for alignment.
+ * Keeps only substitutions.
+ * (could also consider CIGAR format)
+ */
+
 /*
  al2subs:
  takes in an alignment represented as a char ** al. creates
@@ -219,14 +222,13 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
  differs from al[0]
  */
 Sub *al2subs(char **al) {
-  int i, i0, i1, bytes;
-  int align_length, len0, len1;
-  int is_nt0, is_nt1;
-  char *al0, *al1; /* dummy pointers to the sequences in the alignment */
+  int i, i0, i1, bytes, align_length;
+  bool is_nt0, is_nt1;
+  char *al0, *al1; // dummy pointers to the sequences in the alignment
   
   // define dummy pointer to key string
   char *pkey;
-  int key_size = 0; /* key buffer bytes written*/
+  int key_size = 0; // key buffer bytes written
   
   if(!al) { // Null alignment (outside kmer thresh) -> Null sub
     Sub *sub = NULL;
@@ -234,17 +236,8 @@ Sub *al2subs(char **al) {
   }
   
   // create Sub obect and initialize memory
-  align_length = strlen(al[0]);
-  len0 = len1 = 0;
-  for(i=0;i<align_length;i++) {
-    is_nt0 = ((al0[i] == 1) || (al0[i] == 2) || (al0[i] == 3) || (al0[i] == 4) || (al0[i] == 5)); // A/C/G/T/N (non-gap) in seq0
-    is_nt1 = ((al1[i] == 1) || (al1[i] == 2) || (al1[i] == 3) || (al1[i] == 4) || (al1[i] == 5)); // A/C/G/T/N (non-gap) in seq1
-    if(is_nt0) { len0++; }
-    if(is_nt1) { len1++; }
-  }
-
   Sub *sub = (Sub *) malloc(sizeof(Sub)); //E
-  if (sub == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (sub == NULL)  Rcpp::stop("Memory allocation failed.");
   // THESE ARE ALLOCATING MORE THAN THEY NEED (strlen(al[0]) more then len(seq0))
   sub->map = (uint16_t *) malloc(strlen(al[0]) * sizeof(uint16_t)); //E
   sub->pos = (uint16_t *) malloc(strlen(al[0]) * sizeof(uint16_t)); //E
@@ -252,7 +245,7 @@ Sub *al2subs(char **al) {
   sub->nt1 = (char *) malloc(strlen(al[0])); //E
   sub->key = (char *) malloc(6*strlen(al[0])); // Will break if seqs get into the many thousands //E
   if (sub->map == NULL || sub->pos == NULL || sub->nt0 == NULL || sub->nt1 == NULL || sub->key == NULL) {
-    Rcpp::stop("Memory allocation failed!\n");
+    Rcpp::stop("Memory allocation failed.");
   }
   sub->nsubs=0;
   
@@ -293,18 +286,15 @@ Sub *al2subs(char **al) {
   *pkey = '\0';
   int2nt(sub->key, sub->key);  // store sub keys as readable strings
     
-  /* give back unused memory */
+  // give back unused memory
   sub->pos = (uint16_t *) realloc(sub->pos, sub->nsubs * sizeof(uint16_t)); //E
   sub->nt0 = (char *) realloc(sub->nt0, sub->nsubs); //E
   sub->nt1 = (char *) realloc(sub->nt1, sub->nsubs); //E
   sub->key = (char *) realloc(sub->key, strlen(sub->key) + 1); //E
   if (sub->pos == NULL || sub->nt0 == NULL || sub->nt1 == NULL || sub->key == NULL) {
-    Rcpp::stop("Memory allocation failed!\n");
+    Rcpp::stop("Memory allocation failed.");
   }
   
-  if(VERBOSE && sub->nsubs>150) {
-    printf("AL2SUBS: Many subs (%i) \n", sub->nsubs);
-  }
   return sub;
 }
 
@@ -323,7 +313,7 @@ Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_km
     if(raw0->qual && raw1->qual) {
       sub->q0 = (double *) malloc(sub->nsubs * sizeof(double)); //E
       sub->q1 = (double *) malloc(sub->nsubs * sizeof(double)); //E
-      if (sub->q0 == NULL || sub->q1 == NULL) { Rcpp::stop("Memory allocation failed!\n"); }
+      if (sub->q0 == NULL || sub->q1 == NULL) { Rcpp::stop("Memory allocation failed."); }
       
       for(s=0;s<sub->nsubs;s++) {
         sub->q0[s] = raw0->qual[sub->pos[s]];

@@ -211,7 +211,7 @@ void bi_shove_raw(Bi *bi, Raw *raw) {
   fam_add_raw(bi->fam[0], raw);
   bi->nraw++;
   bi->reads += raw->reads;
-  bi->update_fam = TRUE;
+  bi->update_fam = true;
 }
 
 /*
@@ -267,8 +267,9 @@ Bi *bi_new(int totraw) {
   bi->totraw = totraw;
   bi->sm = sm_new(HASHOCC); //E
   if (bi->sm == NULL)  Rcpp::stop("Memory allocation failed!\n");
-  bi->update_lambda = TRUE;
-  bi->update_fam = TRUE;
+  bi->update_lambda = true;
+  bi->update_fam = true;
+  bi->shuffle = true;
   
   bi->nfam = 0;
   bi->reads = 0;
@@ -315,8 +316,6 @@ void bi_census(Bi *bi) {
       nraw++;
     }
   }
-  if(VERBOSE && (bi->reads != reads)) { printf("CENSUS: Census changed reads: %i -> %i\n", bi->reads, reads); }
-  if(VERBOSE && (bi->nraw != nraw)) { printf("CENSUS: Census changed nraw: %i -> %i\n", bi->nraw, nraw); }
   bi->reads = reads;
   bi->nraw = nraw;
 }
@@ -469,10 +468,10 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
         if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
         if(index == TARGET_RAW) { printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
       }
-      b->bi[i]->update_lambda = FALSE;
+      b->bi[i]->update_lambda = false;
       if(!b->bi[i]->update_fam) {
         printf("Warning: Lambda updated but update_fam flag not set in C%i\n", i);
-        b->bi[i]->update_fam = TRUE;
+        b->bi[i]->update_fam = true;
       }
     } // if(b->bi[i]->update_lambda)
   }
@@ -518,7 +517,7 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bo
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
       if(tVERBOSE) { printf("Warning: bi_fam_update hit a null sub.\n"); }
-      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, FALSE, 1., band_size);
+      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, false, 1., band_size);
       // DOESN'T UPDATE LAMBDA HERE, which seems fine, as its most "fair" that it keeps its 0 lambda from being outside kmerdist
       ///! Check that lambda is in fact zero, warn otherwise.
       if(bi->lambda[raws[r_c]->index] != 0) {
@@ -562,12 +561,12 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bo
   }
   if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
   free(raws);
-  bi->update_fam = FALSE;
+  bi->update_fam = false;
 }
 
 void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
-    if(b->bi[i]->update_fam) {  // Consensus has changed OR??? a raw has been shoved EITHER DIRECTION breaking the fam structure
+    if(b->bi[i]->update_fam) {  // Consensus has changed or a raw has been shoved EITHER DIRECTION breaking the fam structure
       if(tVERBOSE) { printf("C%iFU:", i); }
       bi_fam_update(b->bi[i], b->score, b->gap_pen, b->band_size, b->use_quals);
     }
@@ -575,9 +574,14 @@ void b_fam_update(B *b) {
 }
 
 void b_e_update(B *b) {
+  double e;
   for(int i=0; i < b->nclust; i++) {
     for(int index=0; index < b->nraw; index++) {
-      b->bi[i]->e[index] = b->bi[i]->lambda[index]*b->bi[i]->reads;
+      e = b->bi[i]->lambda[index]*b->bi[i]->reads;
+      if(e != b->bi[i]->e[index]) { // E changed
+        b->bi[i]->e[index] = e;
+        b->bi[i]->shuffle = true;
+      }
     }
   }
 }
@@ -587,56 +591,69 @@ void b_e_update(B *b) {
  number of that sequence. The center of a Bi cannot leave.
 */
 bool b_shuffle(B *b) {
+  int i, f, r, j;
   int ibest, index;
   bool shuffled = false;
   Raw *raw;
   double e, maxe;
   // Iterate over raws via clusters/fams
-  for(int i=0; i<b->nclust; i++) {
-    for(int f=0; f<b->bi[i]->nfam; f++) {
+  for(i=0; i<b->nclust; i++) {
+    for(f=0; f<b->bi[i]->nfam; f++) {
       // IMPORTANT TO ITERATE BACKWARDS DUE TO FAM_POP_RAW!!!!!!
-      for(int r=b->bi[i]->fam[f]->nraw-1; r>=0; r--) {
+      for(r=b->bi[i]->fam[f]->nraw-1; r>=0; r--) {
         // Find cluster with best e for this raw
         maxe = 0.0; ibest=-99;
         index = b->bi[i]->fam[f]->raw[r]->index;
-        for(int j=0;j<b->nclust; j++) {
-          e = b->bi[j]->e[index];
-          if(e > maxe) {
-            maxe = e;
-            ibest = j;
+        
+        if(b->bi[i]->shuffle) { // E's for this cluster have changed, compare to all others
+          for(j=0;j<b->nclust; j++) {
+            e = b->bi[j]->e[index];
+            if(e > maxe) {
+              maxe = e;
+              ibest = j;
+            }
+          }
+        } else { // Compare just to other clusters that have changed E's
+          for(j=0;j<b->nclust; j++) {
+            if(b->bi[j]->shuffle) {
+              e = b->bi[j]->e[index];
+              if(e > maxe) {
+                maxe = e;
+                ibest = j;
+              }
+            }
           }
         }
         
-        // Check to see if a cluster was assigned
-        if(ibest == -99) {  // Shouldn't see this unless still in C0 (from initialization)
+        // Check if no cluster assigned
+        if(ibest == -99) {
           ibest=i;
-          if(i != 0) {
-            printf("Warning: Failed to assign raw %i to cluster. Defaulting to no move.\n", index);
-          }
         }
         
-        // If different, move the raw to the new bi
-        if(ibest != i) {
+        // If a better cluster was found, move the raw to the new bi
+        if(maxe > b->bi[i]->e[index]) {
           if(index == b->bi[i]->center->index) {  // Check if center
             if(tVERBOSE) {
               printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
-              printf("Attempted: Raw %i from C%i (center=%i) to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
-                  index, i, b->bi[i]->center->index, ibest, \
+              printf("Attempted: Raw %i from C%i to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
+                  index, i, ibest, \
                   b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
                   b->bi[ibest]->e[index], b->bi[ibest]->sub[index]->key, b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
             }
           } else { // Moving raw
             raw = bi_pop_raw(b->bi[i], f, r);
             bi_shove_raw(b->bi[ibest], raw);
-            b->bi[i]->update_fam = TRUE;
-            b->bi[ibest]->update_fam = TRUE;  // DUPLICATIVE FLAGGING FROM SHOVE_RAW FUNCTION
+            b->bi[i]->update_fam = true;
+            b->bi[ibest]->update_fam = true;  // DUPLICATIVE FLAGGING FROM SHOVE_RAW FUNCTION
             shuffled = true;
-            if(VERBOSE) { printf("shuffle: Raw %i from C%i to C%i (%.4e -> %.4e)\n", index, i, ibest, b->bi[i]->e[index], b->bi[ibest]->e[index]); }
+//            if(VERBOSE) { printf("shuffle: Raw %i from C%i to C%i (%.4e -> %.4e)\n", index, i, ibest, b->bi[i]->e[index], b->bi[ibest]->e[index]); }
           }  
         }
       } //End loop(s) over raws (r).
     } // End loop over fams (f).
   } // End loop over clusters (i).
+  
+  for(i=0; i<b->nclust; i++) { b->bi[i]->shuffle = false; }
   return shuffled;
 }
 
@@ -849,8 +866,8 @@ void bi_consensus_update(Bi *bi) {
   }
   
   if(strcmp(bi->seq, bi->fam[maxf]->raw[maxr]->seq) != 0) {  // strings differ
-    bi->update_lambda = TRUE;
-    bi->update_fam = TRUE;
+    bi->update_lambda = true;
+    bi->update_fam = true;
     if(VERBOSE) {
       printf("bi_c_u: New Consensus from raw %i (%i)\n", bi->fam[maxf]->raw[maxr]->index, bi->fam[maxf]->raw[maxr]->reads);
       printf("\tNew(%i): %s\n", (int) strlen(bi->fam[maxf]->raw[maxr]->seq), ntstr(bi->fam[maxf]->raw[maxr]->seq));

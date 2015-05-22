@@ -367,7 +367,7 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
     
     if(tVERBOSE && nshuffle >= MAX_SHUFFLE) { printf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
     
-    b_fam_update(bb); // must have lambda_update before fam_update
+    b_fam_update(bb); // If centers can move, must have lambda_update before fam_update
     b_p_update(bb);
   }
   
