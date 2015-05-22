@@ -338,7 +338,8 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming)) ) {
     if(tVERBOSE) printf("----------- New Cluster C%i -----------\n", newi);
-    b_consensus_update(bb);
+    ///! TESTING TESTING TESTING - Centers locked at time of bud
+    ///! b_consensus_update(bb);
     b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
     // SHOULD GET_SELF ALSO USE QUALS??
     
@@ -347,7 +348,8 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
       inflation = (bb->bi[newi]->center->reads/bb->bi[newi]->self)/bb->bi[newi]->reads;
       for(index=0;index<bb->nraw;index++) {
         bb->bi[newi]->e[index] = bb->bi[newi]->e[index] * inflation;
-        bb->bi[newi]->update_lambda = TRUE;
+        ///! TESTING TESTING TESTING - REMOVING UNNECESSARY LAMBDA UPDATES
+        ///! bb->bi[newi]->update_lambda = TRUE;
       }
     }
     
@@ -355,16 +357,22 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
     nshuffle = 0;
     do {
       shuffled = b_shuffle(bb);
-      b_consensus_update(bb);
-      b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
+      ///! TESTING TESTING TESTING - Centers locked at time of bud
+      ///! b_consensus_update(bb);
+      ///! TESTING TESTING TESTING - REMOVING UNNECESSARY LAMBDA UPDATES
+      ///! b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
+      b_e_update(bb); ///!
       if(tVERBOSE) { printf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
     
     if(tVERBOSE && nshuffle >= MAX_SHUFFLE) { printf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
     
-    b_fam_update(bb); // must have lambda_update before fam_update
+    b_fam_update(bb); // If centers can move, must have lambda_update before fam_update
     b_p_update(bb);
   }
+  
+  printf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
+  
   return bb;
 }
 

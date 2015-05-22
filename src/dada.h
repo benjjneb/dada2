@@ -94,6 +94,7 @@ typedef struct {
   int maxfam;  // number of fams currently allocated for in **fam
   bool update_lambda; // set to true when consensus changes
   bool update_fam; // set to true when consensus changes and when raws are shuffled
+  bool shuffle; // set to true when any E-value in this cluster changes
   double self; // self-production genotype error probability
   StrMap *sm;  // Hash table from sub->key to string 'fam index+1' '\0'
   Sub **sub;   // Array of pointers to subs with all raws.
@@ -114,6 +115,8 @@ typedef struct {
   int reads;
   int maxclust;
   int band_size;
+  int nalign;
+  int nshroud;
 //  double err[4][4];
   double score[4][4];
   double gap_pen;
