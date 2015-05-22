@@ -24,25 +24,6 @@ namespace dadac {
         }
     }
 
-    inline Rcpp::NumericVector dada_nw(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap, int band, bool FAST_ALIGN) {
-        typedef SEXP(*Ptr_dada_nw)(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
-        static Ptr_dada_nw p_dada_nw = NULL;
-        if (p_dada_nw == NULL) {
-            validateSignature("Rcpp::NumericVector(*dada_nw)(std::string,std::string,Rcpp::NumericMatrix,int,int,bool)");
-            p_dada_nw = (Ptr_dada_nw)R_GetCCallable("dadac", "dadac_dada_nw");
-        }
-        RObject __result;
-        {
-            RNGScope __rngScope;
-            __result = p_dada_nw(Rcpp::wrap(s1), Rcpp::wrap(s2), Rcpp::wrap(score), Rcpp::wrap(gap), Rcpp::wrap(band), Rcpp::wrap(FAST_ALIGN));
-        }
-        if (__result.inherits("interrupted-error"))
-            throw Rcpp::internal::InterruptedException();
-        if (__result.inherits("try-error"))
-            throw Rcpp::exception(as<std::string>(__result).c_str());
-        return Rcpp::as<Rcpp::NumericVector >(__result);
-    }
-
 }
 
 #endif // __dadac_RcppExports_h__
