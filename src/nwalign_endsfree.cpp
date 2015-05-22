@@ -4,14 +4,16 @@
 // [[Rcpp::interfaces(cpp)]]
 
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
-  double dot = 0;
+  int n_kmer = 2 << (2*k);
+  uint16_t dotsum = 0;
+  double dot = 0.0;
   
-  for(int i=0;i<(2 << (2*k)); i++) {
-    dot += (kv1[i] < kv2[i] ? kv1[i] : kv2[i]);
+  for(int i=0;i<n_kmer; i++) {
+    dotsum += (kv1[i] < kv2[i] ? kv1[i] : kv2[i]);
   }
-  dot = dot/((len1 < len2 ? len1 : len2) - k + 1.);
+  dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   
-  if(dot < 0 || dot > 1) { printf("Bad dot: %.4e\n", dot); }
+//  if(dot < 0 || dot > 1) { printf("Bad dot: %.4e\n", dot); }
 
   return (1. - dot);
 }
@@ -55,8 +57,6 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
 }
 
 char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band) {
-  static long nalign=0;
-  static long nshroud=0;
   char **al;
   double kdist;
   
@@ -66,13 +66,9 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool us
   
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
-    nshroud++;
   } else {
     al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band);
   }
-  nalign++;
-  
-  if(tVERBOSE && nalign%ALIGN_SQUAWK==0) { printf("%d alignments, %d shrouded\n", (int) nalign, (int) nshroud); }
 
   return al;
 }

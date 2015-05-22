@@ -114,6 +114,8 @@ typedef struct {
   int reads;
   int maxclust;
   int band_size;
+  int nalign;
+  int nshroud;
 //  double err[4][4];
   double score[4][4];
   double gap_pen;

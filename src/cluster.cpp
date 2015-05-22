@@ -399,6 +399,8 @@ void b_init(B *b) {
   b->bi[0]->birth_fold = 1.0;
   b->bi[0]->birth_e = b->reads;
   b->bi[0]->birth_sub = NULL;
+  b->nalign;
+  b->nshroud;
 
   // Add all raws to that cluster
   for (size_t index=0; index<b->nraw; index++) {
@@ -406,7 +408,7 @@ void b_init(B *b) {
   }
 
   bi_census(b->bi[0]);
-  b_consensus_update(b); // Makes cluster consensus sequence
+  bi_consensus_update(b->bi[0]); // Makes cluster consensus sequence
 }
 
 /* b_free:
@@ -450,7 +452,9 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
       for(index=0; index<b->nraw; index++) {
         // get sub object
         sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
-     
+        b->nalign++;
+        if(!sub) { b->nshroud++; }
+  
         // Store sub in the cluster object Bi
         sub_free(b->bi[i]->sub[index]);
         b->bi[i]->sub[index] = sub;

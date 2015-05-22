@@ -8,6 +8,41 @@
 
 using namespace Rcpp;
 
+// dada_nw
+Rcpp::NumericVector dada_nw(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap, int band, bool FAST_ALIGN);
+static SEXP dadac_dada_nw_try(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP FAST_ALIGNSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
+    Rcpp::traits::input_parameter< int >::type gap(gapSEXP);
+    Rcpp::traits::input_parameter< int >::type band(bandSEXP);
+    Rcpp::traits::input_parameter< bool >::type FAST_ALIGN(FAST_ALIGNSEXP);
+    __result = Rcpp::wrap(dada_nw(s1, s2, score, gap, band, FAST_ALIGN));
+    return __result;
+END_RCPP_RETURN_ERROR
+}
+RcppExport SEXP dadac_dada_nw(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP FAST_ALIGNSEXP) {
+    SEXP __result;
+    {
+        Rcpp::RNGScope __rngScope;
+        __result = PROTECT(dadac_dada_nw_try(s1SEXP, s2SEXP, scoreSEXP, gapSEXP, bandSEXP, FAST_ALIGNSEXP));
+    }
+    Rboolean __isInterrupt = Rf_inherits(__result, "interrupted-error");
+    if (__isInterrupt) {
+        UNPROTECT(1);
+        Rf_onintr();
+    }
+    Rboolean __isError = Rf_inherits(__result, "try-error");
+    if (__isError) {
+        SEXP __msgSEXP = Rf_asChar(__result);
+        UNPROTECT(1);
+        Rf_error(CHAR(__msgSEXP));
+    }
+    UNPROTECT(1);
+    return __result;
+}
 // evaluate_kmers
 Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, int band, size_t max_aligns);
 RcppExport SEXP dadac_evaluate_kmers(SEXP seqsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {
@@ -71,12 +106,14 @@ END_RCPP
 static int dadac_RcppExport_validate(const char* sig) { 
     static std::set<std::string> signatures;
     if (signatures.empty()) {
+        signatures.insert("Rcpp::NumericVector(*dada_nw)(std::string,std::string,Rcpp::NumericMatrix,int,int,bool)");
     }
     return signatures.find(sig) != signatures.end();
 }
 
 // registerCCallable (register entry points for exported C++ functions)
 RcppExport SEXP dadac_RcppExport_registerCCallable() { 
+    R_RegisterCCallable("dadac", "dadac_dada_nw", (DL_FUNC)dadac_dada_nw_try);
     R_RegisterCCallable("dadac", "dadac_RcppExport_validate", (DL_FUNC)dadac_RcppExport_validate);
     return R_NilValue;
 }
