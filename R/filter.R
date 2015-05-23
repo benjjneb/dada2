@@ -14,7 +14,7 @@
 #' 
 #' @param truncQ (Optional). Truncate reads at the first instance of a quality score less than
 #'    or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
-#'    sequence in Illumina 1.8+.
+#'    sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding. 
 #'  
 #' @param truncLen (Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
 #'    this are discarded.
@@ -57,13 +57,21 @@ fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
     
-    # Trim on truncQ ################## BEST TO MAKE THIS ROBUST TO Q ALPHABET
+    # Trim on truncQ 
+    # Convert numeric quality score to the corresponding ascii character
+    if(is.numeric(truncQ)) {
+      enc <- encoding(quality(fq))
+      ind <- which(enc==truncQ)
+      if(length(ind) != 1) stop("Encoding for this truncQ value not found.")
+      truncQ <- names(enc)[[ind]]
+    }
     fq <- trimTails(fq, 1, truncQ)
+    
     # Filter any with less than required length
     if(!is.na(end)) { fq <- fq[width(fq) >= end] }
     # Trim left and truncate to truncLen
     fq <- narrow(fq, start = start, end = end)
-
+    
     # Filter based on minQ and Ns and maxEE
     keep <- rep(TRUE, length(fq))
     keep <- keep & minQFilter(minQ)(fq)
@@ -110,7 +118,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
   endF <- truncLen[[1]]
   if(endF < startF) { endF = NA }
   endR <- truncLen[[2]]
-  if(endR < startR) { endF = NA }
+  if(endR < startR) { endR = NA }
   
   require("ShortRead")
   ## iterating over forward and reverse files using fastq streaming
@@ -126,12 +134,26 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
     if(length(fqF) != length(fqR)) stop("Mismatched forward and reverse sequence files: ", length(fqF), ", ", length(fqR), ".")
     inseqs <- inseqs + length(fqF)
     
-    # Trim on truncQ ################## BEST TO MAKE THIS ROBUST TO Q ALPHABET
+    # Trim on truncQ
+    # Convert numeric quality score to the corresponding ascii character
+    if(is.numeric(truncQ)) {
+      encF <- encoding(quality(fqF))
+      encR <- encoding(quality(fqR))
+      indF <- which(encF==truncQ[[1]])
+      indR <- which(encR==truncQ[[2]])
+      if(!(length(indF) == 1 && length(indR) == 1)) stop("Encoding for this truncQ value not found.")
+      truncQ <- c(names(encF)[[indF]], names(encR)[[indR]])
+    }
     rngF <- trimTails(fqF, 1, truncQ[[1]], ranges=TRUE)
     fqF <- narrow(fqF, 1, end(rngF)) # have to do it this way to avoid dropping the zero lengths
     rngR <- trimTails(fqR, 1, truncQ[[2]], ranges=TRUE)
     fqR <- narrow(fqR, 1, end(rngR)) # have to do it this way to avoid dropping the zero lengths
-
+    # And now filter any with length zero in F or R
+    # May want to roll this into the next length cull step...
+    keep <- (width(fqF) > 0 & width(fqR) > 0)
+    fqF <- fqF[keep]
+    fqR <- fqR[keep]
+    
     # Filter any with less than required length
     keep <- rep(TRUE, length(fqF))
     if(!is.na(endF)) { keep <- keep & (width(fqF) >= endF) }
@@ -146,8 +168,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
     keep <- rep(TRUE, length(fqF))
     keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF)
     if(maxEE[[1]] < Inf) keep <- keep & maxEEFilter(maxEE[[1]])(fqF)
-    keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqF)
-    if(maxEE[[2]] < Inf) keep <- keep & maxEEFilter(maxEE[[2]])(fqF)
+    keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqR)
+    if(maxEE[[2]] < Inf) keep <- keep & maxEEFilter(maxEE[[2]])(fqR)
     fqF <- fqF[keep]
     fqR <- fqR[keep]
     
