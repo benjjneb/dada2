@@ -17,10 +17,11 @@
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
-#define tVERBOSE 0
+#define tVERBOSE 1
 #define BUFFER_SIZE 1250
 #define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
-#define HASHOCC 20
+#define MIN_BUCKETS 10
+#define BUCKET_SCALE 0.5
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 #define DBL_PRECISION 1e-15 // precision of doubles
 #define KMER_SIZE 6

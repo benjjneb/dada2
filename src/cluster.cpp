@@ -265,7 +265,7 @@ Bi *bi_new(int totraw) {
   bi->e = (double *) malloc(totraw * sizeof(double)); //E
   if (bi->e == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->totraw = totraw;
-  bi->sm = sm_new(HASHOCC); //E
+  bi->sm = sm_new(MIN_BUCKETS); //E
   if (bi->sm == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->update_lambda = true;
   bi->update_fam = true;
@@ -489,7 +489,8 @@ void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bo
   char buf[10];
   
   sm_delete(bi->sm);
-  bi->sm = sm_new(HASHOCC);
+  bi->sm = sm_new(MIN_BUCKETS + (int) (BUCKET_SCALE * bi->nraw/2));  // n_buckets scales with # of raws
+  // More buckets = more memory, but less collision (and therefore less costly strcmp w/in buckets).
   bi_census(bi);
   
   // Make list of pointers to the raws
