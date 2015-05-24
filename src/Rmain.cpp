@@ -14,7 +14,7 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::List dada_uniques(Rcpp::CharacterVector seqs,  Rcpp::IntegerVector abundances,
+Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abundances,
                         Rcpp::NumericMatrix err,
                         Rcpp::NumericMatrix quals,
                         Rcpp::NumericMatrix score, Rcpp::NumericVector gap,
@@ -40,17 +40,12 @@ Rcpp::List dada_uniques(Rcpp::CharacterVector seqs,  Rcpp::IntegerVector abundan
   }
   int nraw = len1;
     
-  std::vector<std::string> cpp_seqs(nraw);
-  std::vector<int> cpp_abunds(nraw);
   int max_seq_len = 0;
   for(i=0;i<nraw;i++) {
-    cpp_seqs[i] = std::string(seqs[i]);
-    if(cpp_seqs[i].length() > max_seq_len) { max_seq_len = cpp_seqs[i].length(); }
-    cpp_abunds[i] = abundances[i];
+    if(seqs[i].length() > max_seq_len) { max_seq_len = seqs[i].length(); }
   }
   if(max_seq_len >= SEQLEN) { Rcpp::stop("Input sequences exceed the maximum allowed string length of", SEQLEN-1); }
   // Need one extra byte for the string termination character
-//  std::vector<int> cpp_abunds = Rcpp::as<std::vector<int> >(abunds);
   
   // Each sequence is a COLUMN, each row is a POSITION
   bool has_quals = false;
@@ -64,15 +59,15 @@ Rcpp::List dada_uniques(Rcpp::CharacterVector seqs,  Rcpp::IntegerVector abundan
   if (raws == NULL)  Rcpp::stop("Memory allocation failed!\n");
 
   for (index = 0; index < nraw; index++) {
-    strcpy(seq, cpp_seqs[index].c_str());
+    strcpy(seq, seqs[index].c_str());
     nt2int(seq, seq);
     for(pos=0;pos<strlen(seq);pos++) {
       qual[pos] = quals(pos, index);
     }
     if(has_quals) {
-      raws[index] = raw_qual_new(seq, qual, cpp_abunds[index]);
+      raws[index] = raw_qual_new(seq, qual, abundances[index]);
     } else {
-      raws[index] = raw_new(seq, cpp_abunds[index]);
+      raws[index] = raw_new(seq, abundances[index]);
     }
     raws[index]->index = index;
   }
