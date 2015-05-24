@@ -19,19 +19,10 @@ double calc_pA(int reads, double E_reads) {
   }
   
   // Calculate pval from poisson cdf.
-  if(IMPLEMENTATION == 'R') {
-    Rcpp::IntegerVector n_repeats(1);
-    n_repeats(0) = reads-1;
-    Rcpp::NumericVector res = Rcpp::ppois(n_repeats, E_reads, false);  // lower.tail = false
-    pval = Rcpp::as<double>(res);
-  }          
-/*      else { // C implementation
-    double gslval = 1 - gsl_cdf_poisson_P(reads-1, mu);
-    double minval = (pval < gslval) ? pval : gslval;
-    if( fabs(pval-gslval)/minval > 1e-5 && fabs(pval-gslval) > 1e-25 ) {
-      Rcpp::Rcout << "Pval disagreement (gsl/R) for mu=" << mu << " and n=" << reads-1 << ": " << gslval << ", " << pval << "\n";
-    }
-  }  // THIS MUST BE CHANGED. DOES NOT LIMIT APPROPRIATELY!!!! */
+  Rcpp::IntegerVector n_repeats(1);
+  n_repeats(0) = reads-1;
+  Rcpp::NumericVector res = Rcpp::ppois(n_repeats, E_reads, false);  // lower.tail = false
+  pval = Rcpp::as<double>(res);
   
   pval = pval/norm;
   return pval;
@@ -41,11 +32,7 @@ double calc_pA(int reads, double E_reads) {
 double get_pA(Fam *fam, Bi *bi) {
   double E_reads, pval = 1.;
   
-  if(fam->reads < 1) {
-    printf("Warning: No or negative reads (%i) in fam.\n", fam->reads);
-    pval=1.;
-  } 
-  else if(fam->reads == 1) {   // Singleton. No abundance pval.
+  if(fam->reads == 1) {   // Singleton. No abundance pval.
     pval=1.;
   } 
   else if(!(fam->sub)) { // Outside kmer threshhold
@@ -56,7 +43,8 @@ double get_pA(Fam *fam, Bi *bi) {
   }
   else if(fam->lambda == 0) { // Zero expected reads of this fam
     pval = 0.;
-  } else { // Calculate abundance pval.
+  }
+  else { // Calculate abundance pval.
     // E_reads is the expected number of reads for this fam
     E_reads = fam->lambda * bi->reads;
     pval = calc_pA(fam->reads, E_reads);

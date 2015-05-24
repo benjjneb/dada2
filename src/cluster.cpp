@@ -166,6 +166,8 @@ Raw *bi_pop_raw(Bi *bi, int f, int r) {
     if(pop != NULL) {
       bi->nraw--;
       bi->reads -= pop->reads;
+      bi->update_fam = true;
+      bi->update_e = true;
     }
   } else {  // Trying to pop an out of range raw
     printf("bi_pop_raw: not enough fams %i (%i)\n", f, bi->nfam);
@@ -191,6 +193,7 @@ Fam *bi_pop_fam(Bi *bi, int f) {
     bi->nraw -= pop->nraw;
     for(int r=0;r<pop->nraw;r++) {  // Doesn't rely on fam reads
       bi->reads -= pop->raw[r]->reads;
+      bi->update_e = true;
     }
   } else {  // Trying to pop an out of range fam
     printf("bi_pop_fam: not enough fams %i (%i)\n", f, bi->nfam);
@@ -202,7 +205,7 @@ Fam *bi_pop_fam(Bi *bi, int f) {
 /*
  bi_shove_raw:
  Hackily just adds raw to fam[0].
- consensus_update and fam_update are needed on this cluster afterwards.
+ fam_update and e_update are needed on this cluster afterwards.
  */
 void bi_shove_raw(Bi *bi, Raw *raw) {
   if(bi->nfam == 0) {
@@ -212,6 +215,7 @@ void bi_shove_raw(Bi *bi, Raw *raw) {
   bi->nraw++;
   bi->reads += raw->reads;
   bi->update_fam = true;
+  bi->update_e = true;
 }
 
 /*
@@ -269,6 +273,7 @@ Bi *bi_new(int totraw) {
   if (bi->sm == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->update_lambda = true;
   bi->update_fam = true;
+  bi->update_e = true;
   bi->shuffle = true;
   
   bi->nfam = 0;
@@ -316,7 +321,10 @@ void bi_census(Bi *bi) {
       nraw++;
     }
   }
-  bi->reads = reads;
+  if(reads != bi->reads) {
+    bi->reads = reads;
+    bi->update_e = true;
+  }
   bi->nraw = nraw;
 }
 
@@ -469,10 +477,8 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
         if(index == TARGET_RAW) { printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
       }
       b->bi[i]->update_lambda = false;
-      if(!b->bi[i]->update_fam) {
-        printf("Warning: Lambda updated but update_fam flag not set in C%i\n", i);
-        b->bi[i]->update_fam = true;
-      }
+      b->bi[i]->update_fam = true;
+      b->bi[i]->update_e = true;
     } // if(b->bi[i]->update_lambda)
   }
   b_e_update(b);
@@ -575,15 +581,17 @@ void b_fam_update(B *b) {
 }
 
 void b_e_update(B *b) {
+  int i;
+  size_t index;
   double e;
-  for(int i=0; i < b->nclust; i++) {
-    for(int index=0; index < b->nraw; index++) {
-      e = b->bi[i]->lambda[index]*b->bi[i]->reads;
-      if(e != b->bi[i]->e[index]) { // E changed
-        b->bi[i]->e[index] = e;
-        b->bi[i]->shuffle = true;
+  for(i=0; i < b->nclust; i++) {
+    if(b->bi[i]->update_e) {
+      for(index=0; index < b->nraw; index++) {
+        b->bi[i]->e[index] = b->bi[i]->lambda[index]*b->bi[i]->reads;
       }
+      b->bi[i]->shuffle = true;
     }
+    b->bi[i]->update_e = false;
   }
 }
 
@@ -644,10 +652,7 @@ bool b_shuffle(B *b) {
           } else { // Moving raw
             raw = bi_pop_raw(b->bi[i], f, r);
             bi_shove_raw(b->bi[ibest], raw);
-            b->bi[i]->update_fam = true;
-            b->bi[ibest]->update_fam = true;  // DUPLICATIVE FLAGGING FROM SHOVE_RAW FUNCTION
             shuffled = true;
-//            if(VERBOSE) { printf("shuffle: Raw %i from C%i to C%i (%.4e -> %.4e)\n", index, i, ibest, b->bi[i]->e[index], b->bi[ibest]->e[index]); }
           }  
         }
       } //End loop(s) over raws (r).

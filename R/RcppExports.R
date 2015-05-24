@@ -46,6 +46,10 @@ evaluate_band <- function(seqs, score, gap, band_size, max_aligns) {
     .Call('dadac_evaluate_band', PACKAGE = 'dadac', seqs, score, gap, band_size, max_aligns)
 }
 
+getSingletonCDF <- function(err, nnt, maxD) {
+    .Call('dadac_getSingletonCDF', PACKAGE = 'dadac', err, nnt, maxD)
+}
+
 #' @useDynLib dadac
 #' @importFrom Rcpp evalCpp
 NULL

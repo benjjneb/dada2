@@ -24,6 +24,25 @@ namespace dadac {
         }
     }
 
+    inline Rcpp::DataFrame getSingletonCDF(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD) {
+        typedef SEXP(*Ptr_getSingletonCDF)(SEXP,SEXP,SEXP);
+        static Ptr_getSingletonCDF p_getSingletonCDF = NULL;
+        if (p_getSingletonCDF == NULL) {
+            validateSignature("Rcpp::DataFrame(*getSingletonCDF)(Rcpp::NumericMatrix,std::vector<int>,int)");
+            p_getSingletonCDF = (Ptr_getSingletonCDF)R_GetCCallable("dadac", "dadac_getSingletonCDF");
+        }
+        RObject __result;
+        {
+            RNGScope __rngScope;
+            __result = p_getSingletonCDF(Rcpp::wrap(err), Rcpp::wrap(nnt), Rcpp::wrap(maxD));
+        }
+        if (__result.inherits("interrupted-error"))
+            throw Rcpp::internal::InterruptedException();
+        if (__result.inherits("try-error"))
+            throw Rcpp::exception(as<std::string>(__result).c_str());
+        return Rcpp::as<Rcpp::DataFrame >(__result);
+    }
+
 }
 
 #endif // __dadac_RcppExports_h__

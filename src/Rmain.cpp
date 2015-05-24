@@ -343,9 +343,9 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
       inflation = (bb->bi[newi]->center->reads/bb->bi[newi]->self)/bb->bi[newi]->reads;
       for(index=0;index<bb->nraw;index++) {
         bb->bi[newi]->e[index] = bb->bi[newi]->e[index] * inflation;
-        ///! TESTING TESTING TESTING - REMOVING UNNECESSARY LAMBDA UPDATES
-        ///! bb->bi[newi]->update_lambda = TRUE;
       }
+      bb->bi[newi]->update_e = true;
+      bb->bi[newi]->shuffle = true;
     }
     
     // Keep shuffling and updating until no more shuffles
@@ -356,7 +356,7 @@ B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat
       ///! b_consensus_update(bb);
       ///! TESTING TESTING TESTING - REMOVING UNNECESSARY LAMBDA UPDATES
       ///! b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
-      b_e_update(bb); ///!
+      b_e_update(bb);
       if(tVERBOSE) { printf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
     
