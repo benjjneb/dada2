@@ -406,8 +406,8 @@ void b_init(B *b) {
   b->bi[0]->birth_fold = 1.0;
   b->bi[0]->birth_e = b->reads;
   b->bi[0]->birth_sub = NULL;
-  b->nalign;
-  b->nshroud;
+  b->nalign = 0;
+  b->nshroud = 0;
 
   // Add all raws to that cluster
   for (size_t index=0; index<b->nraw; index++) {
@@ -583,7 +583,7 @@ void b_fam_update(B *b) {
 void b_e_update(B *b) {
   int i;
   size_t index;
-  double e;
+
   for(i=0; i < b->nclust; i++) {
     if(b->bi[i]->update_e) {
       for(index=0; index < b->nraw; index++) {

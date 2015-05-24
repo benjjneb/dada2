@@ -276,9 +276,17 @@ Sub *al2subs(char **al) {
         sub->nt0[sub->nsubs] = al0[i];
         sub->nt1[sub->nsubs] = al1[i];
         
-        bytes = sprintf(pkey,"%c%d%c,",al0[i],i0,al1[i]);
-        key_size += bytes;
-        pkey += bytes;
+        // Assuming space is available
+        // Assuming sequences are <1000 nts long (3 digit positions)
+        *pkey++ = al0[i];
+        *pkey++ = '0' + i0/100;
+        *pkey++ = '0' + (i0 % 100)/10;
+        *pkey++ = '0' + (i0 % 10);
+        *pkey++ = al1[i];
+        *pkey++ = ',';
+//        bytes = sprintf(pkey,"%c%d%c,",al0[i],i0,al1[i]);
+//        key_size += bytes;
+//        pkey += bytes;
         sub->nsubs++;
       }
     }

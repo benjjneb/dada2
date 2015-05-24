@@ -1,8 +1,6 @@
 #ifndef _DADA_H_
 #define _DADA_H_
 
-#define IMPLEMENTATION 'R'
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +16,8 @@
 #define TESTING 0
 #define VERBOSE 0
 #define tVERBOSE 1
-#define BUFFER_SIZE 1250
-#define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
+#define SEQLEN 999 // Buffer size for DNA sequences read in from uniques files
+// SEQLEN MAY NOT BE INCREASED BEYOND 1000 WITHOUT REVISITING AL2SUBS
 #define MIN_BUCKETS 10
 #define BUCKET_SCALE 0.5
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal

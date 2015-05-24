@@ -193,7 +193,7 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
 
 // I AM BROKEN RIGHT NOW BECAUSE OF CHANGE IN ERR MATRIX STUFF!!!!!!!!!
 void b_make_pS_lookup(B *b) {
-  static double err[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+///!  static double err[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
   static int ave_nnt[4] = {0, 0, 0, 0};
   static double *lams = NULL;   // the lookup table
   static double *cdf = NULL;    // the lookup table
@@ -384,8 +384,8 @@ double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
 double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals) {
   // use_quals does nothing in this function, just here for backwards compatability for now
   int s, pos0, pos1, nti0, nti1, len1, ncol;
-  double lambda, trans;
-  float qual;
+  double lambda;
+  float prefactor, fqmin;
   int tvec[SEQLEN];
   int qind[SEQLEN];
   
@@ -397,6 +397,8 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
   // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
   len1 = strlen(raw->seq);
   ncol = errMat.ncol();
+  prefactor = ((float) (ncol-1))/((float) QMAX-QMIN);
+  fqmin = (float) QMIN;
   for(pos1=0;pos1<len1;pos1++) {
     nti1 = ((int) raw->seq[pos1]) - 1;
     if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
@@ -406,7 +408,7 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
     }
     if(raw->qual) {
       // Turn q-score into the index in the array
-      qind[pos1] = round((ncol-1) * (raw->qual[pos1]-QMIN)/((float) QMAX-QMIN));
+      qind[pos1] = round(prefactor * (raw->qual[pos1] - fqmin));
     } else {
       qind[pos1] = 0;
     }
