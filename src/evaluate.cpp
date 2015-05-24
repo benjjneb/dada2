@@ -11,9 +11,9 @@ using namespace Rcpp;
 //'  Only A/C/G/T allowed.
 //' 
 //' @param score (Required). Numeric matrix (4x4).
-//' The score matrix used during the alignment.
+//' The score matrix used during the alignment. Coerced to integer.
 //'
-//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
+//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
 //'
 //' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
 //' pairwise alignments to do.
@@ -22,14 +22,14 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, int band, size_t max_aligns) {
+Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, size_t max_aligns) {
   int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
   char *seq1, *seq2;
-  double c_gap = as<double>(gap);
-  double c_score[4][4];
+
+  int c_score[4][4];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      c_score[i][j] = score(i,j);
+      c_score[i][j] = (int) score(i,j);
     }
   }
   nseqs = seqs.size();
@@ -63,7 +63,7 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
 
       minlen = (len1 < len2 ? len1 : len2);
 
-      sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, c_gap, band));
+      sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, band));
       adist[npairs] = ((double) sub->nsubs)/((double) minlen);
       
       kdist[npairs] = kmer_dist(kv1, len1, kv2, len2, kmer_size);
@@ -92,9 +92,9 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
 //'  Only A/C/G/T allowed.
 //' 
 //' @param score (Required). Numeric matrix (4x4).
-//' The score matrix used during the alignment.
+//' The score matrix used during the alignment. Coerced to integer.
 //'
-//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
+//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
 //' 
 //' @param band_size (Required). A \code{numeric(1)} giving the band size to consider.
 //'
@@ -108,11 +108,11 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
 Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, size_t max_aligns) {
   int i, j, n_iters, stride, nseqs, len1 = 0, len2 = 0;
   char *seq1, *seq2;
-//  double c_gap = as<double>(gap);
-  double c_score[4][4];
+
+  int c_score[4][4];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      c_score[i][j] = score(i,j);
+      c_score[i][j] = (int) score(i,j);
     }
   }
   nseqs = seqs.size();

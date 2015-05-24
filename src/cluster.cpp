@@ -37,7 +37,7 @@ Fam *bi_pop_fam(Bi *bi, int f);
 void bi_census(Bi *bi);
 void bi_consensus_update(Bi *bi);
 void fam_consensus_update(Fam *fam);
-void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bool use_quals);
+void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals);
 
 /*
  raw_new:
@@ -332,7 +332,7 @@ void bi_census(Bi *bi) {
  The constructor for the B object. Takes in a Uniques object.
  Places all sequences into the same family within one cluster.
 */
-B *b_new(Raw **raws, int nraw, double score[4][4], double gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals) {
+B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals) {
   int i, j, nti;
   size_t index;
 
@@ -489,7 +489,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
    cluster consensus.
   Currently completely destructive of old fams.
    */
-void bi_fam_update(Bi *bi, double score[4][4], double gap_pen, int band_size, bool use_quals) {
+void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals) {
   int f, r, result, r_c;
   Sub *sub;
   char buf[10];

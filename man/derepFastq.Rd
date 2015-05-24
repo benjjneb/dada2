@@ -34,7 +34,6 @@ List.
 This is a custom interface to \code{\link{FastqStreamer}}
 for dereplicating amplicon sequences from a fastq or compressed fastq file,
 while also controlling peak memory requirement to support large files.
-This function relies heavily on the \code{\link[ShortRead]{tables}} method.
 }
 \examples{
 # Test that chunk-size, `n`, does not affect the result.
@@ -44,8 +43,5 @@ test2 = dereplicateFastqReads(testFile, 35, TRUE)
 test3 = dereplicateFastqReads(testFile, 100, TRUE)
 all.equal(test1, test2[names(test1)])
 all.equal(test1, test3[names(test1)])
-}
-\seealso{
-\code{\link{replicateReads}}
 }
 

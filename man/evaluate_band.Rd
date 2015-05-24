@@ -12,9 +12,9 @@ evaluate_band(seqs, score, gap, band_size, max_aligns)
  Only A/C/G/T allowed.}
 
 \item{score}{(Required). Numeric matrix (4x4).
-The score matrix used during the alignment.}
+The score matrix used during the alignment. Coerced to integer.}
 
-\item{gap}{(Required). A \code{numeric(1)} giving the gap penalty for alignment.}
+\item{gap}{(Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.}
 
 \item{band_size}{(Required). A \code{numeric(1)} giving the band size to consider.}
 

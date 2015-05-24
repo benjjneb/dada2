@@ -6,10 +6,10 @@ assign("OMEGA_S", 1e-3, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
-assign("SCORE_MATRIX", matrix(c(5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5, -4, -4, -4, -4, 5),
+assign("SCORE_MATRIX", matrix(c(5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L),
                               nrow=4, byrow=TRUE), envir = dada_opts)
-assign("GAP_PENALTY", -8, envir = dada_opts)
-assign("BAND_SIZE", 20, envir = dada_opts)
+assign("GAP_PENALTY", -8L, envir = dada_opts)
+assign("BAND_SIZE", 16, envir = dada_opts)
 assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)

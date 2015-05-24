@@ -5,7 +5,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals);
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -79,10 +79,10 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
     Rcpp::Rcout << "C: Score matrix malformed:" << nrow << ", " << ncol << "\n";
     return R_NilValue;
   }
-  double c_score[4][4];
+  int c_score[4][4];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      c_score[i][j] = score(i,j);
+      c_score[i][j] = (int) score(i,j);
     }
   }
 
@@ -95,7 +95,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
 
   // Check rest of params for Length-One-ness and make into C versions
   if(gap.size() != 1) { Rcpp::Rcout << "C: Gap penalty not length 1\n"; return R_NilValue; }
-  double c_gap = as<double>(gap);
+  int c_gap = as<int>(gap);
   
   // Copy use kmers into a C++ bool
   if(use_kmers.size() != 1) { Rcpp::Rcout << "C: Use_kmers not length 1\n"; return R_NilValue; }
@@ -317,7 +317,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = transMat, _["trans"] = Rtrans, _["clusterquals"] = Rquals, _["map"] = Rmap);
 }
 
-B *run_dada(Raw **raws, int nraw, double score[4][4], Rcpp::NumericMatrix errMat, double gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;

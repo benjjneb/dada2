@@ -15,7 +15,7 @@ fastqFilter(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0,
 
 \item{truncQ}{(Optional). Truncate reads at the first instance of a quality score less than
    or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
-   sequence in Illumina 1.8+.}
+   sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding.}
 
 \item{truncLen}{(Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
    this are discarded.}

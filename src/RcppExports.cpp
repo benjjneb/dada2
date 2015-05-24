@@ -9,7 +9,7 @@
 using namespace Rcpp;
 
 // evaluate_kmers
-Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, int band, size_t max_aligns);
+Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, size_t max_aligns);
 RcppExport SEXP dadac_evaluate_kmers(SEXP seqsSEXP, SEXP kmer_sizeSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -17,7 +17,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector< std::string > >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< int >::type kmer_size(kmer_sizeSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type gap(gapSEXP);
+    Rcpp::traits::input_parameter< int >::type gap(gapSEXP);
     Rcpp::traits::input_parameter< int >::type band(bandSEXP);
     Rcpp::traits::input_parameter< size_t >::type max_aligns(max_alignsSEXP);
     __result = Rcpp::wrap(evaluate_kmers(seqs, kmer_size, score, gap, band, max_aligns));

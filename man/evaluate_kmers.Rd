@@ -5,7 +5,7 @@
 \title{Generate the kmer-distance and the alignment distance from the
   given set of sequences.}
 \usage{
-evaluate_kmers(seqs, score, gap, band, max_aligns)
+evaluate_kmers(seqs, kmer_size, score, gap, band, max_aligns)
 }
 \arguments{
 \item{seqs}{(Required). Character.
@@ -13,9 +13,9 @@ evaluate_kmers(seqs, score, gap, band, max_aligns)
  Only A/C/G/T allowed.}
 
 \item{score}{(Required). Numeric matrix (4x4).
-The score matrix used during the alignment.}
+The score matrix used during the alignment. Coerced to integer.}
 
-\item{gap}{(Required). A \code{numeric(1)} giving the gap penalty for alignment.}
+\item{gap}{(Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.}
 
 \item{max_aligns}{(Required). A \code{numeric(1)} giving the (maximum) number of
 pairwise alignments to do.}

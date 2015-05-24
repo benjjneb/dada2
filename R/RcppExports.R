@@ -9,9 +9,9 @@
 #'  Only A/C/G/T allowed.
 #' 
 #' @param score (Required). Numeric matrix (4x4).
-#' The score matrix used during the alignment.
+#' The score matrix used during the alignment. Coerced to integer.
 #'
-#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
+#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
 #'
 #' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
 #' pairwise alignments to do.
@@ -30,9 +30,9 @@ evaluate_kmers <- function(seqs, kmer_size, score, gap, band, max_aligns) {
 #'  Only A/C/G/T allowed.
 #' 
 #' @param score (Required). Numeric matrix (4x4).
-#' The score matrix used during the alignment.
+#' The score matrix used during the alignment. Coerced to integer.
 #'
-#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment.
+#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
 #' 
 #' @param band_size (Required). A \code{numeric(1)} giving the band size to consider.
 #'

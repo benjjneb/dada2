@@ -63,14 +63,13 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
  * Banded Needleman Wunsch
  */
 
-char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band) {
+char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band) {
   char **al;
   double kdist;
   
   if(use_kmers) {
     kdist = kmer_dist(raw1->kmer, strlen(raw1->seq), raw2->kmer, strlen(raw2->seq), KMER_SIZE);
   }
-  //else { kdist = 0; }
   
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
@@ -82,16 +81,16 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool us
 }
 
 /* note: input sequence must end with string termination character, '\0' */
-char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, int band) {
+char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band) {
   static size_t nnw = 0;
   int i, j;
   int l, r;
-  size_t len1 = strlen(s1);
-  size_t len2 = strlen(s2);
-  double d[len1 + 1][len2 + 1]; // d: DP matrix
+  int len1 = strlen(s1);
+  int len2 = strlen(s2);
+  int d[len1 + 1][len2 + 1]; // d: DP matrix
   int p[len1 + 1][len2 + 1]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
-  double diag, left, up;
-    
+  int diag, left, up;
+      
   // Fill out left columns of d, p.
   for (i = 0; i <= len1; i++) {
     d[i][0] = 0; // ends-free gap
@@ -194,7 +193,7 @@ char **nwalign_endsfree(char *s1, char *s2, double score[4][4], double gap_p, in
   al[1] = (char *) realloc(al[1],len_al+1); //E
   if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed.");
   
-  // Reverse the alignment strings.
+  // Reverse the alignment strings (since traced backwards).
   char temp;
   for (i = 0, j = len_al - 1; i <= j; i++, j--) {
     temp = al[0][i];
@@ -309,8 +308,8 @@ Sub *al2subs(char **al) {
   return sub;
 }
 
-// Wrapper for al2subs(raw_align(...)) that manages memory and quality scores
-Sub *sub_new(Raw *raw0, Raw *raw1, double score[4][4], double gap_p, bool use_kmers, double kdist_cutoff, int band) {
+// Wrapper for al2subs(raw_align(...)) that manages memory and qualities
+Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band) {
   int s;
   char **al;
   Sub *sub;
