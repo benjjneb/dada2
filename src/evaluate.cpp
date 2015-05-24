@@ -22,7 +22,7 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, int band, size_t max_aligns) {
+Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, int band, size_t max_aligns) {
   int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
   char *seq1, *seq2;
   double c_gap = as<double>(gap);
@@ -55,18 +55,18 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, Rcpp::NumericMat
   for(i=0;i<nseqs;i=i+stride) {
     seq1 = intstr(seqs[i].c_str());
     len1 = strlen(seq1);
-    kv1 = get_kmer(seq1, KMER_SIZE);
+    kv1 = get_kmer(seq1, kmer_size);
     for(j=i+1;j<nseqs;j=j+stride) {
       seq2 = intstr(seqs[j].c_str());
       len2 = strlen(seq2);
-      kv2 = get_kmer(seq2, KMER_SIZE);
+      kv2 = get_kmer(seq2, kmer_size);
 
       minlen = (len1 < len2 ? len1 : len2);
 
       sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, c_gap, band));
       adist[npairs] = ((double) sub->nsubs)/((double) minlen);
       
-      kdist[npairs] = kmer_dist(kv1, len1, kv2, len2, KMER_SIZE);
+      kdist[npairs] = kmer_dist(kv1, len1, kv2, len2, kmer_size);
       npairs++;
       free(kv2);
       free(seq2);

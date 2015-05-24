@@ -22,7 +22,7 @@
 #define BUCKET_SCALE 0.5
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 #define DBL_PRECISION 1e-15 // precision of doubles
-#define KMER_SIZE 6
+#define KMER_SIZE 5
 #define NERRS 12
 #define TRUE  1
 #define FALSE 0

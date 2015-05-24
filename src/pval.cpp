@@ -363,7 +363,7 @@ double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
       if(!sub->q1) {
         printf("Warning: Missing quality information when computing lambda.\n");
       }
-      else {     // Incorporate the quality scores. HACKY FOR NOW
+      else {     // Incorporate the qualities. HACKY FOR NOW
         qual = sub->q1[s];
         if(qual<36) {
           trans = trans * pow(10.0, (36.0-qual)/6.5);
@@ -380,7 +380,7 @@ double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
   return lambda;
 }
 
-// This calculates lambda from a lookup table index by transition (row) and rounded qual score (col)
+// This calculates lambda from a lookup table index by transition (row) and rounded quality (col)
 double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals) {
   // use_quals does nothing in this function, just here for backwards compatability for now
   int s, pos0, pos1, nti0, nti1, len1, ncol;
@@ -407,14 +407,14 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
       Rcpp::stop("Error: Can't handle non ACGT sequences in CL3.\n");
     }
     if(raw->qual) {
-      // Turn q-score into the index in the array
+      // Turn quality into the index in the array
       qind[pos1] = round(prefactor * (raw->qual[pos1] - fqmin));
     } else {
       qind[pos1] = 0;
     }
     
     if( qind[pos1] > (ncol-1) ) {
-      Rcpp::stop("Error: rounded quality score exceeded err lookup table.");
+      Rcpp::stop("Error: rounded quality exceeded err lookup table.");
     }
   }
 

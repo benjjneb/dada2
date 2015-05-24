@@ -8,13 +8,15 @@
  */
 
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
+  int i;
   int n_kmer = 2 << (2*k); // 4^k kmers
   uint16_t dotsum = 0;
   double dot = 0.0;
   
-  for(int i=0;i<n_kmer; i++) {
+  for(i=0;i<n_kmer; i++) {
     dotsum += (kv1[i] < kv2[i] ? kv1[i] : kv2[i]);
   }
+
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   return (1. - dot);
 }
@@ -67,7 +69,8 @@ char **raw_align(Raw *raw1, Raw *raw2, double score[4][4], double gap_p, bool us
   
   if(use_kmers) {
     kdist = kmer_dist(raw1->kmer, strlen(raw1->seq), raw2->kmer, strlen(raw2->seq), KMER_SIZE);
-  } else { kdist = 0; }
+  }
+  //else { kdist = 0; }
   
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
