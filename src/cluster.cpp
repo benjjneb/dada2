@@ -49,6 +49,7 @@ Raw *raw_new(char *seq, int reads) {
   raw->seq = (char *) malloc(strlen(seq)+1); //E
   if (raw->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(raw->seq, seq);
+  raw->length = strlen(seq);
   raw->qual = NULL;
   raw->kmer = get_kmer(seq, KMER_SIZE);
   raw->reads = reads;
@@ -57,22 +58,14 @@ Raw *raw_new(char *seq, int reads) {
 
 // raw_qual_new: A constructor for Raw objects with quals
 Raw *raw_qual_new(char *seq, double *qual, int reads) {
-  int seqlen = strlen(seq);
-  Raw *raw = (Raw *) malloc(sizeof(Raw)); //E
-  if (raw == NULL)  Rcpp::stop("Memory allocation failed!\n");
-  raw->seq = (char *) malloc(seqlen+1); //E
-  if (raw->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
-  strcpy(raw->seq, seq);
-  raw->qual = NULL;
+  Raw *raw = raw_new(seq, reads);
   if(qual) {
-    raw->qual = (float *) malloc(seqlen * sizeof(float)); //E
+    raw->qual = (float *) malloc(raw->length * sizeof(float)); //E
     if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed!\n");
-    for(int i=0;i<seqlen;i++) { raw->qual[i] = qual[i]; }
+    for(int i=0;i<raw->length;i++) { raw->qual[i] = qual[i]; }
   } else {
     Rcpp::stop("Error: NULL qual provided to raw_qual_new constructor.\n");
   }
-  raw->kmer = get_kmer(seq, KMER_SIZE);
-  raw->reads = reads;
   return raw;
 }
 
@@ -364,7 +357,7 @@ B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool
   double tot_nnt[] = {0.0,0.0,0.0,0.0};
   b->raw = raws;
   for (index = 0; index < b->nraw; index++) {
-    for(i=0;i<strlen(b->raw[index]->seq);i++) {
+    for(i=0;i<b->raw[index]->length;i++) {
       nti = ((int) b->raw[index]->seq[i]) - 1;
       if(nti == 0 || nti == 1 || nti ==2 || nti == 3) {
         tot_nnt[nti]++;
@@ -705,22 +698,21 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       totfams++;
       fam = b->bi[i]->fam[f];
       
-      // Calculate the fold over-abundnace and the hamming distance to this fam
-      fold = ((double) fam->reads)/b->bi[i]->e[fam->center->index];
-      if(fam->sub) {
-        hamming = fam->sub->nsubs;
-      } else { 
+      if(!fam->sub) {  // This shouldn't happen
         printf("Warning: Fam has null sub in b_bud.\n");
-        hamming = 1; // An unmotivated default here
+        continue; 
       }
-      
-      if(fold >= min_fold && hamming >= min_hamming) {  // Only those passing the hamming/fold screens can be budded
-        if((fam->p < minp) ||
-          ((fam->p == minp && fam->reads > minreads))) { // Most significant
-          mini = i; minf = f;
-          minp = fam->p;
-          minreads = fam->reads;
-        } 
+
+      // Calculate the fold over-abundnace and the hamming distance to this fam
+      if(fam->sub->nsubs >= min_hamming) { // Only those passing the hamming/fold screens can be budded
+        if(min_fold <= 1 || ((double) fam->reads) >= min_fold * b->bi[i]->e[fam->center->index]) {  
+          if((fam->p < minp) ||
+            ((fam->p == minp && fam->reads > minreads))) { // Most significant
+            mini = i; minf = f;
+            minp = fam->p;
+            minreads = fam->reads;
+          }
+        }
       }
     }
   }
@@ -876,7 +868,7 @@ void bi_consensus_update(Bi *bi) {
     bi->update_fam = true;
     if(VERBOSE) {
       printf("bi_c_u: New Consensus from raw %i (%i)\n", bi->fam[maxf]->raw[maxr]->index, bi->fam[maxf]->raw[maxr]->reads);
-      printf("\tNew(%i): %s\n", (int) strlen(bi->fam[maxf]->raw[maxr]->seq), ntstr(bi->fam[maxf]->raw[maxr]->seq));
+      printf("\tNew(%i): %s\n", (int) bi->fam[maxf]->raw[maxr]->length, ntstr(bi->fam[maxf]->raw[maxr]->seq));
       printf("\tOld(%i): %s\n", (int) strlen(bi->seq), ntstr(bi->seq));
     }
     bi->center = bi->fam[maxf]->raw[maxr];

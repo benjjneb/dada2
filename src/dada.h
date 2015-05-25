@@ -60,6 +60,7 @@ typedef struct {
   char *seq;   // the sequence, stored as C-string with A=1,C=2,G=3,T=4
   float *qual; // the average qualities at each position for this unique
   uint16_t *kmer;   // the kmer vector of this sequence
+  int length;  // the length of the sequence
   int reads;   // number of reads of this unique sequence
   int index;   // The index of this Raw in b->raw[index]
 } Raw;

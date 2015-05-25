@@ -32,7 +32,7 @@ Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax
           continue;
         }
         
-        for(pos0=0;pos0<strlen(center->seq);pos0++) {
+        for(pos0=0;pos0<center->length;pos0++) {
           pos1 = sub->map[pos0];
           if(pos1 == GAP_GLYPH) { // A gap in the aligned seq
             continue; // Gaps excluded from the model
@@ -47,7 +47,7 @@ Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax
           } else { 
             transMat(t_ij, 0) += raw->reads; 
           }
-        } // for(pos0=0;pos0<strlen(center->seq);pos0++)
+        } // for(pos0=0;pos0<center->length;pos0++)
       } // for(r=0;b->bi[i]->fam[f]->nraw)
     } // for(f=0;f<b->bi[i]->nfam;f++)
   } // for(i=0;i<b->nclust;i++)
@@ -127,7 +127,7 @@ Rcpp::DataFrame b_get_quality_subs(B *b) {
             continue;
           }
           
-          for(pos0=0;pos0<strlen(center->seq);pos0++) {
+          for(pos0=0;pos0<center->length;pos0++) {
             pos1 = sub->map[pos0];
             if(pos1 == GAP_GLYPH) { // A gap in the aligned seq
               continue; // Gaps excluded from the model

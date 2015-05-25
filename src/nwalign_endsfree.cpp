@@ -68,7 +68,7 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer
   double kdist;
   
   if(use_kmers) {
-    kdist = kmer_dist(raw1->kmer, strlen(raw1->seq), raw2->kmer, strlen(raw2->seq), KMER_SIZE);
+    kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
   }
   
   if(use_kmers && kdist > kdist_cutoff) {

@@ -216,7 +216,7 @@ void b_make_pS_lookup(B *b) {
   // RIGHT NOW THIS IS THE AVERAGE OVER RAWS NOT OVER READS: RIGHT CHOICE?????
   double tot_nnt[] = {0.0,0.0,0.0,0.0};
   for (index = 0; index < b->nraw; index++) {
-    for(i=0;i<strlen(b->raw[index]->seq);i++) {
+    for(i=0;i<b->raw[index]->length;i++) {
       nti = ((int) b->raw[index]->seq[i]) - 1;
       if(nti == 0 || nti == 1 || nti ==2 || nti == 3) {
         tot_nnt[nti]++;
@@ -395,7 +395,7 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
   
   // Make vector that indexes as integers the transitions at each position in seq1
   // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
-  len1 = strlen(raw->seq);
+  len1 = raw->length;
   ncol = errMat.ncol();
   prefactor = ((float) (ncol-1))/((float) QMAX-QMIN);
   fqmin = (float) QMIN;
@@ -443,24 +443,5 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
   if(lambda < 0 || lambda > 1) { Rcpp::stop("Bad lambda"); }
 
   return lambda;
-}
-
-/* get_self: DEPRECATED
- Gets the self-transition probabilty for a sequence under a transition matrix.
- */
-double get_self(char *seq, double err[4][4]) {
-  int i, nti;
-  double self = 1.;
-  for(i=0;i<strlen(seq);i++) {
-    nti = ((int) seq[i]) - 1;
-    if(nti==0 || nti==1 || nti==2 || nti==3) { // A,C,G or T. Not N or -.
-      self = self * err[nti][nti];
-    }
-  }
-  if(self==0.0) { // UNDERFLOW TO ZERO
-    printf("Warning: get_self underflowed to zero.\n");
-  }
-  
-  return self;
 }
 
