@@ -1,7 +1,7 @@
 Package: dadac
 Type: Package
 Title: DADA Algorithm for Amplicon Sequence Denoising
-Version: 0.3.1
+Version: 0.3.2
 Author: Ben Callahan, Paul McMurdie, Susan Holmes
 Maintainer: Bioconductor Package Maintainer
  <maintainer@bioconductor.org>
