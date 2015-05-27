@@ -25,3 +25,4 @@ Suggests:
     knitr (>= 1.9)
 biocViews: Microbiome, Sequencing
 LinkingTo: Rcpp
+LazyData: true

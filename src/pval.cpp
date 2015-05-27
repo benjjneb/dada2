@@ -52,6 +52,118 @@ double get_pA(Fam *fam, Bi *bi) {
   return pval;
 }
 
+/*
+ compute_lambda: DEPRECATED
+ 
+ parameters:
+ char *seq, the reference sequence away from which a lambda will be computed
+ Sub *sub, a substitution struct
+ double self, the rate of self-production of the consensus sequence
+ double t[4][4], a 4x4 matrix of content-independent error probabilities
+ 
+ returns:
+ the double lambda.
+ */
+double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
+  int s, nti0, nti1;
+  double lambda, trans, qual;
+  
+  if(!sub) { // NULL Sub, outside Kmer threshold
+    return 0.0;
+  }
+
+  lambda = self;
+  for(s=0; s < sub->nsubs; s++) {
+    nti0 = (int)sub->nt0[s] - 1;
+    nti1 = (int)sub->nt1[s] - 1;
+    trans = t[nti0][nti1] / t[nti0][nti0];
+    
+    if(use_quals) {
+      if(!sub->q1) {
+        printf("Warning: Missing quality information when computing lambda.\n");
+      }
+      else {     // Incorporate the qualities. HACKY FOR NOW
+        qual = sub->q1[s];
+        if(qual<36) {
+          trans = trans * pow(10.0, (36.0-qual)/6.5);
+        }
+        if(trans > 0.33) { trans = 0.33; } // capping at 0.33 because?
+      }
+    }
+    
+    lambda = lambda * trans;
+  }
+
+  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow OF lambda: %.4e\n", lambda); }
+
+  return lambda;
+}
+
+// This calculates lambda from a lookup table index by transition (row) and rounded quality (col)
+double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals) {
+  // use_quals does nothing in this function, just here for backwards compatability for now
+  int s, pos0, pos1, nti0, nti1, len1, ncol;
+  double lambda;
+  float prefactor, fqmin;
+  int tvec[SEQLEN];
+  int qind[SEQLEN];
+  
+  if(!sub) { // NULL Sub, outside Kmer threshold
+    return 0.0;
+  }
+  
+  // Make vector that indexes as integers the transitions at each position in seq1
+  // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
+  len1 = raw->length;
+  ncol = errMat.ncol();
+  prefactor = ((float) (ncol-1))/((float) QMAX-QMIN);
+  fqmin = (float) QMIN;
+  for(pos1=0;pos1<len1;pos1++) {
+    nti1 = ((int) raw->seq[pos1]) - 1;
+    if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
+      tvec[pos1] = nti1*4 + nti1;
+    } else {
+      Rcpp::stop("Error: Can't handle non ACGT sequences in CL3.\n");
+    }
+    if(raw->qual) {
+      // Turn quality into the index in the array
+      qind[pos1] = round(prefactor * (raw->qual[pos1] - fqmin));
+    } else {
+      qind[pos1] = 0;
+    }
+    
+    if( qind[pos1] > (ncol-1) ) {
+      Rcpp::stop("Error: rounded quality exceeded err lookup table.");
+    }
+  }
+
+  // Now fix the ones where subs occurred
+  for(s=0;s<sub->nsubs;s++) {
+    pos0 = sub->pos[s];
+    if(pos0 < 0 || pos0 >= len1) {
+      Rcpp::stop("CL3: Bad pos0 (%i)", pos0);
+    }
+    pos1 = sub->map[sub->pos[s]];
+    if(pos1 < 0 || pos1 >= len1) {
+      Rcpp::stop("CL3: Bad pos1 (%i)", pos1);
+    }
+    
+    nti0 = ((int) sub->nt0[s]) - 1;
+    nti1 = ((int) sub->nt1[s]) - 1;
+    tvec[pos1] = nti0*4 + nti1;
+  }
+
+  // And calculate lambda
+  lambda = 1.0;
+  for(pos1=0;pos1<len1;pos1++) {
+    lambda = lambda * errMat(tvec[pos1], qind[pos1]);
+  }
+
+  if(lambda < 0 || lambda > 1) { Rcpp::stop("Bad lambda"); }
+
+  return lambda;
+}
+
 // Find singleton pval for a Fam in a Bi, also have to pass in B for lambda/cdf lookup
 double get_pS(Fam *fam, Bi *bi, B *b) {
   size_t ifirst, imid, ilast;
@@ -331,117 +443,5 @@ Rcpp::DataFrame getSingletonCDF(Rcpp::NumericMatrix err, std::vector<int> nnt, i
   getCDF(ps, cdf, c_err, c_nnt, maxD);
   
   return Rcpp::DataFrame::create(Rcpp::_["p"]=ps, Rcpp::_["cdf"]=cdf);
-}
-
-/*
- compute_lambda: DEPRECATED
- 
- parameters:
- char *seq, the reference sequence away from which a lambda will be computed
- Sub *sub, a substitution struct
- double self, the rate of self-production of the consensus sequence
- double t[4][4], a 4x4 matrix of content-independent error probabilities
- 
- returns:
- the double lambda.
- */
-double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
-  int s, nti0, nti1;
-  double lambda, trans, qual;
-  
-  if(!sub) { // NULL Sub, outside Kmer threshold
-    return 0.0;
-  }
-
-  lambda = self;
-  for(s=0; s < sub->nsubs; s++) {
-    nti0 = (int)sub->nt0[s] - 1;
-    nti1 = (int)sub->nt1[s] - 1;
-    trans = t[nti0][nti1] / t[nti0][nti0];
-    
-    if(use_quals) {
-      if(!sub->q1) {
-        printf("Warning: Missing quality information when computing lambda.\n");
-      }
-      else {     // Incorporate the qualities. HACKY FOR NOW
-        qual = sub->q1[s];
-        if(qual<36) {
-          trans = trans * pow(10.0, (36.0-qual)/6.5);
-        }
-        if(trans > 0.33) { trans = 0.33; } // capping at 0.33 because?
-      }
-    }
-    
-    lambda = lambda * trans;
-  }
-
-  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow OF lambda: %.4e\n", lambda); }
-
-  return lambda;
-}
-
-// This calculates lambda from a lookup table index by transition (row) and rounded quality (col)
-double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals) {
-  // use_quals does nothing in this function, just here for backwards compatability for now
-  int s, pos0, pos1, nti0, nti1, len1, ncol;
-  double lambda;
-  float prefactor, fqmin;
-  int tvec[SEQLEN];
-  int qind[SEQLEN];
-  
-  if(!sub) { // NULL Sub, outside Kmer threshold
-    return 0.0;
-  }
-  
-  // Make vector that indexes as integers the transitions at each position in seq1
-  // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
-  len1 = raw->length;
-  ncol = errMat.ncol();
-  prefactor = ((float) (ncol-1))/((float) QMAX-QMIN);
-  fqmin = (float) QMIN;
-  for(pos1=0;pos1<len1;pos1++) {
-    nti1 = ((int) raw->seq[pos1]) - 1;
-    if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
-      tvec[pos1] = nti1*4 + nti1;
-    } else {
-      Rcpp::stop("Error: Can't handle non ACGT sequences in CL3.\n");
-    }
-    if(raw->qual) {
-      // Turn quality into the index in the array
-      qind[pos1] = round(prefactor * (raw->qual[pos1] - fqmin));
-    } else {
-      qind[pos1] = 0;
-    }
-    
-    if( qind[pos1] > (ncol-1) ) {
-      Rcpp::stop("Error: rounded quality exceeded err lookup table.");
-    }
-  }
-
-  // Now fix the ones where subs occurred
-  for(s=0;s<sub->nsubs;s++) {
-    pos0 = sub->pos[s];
-    if(pos0 < 0 || pos0 >= len1) {
-      Rcpp::stop("CL3: Bad pos0 (%i)", pos0);
-    }
-    pos1 = sub->map[sub->pos[s]];
-    if(pos1 < 0 || pos1 >= len1) {
-      Rcpp::stop("CL3: Bad pos1 (%i)", pos1);
-    }
-    
-    nti0 = ((int) sub->nt0[s]) - 1;
-    nti1 = ((int) sub->nt1[s]) - 1;
-    tvec[pos1] = nti0*4 + nti1;
-  }
-
-  // And calculate lambda
-  lambda = 1.0;
-  for(pos1=0;pos1<len1;pos1++) {
-    lambda = lambda * errMat(tvec[pos1], qind[pos1]);
-  }
-
-  if(lambda < 0 || lambda > 1) { Rcpp::stop("Bad lambda"); }
-
-  return lambda;
 }
 

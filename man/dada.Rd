@@ -2,9 +2,7 @@
 % Please edit documentation in R/dada.R
 \name{dada}
 \alias{dada}
-\title{The dada function takes as input the unique sequences in an amplicon sequencing sample paired
- with their abundances, and returns the sample genotypes paired with their abundances
- inferred by the Divisive Amplicon Denoising Algorithm (Rosen, Callahan, Fisher, Holmes 2012).}
+\title{dada infers the sample sequence in amplicon data.}
 \usage{
 dada(uniques, quals = NULL, err, err_function = NULL,
   self_consist = FALSE, ...)

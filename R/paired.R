@@ -35,7 +35,7 @@
 #' @export
 #' @import Biostrings 
 #' 
-mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20) {
+mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character(0)) {
   rF <- dadaF$map[mapF]
   rR <- dadaR$map[mapR]
   if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
@@ -75,10 +75,33 @@ mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20) {
   ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
   ups$sequence <- paste0(Funqseq, subseq(Runqseq,fmat[,6]+1,nchar(Runqseq))) ## WHAT IS SEQ WHEN !MATCH??
   ups$sequence[!ups$match] <- ""
+  # Add columns from forward/reverse clustering
+  keep <- keep[keep %in% colnames(dadaF$clustering)]
+  for(col in keep) {
+    ups[,paste0("F.",col)] <- dadaF$clustering[ups$forward,col]
+    ups[,paste0("R.",col)] <- dadaR$clustering[ups$reverse,col]
+  }
+  # Sort output by abundance and name
+  ups <- ups[order(ups$abundance, decreasing=TRUE),]
   rownames(ups) <- paste0("s", ups$forward, "_", ups$reverse)
   ups
 }
 
+#' @export
+sameOrder <- function(fnF, fnR) {
+  matched <- TRUE
+  fF <- FastqStreamer(fnF)
+  on.exit(close(fF))
+  fR <- FastqStreamer(fnR)
+  on.exit(close(fR), add=TRUE)
+  
+  while( length(suppressWarnings(fqF <- yield(fF))) && length(suppressWarnings(fqR <- yield(fR))) ) {
+    idF <- trimTails(id(fqF), 1, " ")
+    idR <- trimTails(id(fqR), 1, " ")
+    matched <- matched && all(idF == idR)
+  }
+  return(matched)
+}
 
 
 

@@ -1,3 +1,5 @@
+#' dada infers the sample sequence in amplicon data.
+#' 
 #' The dada function takes as input the unique sequences in an amplicon sequencing sample paired
 #'  with their abundances, and returns the sample genotypes paired with their abundances
 #'  inferred by the Divisive Amplicon Denoising Algorithm (Rosen, Callahan, Fisher, Holmes 2012).
@@ -161,7 +163,7 @@ dada <- function(uniques, quals=NULL,
       else { qi <- unname(t(quals[[i]])) } # Need transpose so that sequences are columns
       if(nconsist == 1) {
         cat("Sample", i, "-", sum(uniques[[i]]), "reads in", length(uniques[[i]]), "unique sequences.\n")
-      } else {
+      } else if(i==1) {
         cat("   Consist step", nconsist, "\n")
       }
       res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, qi, 
@@ -206,7 +208,7 @@ dada <- function(uniques, quals=NULL,
     }
 
     # Termination condition for self_consist loop
-    if((!self_consist) || identical(cur, prev) || (nconsist >= get("MAX_CONSIST", envir=dada_opts))) {
+    if((!self_consist) || identical(cur, prev) || (nconsist >= opts$MAX_CONSIST)) {
       break
     } 
     nconsist <- nconsist+1
@@ -214,7 +216,7 @@ dada <- function(uniques, quals=NULL,
 
   cat("\n")
   if(self_consist) {
-    if(nconsist == get("MAX_CONSIST", envir=dada_opts)) {
+    if(nconsist >= opts$MAX_CONSIST) {
       warning("dada: Self-consistency loop terminated before convergence.")
     } else {
       cat("\nConvergence after ", nconsist, " rounds.\n")

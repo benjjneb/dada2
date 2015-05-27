@@ -74,3 +74,17 @@ mergeUniques <- function(unqsList, ...) {
   }
   mrg
 }
+
+#' @export
+uniques <- function(df) {
+  if(all(c("genotypes", "clustering") %in% names(df))) {  # dada return 
+    return(df$genotypes)
+  } else if(all(c("sequence", "abundance") %in% colnames(df))) {
+    unqs <- as.integer(df$abundance)
+    names(unqs) <- df$sequence
+    return(unqs)
+  } else {
+    print("Unrecognized format")
+    return(NULL)
+  }
+}

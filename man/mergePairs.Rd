@@ -4,7 +4,7 @@
 \alias{mergePairs}
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
-mergePairs(dadaF, mapF, dadaR, mapR, minOverlap = 20)
+mergePairs(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep = character(0))
 }
 \arguments{
 \item{dadaF}{(Required). Output of dada() function.
