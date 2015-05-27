@@ -8,6 +8,45 @@
 
 using namespace Rcpp;
 
+// C_nwalign
+Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band);
+RcppExport SEXP dadac_C_nwalign(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP bandSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
+    Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
+    Rcpp::traits::input_parameter< int >::type band(bandSEXP);
+    __result = Rcpp::wrap(C_nwalign(s1, s2, score, gap_p, band));
+    return __result;
+END_RCPP
+}
+// C_eval_pair
+Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2);
+RcppExport SEXP dadac_C_eval_pair(SEXP s1SEXP, SEXP s2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
+    __result = Rcpp::wrap(C_eval_pair(s1, s2));
+    return __result;
+END_RCPP
+}
+// C_pair_consensus
+Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2);
+RcppExport SEXP dadac_C_pair_consensus(SEXP s1SEXP, SEXP s2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
+    __result = Rcpp::wrap(C_pair_consensus(s1, s2));
+    return __result;
+END_RCPP
+}
 // evaluate_kmers
 Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, size_t max_aligns);
 RcppExport SEXP dadac_evaluate_kmers(SEXP seqsSEXP, SEXP kmer_sizeSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {

@@ -35,7 +35,7 @@
 #' @export
 #' @import Biostrings 
 #' 
-mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character(0)) {
+mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character(0), align=TRUE) {
   rF <- dadaF$map[mapF]
   rR <- dadaR$map[mapR]
   if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
@@ -45,35 +45,43 @@ mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character
   Funqseq <- unname(dadaF$clustering$sequence[ups$forward])
   Runqseq <- as(reverseComplement(DNAStringSet(unname(dadaR$clustering$sequence[ups$reverse]))), "character")
   
-  Fstart <- mapply(function(x,y) gregexpr(x,y)[[1]], subseq(Runqseq,1,minOverlap), Funqseq, SIMPLIFY=FALSE)
-  # Returns a list of integer vectors, which may be -1 (no match), length1 and positive (1 match) or len>1 (multiple matches)
-  # Make that a flat vector
-  Fstarts <- c(Fstart, recursive=TRUE)
-  # Record which pair each match corresponds to
-  pairs <- rep(seq(length(Funqseq)), times=sapply(Fstart, length))
-  # And get the start/end of the overlap subseqs for each
-  Fstarts[Fstarts==-1] <- 1
-  Fends <- nchar(Funqseq[pairs])
-  Rstarts <- rep(1, length(Fstarts))
-  Rends <- Rstarts + Fends - Fstarts
-  Rends[Rends > nchar(Runqseq[pairs])] <- nchar(Runqseq[pairs])[Rends > nchar(Runqseq[pairs])]
+  if(align) { # Use unbanded N-W align to compare forward/reverse
+    # May want to adjust align params here, but for now just using dadaOpt
+    alvecs <- mapply(function(x,y) nwalign(x,y,band=0), Funqseq, Runqseq, SIMPLIFY=FALSE)
+    ups$match <- sapply(alvecs, function(x) isMatch(x, minOverlap))
+    # Make the sequence
+    ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
+  } else { # No align, just grep, to compare forward/reverse
+    Fstart <- mapply(function(x,y) gregexpr(x,y)[[1]], subseq(Runqseq,1,minOverlap), Funqseq, SIMPLIFY=FALSE)
+    # Returns a list of integer vectors, which may be -1 (no match), length1 and positive (1 match) or len>1 (multiple matches)
+    # Make that a flat vector
+    Fstarts <- c(Fstart, recursive=TRUE)
+    # Record which pair each match corresponds to
+    pairs <- rep(seq(length(Funqseq)), times=sapply(Fstart, length))
+    # And get the start/end of the overlap subseqs for each
+    Fstarts[Fstarts==-1] <- 1
+    Fends <- nchar(Funqseq[pairs])
+    Rstarts <- rep(1, length(Fstarts))
+    Rends <- Rstarts + Fends - Fstarts
+    Rends[Rends > nchar(Runqseq[pairs])] <- nchar(Runqseq[pairs])[Rends > nchar(Runqseq[pairs])]
+    
+    # Determine what matches
+    matches <- mapply(function(x,y) x==y, subseq(Funqseq[pairs], Fstarts, Fends), subseq(Runqseq[pairs], Rstarts, Rends))
   
-  # Determine what matches
-  matches <- mapply(function(x,y) x==y, subseq(Funqseq[pairs], Fstarts, Fends), subseq(Runqseq[pairs], Rstarts, Rends))
-
-  # Take the first match in each pair set (which should be the longest overlap), or the first non-match if no match
-  mat <- unname(cbind(pairs, matches, Fstarts, Fends, Rstarts, Rends))
-  mat <- mat[!duplicated(mat[,c(1,2)]),] # drop duplicates in pairs/match (ASSUMES earlier matches are first and preferred)
-  fmat <- mat[mat[,2]==1,] # Take those that were paired
-  fmat <- rbind(fmat, mat[!mat[,1] %in% fmat[,1],]) # Add those that weren't
-  fmat <- fmat[order(fmat[,1]),] # And put it in order
-
-  ups$match <- as.logical(fmat[,2])
+    # Take the first match in each pair set (which should be the longest overlap), or the first non-match if no match
+    mat <- unname(cbind(pairs, matches, Fstarts, Fends, Rstarts, Rends))
+    mat <- mat[!duplicated(mat[,c(1,2)]),] # drop duplicates in pairs/match (ASSUMES earlier matches are first and preferred)
+    fmat <- mat[mat[,2]==1,] # Take those that were paired
+    fmat <- rbind(fmat, mat[!mat[,1] %in% fmat[,1],]) # Add those that weren't
+    fmat <- fmat[order(fmat[,1]),] # And put it in order
+  
+    ups$match <- as.logical(fmat[,2])
+    ups$sequence <- paste0(Funqseq, subseq(Runqseq,fmat[,6]+1,nchar(Runqseq))) ## WHAT IS SEQ WHEN !MATCH??
+  }
 
   # Add abundance and sequence to the output data.frame
   tab <- table(pairdf$forward, pairdf$reverse)
   ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
-  ups$sequence <- paste0(Funqseq, subseq(Runqseq,fmat[,6]+1,nchar(Runqseq))) ## WHAT IS SEQ WHEN !MATCH??
   ups$sequence[!ups$match] <- ""
   # Add columns from forward/reverse clustering
   keep <- keep[keep %in% colnames(dadaF$clustering)]
@@ -103,5 +111,14 @@ sameOrder <- function(fnF, fnR) {
   return(matched)
 }
 
+isMatch <- function(al, minOverlap, verbose=FALSE) {
+  out <- C_eval_pair(al[1], al[2]) # match, mismatch, indel
+  if(verbose) { cat("Match/mismatch/indel:", out, "\n") }
+  if(out[1] >= minOverlap && out[2] == 0 && out[3] == 0) {
+    return(TRUE);
+  } else {
+    return(FALSE);
+  }
+}
 
 

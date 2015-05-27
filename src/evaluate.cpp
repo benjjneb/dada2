@@ -3,6 +3,129 @@
 using namespace Rcpp;
 
 //------------------------------------------------------------------
+//' Exposes ends-free Needleman-Wunsh alignment to R.
+//' 
+// [[Rcpp::export]]
+Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
+  int i, j;
+  char *seq1, *seq2;
+  char **al;
+
+  seq1 = (char *) malloc(s1.size()+1); //E
+  seq2 = (char *) malloc(s2.size()+1); //E
+  strcpy(seq1, s1.c_str());
+  strcpy(seq2, s2.c_str());
+  nt2int(seq1, seq1);
+  nt2int(seq2, seq2);
+  
+  int c_score[4][4];
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      c_score[i][j] = (int) score(i,j);
+    }
+  }
+  al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
+  int2nt(al[0], al[0]);
+  int2nt(al[1], al[1]);
+
+//  printf("SCORE:\n");
+//  for(i=0;i<4;i++) { printf("{%i, %i, %i, %i}\n",c_score[i][0],c_score[i][1],c_score[i][2],c_score[i][3]); }
+//  printf("\nGAP: %i, BAND: %i\n", gap_p, band);
+//  printf("ALIGN:\n");
+//  printf("%s\n%s\n", al[0], al[1]);
+
+  Rcpp::CharacterVector rval;
+  rval.push_back(std::string(al[0]));
+  rval.push_back(std::string(al[1]));
+  
+  free(seq1);
+  free(seq2);
+  free(al[0]);
+  free(al[1]);
+  return(rval);
+}
+//char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band)
+
+//------------------------------------------------------------------
+//' Calculates the number of matches/mismatches/internal-indels in an alignment.
+//' 
+// [[Rcpp::export]]
+Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
+  int match, mismatch, indel, start, end;
+  bool s1gap, s2gap;
+  if(s1.size() != s2.size()) {
+    printf("Warning: Aligned strings are not the same length.\n");
+    return R_NilValue;
+  }
+
+  // Find start of align (end of initial gapping)
+  s1gap = s2gap = true;
+  start = -1;
+  do {
+    start++;
+    s1gap = s1gap && (s1[start] == '-');
+    s2gap = s2gap && (s2[start] == '-');
+  } while((s1gap || s2gap) && start<s1.size());
+
+  // Find end of align (start of terminal gapping)
+  s1gap = s2gap = true;
+  end = s1.size();
+  do {
+    end--;
+    s1gap = s1gap && (s1[end] == '-');
+    s2gap = s2gap && (s2[end] == '-');
+  } while((s1gap || s2gap) && end>=start);
+
+  // Count the matches, mismatches, indels within the internal part of
+  // the alignment.
+  match = mismatch = indel = 0;
+  for(int i=start;i<=end;i++) {
+    if(s1[i]=='-' || s2[i]=='-') {
+      indel++;
+    } else if(s1[i] == s2[i]) {
+      match++;
+    } else {
+      mismatch++;
+    }
+  }
+  
+  Rcpp::IntegerVector rval(3);
+  rval(0) = match;
+  rval(1) = mismatch;
+  rval(2) = indel;
+  return(rval);
+}
+
+//------------------------------------------------------------------
+//' Calculates the consensus of two sequences (first sequence wins mismatches).
+//' 
+// [[Rcpp::export]]
+Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2) {
+  if(s1.size() != s2.size()) {
+    printf("Warning: Aligned strings are not the same length.\n");
+    return R_NilValue;
+  }
+  
+  char *oseq = (char *) malloc(s1.size()+1); //E
+  for(int i=0;i<s1.size();i++) {
+    if(s1[i] == s2[i]) {
+      oseq[i] = s1[i];
+    } else if(s2[i] == '-') {
+      oseq[i] = s1[i];
+    } else if(s1[i] == '-') {
+      oseq[i] = s2[i];
+    } else {
+      oseq[i] = s1[i]; // s1 wins mismatches
+    }
+  }
+  oseq[s1.size()] = '\0';
+
+  std::string ostr(oseq);
+  free(oseq);
+  return(ostr);
+}
+
+//------------------------------------------------------------------
 //' Generate the kmer-distance and the alignment distance from the
 //'   given set of sequences. 
 //'

@@ -1,3 +1,7 @@
+#' @export
+nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
+  dadac:::C_nwalign(s1, s2, score, gap, band)
+}
 
 #' @export
 strdiff <- function(s1, s2) {
