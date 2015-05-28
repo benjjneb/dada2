@@ -356,19 +356,14 @@ void b_make_pS_lookup(B *b) {
       b->lams = lams;
       b->cdf = cdf;
       b->nlam = nlam;
-      if(tVERBOSE) { printf("Reusing psingle lookup.\n"); }
       return;
     } else {
-      if(err_diffs == 0 && b->omegaS == omegaS && del_ave_nnt >= nnt/10) {
-        if(tVERBOSE) { printf("Difference because of del_ave_nnt = %i\n", del_ave_nnt); }
-      }
       free(lams);
       free(cdf);
     }
   }
   
   // Making a new lookup, so store the new params
-  if(tVERBOSE) { printf("Making new psingle lookup.\n"); }
   omegaS = b->omegaS;
   for(i=0;i<4;i++) {
     ave_nnt[i] = new_ave_nnt[i];
@@ -401,7 +396,7 @@ void b_make_pS_lookup(B *b) {
   
   // Copy into C style arrays
   // Kind of silly, at some point might be worthwhile doing the full C++ conversion
-  if(tVERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
+//  if(VERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
   lams = (double *) malloc(temp_lambdas.size() * sizeof(double)); //E
   if (lams == NULL)  Rcpp::stop("Memory allocation failed!\n");
   cdf = (double *) malloc(temp_cdf.size() * sizeof(double)); //E

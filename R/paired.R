@@ -48,7 +48,11 @@ mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character
   if(align) { # Use unbanded N-W align to compare forward/reverse
     # May want to adjust align params here, but for now just using dadaOpt
     alvecs <- mapply(function(x,y) nwalign(x,y,band=0), Funqseq, Runqseq, SIMPLIFY=FALSE)
-    ups$match <- sapply(alvecs, function(x) isMatch(x, minOverlap))
+    outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
+    ups$nmatch <- outs[,1]
+    ups$nmismatch <- outs[,2]
+    ups$nindel <- outs[,3]
+    ups$match <- (ups$nmatch > minOverlap) & (ups$nmismatch==0) & (ups$nindel==0)
     # Make the sequence
     ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
   } else { # No align, just grep, to compare forward/reverse

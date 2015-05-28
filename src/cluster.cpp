@@ -441,7 +441,7 @@ int b_add_bi(B *b, Bi *bi) {
  updates the alignments and lambda of all raws to Bi with
  changed center sequences.
 */
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat) {
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
   int i;
   size_t index;
   double lambda;
@@ -450,7 +450,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
   for (i = 0; i < b->nclust; i++) {
     if(b->bi[i]->update_lambda) {   // center sequence for Bi[i] has changed
       // update alignments and lambda of all raws to this sequence
-      if(tVERBOSE) { printf("C%iLU:", i); }
+      if(verbose) { printf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
         // get sub object
         sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
@@ -505,10 +505,6 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
     }
   }
   
-  if(r_c != bi->nraw) {
-    printf("Warning: bi_fam_update --- nraw inconsistent (%i, %i).\n", r_c, bi->nraw);
-  }
-  
   // Destruct old fams
   for(f=0;f<bi->nfam;f++) { fam_free(bi->fam[f]); }
   bi->nfam = 0;
@@ -518,7 +514,6 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
   //    now exceeds kmerdist to another raw in the cluster
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
-      if(tVERBOSE) { printf("Warning: bi_fam_update hit a null sub.\n"); }
       bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, false, 1., band_size);
       // DOESN'T UPDATE LAMBDA HERE, which seems fine, as its most "fair" that it keeps its 0 lambda from being outside kmerdist
       ///! Check that lambda is in fact zero, warn otherwise.
@@ -561,15 +556,14 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
     bi->fam[f]->sub = sub;
     bi->fam[f]->lambda = bi->lambda[bi->fam[f]->center->index];
   }
-  if(tVERBOSE) printf("(nraw=%d,nfam=%d), ", bi->nraw, bi->nfam);
   free(raws);
   bi->update_fam = false;
 }
 
-void b_fam_update(B *b) {
+void b_fam_update(B *b, bool verbose) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // center has changed or a raw has been shoved EITHER DIRECTION breaking the fam structure
-      if(tVERBOSE) { printf("C%iFU:", i); }
+      if(verbose) { printf("C%iFU:", i); }
       bi_fam_update(b->bi[i], b->score, b->gap_pen, b->band_size, b->use_quals);
     }
   }
@@ -637,7 +631,7 @@ bool b_shuffle(B *b) {
         // If a better cluster was found, move the raw to the new bi
         if(maxe > b->bi[i]->e[index]) {
           if(index == b->bi[i]->center->index) {  // Check if center
-            if(tVERBOSE) {
+            if(VERBOSE) {
               printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
               printf("Attempted: Raw %i from C%i to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
                   index, i, ibest, \
@@ -684,7 +678,7 @@ void b_p_update(B *b) {
  Returns index of new cluster, or 0 if no new cluster added.
 */
 
-int b_bud(B *b, double min_fold, int min_hamming) {
+int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
   int i, f, r;
   int mini, minf, totfams, minreads;
   double minp = 1.0, minlam=1.0;
@@ -736,7 +730,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       bi_shove_raw(b->bi[i], fam->raw[r]);
     }
 
-    if(tVERBOSE) { 
+    if(verbose) { 
       double qave = 0.0;
       if(fam->center->qual) {
         for(int s=0;s<fam->sub->nsubs;s++) {
@@ -805,7 +799,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       bi_shove_raw(b->bi[i], fam->raw[r]);
     }
 
-    if(tVERBOSE) { 
+    if(verbose) { 
       printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, pS, fam->lambda);
     }
     
@@ -815,7 +809,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
   }
 
   // No significant abundance or singleton pval
-  if(tVERBOSE) { printf("\nNo significant pval, no new cluster.\n"); }
+  if(verbose) { printf("\nNo significant pval, no new cluster.\n"); }
   return 0;
 }
 

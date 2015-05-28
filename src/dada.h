@@ -15,7 +15,6 @@
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
-#define tVERBOSE 0
 #define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
 // SEQLEN MAY NOT BE INCREASED BEYOND 1000 WITHOUT REVISITING AL2SUBS
 #define MIN_BUCKETS 10
@@ -144,12 +143,12 @@ void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle(B *b);
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat);
-void b_fam_update(B *b);
+void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
+void b_fam_update(B *b, bool verbose);
 void b_consensus_update(B *b);
 void b_e_update(B *b);
 void b_p_update(B *b);
-int b_bud(B *b, double min_fold, int min_hamming);
+int b_bud(B *b, double min_fold, int min_hamming, bool verbose);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
 void b_make_consensus(B *b);

@@ -199,10 +199,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   if(has_quals) {
     for(i=0;i<bb->nclust;i++) {
       len1 = strlen(bb->bi[i]->seq);
-      if(len1 > qlen) {
-        if(tVERBOSE) { printf("Warning: C%i sequence too long for output q matrix (%i vs. %i).\n", i, len1, qlen); }
-        len1 = qlen;
-      }
+      if(len1 > qlen) { len1 = qlen; }
+      
       for(pos0=0;pos0<len1;pos0++) {
         qq=0.0;
         nreads=0;
@@ -217,9 +215,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
               }
               nreads += raw->reads;
               qq += (raw->qual[pos1] * raw->reads);
-            } else {
-//              if(tVERBOSE) { printf("Warning: No sub for R%i in C%i\n", r, i); }
-              if(VERBOSE) { printf("Warning: No sub for R%i in C%i\n", r, i); }
             }
           }
         }
@@ -291,18 +286,15 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
   
   B *bb;
   bb = b_new(raws, nraw, score, gap_pen, omegaA, use_singletons, omegaS, band_size, use_quals); // New cluster with all sequences in 1 bi and 1 fam
-  b_lambda_update(bb, FALSE, 1.0, errMat); // Everyone gets aligned within the initial cluster, no KMER screen
-  b_fam_update(bb);     // Organizes raws into fams, makes fam consensus/lambda
+  b_lambda_update(bb, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
+  b_fam_update(bb, verbose);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
-  while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming)) ) {
+  while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
     if(verbose) printf("----------- New Cluster C%i -----------\n", newi);
-    ///! TESTING TESTING TESTING - Centers locked at time of bud
-    ///! b_consensus_update(bb);
-    b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
-    // SHOULD GET_SELF ALSO USE QUALS??
+    b_lambda_update(bb, use_kmers, kdist_cutoff, errMat, verbose);
     
     // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
     if((int) (bb->bi[newi]->center->reads/bb->bi[newi]->self) > bb->bi[newi]->reads) {
@@ -318,17 +310,13 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     nshuffle = 0;
     do {
       shuffled = b_shuffle(bb);
-      ///! TESTING TESTING TESTING - Centers locked at time of bud
-      ///! b_consensus_update(bb);
-      ///! TESTING TESTING TESTING - REMOVING UNNECESSARY LAMBDA UPDATES
-      ///! b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
       b_e_update(bb);
       if(verbose) { printf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
     
     if(verbose && nshuffle >= MAX_SHUFFLE) { printf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
     
-    b_fam_update(bb); // If centers can move, must have lambda_update before fam_update
+    b_fam_update(bb, verbose); // If centers can move, must have lambda_update before fam_update
     b_p_update(bb);
   }
   

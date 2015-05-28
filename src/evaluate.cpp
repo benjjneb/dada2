@@ -266,7 +266,6 @@ Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatr
       sub_band = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, band_size));
       
       if(strcmp(sub->key, sub_band->key) != 0) { // different strings
-        if(tVERBOSE) { printf("\n%s\n%s\n", sub->key, sub_band->key); }
         differ++;
       }
       
