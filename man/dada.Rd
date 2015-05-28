@@ -48,21 +48,23 @@ dada(uniques, quals = NULL, err, err_function = NULL,
    eg. dada(unq, err=err_in, OMEGA_A=1e-50, MAX_CLUST=50)}
 }
 \value{
-List.
- $genotypes: Integer vector, named by sequence valued by abundance, of the denoised genotypes.
- $clustering: An informative data.frame containing information on each cluster.
- $quality: The average quality scores for each cluster (row) by position (col).
- $map: Integer vector that maps the unique (index) to the cluster/genotype (value).
- $birth_subs: A data.frame containing the substitutions at the birth of each new cluster.
- $trans: The matrix of transitions by type (row), eg. A2A, A2C..., and quality score (col)
-         observed in the final output of the dada algorithm.
- $trans_out: The matrix of transitions by type and quality, summed over all denoised samples.
-         Used to estimate $err_out. Identical to $trans if just one sample denoised.
- $err_out: The err matrix estimated from the output of dada. NULL if err_function not provided.
- $err_in: The err matrix used for this invocation of dada.
- $opts: A list of the dada_opts used for this invocation of dada.
- $uniques: The uniques vector(s) used for this invocation of dada.
- $call: The function call used for this invocation of dada.
+A multi-item List with the following named values...
+\itemize{
+ \item{$genotypes: }{Integer vector, named by sequence valued by abundance, of the denoised genotypes.}
+ \item{$clustering: }{An informative data.frame containing information on each cluster.}
+ \item{$quality: }{The average quality scores for each cluster (row) by position (col).}
+ \item{$map: }{Integer vector that maps the unique (index) to the cluster/genotype (value).}
+ \item{$birth_subs: }{A data.frame containing the substitutions at the birth of each new cluster.}
+ \item{$trans: }{The matrix of transitions by type (row), eg. A2A, A2C..., and quality score (col)
+         observed in the final output of the dada algorithm.}
+ \item{$trans_out: }{The matrix of transitions by type and quality, summed over all denoised samples.
+         Used to estimate $err_out. Identical to $trans if just one sample denoised.}
+ \item{$err_out: }{The err matrix estimated from the output of dada. NULL if err_function not provided.}
+ \item{$err_in: }{The err matrix used for this invocation of dada.}
+ \item{$opts: }{A list of the dada_opts used for this invocation of dada.}
+ \item{$uniques: }{The uniques vector(s) used for this invocation of dada.}
+ \item{$call: }{The function call used for this invocation of dada.}
+}
 
  If a list of uniques vectors was provided (i.e. multiple samples) then $genotypes, $clustering,
    $quality, $map and $birth_subs are lists with entries corresponding to each provided uniques vector.

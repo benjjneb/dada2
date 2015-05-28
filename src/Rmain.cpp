@@ -5,7 +5,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals);
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -17,15 +17,17 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
 Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abundances,
                         Rcpp::NumericMatrix err,
                         Rcpp::NumericMatrix quals,
-                        Rcpp::NumericMatrix score, Rcpp::NumericVector gap,
-                        Rcpp::LogicalVector use_kmers, Rcpp::NumericVector kdist_cutoff,
-                        Rcpp::NumericVector band_size,
-                        Rcpp::NumericVector omegaA, 
-                        Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS,
-                        Rcpp::NumericVector maxClust,
-                        Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming,
-                        Rcpp::LogicalVector useQuals,
-                        int qMin, int qMax) {
+                        Rcpp::NumericMatrix score, int gap,
+                        bool use_kmers, double kdist_cutoff,
+                        int band_size,
+                        double omegaA, 
+                        bool use_singletons, double omegaS,
+                        int max_clust,
+                        double min_fold, int min_hamming,
+                        bool use_quals,
+                        int qmin, int qmax,
+                        bool final_consensus,
+                        bool verbose) {
 
   int i, j, pos, len1, len2, nrow, ncol;
   int f, r, s, nzeros, nones;
@@ -93,44 +95,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
     return R_NilValue;
   }
 
-  // Check rest of params for Length-One-ness and make into C versions
-  if(gap.size() != 1) { Rcpp::Rcout << "C: Gap penalty not length 1\n"; return R_NilValue; }
-  int c_gap = as<int>(gap);
-  
-  // Copy use kmers into a C++ bool
-  if(use_kmers.size() != 1) { Rcpp::Rcout << "C: Use_kmers not length 1\n"; return R_NilValue; }
-  bool c_use_kmers = as<bool>(use_kmers);
-
-  // Copy kdist_cutoff into a C double
-  if(kdist_cutoff.size() != 1) { Rcpp::Rcout << "C: Kdist cutoff not length 1\n"; return R_NilValue; }
-  double c_kdist_cutoff = as<double>(kdist_cutoff);
-
-  if(band_size.size() != 1) { Rcpp::Rcout << "C: Band_size not length 1\n"; return R_NilValue; }
-  int c_band_size = as<int>(band_size);
-
-  if(omegaA.size() != 1) { Rcpp::Rcout << "C: OmegaA not length 1\n"; return R_NilValue; }
-  double c_omegaA = as<double>(omegaA);
-
-  if(use_singletons.size() != 1) { Rcpp::Rcout << "C: use_singletons not length 1\n"; return R_NilValue; }
-  bool c_use_singletons = as<bool>(use_singletons);
-
-  if(omegaS.size() != 1) { Rcpp::Rcout << "C: OmegaS not length 1\n"; return R_NilValue; }
-  double c_omegaS = as<double>(omegaS);
-
-  if(maxClust.size() != 1) { Rcpp::Rcout << "C: MaxClust not length 1\n"; return R_NilValue; }
-  int c_max_clust = as<int>(maxClust);
-
-  if(minFold.size() != 1) { Rcpp::Rcout << "C: MinFold not length 1\n"; return R_NilValue; }
-  double c_min_fold = as<double>(minFold);
-
-  if(minHamming.size() != 1) { Rcpp::Rcout << "C: MinHamming not length 1\n"; return R_NilValue; }
-  int c_min_hamming = as<int>(minHamming);
-
-  if(useQuals.size() != 1) { Rcpp::Rcout << "C: UseQuals not length 1\n"; return R_NilValue; }
-  bool c_use_quals = as<bool>(useQuals);
-
   // Run DADA
-  B *bb = run_dada(raws, nraw, c_score, err, c_gap, c_use_kmers, c_kdist_cutoff, c_band_size, c_omegaA, c_use_singletons, c_omegaS, c_max_clust, c_min_fold, c_min_hamming, c_use_quals);
+  B *bb = run_dada(raws, nraw, c_score, err, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose);
 
   // Extract output from Bi objects
   char **oseqs = (char **) malloc(bb->nclust * sizeof(char *)); //E
@@ -222,7 +188,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   }
   
   Rcpp::DataFrame df_subpos = b_get_positional_subs(bb);
-  Rcpp::IntegerMatrix transMat = b_get_quality_subs2(bb, has_quals, qMin, qMax);
+  Rcpp::IntegerMatrix transMat = b_get_quality_subs2(bb, has_quals, qmin, qmax);
   
   // Get output average qualities
   Rcpp::NumericMatrix Rquals(qlen, bb->nclust);
@@ -317,7 +283,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = transMat, _["trans"] = Rtrans, _["clusterquals"] = Rquals, _["map"] = Rmap);
 }
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals) {
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;
@@ -332,7 +298,7 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming)) ) {
-    if(tVERBOSE) printf("----------- New Cluster C%i -----------\n", newi);
+    if(verbose) printf("----------- New Cluster C%i -----------\n", newi);
     ///! TESTING TESTING TESTING - Centers locked at time of bud
     ///! b_consensus_update(bb);
     b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
@@ -357,16 +323,17 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
       ///! TESTING TESTING TESTING - REMOVING UNNECESSARY LAMBDA UPDATES
       ///! b_lambda_update(bb, use_kmers, kdist_cutoff, errMat);
       b_e_update(bb);
-      if(tVERBOSE) { printf("S"); }
+      if(verbose) { printf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
     
-    if(tVERBOSE && nshuffle >= MAX_SHUFFLE) { printf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
+    if(verbose && nshuffle >= MAX_SHUFFLE) { printf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
     
     b_fam_update(bb); // If centers can move, must have lambda_update before fam_update
     b_p_update(bb);
   }
   
-  if(tVERBOSE) printf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
+  if(final_consensus) { b_make_consensus(bb); }
+  if(verbose) printf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
   
   return bb;
 }

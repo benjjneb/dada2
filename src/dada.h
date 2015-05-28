@@ -16,7 +16,7 @@
 #define TESTING 0
 #define VERBOSE 0
 #define tVERBOSE 0
-#define SEQLEN 999 // Buffer size for DNA sequences read in from uniques files
+#define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
 // SEQLEN MAY NOT BE INCREASED BEYOND 1000 WITHOUT REVISITING AL2SUBS
 #define MIN_BUCKETS 10
 #define BUCKET_SCALE 0.5
@@ -84,7 +84,7 @@ typedef struct {
 // Bi stores the sub/lambda/e to from the cluster seq/reads to every raw in B.
 // Flagged to recalculate various when changes made to its contents.
 typedef struct {
-  char *seq;   // representative sequence for the cluster
+  char seq[SEQLEN]; // representative sequence for the cluster
   Raw *center; // representative raw for the cluster (corresponds to seq)
   int nraw;    // number of raws in Bi
   int reads;   // number of reads in this cluster
@@ -132,31 +132,9 @@ typedef struct {
   Bi **bi;
 } B;
 
-// Unique: holds a sequence and associated abundance
-typedef struct {
-  char *seq;   // A unique sequence, stored in 1-based index form.
-  int length;  // The length of the sequence.
-  int reads;   // The number of reads.
-} Unique;
-
-// Uniques: contains a collection of uniques.
-typedef struct {
-  Unique *unique; // Pointer to array of Unique objects
-  int nseqs;      // Total number of Unique objects
-} Uniques;
-
 /* -------------------------------------------
    -------- METHODS METHODS METHODS ----------
    ------------------------------------------- */
-
-// methods implemented in uniques.c
-Uniques *uniques_from_vectors(std::vector< std::string > strings, std::vector< int > abundances);
-Uniques *uniques_from_file(const char *f);
-int uniques_nseqs(Uniques *uniques);
-int uniques_reads(Uniques *uniques, int n);
-int uniques_length(Uniques *uniques, int n);
-void uniques_sequence(Uniques *uniques, int n, char *seq);
-void uniques_free(Uniques *uniques);
 
 // methods implemented in cluster.c
 B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals);
@@ -174,6 +152,7 @@ void b_p_update(B *b);
 int b_bud(B *b, double min_fold, int min_hamming);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
+void b_make_consensus(B *b);
 
 // methods implemented in misc.c
 void nt2int(char *oseq, const char *iseq);

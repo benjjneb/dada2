@@ -111,8 +111,8 @@ RcppExport SEXP dadac_getSingletonCDF(SEXP errSEXP, SEXP nntSEXP, SEXP maxDSEXP)
     return __result;
 }
 // dada_uniques
-Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, Rcpp::NumericVector gap, Rcpp::LogicalVector use_kmers, Rcpp::NumericVector kdist_cutoff, Rcpp::NumericVector band_size, Rcpp::NumericVector omegaA, Rcpp::LogicalVector use_singletons, Rcpp::NumericVector omegaS, Rcpp::NumericVector maxClust, Rcpp::NumericVector minFold, Rcpp::NumericVector minHamming, Rcpp::LogicalVector useQuals, int qMin, int qMax);
-RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP use_singletonsSEXP, SEXP omegaSSEXP, SEXP maxClustSEXP, SEXP minFoldSEXP, SEXP minHammingSEXP, SEXP useQualsSEXP, SEXP qMinSEXP, SEXP qMaxSEXP) {
+Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose);
+RcppExport SEXP dadac_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP use_singletonsSEXP, SEXP omegaSSEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP qminSEXP, SEXP qmaxSEXP, SEXP final_consensusSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -121,20 +121,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type err(errSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type quals(qualsSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type gap(gapSEXP);
-    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type use_kmers(use_kmersSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type kdist_cutoff(kdist_cutoffSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type band_size(band_sizeSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type omegaA(omegaASEXP);
-    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type use_singletons(use_singletonsSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type omegaS(omegaSSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type maxClust(maxClustSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type minFold(minFoldSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type minHamming(minHammingSEXP);
-    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type useQuals(useQualsSEXP);
-    Rcpp::traits::input_parameter< int >::type qMin(qMinSEXP);
-    Rcpp::traits::input_parameter< int >::type qMax(qMaxSEXP);
-    __result = Rcpp::wrap(dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming, useQuals, qMin, qMax));
+    Rcpp::traits::input_parameter< int >::type gap(gapSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_kmers(use_kmersSEXP);
+    Rcpp::traits::input_parameter< double >::type kdist_cutoff(kdist_cutoffSEXP);
+    Rcpp::traits::input_parameter< int >::type band_size(band_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type omegaA(omegaASEXP);
+    Rcpp::traits::input_parameter< bool >::type use_singletons(use_singletonsSEXP);
+    Rcpp::traits::input_parameter< double >::type omegaS(omegaSSEXP);
+    Rcpp::traits::input_parameter< int >::type max_clust(max_clustSEXP);
+    Rcpp::traits::input_parameter< double >::type min_fold(min_foldSEXP);
+    Rcpp::traits::input_parameter< int >::type min_hamming(min_hammingSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_quals(use_qualsSEXP);
+    Rcpp::traits::input_parameter< int >::type qmin(qminSEXP);
+    Rcpp::traits::input_parameter< int >::type qmax(qmaxSEXP);
+    Rcpp::traits::input_parameter< bool >::type final_consensus(final_consensusSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose));
     return __result;
 END_RCPP
 }

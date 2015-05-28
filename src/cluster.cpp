@@ -35,9 +35,10 @@ Raw *bi_pop_raw(Bi *bi, int f, int r);
 Fam *bi_pop_fam(Bi *bi, int f);
 
 void bi_census(Bi *bi);
-void bi_consensus_update(Bi *bi);
-void fam_consensus_update(Fam *fam);
+void bi_center_update(Bi *bi);
+void fam_center_update(Fam *fam);
 void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals);
+void bi_make_consensus(Bi *bi, bool use_quals);
 
 /*
  raw_new:
@@ -248,8 +249,8 @@ void bi_add_raw(Bi *bi, Raw *raw) {
 Bi *bi_new(int totraw) {
   Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
   if (bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
-  bi->seq = (char *) malloc(SEQLEN); //E
-  if (bi->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
+//  bi->seq = (char *) malloc(SEQLEN); //E
+//  if (bi->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(bi->seq, "");
   bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *)); //E
   if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed!\n");
@@ -264,6 +265,7 @@ Bi *bi_new(int totraw) {
   bi->totraw = totraw;
   bi->sm = sm_new(MIN_BUCKETS); //E
   if (bi->sm == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  bi->center = NULL;
   bi->update_lambda = true;
   bi->update_fam = true;
   bi->update_e = true;
@@ -281,7 +283,7 @@ Bi *bi_new(int totraw) {
 void bi_free(Bi *bi) {
   for(int f=0;f<bi->nfam;f++) { fam_free(bi->fam[f]); }
   free(bi->fam);
-  free(bi->seq);
+//  free(bi->seq);
   for(int i=0;i<bi->totraw;i++) { sub_free(bi->sub[i]); }
   free(bi->sub);
   free(bi->lambda);
@@ -383,7 +385,7 @@ B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool
 }
 
 /* b_init:
- Initialized b with all raws in one cluster, with consensus, flagged to update lambda and fam.
+ Initialized b with all raws in one cluster, with center, flagged to update lambda and fam.
 */
 void b_init(B *b) {
   // Destruct existing clusters/fams
@@ -408,7 +410,7 @@ void b_init(B *b) {
   }
 
   bi_census(b->bi[0]);
-  bi_consensus_update(b->bi[0]); // Makes cluster consensus sequence
+  bi_center_update(b->bi[0]); // Makes cluster center sequence
 }
 
 /* b_free:
@@ -437,7 +439,7 @@ int b_add_bi(B *b, Bi *bi) {
 /*
  lambda_update:
  updates the alignments and lambda of all raws to Bi with
- updated consensus sequences. 
+ changed center sequences.
 */
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat) {
   int i;
@@ -446,7 +448,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
   Sub *sub;
   
   for (i = 0; i < b->nclust; i++) {
-    if(b->bi[i]->update_lambda) {   // consensus sequence for Bi[i] has changed
+    if(b->bi[i]->update_lambda) {   // center sequence for Bi[i] has changed
       // update alignments and lambda of all raws to this sequence
       if(tVERBOSE) { printf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
@@ -479,7 +481,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
 
 /* bi_fam_update(Bi *bi, ...):
    Creates and allocates new fams based on the sub between each raw and the
-   cluster consensus.
+   cluster center.
   Currently completely destructive of old fams.
    */
 void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals) {
@@ -547,9 +549,9 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
     }
   }
   
-  // consensus_update/align the fams
+  // center_update/align the fams
   for(f=0;f<bi->nfam;f++) {
-    fam_consensus_update(bi->fam[f]);
+    fam_center_update(bi->fam[f]);
     sub = bi->sub[bi->fam[f]->center->index];
 
     if(!sub) { // Protect from null subs, but this should never arise...
@@ -566,7 +568,7 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
 
 void b_fam_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
-    if(b->bi[i]->update_fam) {  // Consensus has changed or a raw has been shoved EITHER DIRECTION breaking the fam structure
+    if(b->bi[i]->update_fam) {  // center has changed or a raw has been shoved EITHER DIRECTION breaking the fam structure
       if(tVERBOSE) { printf("C%iFU:", i); }
       bi_fam_update(b->bi[i], b->score, b->gap_pen, b->band_size, b->use_quals);
     }
@@ -751,7 +753,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       printf("%s\n", ntstr(fam->sub->key));
     }
     
-    bi_consensus_update(b->bi[i]);
+    bi_center_update(b->bi[i]);
     fam_free(fam);
     return i;
   }
@@ -807,7 +809,7 @@ int b_bud(B *b, double min_fold, int min_hamming) {
       printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, pS, fam->lambda);
     }
     
-    bi_consensus_update(b->bi[i]);
+    bi_center_update(b->bi[i]);
     fam_free(fam);
     return i;
   }
@@ -817,12 +819,12 @@ int b_bud(B *b, double min_fold, int min_hamming) {
   return 0;
 }
 
-/* fam_consensus_update:
- Takes a fam object, and calculates and assigns its consensus sequence.
+/* fam_center_update:
+ Takes a fam object, and calculates and assigns its center sequence.
  Currently this is done trivially by choosing the most abundant sequence.
  NOTE: IT IS NOT CLEAR THAT THIS IS THE SAME AS THE MATLAB FUNCTIONALITY
  */
-void fam_consensus_update(Fam *fam) {
+void fam_center_update(Fam *fam) {
   int max_reads = 0;
   int r, maxr= -99;
   
@@ -842,14 +844,12 @@ void fam_consensus_update(Fam *fam) {
   }
 }
 
-/* Bi_consensus_update:
- Takes a Bi object, and calculates and assigns its consensus sequence.
+/* Bi_center_update:
+ Takes a Bi object, and calculates and assigns its center sequence.
  Currently this is done trivially by choosing the most abundant sequence.
- If consensus changes...
-    Updates .center and .self
-    Flags update_fam and update_lambda
+ If center changes flags update_fam and update_lambda
 */
-void bi_consensus_update(Bi *bi) {
+void bi_center_update(Bi *bi) {
   int max_reads = 0;
   int f, r;
   int maxf = 0, maxr= 0;
@@ -867,7 +867,7 @@ void bi_consensus_update(Bi *bi) {
     bi->update_lambda = true;
     bi->update_fam = true;
     if(VERBOSE) {
-      printf("bi_c_u: New Consensus from raw %i (%i)\n", bi->fam[maxf]->raw[maxr]->index, bi->fam[maxf]->raw[maxr]->reads);
+      printf("bi_c_u: New center raw %i (%i)\n", bi->fam[maxf]->raw[maxr]->index, bi->fam[maxf]->raw[maxr]->reads);
       printf("\tNew(%i): %s\n", (int) bi->fam[maxf]->raw[maxr]->length, ntstr(bi->fam[maxf]->raw[maxr]->seq));
       printf("\tOld(%i): %s\n", (int) strlen(bi->seq), ntstr(bi->seq));
     }
@@ -876,12 +876,87 @@ void bi_consensus_update(Bi *bi) {
   }
 }
 
-/* B_consensus_update:
+/* B_center_update:
  Updates all Bi consensi.
  */
-void b_consensus_update(B *b) {
+void b_center_update(B *b) {
   for (int i=0; i<b->nclust; i++) {
-    bi_consensus_update(b->bi[i]);
+    bi_center_update(b->bi[i]);
   }
 }
 
+/* Bi_make_consensus:
+  Uses the alignments to the cluster center to construct a consensus sequence, which
+  is then assigned to bi->seq
+*/
+void bi_make_consensus(Bi *bi, bool use_quals) {
+  int i,f,r,s,nti0,nti1,pos,maxc,maxi;
+  char seq[SEQLEN];
+  double counts[4][SEQLEN] = {0.0};
+  Sub *sub = NULL;
+  Raw *raw;
+  
+  if(!bi->center) { return; }
+  int len = bi->center->length;
+  if(len >= SEQLEN) { return; }
+  
+  for(f=0;f<bi->nfam;f++) {
+    for(r=0;r<bi->fam[f]->nraw;r++) {
+      raw = bi->fam[f]->raw[r];
+      sub = bi->sub[raw->index];
+      // Assign all counts to center sequence
+      for(i=0;i<len;i++) {
+        nti0 = ((int) bi->center->seq[i]) - 1;
+        if(use_quals) {
+          counts[nti0][i] += (raw->reads * (double) raw->qual[i]);  // NEED TO EXCEPT THIS IF NOT USING QUALS!!
+        } else {
+          counts[nti0][i] += raw->reads;
+        }
+      }
+      // Move counts at all subs to proper nt
+      if(sub) {
+        for(s=0;s<sub->nsubs;s++) {
+          nti0 = ((int) sub->nt0[s]) - 1;
+          nti1 = ((int) sub->nt1[s]) - 1;
+          pos = sub->pos[s];
+          if(use_quals) {
+            counts[nti0][pos] -= (raw->reads * (double) raw->qual[pos]);
+            counts[nti1][pos] += (raw->reads * (double) raw->qual[pos]);
+          } else {
+            counts[nti0][pos] -= raw->reads;
+            counts[nti1][pos] += raw->reads;
+          }
+        }
+      }
+    } // for(r=0;r<bi->fam[f]->nraw;r++)
+  } // for(f=0;f<bi->nfam;f++)
+  
+  // Use counts to write consensus
+  strcpy(bi->seq, bi->center->seq);
+  for(i=0;i<len;i++) {
+    if(counts[0][i] > counts[1][i] && counts[0][i] > counts[2][i] && counts[0][i] > counts[3][i]) {
+      bi->seq[i] = 1;
+    } 
+    else if(counts[1][i] > counts[0][i] && counts[1][i] > counts[2][i] && counts[1][i] > counts[3][i]) {
+      bi->seq[i] = 2;
+    }
+    else if(counts[2][i] > counts[0][i] && counts[2][i] > counts[1][i] && counts[2][i] > counts[3][i]) {
+      bi->seq[i] = 3;
+    }
+    else if(counts[3][i] > counts[0][i] && counts[3][i] > counts[1][i] && counts[3][i] > counts[2][i]) {
+      bi->seq[i] = 4;
+    } else { // TIES! These are not properly dealt with currently!
+      bi->seq[i] = bi->center->seq[i];
+    }
+  }
+  bi->seq[len] = '\0';
+}
+
+/* B_make_consensus:
+  Makes consensus sequences for all Bi.
+*/
+void b_make_consensus(B *b) {
+  for (int i=0; i<b->nclust; i++) {
+    bi_make_consensus(b->bi[i], b->use_quals);
+  }
+}
