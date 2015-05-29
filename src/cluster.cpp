@@ -589,11 +589,20 @@ void b_e_update(B *b) {
  number of that sequence. The center of a Bi cannot leave.
 */
 bool b_shuffle(B *b) {
-  int i, f, r, j;
+  int i, f, r, j, foo;
   int ibest, index;
   bool shuffled = false;
   Raw *raw;
   double e, maxe;
+  
+  // Make list of clusters that have shuffle flags
+  std::vector<int> shuffled_bis;
+  for(i=0;i<b->nclust;i++) {
+    if(b->bi[i]->shuffle) {
+      shuffled_bis.push_back(i);
+    }
+  }
+  
   // Iterate over raws via clusters/fams
   for(i=0; i<b->nclust; i++) {
     for(f=0; f<b->bi[i]->nfam; f++) {
@@ -612,13 +621,12 @@ bool b_shuffle(B *b) {
             }
           }
         } else { // Compare just to other clusters that have changed E's
-          for(j=0;j<b->nclust; j++) {
-            if(b->bi[j]->shuffle) {
-              e = b->bi[j]->e[index];
-              if(e > maxe) {
-                maxe = e;
-                ibest = j;
-              }
+          for(foo=0;foo<shuffled_bis.size();foo++) {
+            j = shuffled_bis[foo];
+            e = b->bi[j]->e[index];
+            if(e > maxe) {
+              maxe = e;
+              ibest = j;
             }
           }
         }
