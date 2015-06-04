@@ -52,21 +52,19 @@
 #'  \item{$birth_subs: }{A data.frame containing the substitutions at the birth of each new cluster.}
 #'  \item{$trans: }{The matrix of transitions by type (row), eg. A2A, A2C..., and quality score (col)
 #'          observed in the final output of the dada algorithm.}
-#'  \item{$trans_out: }{The matrix of transitions by type and quality, summed over all denoised samples.
-#'          Used to estimate $err_out. Identical to $trans if just one sample denoised.}
-#'  \item{$err_out: }{The err matrix estimated from the output of dada. NULL if err_function not provided.}
 #'  \item{$err_in: }{The err matrix used for this invocation of dada.}
+#'  \item{$err_out: }{The err matrix estimated from the output of dada. NULL if err_function not provided.}
 #'  \item{$opts: }{A list of the dada_opts used for this invocation of dada.}
 #'  \item{$uniques: }{The uniques vector(s) used for this invocation of dada.}
 #'  \item{$call: }{The function call used for this invocation of dada.}
 #' }
 #'   
-#'  If a list of uniques vectors was provided (i.e. multiple samples) then $genotypes, $clustering,
-#'    $quality, $map and $birth_subs are lists with entries corresponding to each provided uniques vector.
-#'  
 #'  If self_consist=TRUE, $err_in is a list of length the number of times through the self_consist
 #'    loop corresponding to the err used in each iteration. $err_out is the final estimated error rate.
 #'   
+#'  If a list of uniques vectors was provided (i.e. multiple samples) then a list of the above output lists
+#'    is returned corresponding to each input sample.
+#'  
 #' @export
 #'
 dada <- function(uniques, quals=NULL,
@@ -92,7 +90,7 @@ dada <- function(uniques, quals=NULL,
   if(!is.null(quals) && !is.list(quals)) { quals <- list(quals) }
   
   # Validate uniques vector(s)
-  for(i in seq(length(uniques))) {
+  for(i in seq_along(uniques)) {
     if(!(is.integer(uniques[[i]]))) {
       if(is.numeric(uniques[[i]]) && all.equal(uniques[[i]], as.integer(uniques[[i]]))) {
         nms <- names(uniques[[i]])
@@ -124,7 +122,7 @@ dada <- function(uniques, quals=NULL,
   }
   
   # Validate err matrix
-  if(!( is.numeric(err) && nrow(err) == 16) && all(err>=0))
+  if(!( is.numeric(err) && nrow(err) == 16 && all(err>=0)))
   { stop("Invalid error matrix.") }
   if(any(err==0)) warning("Zero in error matrix.")
   
@@ -227,50 +225,35 @@ dada <- function(uniques, quals=NULL,
     }
   }
   
-  # Construct dada return object
-  # Convert cur$genotypes to the named integer vector being used as the uniques format
-  rval = list()
-  rval$genotypes <- list()
-  for(i in seq(length(uniques))) {
-    rval$genotypes[[i]] <- as.integer(clustering[[i]]$abundance)
-    names(rval$genotypes[[i]]) <- clustering[[i]]$sequence
+  # Construct return object
+  # A single return list if one uniques vector provided.
+  # A list of return lists if multiple uniques vectors provided (of length=# of uniques vectors provided).
+  rval2 = replicate(length(uniques), list(genotypes=NULL, clustering=NULL, quality=NULL, subpos=NULL, trans=NULL, map=NULL, uniques=NULL,
+                                          err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
+  for(i in seq_along(uniques)) {
+    # Convert cur$genotypes to the named integer vector being used as the uniques format
+    rval2[[i]]$genotypes <- as.integer(clustering[[i]]$abundance)
+    names(rval2[[i]]$genotypes) <- clustering[[i]]$sequence
+    rval2[[i]]$clustering <- clustering[[i]]
+    rval2[[i]]$quality <- clusterquals[[i]]
+    rval2[[i]]$subpos <- subpos[[i]]
+    rval2[[i]]$trans <- trans[[i]]
+    rval2[[i]]$map <- map[[i]]
+    rval2[[i]]$uniques <- uniques[[i]]
+    # Return the error rate(s) used as well as the final estimated error matrix
+    if(self_consist) { # Did a self-consist loop
+      rval2[[i]]$err_in <- errs
+    } else {
+      rval2[[i]]$err_in <- errs[[1]]
+    }
+    rval2[[i]]$err_out <- err           # maybe better as _final? Just the last one
+    
+    # Store the call and the options that were used in the return object
+    rval2[[i]]$opts <- opts
+    rval2[[i]]$call <- call
   }
-  rval$clustering <- clustering
-  rval$quality <- clusterquals
-  rval$subpos <- subpos
-  rval$trans <- trans
-  rval$map <- map
-  rval$uniques <- uniques
+  names(rval2) <- names(uniques)
+  if(length(rval2) == 1) { rval2 <- rval2[[1]] } # Unlist if just a single uniques vector provided
 
-  if(length(rval$genotypes)==1) { # one sample, return a naked uniques vector
-    rval$genotypes <- rval$genotypes[[1]]
-    rval$clustering <- rval$clustering[[1]]
-    rval$quality <- rval$quality[[1]]
-    rval$subpos <- rval$subpos[[1]]
-    rval$trans <- rval$trans[[1]]
-    rval$map <- rval$map[[1]]
-    rval$uniques <- rval$uniques[[1]]
-  } else { # keep names if it is a list
-    names(rval$genotypes) <- names(uniques)
-    names(rval$clustering) <- names(uniques)
-    names(rval$quality) <- names(uniques)
-    names(rval$subpos) <- names(uniques)
-    names(rval$trans) <- names(uniques)
-    names(rval$map) <- names(uniques)
-  }
-
-  # Return the error rate(s) used as well as the final sub matrix and estimated error matrix
-  if(self_consist) { # Did a self-consist loop
-    rval$err_in <- errs
-  } else {
-    rval$err_in <- errs[[1]]
-  }
-  rval$trans_out <- cur
-  rval$err_out <- err
-  
-  # Store the call and the options that were used in the return object
-  rval$opts <- opts
-  rval$call <- call
-  
-  rval
+  rval2
 }

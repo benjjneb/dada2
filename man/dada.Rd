@@ -57,20 +57,18 @@ A multi-item List with the following named values...
  \item{$birth_subs: }{A data.frame containing the substitutions at the birth of each new cluster.}
  \item{$trans: }{The matrix of transitions by type (row), eg. A2A, A2C..., and quality score (col)
          observed in the final output of the dada algorithm.}
- \item{$trans_out: }{The matrix of transitions by type and quality, summed over all denoised samples.
-         Used to estimate $err_out. Identical to $trans if just one sample denoised.}
- \item{$err_out: }{The err matrix estimated from the output of dada. NULL if err_function not provided.}
  \item{$err_in: }{The err matrix used for this invocation of dada.}
+ \item{$err_out: }{The err matrix estimated from the output of dada. NULL if err_function not provided.}
  \item{$opts: }{A list of the dada_opts used for this invocation of dada.}
  \item{$uniques: }{The uniques vector(s) used for this invocation of dada.}
  \item{$call: }{The function call used for this invocation of dada.}
 }
 
- If a list of uniques vectors was provided (i.e. multiple samples) then $genotypes, $clustering,
-   $quality, $map and $birth_subs are lists with entries corresponding to each provided uniques vector.
-
  If self_consist=TRUE, $err_in is a list of length the number of times through the self_consist
    loop corresponding to the err used in each iteration. $err_out is the final estimated error rate.
+
+ If a list of uniques vectors was provided (i.e. multiple samples) then a list of the above output lists
+   is returned corresponding to each input sample.
 }
 \description{
 The dada function takes as input the unique sequences in an amplicon sequencing sample paired

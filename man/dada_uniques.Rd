@@ -5,8 +5,8 @@
 \title{Run DADA on the provided unique sequences/abundance pairs.}
 \usage{
 dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff,
-  band_size, omegaA, use_singletons, omegaS, maxClust, minFold, minHamming,
-  useQuals, qMin, qMax)
+  band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming,
+  use_quals, qmin, qmax, final_consensus, verbose)
 }
 \value{
 List.

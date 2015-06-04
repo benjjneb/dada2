@@ -91,7 +91,7 @@ showErrors <- function(dq, nti, ntj="all", erri=TRUE, erro=TRUE, ...) {
   ACGT <- c("A", "C", "G", "T")
   tij <- 4*(which(ACGT==nti)-1) + which(ACGT==ntj)
   nij <- paste0(nti,"2",ntj)
-  subdf <- as.data.frame(t(dq$trans_out))
+  subdf <- as.data.frame(t(dq$trans))
   subdf$qave <- as.numeric(rownames(subdf))
   subdf[,nij] <- subdf[,nij]/(subdf[,paste0(nti,"2A")]+subdf[,paste0(nti,"2C")]+subdf[,paste0(nti,"2G")]+subdf[,paste0(nti,"2T")])
 
