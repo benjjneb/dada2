@@ -51,6 +51,15 @@ fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN
   f <- FastqStreamer(fn, n = n)
   on.exit(close(f))
   
+  # Delete fout if it already exists (since writeFastq doesn't overwrite)
+  if(file.exists(fout)) {
+    if(file.remove(fout)) {
+      if(verbose) message("Overwriting file:", fout)
+    } else {
+      stop("Failed to overwrite file:", fout)
+    }
+  }
+
   first=TRUE
   inseqs = 0
   outseqs = 0
@@ -127,6 +136,21 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
   fR <- FastqStreamer(fn[[2]], n = n)
   on.exit(close(fR), add=TRUE)
   
+  if(file.exists(fout[[1]])) {
+    if(file.remove(fout[[1]])) {
+      if(verbose) message("Overwriting file:", fout[[1]])
+    } else {
+      stop("Failed to overwrite file:", fout[[1]])
+    }
+  }
+  if(file.exists(fout[[2]])) {
+    if(file.remove(fout[[2]])) {
+      if(verbose) message("Overwriting file:", fout[[2]])
+    } else {
+      stop("Failed to overwrite file:", fout[[2]])
+    }
+  }
+  
   first=TRUE
   inseqs = 0
   outseqs = 0
@@ -187,7 +211,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
   }
   
   if(verbose) {
-    cat("Read in", inseqs, "sequences, outputted", outseqs, "filtered sequences.")
+    cat("Read in", inseqs, "paired-sequences, outputted", outseqs, "filtered paired-sequences.\n")
   }
 }
 
