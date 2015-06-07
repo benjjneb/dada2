@@ -47,7 +47,7 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
 //char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band)
 
 //------------------------------------------------------------------
-//' Calculates the number of matches/mismatches/internal-indels in an alignment.
+//' Calculates the number of matches/mismatches/internal_indels in an alignment.
 //' 
 // [[Rcpp::export]]
 Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
@@ -262,7 +262,7 @@ Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatr
       seq2 = intstr(seqs[j].c_str());
       len2 = strlen(seq2);
 
-      sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, 0));
+      sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, -1));
       sub_band = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, band_size));
       
       if(strcmp(sub->key, sub_band->key) != 0) { // different strings

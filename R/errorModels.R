@@ -57,6 +57,7 @@ threepiece <- function(parms, qave) {
   pred[qave>knot1] <- e0 + (qave[qave>knot1]-knot1)*(e40-e0)/(knot2-knot1)
   pred[qave>knot2] <- e40
   pred <- 10^pred
+  pred[pred > 0.25] <- 0.25 ### Hacky
   return(pred)
 }
 

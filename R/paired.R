@@ -48,14 +48,14 @@ mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character
   rR <- dadaR$map[mapR]
   if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
   
-  pairdf <- data.frame(forward=rF, reverse=rR)
+  pairdf <- data.frame(sequence = "", abundance=0, forward=rF, reverse=rR)
   ups <- unique(pairdf) # The unique forward/reverse pairs of denoised sequences
   Funqseq <- unname(dadaF$clustering$sequence[ups$forward])
   Runqseq <- as(reverseComplement(DNAStringSet(unname(dadaR$clustering$sequence[ups$reverse]))), "character")
   
   if(align) { # Use unbanded N-W align to compare forward/reverse
     # May want to adjust align params here, but for now just using dadaOpt
-    alvecs <- mapply(function(x,y) nwalign(x,y,band=0), Funqseq, Runqseq, SIMPLIFY=FALSE)
+    alvecs <- mapply(function(x,y) nwalign(x,y,band=-1), Funqseq, Runqseq, SIMPLIFY=FALSE)
     outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
     ups$nmatch <- outs[,1]
     ups$nmismatch <- outs[,2]

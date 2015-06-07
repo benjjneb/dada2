@@ -109,16 +109,16 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   }
 
   // Fill out band boundaries of d.
-  if(band) {
+  if(band>=0 && band<len1) {
     for(i=0;i<=len1;i++) {
-      if(i-band-1 >= 0) { d[i][i-band-1] = -999; }
-      if(i+band+1 <= len2) { d[i][i+band+1] = -999; }
+      if(i-band-1 >= 0) { d[i][i-band-1] = -9999; }
+      if(i+band+1 <= len2) { d[i][i+band+1] = -9999; }
     }
   }
   
   // Fill out the body of the DP matrix.
   for (i = 1; i <= len1; i++) {
-    if(band) {
+    if(band>=0) {
       l = i-band; if(l < 1) { l = 1; }
       r = i+band; if(r>len2) { r = len2; }
     } else { l=1; r=len2; }

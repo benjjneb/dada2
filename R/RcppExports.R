@@ -7,7 +7,7 @@ C_nwalign <- function(s1, s2, score, gap_p, band) {
     .Call('dadac_C_nwalign', PACKAGE = 'dadac', s1, s2, score, gap_p, band)
 }
 
-#' Calculates the number of matches/mismatches/internal-indels in an alignment.
+#' Calculates the number of matches/mismatches/internal_indels in an alignment.
 #' 
 C_eval_pair <- function(s1, s2) {
     .Call('dadac_C_eval_pair', PACKAGE = 'dadac', s1, s2)

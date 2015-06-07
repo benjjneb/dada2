@@ -13,11 +13,11 @@ assign("BAND_SIZE", 16, envir = dada_opts)
 assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
-assign("USE_QUALS", FALSE, envir=dada_opts)
-assign("QMIN", 0, envir=dada_opts) # NOT PASSED IN YET
-assign("QMAX", 40, envir=dada_opts) # NOT PASSED IN YET
-assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NOT PASSED IN YET
-assign("VERBOSE", FALSE, envir=dada_opts) # NOT PASSED IN YET
+assign("USE_QUALS", TRUE, envir=dada_opts)
+assign("QMIN", 0, envir=dada_opts) # NOT FULLY PASSED IN YET
+assign("QMAX", 40, envir=dada_opts) # NOT FULLY PASSED IN YET
+assign("FINAL_CONSENSUS", FALSE, envir=dada_opts)
+assign("VERBOSE", FALSE, envir=dada_opts)
 
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
 
