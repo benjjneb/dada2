@@ -287,9 +287,9 @@ qtables2 <- function(x, QtoP = FALSE) {
 #' 
 #' @export
 #' 
-uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w") {
+uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w", width=20000) {
   if(is.null(ids)) {
     ids <- paste0("sq", seq(1, length(unqs)), ";size=", unname(unqs), ";")
   }
-  writeFasta(ShortRead(DNAStringSet(names(unqs)), BStringSet(ids)), fout, mode)
+  writeFasta(ShortRead(DNAStringSet(names(unqs)), BStringSet(ids)), fout, mode, width=width)
 }

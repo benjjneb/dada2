@@ -1,4 +1,6 @@
 ################################################################################
+#' DEPRECATED IN FAVOR OF ISBIMERA2: FASTER AND FINDS SHIFT-BIMERAS AS WELL
+#' 
 #' Determine if input sequence is an exact bimera of putative parent sequences.
 #' 
 #' This function attempts to find an exact bimera of the parent sequences that
@@ -26,7 +28,6 @@
 #'
 #' @seealso \code{\link{isBimeraDenovo}}
 #'
-#' @export
 #' @import Biostrings 
 #' 
 isBimera <- function(sq, parents, verbose=FALSE) {
@@ -43,7 +44,47 @@ isBimera <- function(sq, parents, verbose=FALSE) {
   }
   return(min_bi_ham == 0 && min_ham > 0)
 }
-##########  SEEE srdistance {ShortRead}  for possible more efficient implementation?
+
+#' @export
+#' 
+getOverlaps <- function(parent, sq) {  # parent must be first, sq is being evaluated as a potential bimera
+  al <- nwalign(parent, sq)
+  lr <- C_get_overlaps(al[1], al[2])
+  return(lr)
+}
+
+################################################################################
+#' DEPRECATED IN FAVOR OF ISBIMERA2: FASTER AND FINDS SHIFT-BIMERAS AS WELL
+#' 
+#' Determine if input sequence is an exact bimera of putative parent sequences.
+#' 
+#' This function attempts to find an exact bimera of the parent sequences that
+#' matches the input sequence. A bimera is a two-parent chimera, in which the
+#' left side is made up of one parent sequence, and the right-side made up of
+#' a second parent sequence. If an exact bimera is found (no mismatches are
+#' allowed, but strict shifts are allowed) TRUE is returned, otherwise FALSE.
+#' 
+#' @param sq (Required). A \code{character(1)}.
+#'  The sequence being evaluated as a possible bimera.
+#' 
+#' @param parents (Required). Character vector.
+#'  A vector of possible "parent" sequence that could form the left and right
+#'  sides of the bimera.
+#'   
+#' @param verbose (Optional). \code{logical(1)}.
+#'  If TRUE, some informative output is printed. Default is FALSE.
+#'
+#' @return \code{logical(1)}.
+#'  TRUE if sq is an exact bimera of two of the parents. Otherwise FALSE.
+#'
+#' @seealso \code{\link{isBimeraDenovo}}
+#' @export
+#' 
+isBimera2 <- function(sq, parents, verbose=FALSE) { # Note that order of sq/parents is reversed here from internals
+  ov <- t(unname(sapply(parents, function(x) getOverlaps(x, sq))))
+  return((max(ov[,1]) + max(ov[,2])) >= nchar(sq))
+  # TRUE if the max left/right overlaps are as long as the sequence (or longer)
+}
 
 ################################################################################
 #' Identify bimeras de-novo from collections of unique sequences.
@@ -86,7 +127,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 10, minParentAbund
       if(verbose) print("Only one possible parent.")
       return(FALSE)
     } else {
-      isBimera(sq, pars, verbose)
+      isBimera2(sq, pars, verbose)
     }
   }
   bims <- mapply(loopFun, seqs, abunds)

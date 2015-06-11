@@ -35,6 +35,18 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// C_get_overlaps
+Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2);
+RcppExport SEXP dadac_C_get_overlaps(SEXP s1SEXP, SEXP s2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
+    __result = Rcpp::wrap(C_get_overlaps(s1, s2));
+    return __result;
+END_RCPP
+}
 // C_pair_consensus
 Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2);
 RcppExport SEXP dadac_C_pair_consensus(SEXP s1SEXP, SEXP s2SEXP) {

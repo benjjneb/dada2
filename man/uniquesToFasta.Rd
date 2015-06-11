@@ -4,7 +4,7 @@
 \alias{uniquesToFasta}
 \title{Write a uniques vector to a FASTA file}
 \usage{
-uniquesToFasta(unqs, fout, ids = NULL, mode = "w")
+uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000)
 }
 \description{
 Basically a wrapper for writeFastq in the ShortRead package. Format is suitable for uchime.

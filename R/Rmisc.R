@@ -1,4 +1,16 @@
 #' @export
+isHit100 <- function(clust, fn) {  ### INCOMPLETE
+  bb <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
+  bbHit100 <- bb[bb$identity == 100 & bb$coverage == nchar(cF[match(bb$seqid,clust$id),"sequence"]),]
+  return(clust$id %in% bbHit100$seqid)
+}
+
+#' @export
+checkConvergence <- function(dadaO) {
+  sapply(dadaO$err_in, function(x) sum(abs(dadaO$err_out-x)))
+}
+
+#' @export
 nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
   dadac:::C_nwalign(s1, s2, score, gap, band)
 }

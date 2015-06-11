@@ -299,6 +299,7 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
     if((int) (bb->bi[newi]->center->reads/bb->bi[newi]->self) > bb->bi[newi]->reads) {
       inflation = (bb->bi[newi]->center->reads/bb->bi[newi]->self)/bb->bi[newi]->reads;
+ ///!      if(verbose) printf("Inflating C%i by %.2e (self=%.2e)\n", newi, inflation, bb->bi[newi]->self);
       for(index=0;index<bb->nraw;index++) {
         bb->bi[newi]->e[index] = bb->bi[newi]->e[index] * inflation;
       }

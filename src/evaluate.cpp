@@ -44,7 +44,6 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
   free(al[1]);
   return(rval);
 }
-//char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band)
 
 //------------------------------------------------------------------
 //' Calculates the number of matches/mismatches/internal_indels in an alignment.
@@ -89,10 +88,70 @@ Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
     }
   }
   
-  Rcpp::IntegerVector rval(3);
-  rval(0) = match;
-  rval(1) = mismatch;
-  rval(2) = indel;
+  Rcpp::IntegerVector rval = Rcpp::IntegerVector::create(_["match"]=match, _["mismatch"]=mismatch, _["indel"]=indel);
+  return(rval);
+}
+
+//------------------------------------------------------------------
+//' Calculates the size of perfect overlap on the left and right side
+//' of the child sequence (s2) to the aligned parent.
+//' 
+// [[Rcpp::export]]
+Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2) {
+  int left, right, start, end, i;
+  bool s1gap, s2gap, is_nt1, is_nt2;
+  if(s1.size() != s2.size()) {
+    printf("Warning: Aligned strings are not the same length.\n");
+    return R_NilValue;
+  }
+
+  // Find start of align (end of initial gapping)
+  s1gap = s2gap = true;
+  start = -1;
+  do {
+    start++;
+    s1gap = s1gap && (s1[start] == '-');
+    s2gap = s2gap && (s2[start] == '-');
+  } while((s1gap || s2gap) && start<s1.size());
+
+  // Find end of align (start of terminal gapping)
+  s1gap = s2gap = true;
+  end = s1.size();
+  do {
+    end--;
+    s1gap = s1gap && (s1[end] == '-');
+    s2gap = s2gap && (s2[end] == '-');
+  } while((s1gap || s2gap) && end>=start);
+
+
+  // Count the length of perfect alignment from the left and right sides
+  left=0;
+  for(i=0;i<s1.size();i++) {
+    is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
+    is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
+    if(is_nt2) { 
+      if(i >= start && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
+          break;
+      } else { // match or in overhang
+        left++;
+      }
+    }
+  }
+  
+  right=0;
+  for(i=s1.size()-1;i>=0;i--) {
+    is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
+    is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
+    if(is_nt2) { 
+      if(i <= end && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
+          break;
+      } else { // match or in overhang
+        right++;
+      }
+    }
+  }
+  
+  Rcpp::IntegerVector rval = Rcpp::IntegerVector::create(_["left"]=left, _["right"]=right);
   return(rval);
 }
 

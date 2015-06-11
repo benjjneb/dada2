@@ -13,6 +13,13 @@ C_eval_pair <- function(s1, s2) {
     .Call('dadac_C_eval_pair', PACKAGE = 'dadac', s1, s2)
 }
 
+#' Calculates the size of perfect overlap on the left and right side
+#' of the child sequence (s2) to the aligned parent.
+#' 
+C_get_overlaps <- function(s1, s2) {
+    .Call('dadac_C_get_overlaps', PACKAGE = 'dadac', s1, s2)
+}
+
 #' Calculates the consensus of two sequences (first sequence wins mismatches).
 #' 
 C_pair_consensus <- function(s1, s2) {

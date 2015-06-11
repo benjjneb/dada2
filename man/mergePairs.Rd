@@ -5,7 +5,7 @@
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
 mergePairs(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep = character(0),
-  align = TRUE)
+  verbose = TRUE, align = TRUE)
 }
 \arguments{
 \item{dadaF}{(Required). Output of dada() function.
@@ -22,15 +22,23 @@ mergePairs(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep = character(0),
 
 \item{minOverlap}{(Optional). A \code{numeric(1)} of the minimum overlap
  required for merging the forward and reverse reads. Default is 20.}
+
+\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Defaults FALSE.}
 }
 \value{
 Dataframe.
- $forward: The index of the forward denoised sequence.
- $reverse: The index of the reverse denoised sequence.
- $match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
-         FALSE otherwise.
  $abundance: Number of reads corresponding to this forward/reverse combination.
  $sequence: The merged sequence if match=TRUE. Otherwise an empty sequence, i.e. "";
+ $forward: The index of the forward denoised genotypes.
+ $reverse: The index of the reverse denoised genotype.
+ $nmatch: Number of matching nts in the overlap region.
+ $nmismatch: Number of mismatching nts in the overlap region.
+ $nindel: Number of indels in the overlap region.
+ $match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
+         FALSE otherwise.
+
+Also will propagate forward columns indicated in the keep argument from the $clustering data.frames of the
+ forward and reverse dada objects.
 }
 \description{
 This function takes the output of dada() and the map from read to unique index

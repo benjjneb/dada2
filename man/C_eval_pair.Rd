@@ -2,11 +2,11 @@
 % Please edit documentation in R/RcppExports.R
 \name{C_eval_pair}
 \alias{C_eval_pair}
-\title{Calculates the number of matches/mismatches/internal-indels in an alignment.}
+\title{Calculates the number of matches/mismatches/internal_indels in an alignment.}
 \usage{
 C_eval_pair(s1, s2)
 }
 \description{
-Calculates the number of matches/mismatches/internal-indels in an alignment.
+Calculates the number of matches/mismatches/internal_indels in an alignment.
 }
 
