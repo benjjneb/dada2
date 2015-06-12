@@ -660,6 +660,51 @@ bool b_shuffle(B *b) {
   return shuffled;
 }
 
+/* b_shuffle:
+ Move sequences to the newest bi if its E-value is higher than for the
+ cluster they are currently in. Cluster centers cannot move.
+*/
+bool b_shuffle_oneway(B *b) {
+  int i, f, r, j, foo, inew;
+  int ibest, index;
+  bool shuffled = false;
+  Raw *raw;
+  double e, maxe;
+  
+  inew = b->nclust-1;
+  // Iterate over raws via clusters/fams
+  for(i=0; i<inew; i++) {
+    for(f=0; f<b->bi[i]->nfam; f++) {
+      // IMPORTANT TO ITERATE BACKWARDS DUE TO FAM_POP_RAW!!!!!!
+      for(r=b->bi[i]->fam[f]->nraw-1; r>=0; r--) {
+        // Is e better in the new cluster?
+        index = b->bi[i]->fam[f]->raw[r]->index;
+        newe = b->bi[inew]->fam[f]->e[index];
+                
+        // If new cluster is better, move the raw to the new bi
+        if(newe > b->bi[i]->e[index]) {
+          if(index == b->bi[i]->center->index) {  // Check if center
+            if(VERBOSE) {
+              printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
+              printf("Attempted: Raw %i from C%i to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
+                  index, i, ibest, \
+                  b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
+                  b->bi[ibest]->e[index], b->bi[ibest]->sub[index]->key, b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
+            }
+          } else { // Moving raw
+            raw = bi_pop_raw(b->bi[i], f, r);
+            bi_shove_raw(b->bi[inew], raw);
+            shuffled = true;
+          }  
+        }
+      } //End loop(s) over raws (r).
+    } // End loop over fams (f).
+  } // End loop over clusters (i).
+  
+  for(i=0; i<b->nclust; i++) { b->bi[i]->shuffle = false; }
+  return shuffled;
+}
+
 /* b_p_update:
  Calculates the abundance p-value for each family in the clustering.
  Depends on the lambda between the fam and its cluster, and the reads of each.

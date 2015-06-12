@@ -5,7 +5,7 @@ using namespace Rcpp;
 //' @useDynLib dadac
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose);
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose, bool inflate);
 
 //------------------------------------------------------------------
 //' Run DADA on the provided unique sequences/abundance pairs. 
@@ -96,7 +96,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   }
 
   // Run DADA
-  B *bb = run_dada(raws, nraw, c_score, err, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose);
+  bool inflate=false;
+  B *bb = run_dada(raws, nraw, c_score, err, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose, inflate);
 
   // Extract output from Bi objects
   char **oseqs = (char **) malloc(bb->nclust * sizeof(char *)); //E
@@ -278,7 +279,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = transMat, _["trans"] = Rtrans, _["clusterquals"] = Rquals, _["map"] = Rmap);
 }
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose) {
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose, bool inflate) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;
@@ -296,17 +297,17 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     if(verbose) printf("----------- New Cluster C%i -----------\n", newi);
     b_lambda_update(bb, use_kmers, kdist_cutoff, errMat, verbose);
     
-    // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
-    if((int) (bb->bi[newi]->center->reads/bb->bi[newi]->self) > bb->bi[newi]->reads) {
-      inflation = (bb->bi[newi]->center->reads/bb->bi[newi]->self)/bb->bi[newi]->reads;
- ///!      if(verbose) printf("Inflating C%i by %.2e (self=%.2e)\n", newi, inflation, bb->bi[newi]->self);
-      for(index=0;index<bb->nraw;index++) {
-        bb->bi[newi]->e[index] = bb->bi[newi]->e[index] * inflation;
+    if(inflate) { // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
+      if((int) (bb->bi[newi]->center->reads/bb->bi[newi]->self) > bb->bi[newi]->reads) {
+        inflation = (bb->bi[newi]->center->reads/bb->bi[newi]->self)/bb->bi[newi]->reads;
+   ///!      if(verbose) printf("Inflating C%i by %.2e (self=%.2e)\n", newi, inflation, bb->bi[newi]->self);
+        for(index=0;index<bb->nraw;index++) {
+          bb->bi[newi]->e[index] = bb->bi[newi]->e[index] * inflation;
+        }
+        bb->bi[newi]->update_e = true;
+        bb->bi[newi]->shuffle = true;
       }
-      bb->bi[newi]->update_e = true;
-      bb->bi[newi]->shuffle = true;
     }
-    
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {
