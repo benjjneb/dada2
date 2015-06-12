@@ -123,7 +123,7 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
     if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
       tvec[pos1] = nti1*4 + nti1;
     } else {
-      Rcpp::stop("Error: Can't handle non ACGT sequences in CL3.\n");
+      Rcpp::stop("Error: Can't handle non ACGT sequences in CL3.");
     }
     if(raw->qual) {
       // Turn quality into the index in the array
@@ -141,11 +141,11 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
   for(s=0;s<sub->nsubs;s++) {
     pos0 = sub->pos[s];
     if(pos0 < 0 || pos0 >= len1) {
-      Rcpp::stop("CL3: Bad pos0 (%i)", pos0);
+      Rcpp::stop("CL3: Bad pos0.");
     }
     pos1 = sub->map[sub->pos[s]];
     if(pos1 < 0 || pos1 >= len1) {
-      Rcpp::stop("CL3: Bad pos1 (%i)", pos1);
+      Rcpp::stop("CL3: Bad pos1.");
     }
     
     nti0 = ((int) sub->nt0[s]) - 1;
@@ -159,7 +159,7 @@ double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_
     lambda = lambda * errMat(tvec[pos1], qind[pos1]);
   }
 
-  if(lambda < 0 || lambda > 1) { Rcpp::stop("Bad lambda"); }
+  if(lambda < 0 || lambda > 1) { Rcpp::stop("Bad lambda."); }
 
   return lambda;
 }
@@ -321,7 +321,7 @@ void b_make_pS_lookup(B *b) {
     printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
     
     b_free(b);
-    Rcpp::stop("Cannot meet requested OmegaS\n");
+    Rcpp::stop("Cannot meet requested OmegaS.");
   }    
 
   // Calculate average sequence nnt
@@ -398,9 +398,9 @@ void b_make_pS_lookup(B *b) {
   // Kind of silly, at some point might be worthwhile doing the full C++ conversion
 //  if(VERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
   lams = (double *) malloc(temp_lambdas.size() * sizeof(double)); //E
-  if (lams == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (lams == NULL)  Rcpp::stop("Memory allocation failed!");
   cdf = (double *) malloc(temp_cdf.size() * sizeof(double)); //E
-  if (cdf == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (cdf == NULL)  Rcpp::stop("Memory allocation failed!");
   
   nlam = temp_lambdas.size();
   for(index=0;index<nlam;index++) {
