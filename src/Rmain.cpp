@@ -46,7 +46,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   for(i=0;i<nraw;i++) {
     if(seqs[i].length() > max_seq_len) { max_seq_len = seqs[i].length(); }
   }
-  if(max_seq_len >= SEQLEN) { Rcpp::stop("Input sequences exceed the maximum allowed string length of", SEQLEN-1); }
+  if(max_seq_len >= SEQLEN) { Rcpp::stop("Input sequences exceed the maximum allowed string length."); }
   // Need one extra byte for the string termination character
   
   // Each sequence is a COLUMN, each row is a POSITION
@@ -58,7 +58,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   char seq[SEQLEN];
   double qual[SEQLEN];
   Raw **raws = (Raw **) malloc(nraw * sizeof(Raw *)); //E
-  if (raws == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (raws == NULL)  Rcpp::stop("Memory allocation failed.");
 
   for (index = 0; index < nraw; index++) {
     strcpy(seq, seqs[index].c_str());
@@ -101,11 +101,11 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
 
   // Extract output from Bi objects
   char **oseqs = (char **) malloc(bb->nclust * sizeof(char *)); //E
-  if (oseqs == NULL)  Rcpp::stop("Memory allocation failed!\n");
+  if (oseqs == NULL)  Rcpp::stop("Memory allocation failed.");
   
   for(i=0;i<bb->nclust;i++) {
     oseqs[i] = (char *) malloc((strlen(bb->bi[i]->seq)+1) * sizeof(char)); //E
-    if (oseqs[i] == NULL)  Rcpp::stop("Memory allocation failed!\n");
+    if (oseqs[i] == NULL)  Rcpp::stop("Memory allocation failed.");
     ntcpy(oseqs[i], bb->bi[i]->seq);
   }
 
