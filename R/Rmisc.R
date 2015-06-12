@@ -1,8 +1,21 @@
 #' @export
-isHit100 <- function(clust, fn) {  ### INCOMPLETE
+isHit100 <- function(clust, fn) {
   bb <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
-  bbHit100 <- bb[bb$identity == 100 & bb$coverage == nchar(cF[match(bb$seqid,clust$id),"sequence"]),]
+  bbHit100 <- bb[bb$identity == 100 & bb$coverage == nchar(clust[match(bb$seqid,clust$id),"sequence"]),]
   return(clust$id %in% bbHit100$seqid)
+}
+
+#' @export
+isOneOff <- function(clust, fn) {
+  bb <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
+  bb <- bb[bb$coverage == nchar(clust[match(bb$seqid,clust$id),"sequence"]),] # Only full length hits
+  tab <- tapply(bb$identity, bb$seqid, max)
+  tab <- tab[match(clust$id, names(tab))]
+  seqlens <- nchar(clust$sequence)
+  oneOff <- tab<100 & (abs(tab - 100.0*(seqlens-1)/seqlens) < 0.01)
+  oneOff[is.na(oneOff)] <- FALSE # happens if no hits were full coverage
+  names(oneOff) <- clust$id # Also drop the name to NA so fix here
+  return(oneOff)
 }
 
 #' @export
