@@ -37,7 +37,7 @@ Fam *bi_pop_fam(Bi *bi, int f);
 void bi_census(Bi *bi);
 void bi_center_update(Bi *bi);
 void fam_center_update(Fam *fam);
-void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals);
+void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals, bool verbose);
 void bi_make_consensus(Bi *bi, bool use_quals);
 
 /*
@@ -162,6 +162,8 @@ Raw *bi_pop_raw(Bi *bi, int f, int r) {
       bi->reads -= pop->reads;
       bi->update_fam = true;
       bi->update_e = true;
+      sub_free(bi->sub[pop->index]);  ///! Free the sub
+      bi->sub[pop->index] = NULL;     ///! Free the sub
     }
   } else {  // Trying to pop an out of range raw
     printf("bi_pop_raw: not enough fams %i (%i)\n", f, bi->nfam);
@@ -187,6 +189,8 @@ Fam *bi_pop_fam(Bi *bi, int f) {
     bi->nraw -= pop->nraw;
     for(int r=0;r<pop->nraw;r++) {  // Doesn't rely on fam reads
       bi->reads -= pop->raw[r]->reads;
+      sub_free(bi->sub[pop->raw[r]->index]);
+      bi->sub[pop->raw[r]->index] = NULL;
       bi->update_e = true;
     }
   } else {  // Trying to pop an out of range fam
@@ -249,8 +253,6 @@ void bi_add_raw(Bi *bi, Raw *raw) {
 Bi *bi_new(int totraw) {
   Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
   if (bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
-//  bi->seq = (char *) malloc(SEQLEN); //E
-//  if (bi->seq == NULL)  Rcpp::stop("Memory allocation failed!\n");
   strcpy(bi->seq, "");
   bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *)); //E
   if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed!\n");
@@ -274,6 +276,7 @@ Bi *bi_new(int totraw) {
   bi->nfam = 0;
   bi->reads = 0;
   bi->nraw = 0;
+  bi->birth_sub=NULL;
   return bi;
 }
 
@@ -283,8 +286,8 @@ Bi *bi_new(int totraw) {
 void bi_free(Bi *bi) {
   for(int f=0;f<bi->nfam;f++) { fam_free(bi->fam[f]); }
   free(bi->fam);
-//  free(bi->seq);
   for(int i=0;i<bi->totraw;i++) { sub_free(bi->sub[i]); }
+  sub_free(bi->birth_sub);
   free(bi->sub);
   free(bi->lambda);
   free(bi->e);
@@ -484,13 +487,13 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
    cluster center.
   Currently completely destructive of old fams.
    */
-void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals) {
+void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals, bool verbose) {
   int f, r, result, r_c;
   Sub *sub;
   char buf[10];
   
   sm_delete(bi->sm);
-  bi->sm = sm_new(MIN_BUCKETS + (int) (BUCKET_SCALE * bi->nraw/2));  // n_buckets scales with # of raws
+  bi->sm = sm_new(MIN_BUCKETS + (int) (BUCKET_SCALE * bi->nraw));  // n_buckets scales with # of raws
   // More buckets = more memory, but less collision (and therefore less costly strcmp w/in buckets).
   bi_census(bi);
   
@@ -515,11 +518,8 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
       bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, false, 1., band_size);
-      // DOESN'T UPDATE LAMBDA HERE, which seems fine, as its most "fair" that it keeps its 0 lambda from being outside kmerdist
-      ///! Check that lambda is in fact zero, warn otherwise.
-      if(bi->lambda[raws[r_c]->index] != 0) {
-        printf("Warning: Unexepected non-zero lambda %.2f for raw outside kmerdist in fam_update.\n", bi->lambda[raws[r_c]->index]);
-      }
+      if(verbose) printf("F");
+      // DOESN'T UPDATE LAMBDA HERE, THAT ONLY HAPPENS IN COMPUTE_LAMBDA
     }
   }
   
@@ -564,7 +564,7 @@ void b_fam_update(B *b, bool verbose) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // center has changed or a raw has been shoved EITHER DIRECTION breaking the fam structure
       if(verbose) { printf("C%iFU:", i); }
-      bi_fam_update(b->bi[i], b->score, b->gap_pen, b->band_size, b->use_quals);
+      bi_fam_update(b->bi[i], b->score, b->gap_pen, b->band_size, b->use_quals, verbose);
     }
   }
 }
@@ -669,7 +669,7 @@ bool b_shuffle_oneway(B *b) {
   int ibest, index;
   bool shuffled = false;
   Raw *raw;
-  double e, maxe;
+  double newe;
   
   inew = b->nclust-1;
   // Iterate over raws via clusters/fams
@@ -679,7 +679,7 @@ bool b_shuffle_oneway(B *b) {
       for(r=b->bi[i]->fam[f]->nraw-1; r>=0; r--) {
         // Is e better in the new cluster?
         index = b->bi[i]->fam[f]->raw[r]->index;
-        newe = b->bi[inew]->fam[f]->e[index];
+        newe = b->bi[inew]->e[index];
                 
         // If new cluster is better, move the raw to the new bi
         if(newe > b->bi[i]->e[index]) {
@@ -739,6 +739,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
   double fold;
   int hamming;
   Fam *fam;
+  Sub *birth_sub;
 
   // Find i, f indices and value of minimum pval.
   mini=-999; minf=-999; minreads=0; minp=1.0; totfams=0;
@@ -770,13 +771,14 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
   // (quite conservative, although probably unimportant given the abundance model issues)
   pA = minp*totfams;
   if(pA < b->omegaA && mini >= 0 && minf >= 0) {  // A significant abundance pval
+    birth_sub = sub_copy(b->bi[mini]->fam[minf]->sub); // do this before bi_pop_fam destructs the sub
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
     strcpy(b->bi[i]->birth_type, "A");
     b->bi[i]->birth_pval = pA;
     b->bi[i]->birth_fold = fam->reads/b->bi[mini]->e[fam->center->index];
     b->bi[i]->birth_e = b->bi[mini]->e[fam->center->index];
-    b->bi[i]->birth_sub = fam->sub;
+    b->bi[i]->birth_sub = birth_sub;
     
     // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {
@@ -786,18 +788,18 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
     if(verbose) { 
       double qave = 0.0;
       if(fam->center->qual) {
-        for(int s=0;s<fam->sub->nsubs;s++) {
+        for(int s=0;s<birth_sub->nsubs;s++) {
           for(int r=0;r<fam->nraw;r++) {
-            qave += (fam->raw[r]->reads * fam->raw[r]->qual[fam->sub->pos[s]]);
+            qave += (fam->raw[r]->reads * fam->raw[r]->qual[birth_sub->pos[s]]);
           }
         }
-        qave = qave/((double)fam->sub->nsubs * fam->reads);
+        qave = qave/((double)birth_sub->nsubs * fam->reads);
       }
       printf("\nNew cluster from Raw %i in C%iF%i: ", fam->center->index, mini, minf);
       fold = ((double) fam->reads)/b->bi[mini]->e[fam->center->index];
-      printf(" p*=%.3e, n/E(n)=%.1e (%.1e fold per sub)\n", pA, fold, fold/fam->sub->nsubs);
-      printf("Reads: %i, E: %.2e, Nsubs: %i, Ave Qsub:%.1f\n", fam->reads, b->bi[mini]->e[fam->center->index], fam->sub->nsubs, qave);
-      printf("%s\n", ntstr(fam->sub->key));
+      printf(" p*=%.3e, n/E(n)=%.1e (%.1e fold per sub)\n", pA, fold, fold/birth_sub->nsubs);
+      printf("Reads: %i, E: %.2e, Nsubs: %i, Ave Qsub:%.1f\n", fam->reads, b->bi[mini]->e[fam->center->index], birth_sub->nsubs, qave);
+      printf("%s\n", ntstr(birth_sub->key));
     }
     
     bi_center_update(b->bi[i]);
@@ -839,13 +841,14 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
   // DADA_ML MATCH: minp*b->nclust*b->bi[i]->reads < b->omegaS
   pS = minp * b->reads;
   if(pS < b->omegaS && mini >= 0 && minf >= 0) {  // A significant singleton pval
+    birth_sub = sub_copy(b->bi[mini]->fam[minf]->sub); // do this before bi_pop_fam destructs the sub
     fam = bi_pop_fam(b->bi[mini], minf);
     i = b_add_bi(b, bi_new(b->nraw));
     strcpy(b->bi[i]->birth_type, "S");
     b->bi[i]->birth_pval = pS;
     b->bi[i]->birth_fold = fam->reads/b->bi[mini]->e[fam->center->index];
     b->bi[i]->birth_e = b->bi[mini]->e[fam->center->index];
-    b->bi[i]->birth_sub = fam->sub;
+    b->bi[i]->birth_sub = birth_sub;
     
     // Move raws into new cluster, could be more elegant but this works.
     for(r=0;r<fam->nraw;r++) {

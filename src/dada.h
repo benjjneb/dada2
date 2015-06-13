@@ -30,6 +30,7 @@
 #define QMAX 40
 #define QSTEP 1
 #define GAP_GLYPH 9999
+#define ALL_SHUFFLE_STEP 50
 
 
 /* -------------------------------------------
@@ -45,6 +46,7 @@ typedef std::pair<double, double> Prob;
  Note: positions will be 0-indexed in the alignment */
 typedef struct {
   int nsubs;   // number of substitions
+  int len0;    // The length of the ref seq
   uint16_t *map;    // map of the sequence position in the ref seq to that in the aligned seq
   uint16_t *pos;    // sequence position of the substitition: index in the reference seq
   char *nt0;   // nt in reference seq
@@ -143,6 +145,7 @@ void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle(B *b);
+bool b_shuffle_oneway(B *b);
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
 void b_fam_update(B *b, bool verbose);
 void b_consensus_update(B *b);
@@ -172,6 +175,7 @@ uint16_t *get_kmer(char *seq, int k);
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
 Sub *al2subs(char **al);
 Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band);
+Sub *sub_copy(Sub *sub);
 void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
