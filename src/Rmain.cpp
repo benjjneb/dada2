@@ -178,8 +178,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["nfam"] = Rfams, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves);
 
   // Get error (or substitution) statistics
-  Rcpp::DataFrame df_subpos = b_get_positional_subs(bb); ///!
-  Rcpp::IntegerMatrix transMat = b_get_quality_subs2(bb, has_quals, qmin, qmax); ///!
+  Rcpp::DataFrame df_subpos = b_get_positional_subs(bb);
+  Rcpp::IntegerMatrix transMat = b_get_quality_subs2(bb, has_quals, qmin, qmax);
   
   // Get output average qualities
   Rcpp::NumericMatrix Rquals(qlen, bb->nclust);
@@ -198,7 +198,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
         for(f=0;f<bb->bi[i]->nfam;f++) {
           for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
             raw = bb->bi[i]->fam[f]->raw[r];
-            sub = bb->bi[i]->sub[raw->index]; ///!
+            sub = bb->bi[i]->sub[raw->index];
             if(sub) {
               pos1 = sub->map[pos0];
               if(pos1 == GAP_GLYPH) { // Gap
@@ -234,7 +234,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   Rcpp::NumericVector bs_qual;
   Rcpp::IntegerVector bs_clust;
   for(i=0;i<bb->nclust;i++) {
-    if(bb->bi[i]->birth_sub) { ///?
+    if(bb->bi[i]->birth_sub) {
       for(s=0;s<bb->bi[i]->birth_sub->nsubs;s++) {
         bs_pos.push_back(bb->bi[i]->birth_sub->pos[s]);
         buf[0] = bb->bi[i]->birth_sub->nt0[s];
@@ -283,7 +283,7 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
-  bool *keep = (bool *) malloc(nraw * sizeof(bool));
+  bool *keep = (bool *) malloc(nraw * sizeof(bool)); ///1w
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
     if(verbose) printf("----------- New Cluster C%i -----------\n", newi);
@@ -292,7 +292,6 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     if(inflate) { // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
       if((int) (bb->bi[newi]->center->reads/bb->bi[newi]->self) > bb->bi[newi]->reads) {
         inflation = (bb->bi[newi]->center->reads/bb->bi[newi]->self)/bb->bi[newi]->reads;
-   ///!      if(verbose) printf("Inflating C%i by %.2e (self=%.2e)\n", newi, inflation, bb->bi[newi]->self);
         for(index=0;index<bb->nraw;index++) {
           bb->bi[newi]->e[index] = bb->bi[newi]->e[index] * inflation;
         }
@@ -303,7 +302,8 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {
-      shuffled = b_shuffle_oneway(bb);
+      shuffled = b_shuffle(bb);
+///1w      shuffled = b_shuffle_oneway(bb);
       b_e_update(bb);
       if(verbose) { printf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
@@ -313,7 +313,7 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     b_fam_update(bb, verbose); // If centers can move, must have lambda_update before fam_update
     b_p_update(bb);
     
-    // Free subs in this cluster if they didn't join
+    // Free subs in this cluster if they didn't join (Refactor to elsewhere?)
     for(index=0;index<nraw;index++) { keep[index] = false; }
     for(f=0;f<bb->bi[newi]->nfam;f++) {
       for(r=0;r<bb->bi[newi]->fam[f]->nraw;r++) {
@@ -326,28 +326,11 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
         bb->bi[newi]->sub[index] = NULL;
       }
     }
-    
-    // Do an all-shuffle very so often
-    if(newi % ALL_SHUFFLE_STEP == 0) {
-      for(i=0;i<bb->nclust;i++) {
-        bb->bi[i]->shuffle=true;
-      }
-      nshuffle = 0;
-      do {
-        shuffled = b_shuffle(bb);
-        b_e_update(bb);
-        if(verbose) { printf("F"); }
-      } while(shuffled && ++nshuffle < 5*MAX_SHUFFLE);
-      // b_fam_update remakes missing subs within clusters
-      b_fam_update(bb, verbose);
-      b_p_update(bb);
-      if(verbose) {printf("\nThere were %i final shuffles.", nshuffle); }
-    }
-
-  }
+  } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) )
   
   if(final_consensus) { b_make_consensus(bb); }
-  
+
+/* ///1w
   bool final_shuffle = true;
   if(final_shuffle) {
     for(i=0;i<bb->nclust;i++) {
@@ -363,8 +346,9 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     b_fam_update(bb, verbose); 
     if(verbose) {printf("\nThere were %i final shuffles.", nshuffle); }
   }
+  */
   
-  free(keep);
+  free(keep); ///1w
   if(verbose) printf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
   
   return bb;

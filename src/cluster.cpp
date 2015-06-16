@@ -189,8 +189,8 @@ Fam *bi_pop_fam(Bi *bi, int f) {
     bi->nraw -= pop->nraw;
     for(int r=0;r<pop->nraw;r++) {  // Doesn't rely on fam reads
       bi->reads -= pop->raw[r]->reads;
-      sub_free(bi->sub[pop->raw[r]->index]);
-      bi->sub[pop->raw[r]->index] = NULL;
+      sub_free(bi->sub[pop->raw[r]->index]);   ///! Free the sub
+      bi->sub[pop->raw[r]->index] = NULL;      ///! Free the sub
       bi->update_e = true;
     }
   } else {  // Trying to pop an out of range fam
