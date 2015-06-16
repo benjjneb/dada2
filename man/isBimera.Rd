@@ -2,9 +2,9 @@
 % Please edit documentation in R/chimeras.R
 \name{isBimera}
 \alias{isBimera}
-\title{DEPRECATED IN FAVOR OF ISBIMERA2: FASTER AND FINDS SHIFT-BIMERAS AS WELL}
+\title{Determine if input sequence is an exact bimera of putative parent sequences.}
 \usage{
-isBimera(sq, parents, verbose = FALSE)
+isBimera(sq, parents, maxShift = 10)
 }
 \arguments{
 \item{sq}{(Required). A \code{character(1)}.
@@ -13,27 +13,17 @@ isBimera(sq, parents, verbose = FALSE)
 \item{parents}{(Required). Character vector.
  A vector of possible "parent" sequence that could form the left and right
  sides of the bimera.}
-
-\item{verbose}{(Optional). \code{logical(1)}.
- If TRUE, some informative output is printed. Default is FALSE.}
 }
 \value{
 \code{logical(1)}.
  TRUE if sq is an exact bimera of two of the parents. Otherwise FALSE.
 }
 \description{
-Determine if input sequence is an exact bimera of putative parent sequences.
-}
-\details{
 This function attempts to find an exact bimera of the parent sequences that
 matches the input sequence. A bimera is a two-parent chimera, in which the
 left side is made up of one parent sequence, and the right-side made up of
 a second parent sequence. If an exact bimera is found (no mismatches are
-allowed and positions must line up exactly) TRUE is returned, otherwise FALSE.
-
-WARNING: This is a very simplistic bimera checker that does no alignment and
-allows no mismatches. While it seems to perform well on DADA denoised Illumina
-data, more caution is warranted for 454 data where alignment may be necessary.
+allowed, but strict shifts are allowed) TRUE is returned, otherwise FALSE.
 }
 \seealso{
 \code{\link{isBimeraDenovo}}

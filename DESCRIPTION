@@ -1,12 +1,12 @@
 Package: dadac
 Type: Package
 Title: DADA Algorithm for Amplicon Sequence Denoising
-Version: 0.3.2
+Version: 0.4.0
 Author: Ben Callahan, Paul McMurdie, Susan Holmes
 Maintainer: Bioconductor Package Maintainer
  <maintainer@bioconductor.org>
 Description: This is a package.
-License: LGPL-3
+License: LGPL-3 | file LICENSE
 LazyLoad: yes
 Depends: 
     R (>= 3.1.0),
@@ -16,13 +16,14 @@ Depends:
 Imports:
     Biobase,
     methods,
-    Rcpp (>= 0.11.2),
+    ggplot2 (>= 1.0),
+    gridExtra (>= 0.9),
     ShortRead (>= 1.24.0)
 Suggests:
     testthat (>= 0.9.1),
     microbenchmark (>= 1.4.2),
-    ggplot2 (>= 1.0.0),
     knitr (>= 1.9)
+VignetteBuilder: knitr
 biocViews: Microbiome, Sequencing
 LinkingTo: Rcpp
 LazyData: true

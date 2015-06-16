@@ -1,22 +1,8 @@
----
-title: "Kmer versus Alignment Distance"
-author: "Ben Callahan, Paul McMurdie, Susan Holmes"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteIndexEntry{Kmer versus Alignment Distance}
-  \usepackage[utf8]{inputenc}
----
-
-# Plot kmer dist vs. align dist
-
-
-```{r init}
+## ----init----------------------------------------------------------------
 #library("dadac"); packageVersion("dadac")
 library("ggplot2"); packageVersion("ggplot2")
-```
 
-```{r, eval=TRUE}
+## ---- eval=TRUE----------------------------------------------------------
 # System-agnostic file path
 fooFile = system.file("extdata", "kmer.csv.gz", package="dadac")
 # Read the table
@@ -25,5 +11,4 @@ colnames(foo) <- c("Kmer", "Align")
 # Plot the Alignment versus Kmer distance as density plot
 ggplot(data=foo, aes(x=Kmer, y=Align)) + 
   geom_bin2d(binwidth = c(0.005, 0.005))
-```
 

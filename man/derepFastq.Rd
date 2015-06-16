@@ -4,19 +4,19 @@
 \alias{derepFastq}
 \title{Read and Dereplicate a Fastq file.}
 \usage{
-derepFastq(fl, n = 1e+06, verbose = FALSE)
+derepFastq(fl, n = 1e+06, verbose = FALSE, qeff = FALSE)
 }
 \arguments{
 \item{fl}{(Required). Character.
  The file path to the fastq or fastq.gz file.
- Actually, any file format supported by \code{\link{FastqStreamer}}.}
+ Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.}
 
 \item{n}{(Optional). A \code{numeric(1)} indicating
  the maximum number of records (reads) to parse and dereplicate
  at any one time. This controls the peak memory requirement
  so that large fastq files are supported.
  Defaults is \code{1e6}, one-million reads.
- See \code{\link{FastqStreamer}} for details on this parameter,
+ See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
  which is passed on.}
 
 \item{verbose}{(Optional). A \code{logical(1)} indicating
@@ -31,17 +31,17 @@ List.
  $map: Integer vector of the index of the unique (in $uniques) corresponding to each read.
 }
 \description{
-This is a custom interface to \code{\link{FastqStreamer}}
+This is a custom interface to \code{\link[ShortRead]{FastqStreamer}}
 for dereplicating amplicon sequences from a fastq or compressed fastq file,
 while also controlling peak memory requirement to support large files.
 }
 \examples{
 # Test that chunk-size, `n`, does not affect the result.
 testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
-test1 = dereplicateFastqReads(testFile, verbose = TRUE)
-test2 = dereplicateFastqReads(testFile, 35, TRUE)
-test3 = dereplicateFastqReads(testFile, 100, TRUE)
-all.equal(test1, test2[names(test1)])
-all.equal(test1, test3[names(test1)])
+test1 = derepFastq(testFile, verbose = TRUE)
+test2 = derepFastq(testFile, 35, TRUE)
+test3 = derepFastq(testFile, 100, TRUE)
+all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
+all.equal(test1$uniques, test3$uniques[names(test1$uniques)])
 }
 

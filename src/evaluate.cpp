@@ -4,7 +4,12 @@ using namespace Rcpp;
 
 //------------------------------------------------------------------
 //' Exposes ends-free Needleman-Wunsh alignment to R.
-//' 
+//' @export
+//' @param s1 desc
+//' @param s2 desc
+//' @param score desc
+//' @param gap_p desc
+//' @param band desc
 // [[Rcpp::export]]
 Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
   int i, j;

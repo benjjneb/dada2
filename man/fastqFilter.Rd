@@ -50,6 +50,10 @@ fastqFilter replicates most of the functionality of the fastq_filter command in 
 (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html).
 }
 \seealso{
-\code{\link{FastqStreamer}}, \code{\link{srFilter}}, \code{\link{trimTails}}
+\code{\link[ShortRead]{FastqStreamer}}
+
+ \code{\link[ShortRead]{srFilter}}
+
+ \code{\link[ShortRead]{trimTails}}
 }
 
