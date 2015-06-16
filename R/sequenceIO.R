@@ -38,16 +38,15 @@
 #' test3 = dereplicateFastqReads(testFile, 100, TRUE)
 #' all.equal(test1, test2[names(test1)])
 #' all.equal(test1, test3[names(test1)])
-derepFastq <- function(fl, n = 1e6, verbose = FALSE){
+derepFastq <- function(fl, n = 1e6, verbose = FALSE, qeff=FALSE){
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
   }
-  QtoP <- FALSE
   
   f <- FastqStreamer(fl, n = n)
   suppressWarnings(fq <- yield(f))
   
-  out <- qtables2(fq, QtoP)
+  out <- qtables2(fq, qeff)
   
   derepCounts <- out$uniques
   derepQuals <- out$cum_quals
@@ -59,7 +58,7 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE){
     if(verbose){
       message(".", appendLF = FALSE)
     }
-    out <- qtables2(fq, QtoP)
+    out <- qtables2(fq, qeff)
     # identify sequences already present in `derepCounts`
     alreadySeen <- names(out$uniques) %in% names(derepCounts)
     # Sum these values, if any
@@ -78,7 +77,12 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE){
     derepMap <- c(derepMap, new2old[out$map])
   }
   derepQuals <- derepQuals/derepCounts # Average
-  if(QtoP) derepQuals <- -10*log10(derepQuals)  # Convert back to effective Q value
+  if(qeff) derepQuals <- -10*log10(derepQuals)  # Convert back to effective Q value
+  # Sort by decreasing abundance
+  ord <- order(derepCounts, decreasing=TRUE)
+  derepCounts <- derepCounts[ord]
+  derepQuals <- derepQuals[ord,]
+  derepMap <- match(derepMap, ord)
   if(verbose){
     message("Encountered ",
             length(derepCounts),
@@ -258,7 +262,7 @@ derepMultiSampleFastq <- function(fl, samsubseq, n = 1e6, verbose = FALSE){
 #' Internal function to replicate tables functionality while also returning average quals and a map
 #' from reads to uniques
 #' 
-qtables2 <- function(x, QtoP = FALSE) {
+qtables2 <- function(x, qeff = FALSE) {
   # ranks are lexical rank
   srt <- srsort(x) # map from rank to sequence/quality/id
   rnk <- srrank(x) # map from read_i to rank (integer vec of ranks, ties take top rank)
@@ -274,7 +278,7 @@ qtables2 <- function(x, QtoP = FALSE) {
   
   # do matrices
   qmat <- as(quality(srt), "matrix") # map from read_i to quality
-  if(QtoP) qmat <- 10^(-qmat/10)  # Convert to nominal error probability first
+  if(qeff) qmat <- 10^(-qmat/10)  # Convert to nominal error probability first
   qmat <- rowsum(qmat, srtrnk, reorder=FALSE)
   rownames(qmat) <- names(uniques)
   list(uniques=uniques, cum_quals=qmat, map=map)

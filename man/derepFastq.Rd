@@ -4,7 +4,7 @@
 \alias{derepFastq}
 \title{Read and Dereplicate a Fastq file.}
 \usage{
-derepFastq(fl, n = 1e+06, verbose = FALSE)
+derepFastq(fl, n = 1e+06, verbose = FALSE, qeff = FALSE)
 }
 \arguments{
 \item{fl}{(Required). Character.

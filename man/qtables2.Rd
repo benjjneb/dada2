@@ -5,7 +5,7 @@
 \title{Internal function to replicate tables functionality while also returning average quals and a map
 from reads to uniques}
 \usage{
-qtables2(x, QtoP = FALSE)
+qtables2(x, qeff = FALSE)
 }
 \description{
 Internal function to replicate tables functionality while also returning average quals and a map
