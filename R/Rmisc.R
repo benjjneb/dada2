@@ -25,7 +25,7 @@ checkConvergence <- function(dadaO) {
 
 #' @export
 nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
-  dadac:::C_nwalign(s1, s2, score, gap, band)
+  C_nwalign(s1, s2, score, gap, band)
 }
 
 #' @export
@@ -43,9 +43,9 @@ rc <- function(x) as(reverseComplement(DNAString(x)), "character")
 hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
 
 #' @export
+#' @import ggplot2
+#' @import gridExtra
 showSubPos <- function(subpos, ...) {
-  require(ggplot2)
-  require(gridExtra)
   subpos$pos <- seq(nrow(subpos))
   subpos <- subpos[1:match(0,subpos$nts)-1,]
   p <- ggplot(data=subpos, aes(x=pos))

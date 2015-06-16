@@ -6,6 +6,17 @@
 \usage{
 C_nwalign(s1, s2, score, gap_p, band)
 }
+\arguments{
+\item{s1}{desc}
+
+\item{s2}{desc}
+
+\item{score}{desc}
+
+\item{gap_p}{desc}
+
+\item{band}{desc}
+}
 \description{
 Exposes ends-free Needleman-Wunsh alignment to R.
 }

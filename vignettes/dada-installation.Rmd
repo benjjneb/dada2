@@ -1,9 +1,13 @@
 ---
-title: "DADA - R Package Installation and Testing Instructions"
-author: "Paul McMurdie"
-date: "`r date()`"
-output: html_document
+title: "Installation and Testing"
+author: "Ben Callahan, Paul McMurdie, Susan Holmes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Installation and Testing}
+  \usepackage[utf8]{inputenc}
 ---
+
 
 ## Installation Instructions
 
@@ -113,14 +117,16 @@ look at the help files for the main implemented functions.
 
 ```{r documentation-example, eval=FALSE, message=FALSE}
 ?dada
-?dereplicateFastqReads
+?derepFastq
 ?importUniques
 ```
 
 
 ### 2. Test out DADA:
 
-```{r test-dada-0}
+THIS IS OLD!
+
+```{r test-dada-0, eval=FALSE}
 score <- matrix(c(5, -4, -4, -4, -4, 5, -4, 
                   -4, -4, -4, 5, -4, -4, -4, -4, 5),
                 nrow=4, byrow=T)
@@ -131,34 +137,41 @@ err_init <- matrix(c(0.991, 0.003, 0.003, 0.003,
                      0.003, 0.991),
                    nrow=4, byrow=T)
 test_fastq_file = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
-uniques <- dereplicateFastqReads(fl = test_fastq_file)
-uniques.dada <- dada(uniques, err_init, score, gap_penalty)
+uniques <- derepFastq(fl = test_fastq_file)
+uniques.dada <- dada(uniques = uniques$uniques, quals = uniques$quals)
 uniques.dada.consistent <- dada(uniques, err_init, score, gap_penalty, self_consist = TRUE)
 length(uniques)
 length(uniques.dada$genotypes)
 length(uniques.dada.consistent$genotypes)
 ```
 
-Out of `r length(uniques)` original unique sequences,
-did you get `r length(uniques.dada$genotypes)`
-genotypes in `uniques.dada$genotypes` and
-`r length(uniques.dada.consistent$genotypes)` in `uniques.dada.consistent`?
+```{r}
+# Out of `r length(uniques)` original unique sequences,
+# did you get `r length(uniques.dada$genotypes)`
+# genotypes in `uniques.dada$genotypes` and
+# `r length(uniques.dada.consistent$genotypes)` in `uniques.dada.consistent`?
+```
+
 
 ### 3. Performance check DADA:
 
-```{r compute-performance-1}
-group_0_25_file = system.file("extdata", "group_0-25.uniques", package="dadac")
+THIS IS OLD!!
+
+```{r compute-performance-1, eval=FALSE}
+group_0_25_file = system.file("extdata", "group_0-25.uniques.gz", package="dadac")
 bu = importUniques(group_0_25_file)
 length(bu)
 library("microbenchmark")
-microbenchmark(dada(bu, err_init, score, gap_penalty), times=10)
+microbenchmark(dada(bu, err = err_init, ), times=10)
 ```
 
 How long does this expression take?
 (Hopefully ~10 seconds or less per evaluation.)
 
-```{r compute-performance-2}
-group_0_30_file = system.file("extdata", "group_0-30.uniques", package="dadac")
+THIS IS OLD!
+
+```{r compute-performance-2, eval=FALSE}
+group_0_30_file = system.file("extdata", "group_0-30.uniques.gz", package="dadac")
 bu = NULL
 bu <- importUniques(group_0_30_file)
 length(bu)
@@ -169,7 +182,9 @@ And this?
 
 ### 4. Performance Check
 
-```{r compute-performance-3}
+THIS IS OLD!
+
+```{r compute-performance-3, eval=FALSE}
 library("ggplot2")
 length(bu)
 # The max number of sequences from `bu` to include in this example

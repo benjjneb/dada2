@@ -75,9 +75,9 @@ makeLoglsqObj <- function(err_model, qave, obs) {
 }
 
 #' @export
+#' @import ggplot2
+#' @import gridExtra
 showErrors <- function(dq, nti, ntj="all", erri=TRUE, erro=TRUE, ...) {
-  require(ggplot2)
-  require(gridExtra)
   ACGT <- c("A", "C", "G", "T")
   if(ntj == "all") {
     err_plots <- mapply(function(x,y) .showErrors(dq, x, y, erri, erro, title=paste(x, "->", y)), nti, ACGT, SIMPLIFY=FALSE)
@@ -87,8 +87,8 @@ showErrors <- function(dq, nti, ntj="all", erri=TRUE, erro=TRUE, ...) {
   }
 }
 
+#' @import ggplot2
 .showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE, ...) {
-  require(ggplot2)
   ACGT <- c("A", "C", "G", "T")
   tij <- 4*(which(ACGT==nti)-1) + which(ACGT==ntj)
   nij <- paste0(nti,"2",ntj)

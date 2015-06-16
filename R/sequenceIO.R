@@ -1,20 +1,20 @@
 ################################################################################
 #' Read and Dereplicate a Fastq file.
 #' 
-#' This is a custom interface to \code{\link{FastqStreamer}} 
+#' This is a custom interface to \code{\link[ShortRead]{FastqStreamer}} 
 #' for dereplicating amplicon sequences from a fastq or compressed fastq file,
 #' while also controlling peak memory requirement to support large files.
 #'
 #' @param fl (Required). Character.
 #'  The file path to the fastq or fastq.gz file.
-#'  Actually, any file format supported by \code{\link{FastqStreamer}}.
+#'  Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
 #' 
 #' @param n (Optional). A \code{numeric(1)} indicating
 #'  the maximum number of records (reads) to parse and dereplicate
 #'  at any one time. This controls the peak memory requirement
 #'  so that large fastq files are supported.
 #'  Defaults is \code{1e6}, one-million reads.
-#'  See \code{\link{FastqStreamer}} for details on this parameter,
+#'  See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
 #'  which is passed on.
 #' 
 #' @param verbose (Optional). A \code{logical(1)} indicating
@@ -33,11 +33,11 @@
 #' @examples 
 #' # Test that chunk-size, `n`, does not affect the result.
 #' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
-#' test1 = dereplicateFastqReads(testFile, verbose = TRUE)
-#' test2 = dereplicateFastqReads(testFile, 35, TRUE)
-#' test3 = dereplicateFastqReads(testFile, 100, TRUE)
-#' all.equal(test1, test2[names(test1)])
-#' all.equal(test1, test3[names(test1)])
+#' test1 = derepFastq(testFile, verbose = TRUE)
+#' test2 = derepFastq(testFile, 35, TRUE)
+#' test3 = derepFastq(testFile, 100, TRUE)
+#' all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
+#' all.equal(test1$uniques, test3$uniques[names(test1$uniques)])
 derepFastq <- function(fl, n = 1e6, verbose = FALSE){
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
@@ -136,7 +136,7 @@ importUniques <- function(fl, colClasses = c("integer", "character"), ...){
 #  DEPRECATED DEPRECATED DEPRECATED
 #' Read and Dereplicate a Fastq file containing multiple samples.
 #' 
-#' This is a custom interface to \code{\link{FastqStreamer}} 
+#' This is a custom interface to \code{\link[ShortRead]{FastqStreamer}} 
 #' for dereplicating amplicon sequences from a multi-sample fastq or fastq.gz file.
 #' This function relies heavily on the \code{\link[ShortRead]{tables}} method.
 #'
@@ -150,7 +150,7 @@ importUniques <- function(fl, colClasses = c("integer", "character"), ...){
 #'  the maximum number of records (reads) to parse and dereplicate
 #'  at any one time. This controls the peak memory requirement.
 #'  Defaults is \code{1e6}, one-million reads.
-#'  See \code{\link{FastqStreamer}} for details on this parameter,
+#'  See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
 #'  which is passed on.
 #' 
 #' @param verbose (Optional). A \code{logical(1)} indicating
@@ -160,13 +160,9 @@ importUniques <- function(fl, colClasses = c("integer", "character"), ...){
 #'
 #' @return Named integer vector. Named by sequence, valued by number of occurence.
 #'
-#' @seealso \code{\link{replicateReads}}, \code{\link{removeReadsWithNs}}, 
-#' \code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
-#'
 #' @import ShortRead 
 #' 
 derepMultiSampleFastq <- function(fl, samsubseq, n = 1e6, verbose = FALSE){
-  # require("ShortRead")
   if(verbose){
     message("Dereplicating multi-sample sequences in Fastq file: ", fl, appendLF = TRUE)
     message("Identifying the sample IDs---", appendLF = TRUE)
@@ -283,13 +279,35 @@ qtables2 <- function(x, QtoP = FALSE) {
 ##########
 #' Write a uniques vector to a FASTA file
 #' 
-#' Basically a wrapper for writeFastq in the ShortRead package. Format is suitable for uchime.
+#' Basically a wrapper for writeFastq in the ShortRead package.
+#' Format is suitable for uchime.
 #' 
+#' @param unqs The uniques object. E.g. the output of \code{\link{derepFastq}}.
+#' 
+#' @param fout The file path of the output file. The file you want to write.
+#' 
+#' @param ids A character vector of sequence ids, one for each element in \code{unqs}.
+#'  Default value is \code{NULL}, in which case an arbitrary ID is assigned.
+#'  
+#' @param mode A character string flag passed on to \code{\link[ShortRead]{writeFasta}}
+#'  indicating the type of file writing mode. Default is \code{"w"}.
+#'  
+#' @param width The number of characters per line in the file.
+#'  Passed on to \code{\link[ShortRead]{writeFasta}}.
+#'  
+#' @param ... Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.
+#' 
+#' @import ShortRead
 #' @export
 #' 
-uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w", width=20000) {
+uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w", width=20000, ...) {
   if(is.null(ids)) {
     ids <- paste0("sq", seq(1, length(unqs)), ";size=", unname(unqs), ";")
   }
-  writeFasta(ShortRead(DNAStringSet(names(unqs)), BStringSet(ids)), fout, mode, width=width)
+  writeFasta(object = ShortRead(sread = DNAStringSet(names(unqs)),
+                                id = BStringSet(ids)),
+             file = fout, 
+             mode = mode, 
+             width = width,
+             ...)
 }

@@ -17,7 +17,7 @@ derepMultiSampleFastq(fl, samsubseq, n = 1e+06, verbose = FALSE)
  the maximum number of records (reads) to parse and dereplicate
  at any one time. This controls the peak memory requirement.
  Defaults is \code{1e6}, one-million reads.
- See \code{\link{FastqStreamer}} for details on this parameter,
+ See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
  which is passed on.}
 
 \item{verbose}{(Optional). A \code{logical(1)} indicating
@@ -29,12 +29,8 @@ derepMultiSampleFastq(fl, samsubseq, n = 1e+06, verbose = FALSE)
 Named integer vector. Named by sequence, valued by number of occurence.
 }
 \description{
-This is a custom interface to \code{\link{FastqStreamer}}
+This is a custom interface to \code{\link[ShortRead]{FastqStreamer}}
 for dereplicating amplicon sequences from a multi-sample fastq or fastq.gz file.
 This function relies heavily on the \code{\link[ShortRead]{tables}} method.
-}
-\seealso{
-\code{\link{replicateReads}}, \code{\link{removeReadsWithNs}},
-\code{\link{findBarcodes}}, \code{\link{splitByBarcode}}
 }
 
