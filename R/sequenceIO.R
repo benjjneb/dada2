@@ -33,21 +33,12 @@
 #' @examples 
 #' # Test that chunk-size, `n`, does not affect the result.
 #' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
-<<<<<<< HEAD
-#' test1 = dereplicateFastqReads(testFile, verbose = TRUE)
-#' test2 = dereplicateFastqReads(testFile, 35, TRUE)
-#' test3 = dereplicateFastqReads(testFile, 100, TRUE)
-#' all.equal(test1, test2[names(test1)])
-#' all.equal(test1, test3[names(test1)])
-derepFastq <- function(fl, n = 1e6, verbose = FALSE, qeff=FALSE){
-=======
 #' test1 = derepFastq(testFile, verbose = TRUE)
 #' test2 = derepFastq(testFile, 35, TRUE)
 #' test3 = derepFastq(testFile, 100, TRUE)
 #' all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
 #' all.equal(test1$uniques, test3$uniques[names(test1$uniques)])
-derepFastq <- function(fl, n = 1e6, verbose = FALSE){
->>>>>>> origin/master
+derepFastq <- function(fl, n = 1e6, verbose = FALSE, qeff=FALSE){
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
   }
