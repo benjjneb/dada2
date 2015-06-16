@@ -167,3 +167,93 @@ inflateErr <- function(err, inflation=1.0, inflateNonSubs = FALSE) {
   }
   return(err)
 }
+
+################################################################################
+#' Identify False Positive inferred sequences due to bad bases.
+#' 
+#' Illumina sequencing sometimes produces "bad bases", positions at which 
+#' error rates are significantly higher than expected by the assigned quality
+#' score. This function identifies the inferred sequences that are likely to
+#' have been driven by those bad bases.
+#' 
+#' @param dadaO (Required). Output of dada() function.
+#' 
+#' @param minFraction (Optional). A \code{numeric(1)}. Default is 0.51.
+#'  The minimum fraction of bad bases among the base positions used to infer the
+#'  sequence required to call the inferred sequence a false positive.
+#'   
+#' @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
+#'  The p-value threshhold below which a base is assigned as "bad".
+#'  The p-value is calculated by the number of repeated occurences of a particular
+#'    base position individually driving the formation of a new cluster. Bad bases 
+#'    drive many new "1-away" clustes.
+#'  The null hypothesis being tested is that real differences are distributed
+#'    uniformly along the sequence. This is not true, biological differences are
+#'    non-uniform, so this pvalue threshhold should be set conservatively.
+#' 
+#' @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
+#'  The minimum times a single base position must drive the formation of a new cluster
+#'    before it can be considered a "bad base".
+#'
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Defaults FALSE.
+#'
+#' @return Logical vector of length the number of inferred sequences. 
+#'  TRUE if inferred sequence a false positive.
+#'  FALSE otherwise.
+#'
+#' @seealso \code{\link{getBadBases}}
+#'
+#' @export
+#' 
+getBadBaseFPs <- function(dadaO, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
+  bb <- getBadBases(dadaO, omegaB, minOccurence)
+  fps <- c("1"=FALSE, tapply(dadaO$subpos$pos, dadaO$subpos$clust, function(x) mean(x %in% bb) >= minFraction))
+  if(verbose) {
+    cat(length(fps), "false positives caused by bad bases identified.\n")
+  }
+  unname(fps)
+}
+
+################################################################################
+#' Identify bad base positions.
+#' 
+#' Illumina sequencing sometimes produces "bad bases", positions at which 
+#' error rates are significantly higher than expected by the assigned quality
+#' score. This function identifies those bad bases.
+#' 
+#' @param dadaO (Required). Output of dada() function.
+#' 
+#' @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
+#'  The p-value threshhold below which a base is assigned as "bad".
+#'  The p-value is calculated by the number of repeated occurences of a particular
+#'    base position individually driving the formation of a new cluster. Bad bases 
+#'    drive many new "1-away" clustes.
+#'  The null hypothesis being tested is that real differences are distributed
+#'    uniformly along the sequence. This is not true, biological differences are
+#'    non-uniform, so this pvalue threshhold should be set conservatively.
+#' 
+#' @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
+#'  The minimum times a single base position must drive the formation of a new cluster
+#'    before it can be considered a "bad base".
+#'
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Defaults FALSE.
+#'
+#' @return Integer vector of the bad base positions. 
+#'
+#' @seealso \code{\link{getBadBases}}
+#'
+#' @export
+#' 
+getBadBases <- function(dadaO, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
+  oos <- which(dadaO$clustering$birth_ham == 1)
+  oopos <- dadaO$subpos[dadaO$subpos$clust %in% oos,]
+  tab <- table(oopos$pos)
+  seqlen <- nchar(dadaO$clustering$sequence[[1]]) ##
+  posp <- ppois(tab, length(oos)/seqlen, lower.tail=FALSE) * seqlen
+  bad_bases <- as.integer(names(posp)[posp<omegaB & tab>=minOccurence])
+  if(verbose) {
+    cat(length(bad_bases), "bad bases identified.\n")
+  }
+  return(bad_bases)
+}
+

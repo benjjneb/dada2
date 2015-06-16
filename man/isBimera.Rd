@@ -4,7 +4,7 @@
 \alias{isBimera}
 \title{Determine if input sequence is an exact bimera of putative parent sequences.}
 \usage{
-isBimera(sq, parents, maxShift = 10)
+isBimera(sq, parents, maxShift = 16)
 }
 \arguments{
 \item{sq}{(Required). A \code{character(1)}.

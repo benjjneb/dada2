@@ -4,8 +4,8 @@
 \alias{isBimeraDenovo}
 \title{Identify bimeras de-novo from collections of unique sequences.}
 \usage{
-isBimeraDenovo(unqs, minFoldParentOverAbundance = 10,
-  minParentAbundance = 100, verbose = FALSE)
+isBimeraDenovo(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8,
+  maxShift = 16, verbose = FALSE)
 }
 \arguments{
 \item{unqs}{(Required). A named integer vector or data.frame with "sequence" and "abundance" cols.
