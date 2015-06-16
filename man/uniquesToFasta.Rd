@@ -4,9 +4,26 @@
 \alias{uniquesToFasta}
 \title{Write a uniques vector to a FASTA file}
 \usage{
-uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000)
+uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000, ...)
+}
+\arguments{
+\item{unqs}{The uniques object. E.g. the output of \code{\link{derepFastq}}.}
+
+\item{fout}{The file path of the output file. The file you want to write.}
+
+\item{ids}{A character vector of sequence ids, one for each element in \code{unqs}.
+ Default value is \code{NULL}, in which case an arbitrary ID is assigned.}
+
+\item{mode}{A character string flag passed on to \code{\link[ShortRead]{writeFasta}}
+ indicating the type of file writing mode. Default is \code{"w"}.}
+
+\item{width}{The number of characters per line in the file.
+ Passed on to \code{\link[ShortRead]{writeFasta}}.}
+
+\item{...}{Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.}
 }
 \description{
-Basically a wrapper for writeFastq in the ShortRead package. Format is suitable for uchime.
+Basically a wrapper for writeFastq in the ShortRead package.
+Format is suitable for uchime.
 }
 

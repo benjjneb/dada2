@@ -38,9 +38,15 @@
 #' 
 #' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
 #'    
-#' @seealso \code{\link{FastqStreamer}}, \code{\link{srFilter}}, \code{\link{trimTails}}
+#' @seealso 
+#'  \code{\link[ShortRead]{FastqStreamer}}
+#'  
+#'  \code{\link[ShortRead]{srFilter}}
+#'  
+#'  \code{\link[ShortRead]{trimTails}}
 #' 
 #' @export
+#' @import ShortRead
 fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
   # See also filterFastq in the ShortRead package
   start <- max(1, trimLeft + 1)
@@ -129,7 +135,6 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
   endR <- truncLen[[2]]
   if(endR < startR) { endR = NA }
   
-  require("ShortRead")
   ## iterating over forward and reverse files using fastq streaming
   fF <- FastqStreamer(fn[[1]], n = n)
   on.exit(close(fF))
@@ -215,27 +220,28 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
   }
 }
 
+#' @import ShortRead
 minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
 {
   ShortRead:::.check_type_and_length(minQ, "numeric", 1)
-  ShortRead:::srFilter(function(x) {
+  srFilter(function(x) {
     apply(as(quality(x), "matrix"), 1, function(qs) min(qs, na.rm=TRUE) >= minQ)
   }, name = .name)
 }
 
+#' @import ShortRead
 maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter") 
 {
   ShortRead:::.check_type_and_length(maxEE, "numeric", 1)
-  ShortRead:::srFilter(function(x) {
+  srFilter(function(x) {
     apply(as(quality(x), "matrix"), 1, function(qs) sum(10^(-qs[!is.na(qs)]/10.0)) <= maxEE)
   }, name = .name)
 }
 
-minLenFilter <- function (minLen = 0L, .name = "MinLenFilter") 
-{
+#' @import ShortRead
+minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
   ShortRead:::.check_type_and_length(minLen, "numeric", 1)
-  ShortRead:::srFilter(function(x) {
+  srFilter(function(x) {
     width(x) >= minLen
   }, name = .name)
 }
-

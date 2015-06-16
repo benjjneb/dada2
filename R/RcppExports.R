@@ -2,7 +2,12 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' Exposes ends-free Needleman-Wunsh alignment to R.
-#' 
+#' @export
+#' @param s1 desc
+#' @param s2 desc
+#' @param score desc
+#' @param gap_p desc
+#' @param band desc
 C_nwalign <- function(s1, s2, score, gap_p, band) {
     .Call('dadac_C_nwalign', PACKAGE = 'dadac', s1, s2, score, gap_p, band)
 }
