@@ -205,11 +205,11 @@ inflateErr <- function(err, inflation=1.0, inflateNonSubs = FALSE) {
 #'
 #' @export
 #' 
-getBadBaseFPs <- function(dadaO, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
-  bb <- getBadBases(dadaO, omegaB, minOccurence)
+isBadBaseFP <- function(dadaO, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
+  bb <- getBadBases(dadaO, omegaB, minOccurence, verbose=verbose)
   fps <- c("1"=FALSE, tapply(dadaO$subpos$pos, dadaO$subpos$clust, function(x) mean(x %in% bb) >= minFraction))
   if(verbose) {
-    cat(length(fps), "false positives caused by bad bases identified.\n")
+    cat(sum(fps), "false positives caused by bad bases identified.\n")
   }
   unname(fps)
 }
