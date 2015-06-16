@@ -87,8 +87,8 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   int l, r;
   int len1 = strlen(s1);
   int len2 = strlen(s2);
-  int d[len1 + 1][len2 + 1]; // d: DP matrix
-  int p[len1 + 1][len2 + 1]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
+  int d[SEQLEN + 1][SEQLEN + 1]; // d: DP matrix
+  int p[SEQLEN + 1][SEQLEN + 1]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
   int diag, left, up;
       
   // Fill out left columns of d, p.
@@ -153,12 +153,8 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
     }
   }
     
-  // Allocate memory to alignment strings.
-  char **al = (char **) malloc( 2 * sizeof(char *) ); //E
-  if (al == NULL)  Rcpp::stop("Memory allocation failed.");
-  al[0] = (char *) calloc( len1 + len2 + 1, sizeof(char)); //initialize to max possible length //E
-  al[1] = (char *) calloc( len1 + len2 + 1, sizeof(char)); //E
-  if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed.");
+  char al0[2*SEQLEN+1];
+  char al1[2*SEQLEN+1];
 
   // Trace back over p to form the alignment.
   size_t len_al = 0;
@@ -168,40 +164,37 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   while ( i > 0 || j > 0 ) {
     switch ( p[i][j] ) {
     case 1:
-      al[0][len_al] = s1[--i];
-      al[1][len_al] = s2[--j];
+      al0[len_al] = s1[--i];
+      al1[len_al] = s2[--j];
       break;
     case 2:
-      al[0][len_al] = 6;
-      al[1][len_al] = s2[--j];
+      al0[len_al] = 6;
+      al1[len_al] = s2[--j];
       break;
     case 3:
-      al[0][len_al] = s1[--i];
-      al[1][len_al] = 6;
+      al0[len_al] = s1[--i];
+      al1[len_al] = 6;
       break;
     default:
       Rcpp::stop("N-W Align out of range.");
     }
     len_al++;
   }
-  al[0][len_al] = '\0';
-  al[1][len_al] = '\0';
+  al0[len_al] = '\0';
+  al1[len_al] = '\0';
   
   
-  // Remove empty tails of strings.
-  al[0] = (char *) realloc(al[0],len_al+1); //E
-  al[1] = (char *) realloc(al[1],len_al+1); //E
+  // Allocate memory to alignment strings.
+  char **al = (char **) malloc( 2 * sizeof(char *) ); //E
+  if (al == NULL)  Rcpp::stop("Memory allocation failed.");
+  al[0] = (char *) malloc(len_al+1); //E
+  al[1] = (char *) malloc(len_al+1); //E
   if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed.");
-  
+
   // Reverse the alignment strings (since traced backwards).
-  char temp;
-  for (i = 0, j = len_al - 1; i <= j; i++, j--) {
-    temp = al[0][i];
-    al[0][i] = al[0][j];
-    al[0][j] = temp;
-    temp = al[1][i];
-    al[1][i] = al[1][j];
-    al[1][j] = temp;
+  for (i=0;i<len_al;i++) {
+    al[0][i] = al0[len_al-i-1];
+    al[1][i] = al1[len_al-i-1];
   }
   al[0][len_al] = '\0';
   al[1][len_al] = '\0';
@@ -257,6 +250,7 @@ Sub *al2subs(char **al) {
     }
   }
 
+  sub->len0 = len0;
   sub->map = (uint16_t *) malloc(len0 * sizeof(uint16_t)); //E
   sub->pos = (uint16_t *) malloc(nsubs * sizeof(uint16_t)); //E
   sub->nt0 = (char *) malloc(nsubs); //E
@@ -341,6 +335,47 @@ Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, bool use_kmers, d
   }
 
   return sub;
+}
+
+// Copies the given sub into a newly allocated sub object
+Sub *sub_copy(Sub *sub) {
+  int nsubs, len0;
+  
+  if(sub == NULL) { return(NULL); }
+  nsubs = sub->nsubs;
+  len0 = sub->len0;
+  
+  Sub *rsub = (Sub *) malloc(sizeof(Sub)); //E
+  if (rsub == NULL)  Rcpp::stop("Memory allocation failed.");
+  rsub->map = (uint16_t *) malloc(len0 * sizeof(uint16_t)); //E
+  rsub->pos = (uint16_t *) malloc(nsubs * sizeof(uint16_t)); //E
+  rsub->nt0 = (char *) malloc(nsubs); //E
+  rsub->nt1 = (char *) malloc(nsubs); //E
+  rsub->key = (char *) malloc((6*nsubs) + 1); // Must be modified if SEQLEN > 1000 //E
+  if (rsub->map == NULL || rsub->pos == NULL || rsub->nt0 == NULL || rsub->nt1 == NULL || rsub->key == NULL) {
+    Rcpp::stop("Memory allocation failed.");
+  }
+  
+  rsub->nsubs = sub->nsubs;
+  rsub->len0 = sub->len0;
+  memcpy(rsub->map, sub->map, len0 * sizeof(uint16_t));
+  memcpy(rsub->pos, sub->pos, nsubs * sizeof(uint16_t));
+  memcpy(rsub->nt0, sub->nt0, nsubs);
+  memcpy(rsub->nt1, sub->nt1, nsubs);
+  memcpy(rsub->key, sub->key, (6*nsubs) + 1);
+
+  if(sub->q0 && sub->q1) {
+    rsub->q0 = (double *) malloc(nsubs * sizeof(double)); //E
+    rsub->q1 = (double *) malloc(nsubs * sizeof(double)); //E
+    if (rsub->q0 == NULL || rsub->q1 == NULL) { Rcpp::stop("Memory allocation failed."); }
+    memcpy(rsub->q0, sub->q0, nsubs * sizeof(double));
+    memcpy(rsub->q1, sub->q1, nsubs * sizeof(double));
+  } else {
+    rsub->q0 = NULL;
+    rsub->q1 = NULL;
+  }
+
+  return rsub;
 }
 
 // Destructor for sub object
