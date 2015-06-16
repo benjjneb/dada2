@@ -569,6 +569,29 @@ void b_fam_update(B *b, bool verbose) {
   }
 }
 
+/* bi_free_absent_subs(Bi *bi, int nraw):
+   Frees subs of raws that are not currently in this cluster.
+   */
+void bi_free_absent_subs(Bi *bi, int nraw) {
+  int f, r, index;
+  bool *keep = (bool *) malloc(nraw * sizeof(bool)); //E
+  if (keep == NULL)  Rcpp::stop("Memory allocation failed.");
+  for(index=0;index<nraw;index++) { keep[index] = false; }
+  
+  for(f=0;f<bi->nfam;f++) {
+    for(r=0;r<bi->fam[f]->nraw;r++) {
+      keep[bi->fam[f]->raw[r]->index] = true;
+    }
+  }
+  for(index=0;index<nraw;index++) {
+    if(!keep[index]) {
+      sub_free(bi->sub[index]);
+      bi->sub[index] = NULL;
+    }
+  }
+  free(keep);
+}
+
 void b_e_update(B *b) {
   int i;
   size_t index;

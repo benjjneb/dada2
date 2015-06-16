@@ -155,6 +155,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
 void b_make_consensus(B *b);
+void bi_free_absent_subs(Bi *bi, int nraw);
 
 // methods implemented in misc.c
 void nt2int(char *oseq, const char *iseq);

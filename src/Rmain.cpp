@@ -283,7 +283,6 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
-  bool *keep = (bool *) malloc(nraw * sizeof(bool)); ///1w
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
     if(verbose) printf("----------- New Cluster C%i -----------\n", newi);
@@ -303,52 +302,17 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     nshuffle = 0;
     do {
       shuffled = b_shuffle(bb);
-///1w      shuffled = b_shuffle_oneway(bb);
       b_e_update(bb);
       if(verbose) { printf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
-    
     if(verbose && nshuffle >= MAX_SHUFFLE) { printf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
     
     b_fam_update(bb, verbose); // If centers can move, must have lambda_update before fam_update
     b_p_update(bb);
-    
-    // Free subs in this cluster if they didn't join (Refactor to elsewhere?)
-    for(index=0;index<nraw;index++) { keep[index] = false; }
-    for(f=0;f<bb->bi[newi]->nfam;f++) {
-      for(r=0;r<bb->bi[newi]->fam[f]->nraw;r++) {
-        keep[bb->bi[newi]->fam[f]->raw[r]->index] = true;
-      }
-    }
-    for(index=0;index<nraw;index++) {
-      if(!keep[index]) {
-        sub_free(bb->bi[newi]->sub[index]);
-        bb->bi[newi]->sub[index] = NULL;
-      }
-    }
+    bi_free_absent_subs(bb->bi[newi], bb->nraw); // Free subs in this cluster if they didn't join
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) )
   
   if(final_consensus) { b_make_consensus(bb); }
-
-/* ///1w
-  bool final_shuffle = true;
-  if(final_shuffle) {
-    for(i=0;i<bb->nclust;i++) {
-      bb->bi[i]->shuffle=true;
-    }
-    nshuffle = 0;
-    do {
-      shuffled = b_shuffle(bb);
-      b_e_update(bb);
-      if(verbose) { printf("F"); }
-    } while(shuffled && ++nshuffle < 5*MAX_SHUFFLE);
-    // b_fam_update remakes missing subs within clusters
-    b_fam_update(bb, verbose); 
-    if(verbose) {printf("\nThere were %i final shuffles.", nshuffle); }
-  }
-  */
-  
-  free(keep); ///1w
   if(verbose) printf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
   
   return bb;
