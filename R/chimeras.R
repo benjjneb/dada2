@@ -48,8 +48,12 @@ isBimeraDeprecated <- function(sq, parents, verbose=FALSE) {
 #' @export
 #' 
 getOverlaps <- function(parent, sq, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
-  al <- nwalign(parent, sq, band=maxShift)
-  lr <- C_get_overlaps(al[1], al[2])
+  if(nchar(parent) == nchar(sq)) { # Use banding if applicable
+    al <- nwalign(parent, sq, band=maxShift)
+  } else {
+    al <- nwalign(parent, sq, band=-1)
+  }
+  lr <- C_get_overlaps(al[1], al[2], maxShift)
   return(lr)
 }
 

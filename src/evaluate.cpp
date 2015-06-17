@@ -102,7 +102,7 @@ Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
 //' of the child sequence (s2) to the aligned parent.
 //' 
 // [[Rcpp::export]]
-Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2) {
+Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int max_shift) {
   int left, right, start, end, i;
   bool s1gap, s2gap, is_nt1, is_nt2;
   if(s1.size() != s2.size()) {
@@ -117,7 +117,7 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2) {
     start++;
     s1gap = s1gap && (s1[start] == '-');
     s2gap = s2gap && (s2[start] == '-');
-  } while((s1gap || s2gap) && start<s1.size());
+  } while((s1gap || s2gap) && start < max_shift && start < s1.size());
 
   // Find end of align (start of terminal gapping)
   s1gap = s2gap = true;
@@ -126,7 +126,7 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2) {
     end--;
     s1gap = s1gap && (s1[end] == '-');
     s2gap = s2gap && (s2[end] == '-');
-  } while((s1gap || s2gap) && end>=start);
+  } while((s1gap || s2gap) && end > s1.size()-max_shift && end > start);
 
 
   // Count the length of perfect alignment from the left and right sides

@@ -25,6 +25,10 @@ checkConvergence <- function(dadaO) {
 
 #' @export
 nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
+  if(nchar(s1) != nchar(s2)) {
+    if(band != -1) message("Sequences of unequal length must use unbanded alignment.")
+    band = -1
+  }
   C_nwalign(s1, s2, score, gap, band)
 }
 
@@ -105,15 +109,16 @@ mergeUniques <- function(unqsList, ...) {
 }
 
 #' @export
-uniques <- function(df) {
-  if(all(c("genotypes", "clustering") %in% names(df))) {  # dada return 
+as.uniques <- function(df) {
+  if(is.integer(df) && length(names(df)) != 0 && !any(is.na(names(df)))) { # Named integer vector already
+    return(df)
+  } else if(all(c("genotypes", "clustering") %in% names(df))) {  # dada return 
     return(df$genotypes)
   } else if(all(c("sequence", "abundance") %in% colnames(df))) {
     unqs <- as.integer(df$abundance)
     names(unqs) <- df$sequence
     return(unqs)
   } else {
-    print("Unrecognized format")
-    return(NULL)
+    stop("Unrecognized format.")
   }
 }

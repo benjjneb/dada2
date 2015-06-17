@@ -21,8 +21,8 @@ C_eval_pair <- function(s1, s2) {
 #' Calculates the size of perfect overlap on the left and right side
 #' of the child sequence (s2) to the aligned parent.
 #' 
-C_get_overlaps <- function(s1, s2) {
-    .Call('dadac_C_get_overlaps', PACKAGE = 'dadac', s1, s2)
+C_get_overlaps <- function(s1, s2, max_shift) {
+    .Call('dadac_C_get_overlaps', PACKAGE = 'dadac', s1, s2, max_shift)
 }
 
 #' Calculates the consensus of two sequences (first sequence wins mismatches).

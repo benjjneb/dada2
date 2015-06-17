@@ -305,6 +305,7 @@ qtables2 <- function(x, qeff = FALSE) {
 #' @export
 #' 
 uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w", width=20000, ...) {
+  unqs <- as.uniques(unqs)
   if(is.null(ids)) {
     ids <- paste0("sq", seq(1, length(unqs)), ";size=", unname(unqs), ";")
   }
