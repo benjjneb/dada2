@@ -236,7 +236,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   for(i=0;i<bb->nclust;i++) {
     if(bb->bi[i]->birth_sub) {
       for(s=0;s<bb->bi[i]->birth_sub->nsubs;s++) {
-        bs_pos.push_back(bb->bi[i]->birth_sub->pos[s]);
+        bs_pos.push_back(bb->bi[i]->birth_sub->pos[s]+1); // R 1 indexing
         buf[0] = bb->bi[i]->birth_sub->nt0[s];
         int2nt(buf, buf);
         bs_nt0.push_back(std::string(buf));

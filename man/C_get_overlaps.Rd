@@ -5,7 +5,7 @@
 \title{Calculates the size of perfect overlap on the left and right side
 of the child sequence (s2) to the aligned parent.}
 \usage{
-C_get_overlaps(s1, s2)
+C_get_overlaps(s1, s2, max_shift)
 }
 \description{
 Calculates the size of perfect overlap on the left and right side
