@@ -85,7 +85,7 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 #' @seealso \code{\link{isBimeraDenovo}, \link{isBimeraOneOff}}
 #' @export
 #' 
-isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
+isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
   # (l0,r0) or (l0,r0,l1,r1,match,mismatch,indel) if allowOneOff
   ov <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, allowOneOff=allowOneOff, maxShift=maxShift))))
   # Remove identical (or strictly shifted) parents
