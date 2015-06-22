@@ -99,11 +99,11 @@ Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
 
 //------------------------------------------------------------------
 //' Calculates the size of perfect overlap on the left and right side
-//' of the child sequence (s2) to the aligned parent.
+//' of the child sequence (s2) to the aligned parent (s1).
 //' 
 // [[Rcpp::export]]
-Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int max_shift) {
-  int left, right, start, end, i;
+Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, int max_shift) {
+  int left, right, start, end, i, diff;
   bool s1gap, s2gap, is_nt1, is_nt2;
   if(s1.size() != s2.size()) {
     printf("Warning: Aligned strings are not the same length.\n");
@@ -129,29 +129,37 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int max_shift
   } while((s1gap || s2gap) && end > s1.size()-max_shift && end > start);
 
 
-  // Count the length of perfect alignment from the left and right sides
-  left=0;
+  // Count the length of alignment with <= allow indels/mismatches from the left and right sides
+  left=0; diff=0;
   for(i=0;i<s1.size();i++) {
     is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
     is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
     if(is_nt2) { 
       if(i >= start && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
-          break;
-      } else { // match or in overhang
+        diff++;
+      } 
+      
+      if(diff <= allow) { // Still OK
         left++;
+      } else {
+        break;
       }
     }
   }
   
-  right=0;
+  right=0; diff=0;
   for(i=s1.size()-1;i>=0;i--) {
     is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
     is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
     if(is_nt2) { 
       if(i <= end && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
-          break;
-      } else { // match or in overhang
+        diff++;
+      }
+      
+      if(diff <= allow) { // match or in overhang
         right++;
+      } else {
+        break;
       }
     }
   }

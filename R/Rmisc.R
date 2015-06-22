@@ -127,11 +127,11 @@ as.uniques <- function(df) {
     return(df)
   } else if(all(c("genotypes", "clustering") %in% names(df))) {  # dada return 
     return(df$genotypes)
-  } else if(all(c("sequence", "abundance") %in% colnames(df))) {
+  } else if(is.data.frame(df) && all(c("sequence", "abundance") %in% colnames(df))) {
     unqs <- as.integer(df$abundance)
     names(unqs) <- df$sequence
     return(unqs)
   } else {
-    stop("Unrecognized format.")
+    stop("Unrecognized format: Requires named integer vector, dada object or $clustering data.frame.")
   }
 }

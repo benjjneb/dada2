@@ -47,13 +47,18 @@ isBimeraDeprecated <- function(sq, parents, verbose=FALSE) {
 
 #' @export
 #' 
-getOverlaps <- function(parent, sq, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
+getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
   if(nchar(parent) == nchar(sq)) { # Use banding if applicable
     al <- nwalign(parent, sq, band=maxShift)
   } else {
     al <- nwalign(parent, sq, band=-1)
   }
-  lr <- C_get_overlaps(al[1], al[2], maxShift)
+  lr <- C_get_overlaps(al[1], al[2], 0, maxShift)
+  if(allowOneOff) {
+    lr1 <- C_get_overlaps(al[1], al[2], 1, maxShift)
+    diff1 <- C_eval_pair(al[1], al[2])
+    lr <- c(lr,lr1,diff1)
+  }
   return(lr)
 }
 
@@ -77,16 +82,42 @@ getOverlaps <- function(parent, sq, maxShift=16) {  # parent must be first, sq i
 #' @return \code{logical(1)}.
 #'  TRUE if sq is an exact bimera of two of the parents. Otherwise FALSE.
 #'
-#' @seealso \code{\link{isBimeraDenovo}}
+#' @seealso \code{\link{isBimeraDenovo}, \link{isBimeraOneOff}}
 #' @export
 #' 
-isBimera <- function(sq, parents, maxShift=16) { # Note that order of sq/parents is reversed here from internals
-  ov <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, maxShift))))
+isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
+  # (l0,r0) or (l0,r0,l1,r1,match,mismatch,indel) if allowOneOff
+  ov <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, allowOneOff=allowOneOff, maxShift=maxShift))))
   # Remove identical (or strictly shifted) parents
-  id_or_fullshift <- apply(ov, 1, function(x) max(x) >= nchar(sq))
+  id_or_fullshift <- apply(ov[,1:2], 1, function(x) max(x) >= nchar(sq))
   ov <- ov[!id_or_fullshift,]
+  # Return TRUE if the max left/right 0-overlaps are as long as the sequence
+  if((max(ov[,1]) + max(ov[,2])) >= nchar(sq)) {
+    return(TRUE)
+  } else if(allowOneOff) {
+    too_close <- (apply(ov[,6:7], 1, sum) < minOneOffParentDistance)
+    ov <- ov[!too_close,]
+    # Return TRUE if the max left/right 0/1-overlaps are as long as the sequence
+    if((max(ov[,1]) + max(ov[,4])) >= nchar(sq) || (max(ov[,2]) + max(ov[,3])) >= nchar(sq)) {
+      return(TRUE)
+    }
+  }
+  # If haven't returned TRUE, then not a bimera
+  return(FALSE)
+}
+
+#' @export
+#' 
+isBimeraOneOff <- function(sq, parents, minParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
+  ov0 <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, allow=0, maxShift=maxShift))))
+  ov1 <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, allow=1, maxShift=maxShift))))
+  # Remove identical (or strictly shifted) parents
+  id_or_fullshift <- apply(ov0, 1, function(x) max(x) >= nchar(sq))
+  too_close <- unname(sapply(parents, function(x) sum(nweval(x, sq)[2:3])) < 4)
+  ov0 <- ov0[!id_or_fullshift & !too_close,]
+  ov1 <- ov1[!id_or_fullshift & !too_close,]
   # Return TRUE if the max left/right overlaps are as long as the sequence
-  return((max(ov[,1]) + max(ov[,2])) >= nchar(sq))
+  return((max(ov0[,1]) + max(ov1[,2])) >= nchar(sq) || (max(ov0[,2]) + max(ov1[,1])) >= nchar(sq))
 }
 
 ################################################################################
@@ -110,16 +141,10 @@ isBimera <- function(sq, parents, maxShift=16) { # Note that order of sq/parents
 #' 
 #' @export
 #' 
-isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8, maxShift = 16, verbose=FALSE) {
-  if(is.data.frame(unqs) && "sequence" %in% colnames(unqs) && "abundance" %in% colnames(unqs)) {
-    seqs <- unqs$sequence
-    abunds <- unqs$abundance
-  } else if(is.integer(unqs) && !is.null(names(unqs))) {
-    seqs <- names(unqs)
-    abunds <- unname(unqs)
-  } else {
-    stop("Improper input: Requires named integer vector or $clustering data.frame.")
-  }
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
+  unqs <- as.uniques(unqs)
+  abunds <- unname(unqs)
+  seqs <- names(unqs)
   
   loopFun <- function(sq, abund) {
     pars <- seqs[(abunds>(minFoldParentOverAbundance*abund) & abunds>minParentAbundance)]
@@ -130,7 +155,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbunda
       if(verbose) print("Only one possible parent.")
       return(FALSE)
     } else {
-      isBimera(sq, pars, maxShift=maxShift)
+      isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
     }
   }
   bims <- mapply(loopFun, seqs, abunds)

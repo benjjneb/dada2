@@ -4,7 +4,8 @@
 \alias{isBimera}
 \title{Determine if input sequence is an exact bimera of putative parent sequences.}
 \usage{
-isBimera(sq, parents, maxShift = 16)
+isBimera(sq, parents, allowOneOff = TRUE, minOneOffParentDistance = 4,
+  maxShift = 16)
 }
 \arguments{
 \item{sq}{(Required). A \code{character(1)}.
@@ -26,6 +27,6 @@ a second parent sequence. If an exact bimera is found (no mismatches are
 allowed, but strict shifts are allowed) TRUE is returned, otherwise FALSE.
 }
 \seealso{
-\code{\link{isBimeraDenovo}}
+\code{\link{isBimeraDenovo}, \link{isBimeraOneOff}}
 }
 

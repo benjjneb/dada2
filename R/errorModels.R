@@ -248,7 +248,8 @@ getBadBases <- function(dadaO, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) 
   oos <- which(dadaO$clustering$birth_ham == 1)
   oopos <- dadaO$subpos[dadaO$subpos$clust %in% oos,]
   tab <- table(oopos$pos)
-  seqlen <- nchar(dadaO$clustering$sequence[[1]]) ##
+  if(length(unique(nchar(dadaO$clustering$sequence)))>1) stop("Requires same length sequences.")
+  seqlen <- nchar(dadaO$clustering$sequence[[1]])
   posp <- ppois(tab, length(oos)/seqlen, lower.tail=FALSE) * seqlen
   bad_bases <- as.integer(names(posp)[posp<omegaB & tab>=minOccurence])
   if(verbose) {

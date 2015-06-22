@@ -3,12 +3,12 @@
 \name{C_get_overlaps}
 \alias{C_get_overlaps}
 \title{Calculates the size of perfect overlap on the left and right side
-of the child sequence (s2) to the aligned parent.}
+of the child sequence (s2) to the aligned parent (s1).}
 \usage{
-C_get_overlaps(s1, s2, max_shift)
+C_get_overlaps(s1, s2, allow, max_shift)
 }
 \description{
 Calculates the size of perfect overlap on the left and right side
-of the child sequence (s2) to the aligned parent.
+of the child sequence (s2) to the aligned parent (s1).
 }
 
