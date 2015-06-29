@@ -17,6 +17,18 @@ isBimeraDenovo(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8,
 
 \item{minParentAbundance}{(Optional). A \code{numeric(1)}. Default is 100.
   Only sequences at least this abundant can be "parents".}
+
+\item{allowOneOff}{(Optional). A \code{logical(1)}. Default is FALSE.
+  If TRUE, sequences that have one mismatch or indel to an exact bimera are also
+  flagged.}
+
+\item{minOneOffParentDistance}{(Optional). A \code{numeric(1)}. Default is 4.
+  Only sequences with at least this many mismatches to the potential bimeric sequence
+  considered as possible "parents" when flagging one-off bimeras. Note that there is
+  no such screen when considering exact bimeras.}
+
+\item{maxShift}{(Optional). A \code{numeric(1)}. Default is 16.
+  Maximum shift allowed when aligning sequences to potential "parents".}
 }
 \description{
 This function is a wrapper around isBimera for collections of DADA denoised

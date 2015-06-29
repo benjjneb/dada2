@@ -25,6 +25,8 @@ checkConvergence <- function(dadaO) {
 
 #' @export
 nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
+  if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
+  if(nchar(s1) >= 1000 || nchar(s2) >= 1000) stop("Can only align strings up to 999 nts in length.")
   if(nchar(s1) != nchar(s2)) {
     if(band != -1) message("Sequences of unequal length must use unbanded alignment.")
     band = -1
@@ -40,10 +42,10 @@ nwhamming <- Vectorize(function(s1, s2, ...) {
 })
 
 #' @export 
-nweval <- function(s1, s2, ...) {
+nweval <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   C_eval_pair(al[1], al[2])
-}
+})
 
 #' @export
 strdiff <- function(s1, s2) {
@@ -54,7 +56,7 @@ strdiff <- function(s1, s2) {
 }
 
 #' @export
-rc <- function(x) as(reverseComplement(DNAString(x)), "character")
+rc <- Vectorize(function(x) as(reverseComplement(DNAString(x)), "character"))
 
 #' @export
 hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))

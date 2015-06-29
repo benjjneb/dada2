@@ -254,6 +254,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   }
   Rcpp::DataFrame df_birth_subs = Rcpp::DataFrame::create(_["pos"] = bs_pos, _["ref"] = bs_nt0, _["sub"] = bs_nt1, _["qual"] = bs_qual, _["clust"] = bs_clust);
 
+  Rcpp::DataFrame df_expected = b_subs_vs_exp(bb, err);
+
   // Free memory
   for(i=0;i<bb->nclust;i++) {
     free(oseqs[i]);
@@ -266,7 +268,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   free(raws);
   
   // Organize return List  
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = transMat, _["clusterquals"] = Rquals, _["map"] = Rmap);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = transMat, _["clusterquals"] = Rquals, _["map"] = Rmap, _["exp"] = df_expected);
 }
 
 B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose, bool inflate) {

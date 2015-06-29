@@ -293,6 +293,59 @@ void b_get_trans_matrix(B *b, int32_t obs[4][4]) {
   } // for(i=0;i<b->nclust;i++)
 }
 
+Rcpp::DataFrame b_subs_vs_exp(B *b, Rcpp::NumericMatrix errMat) {
+  int i, pos, pos1, qind, j, f, r, s, nti0;
+  Raw *raw;
+  Sub *sub;
+  int seqlen = b->raw[0]->length; // ASSUMING ALL SAME LENGTH
+  Rcpp::IntegerVector nts_by_pos(seqlen);
+  Rcpp::IntegerVector subs_by_pos(seqlen);
+  Rcpp::NumericVector exp_by_pos(seqlen);
+
+  int ncol = errMat.ncol();
+  float prefactor = ((float) (ncol-1))/((float) QMAX-QMIN);
+  float fqmin = (float) QMIN;
+  
+  for(i=0;i<b->nclust;i++) {
+    for(f=0;f<b->bi[i]->nfam;f++) {
+      // Iterate through raws
+      for(r=0;r<b->bi[i]->fam[f]->nraw;r++) {
+        raw = b->bi[i]->fam[f]->raw[r];
+        sub = b->bi[i]->sub[raw->index];
+        if(sub) { // not a NULL sub
+          // Add to the subs count
+          for(s=0;s<sub->nsubs;s++) {
+            subs_by_pos(sub->pos[s]) += raw->reads;
+          }
+          
+          for(pos=0;pos<b->bi[i]->center->length;pos++) {
+            pos1 = sub->map[pos];
+            if(pos1 == GAP_GLYPH) { // Gap
+              continue;
+            }
+            // Add to the nts_by_pos count
+            nts_by_pos(pos) += raw->reads;
+            // Add expected error count
+            if(raw->qual) {
+              // Turn quality into the index in the array
+              qind = round(prefactor * (raw->qual[pos1] - fqmin));
+            } else {
+              qind = 0;
+            }
+            nti0 = (int) b->bi[i]->center->seq[pos] - 1;
+            for(j=4*nti0;j<4*nti0+4;j++) {
+              if(j%5 == 0) { continue; } // the same-nt transitions
+              exp_by_pos(pos) += raw->reads*errMat(j, qind);
+            }
+          }
+        } // if(sub)
+      }
+    } // for(f=0;f<b->bi[i]->nfam;f++)
+  }
+  return(Rcpp::DataFrame::create(_["nts"] = nts_by_pos, _["subs"] = subs_by_pos, _["exp"] = exp_by_pos));
+}
+
+
 Rcpp::DataFrame b_get_positional_subs(B *b) {
   //! CONSTRAIN THIS TO THE MAXIMUM LENGTH OF THE SEQUENCES
   int i, j, f, s, sub_ind;

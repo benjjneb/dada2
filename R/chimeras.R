@@ -106,20 +106,6 @@ isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, 
   return(FALSE)
 }
 
-#' @export
-#' 
-isBimeraOneOff <- function(sq, parents, minParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
-  ov0 <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, allow=0, maxShift=maxShift))))
-  ov1 <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, allow=1, maxShift=maxShift))))
-  # Remove identical (or strictly shifted) parents
-  id_or_fullshift <- apply(ov0, 1, function(x) max(x) >= nchar(sq))
-  too_close <- unname(sapply(parents, function(x) sum(nweval(x, sq)[2:3])) < 4)
-  ov0 <- ov0[!id_or_fullshift & !too_close,]
-  ov1 <- ov1[!id_or_fullshift & !too_close,]
-  # Return TRUE if the max left/right overlaps are as long as the sequence
-  return((max(ov0[,1]) + max(ov1[,2])) >= nchar(sq) || (max(ov0[,2]) + max(ov1[,1])) >= nchar(sq))
-}
-
 ################################################################################
 #' Identify bimeras de-novo from collections of unique sequences.
 #' 
@@ -137,6 +123,18 @@ isBimeraOneOff <- function(sq, parents, minParentDistance=4, maxShift=16) { # No
 #' @param minParentAbundance (Optional). A \code{numeric(1)}. Default is 100.
 #'   Only sequences at least this abundant can be "parents".
 #' 
+#' @param allowOneOff (Optional). A \code{logical(1)}. Default is FALSE.
+#'   If TRUE, sequences that have one mismatch or indel to an exact bimera are also
+#'   flagged.
+#' 
+#' @param minOneOffParentDistance (Optional). A \code{numeric(1)}. Default is 4.
+#'   Only sequences with at least this many mismatches to the potential bimeric sequence
+#'   considered as possible "parents" when flagging one-off bimeras. Note that there is
+#'   no such screen when considering exact bimeras.
+#'   
+#' @param maxShift (Optional). A \code{numeric(1)}. Default is 16.
+#'   Maximum shift allowed when aligning sequences to potential "parents".
+#'   
 #' @seealso \code{\link{isBimera}}
 #' 
 #' @export

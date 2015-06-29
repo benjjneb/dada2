@@ -155,6 +155,7 @@ dada <- function(uniques, quals=NULL,
     subpos <- list()
     trans <- list()
     map <- list()
+    exp <- list()
     prev <- cur
     errs[[nconsist]] <- err
 
@@ -180,7 +181,6 @@ dada <- function(uniques, quals=NULL,
                           opts[["VERBOSE"]])
       
       # Augment the returns
-      # res$clustering$ham_nln <- 
       
       # List the returns
       clustering[[i]] <- res$clustering
@@ -188,6 +188,7 @@ dada <- function(uniques, quals=NULL,
       subpos[[i]] <- res$subpos
       trans[[i]] <- res$subqual
       map[[i]] <- res$map
+      exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
       if(!is.null(quals)) colnames(trans[[i]]) <- seq(opts$QMIN, opts$QMAX)  # Assumes C sides is returning one col for each integer from QMIN to QMAX
     }
@@ -240,6 +241,7 @@ dada <- function(uniques, quals=NULL,
     rval2[[i]]$trans <- trans[[i]]
     rval2[[i]]$map <- map[[i]]
     rval2[[i]]$uniques <- uniques[[i]]
+    rval2[[i]]$exp <- exp[[i]]
     # Return the error rate(s) used as well as the final estimated error matrix
     if(self_consist) { # Did a self-consist loop
       rval2[[i]]$err_in <- errs

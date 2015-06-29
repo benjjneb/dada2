@@ -195,5 +195,6 @@ Rcpp::DataFrame b_get_positional_subs(B *b);
 Rcpp::DataFrame b_get_quality_subs(B *b);
 Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax);
 Rcpp::DataFrame get_sublong(B *b, bool has_quals);
+Rcpp::DataFrame b_subs_vs_exp(B *b, Rcpp::NumericMatrix errMat);
 
 #endif
