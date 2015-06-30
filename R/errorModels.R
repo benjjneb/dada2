@@ -176,7 +176,10 @@ inflateErr <- function(err, inflation=1.0, inflateNonSubs = FALSE) {
 #' score. This function identifies the inferred sequences that are likely to
 #' have been driven by those bad bases.
 #' 
-#' @param dadaO (Required). Output of dada() function.
+#' @param clust (Required). The $clustering data frame from the dada() output.
+#'   May be subsetted from the original prior to using this function.
+#' 
+#' @param subpos (Required). The $subpos data frame from the dada() output.
 #' 
 #' @param minFraction (Optional). A \code{numeric(1)}. Default is 0.51.
 #'  The minimum fraction of bad bases among the base positions used to infer the
@@ -205,13 +208,15 @@ inflateErr <- function(err, inflation=1.0, inflateNonSubs = FALSE) {
 #'
 #' @export
 #' 
-isBadBaseFP <- function(dadaO, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
-  bb <- getBadBases(dadaO, omegaB, minOccurence, verbose=verbose)
-  fps <- c("1"=FALSE, tapply(dadaO$subpos$pos, dadaO$subpos$clust, function(x) mean(x %in% bb) >= minFraction))
+isBadBaseFP <- function(clust, subpos, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
+  bb <- getBadBases(clust, subpos, omegaB, minOccurence, verbose=verbose)
+  fps <- tapply(subpos$pos, subpos$clust, function(x) mean(x %in% bb) >= minFraction)
+  fps <- names(fps)[fps]
+  rval <- rownames(clust) %in% fps
   if(verbose) {
-    cat(sum(fps), "false positives caused by bad bases identified.\n")
+    cat(sum(rval), "false positives caused by bad bases identified from", nrow(clust), "input sequences.\n")
   }
-  unname(fps)
+  rval
 }
 
 ################################################################################
@@ -221,7 +226,10 @@ isBadBaseFP <- function(dadaO, minFraction = 0.51, omegaB = 1e-10, minOccurence 
 #' error rates are significantly higher than expected by the assigned quality
 #' score. This function identifies those bad bases.
 #' 
-#' @param dadaO (Required). Output of dada() function.
+#' @param clust (Required). The $clustering data frame from the dada() output.
+#'   May be subsetted from the original prior to using this function.
+#'   
+#' @param subpos (Required). The $subpos data frame from the dada() output.
 #' 
 #' @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
 #'  The p-value threshhold below which a base is assigned as "bad".
@@ -244,12 +252,12 @@ isBadBaseFP <- function(dadaO, minFraction = 0.51, omegaB = 1e-10, minOccurence 
 #'
 #' @export
 #' 
-getBadBases <- function(dadaO, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
-  oos <- which(dadaO$clustering$birth_ham == 1)
-  oopos <- dadaO$subpos[dadaO$subpos$clust %in% oos,]
+getBadBases <- function(clust, subpos, omegaB = 1e-20, minOccurence = 4, verbose=FALSE) {
+  oos <- which(clust$birth_ham == 1)
+  oopos <- subpos[subpos$clust %in% oos,]
   tab <- table(oopos$pos)
-  if(length(unique(nchar(dadaO$clustering$sequence)))>1) stop("Requires same length sequences.")
-  seqlen <- nchar(dadaO$clustering$sequence[[1]])
+  if(length(unique(nchar(clust$sequence)))>1) stop("Requires same length sequences.")
+  seqlen <- nchar(clust$sequence[[1]])
   posp <- ppois(tab, length(oos)/seqlen, lower.tail=FALSE) * seqlen
   bad_bases <- as.integer(names(posp)[posp<omegaB & tab>=minOccurence])
   if(verbose) {

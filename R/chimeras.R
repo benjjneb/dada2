@@ -90,13 +90,17 @@ isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, 
   ov <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, allowOneOff=allowOneOff, maxShift=maxShift))))
   # Remove identical (or strictly shifted) parents
   id_or_fullshift <- apply(ov[,1:2], 1, function(x) max(x) >= nchar(sq))
-  ov <- ov[!id_or_fullshift,]
+  ov <- ov[!id_or_fullshift,,drop=FALSE]
+  # Return FALSE if now too few parents
+  if(nrow(ov) <= 1) return(FALSE)
   # Return TRUE if the max left/right 0-overlaps are as long as the sequence
   if((max(ov[,1]) + max(ov[,2])) >= nchar(sq)) {
     return(TRUE)
   } else if(allowOneOff) {
     too_close <- (apply(ov[,6:7], 1, sum) < minOneOffParentDistance)
-    ov <- ov[!too_close,]
+    ov <- ov[!too_close,,drop=FALSE]
+    # Return FALSE if now too few parents
+    if(nrow(ov) <= 1) return(FALSE)
     # Return TRUE if the max left/right 0/1-overlaps are as long as the sequence
     if((max(ov[,1]) + max(ov[,4])) >= nchar(sq) || (max(ov[,2]) + max(ov[,3])) >= nchar(sq)) {
       return(TRUE)
