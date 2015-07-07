@@ -7,14 +7,22 @@ isHit100 <- function(clust, fn) {
 
 #' @export
 isOneOff <- function(clust, fn) {
-  bb <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
-  bb <- bb[bb$coverage == nchar(clust[match(bb$seqid,clust$id),"sequence"]),] # Only full length hits
+  hit <- isHit100(clust, fn)
+  bball <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
+  bb <- bball[bball$coverage == nchar(clust[match(bball$seqid,clust$id),"sequence"]),] # Only full length hits
   tab <- tapply(bb$identity, bb$seqid, max)
   tab <- tab[match(clust$id, names(tab))]
   seqlens <- nchar(clust$sequence)
   oneOff <- tab<100 & (abs(tab - 100.0*(seqlens-1)/seqlens) < 0.01)
   oneOff[is.na(oneOff)] <- FALSE # happens if no hits were full coverage
   names(oneOff) <- clust$id # Also drop the name to NA so fix here
+  # Also get coverage-1 matches
+  # But still wont catch mismatches within the first or last couple of nts that cutoff more than 1 nt...
+  bb <- bball[bball$coverage == nchar(clust[match(bball$seqid,clust$id),"sequence"])-1,] # Full length-1 hits
+  bb <- bb[bb$identity==100,]
+  oneOff <- oneOff | clust$id %in% bb$seqid
+  # Make sure not a hit
+  oneOff[hit] <- FALSE
   return(oneOff)
 }
 
@@ -38,7 +46,7 @@ nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GA
 nwhamming <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   out <- dadac:::C_eval_pair(al[1], al[2])
-  return(out["mismatch"])
+  return(out["mismatch"]+out["indel"])
 })
 
 #' @export 
