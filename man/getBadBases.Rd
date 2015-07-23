@@ -4,10 +4,14 @@
 \alias{getBadBases}
 \title{Identify bad base positions.}
 \usage{
-getBadBases(dadaO, omegaB = 1e-10, minOccurence = 4, verbose = FALSE)
+getBadBases(clust, subpos, omegaB = 1e-20, minOccurence = 4,
+  verbose = FALSE)
 }
 \arguments{
-\item{dadaO}{(Required). Output of dada() function.}
+\item{clust}{(Required). The $clustering data frame from the dada() output.
+  May be subsetted from the original prior to using this function.}
+
+\item{subpos}{(Required). The $subpos data frame from the dada() output.}
 
 \item{omegaB}{(Optional). A \code{numeric(1)}. Default is 1e-10.
  The p-value threshhold below which a base is assigned as "bad".

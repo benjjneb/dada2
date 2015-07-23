@@ -4,11 +4,14 @@
 \alias{isBadBaseFP}
 \title{Identify False Positive inferred sequences due to bad bases.}
 \usage{
-isBadBaseFP(dadaO, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4,
-  verbose = FALSE)
+isBadBaseFP(clust, subpos, minFraction = 0.51, omegaB = 1e-10,
+  minOccurence = 4, verbose = FALSE)
 }
 \arguments{
-\item{dadaO}{(Required). Output of dada() function.}
+\item{clust}{(Required). The $clustering data frame from the dada() output.
+  May be subsetted from the original prior to using this function.}
+
+\item{subpos}{(Required). The $subpos data frame from the dada() output.}
 
 \item{minFraction}{(Optional). A \code{numeric(1)}. Default is 0.51.
  The minimum fraction of bad bases among the base positions used to infer the

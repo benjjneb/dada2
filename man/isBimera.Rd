@@ -4,7 +4,7 @@
 \alias{isBimera}
 \title{Determine if input sequence is an exact bimera of putative parent sequences.}
 \usage{
-isBimera(sq, parents, allowOneOff = FALSE, minOneOffParentDistance = 4,
+isBimera(sq, parents, allowOneOff = TRUE, minOneOffParentDistance = 4,
   maxShift = 16)
 }
 \arguments{
