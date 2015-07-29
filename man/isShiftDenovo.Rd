@@ -2,7 +2,8 @@
 % Please edit documentation in R/chimeras.R
 \name{isShiftDenovo}
 \alias{isShiftDenovo}
-\title{Identify bimeras de-novo from collections of unique sequences.}
+\title{Identify sequences that are identical to a more abundant sequence up to an
+overall shift from a collection of unique sequences.}
 \usage{
 isShiftDenovo(unqs, minOverlap = 20, verbose = FALSE)
 }
@@ -12,6 +13,10 @@ isShiftDenovo(unqs, minOverlap = 20, verbose = FALSE)
 
 \item{minOverlap}{(Optional). A \code{numeric(1)}. Default is 20.
   Minimum overlap required to call something a shift.}
+}
+\value{
+\code{logical} of length the number of input unique sequences.
+ TRUE if sequence is an exact shift of a more abundant sequence. Otherwise FALSE.
 }
 \description{
 This function is a wrapper around isShift for collections of DADA denoised

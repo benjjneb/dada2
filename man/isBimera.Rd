@@ -2,7 +2,7 @@
 % Please edit documentation in R/chimeras.R
 \name{isBimera}
 \alias{isBimera}
-\title{Determine if input sequence is an exact bimera of putative parent sequences.}
+\title{Determine if input sequence is a bimera of putative parent sequences.}
 \usage{
 isBimera(sq, parents, allowOneOff = TRUE, minOneOffParentDistance = 4,
   maxShift = 16)
@@ -14,19 +14,32 @@ isBimera(sq, parents, allowOneOff = TRUE, minOneOffParentDistance = 4,
 \item{parents}{(Required). Character vector.
  A vector of possible "parent" sequence that could form the left and right
  sides of the bimera.}
+
+\item{allowOneOff}{(Optional). A \code{logical(1)}. Default is TRUE.
+  If TRUE, sq will be identified as a bimera if it is one mismatch or indel away
+  from an exact bimera.}
+
+\item{minOneOffParentDistance}{(Optional). A \code{numeric(1)}. Default is 4.
+  Only sequences with at least this many mismatches to sq are considered as possible
+  "parents" when flagging one-off bimeras. There is no such screen when identifying
+  exact bimeras.}
+
+\item{maxShift}{(Optional). A \code{numeric(1)}. Default is 16.
+  Maximum shift allowed when aligning sequences to potential "parents".}
 }
 \value{
 \code{logical(1)}.
- TRUE if sq is an exact bimera of two of the parents. Otherwise FALSE.
+ TRUE if sq is a bimera of two of the parents. Otherwise FALSE.
 }
 \description{
 This function attempts to find an exact bimera of the parent sequences that
 matches the input sequence. A bimera is a two-parent chimera, in which the
 left side is made up of one parent sequence, and the right-side made up of
-a second parent sequence. If an exact bimera is found (no mismatches are
-allowed, but strict shifts are allowed) TRUE is returned, otherwise FALSE.
+a second parent sequence. If an exact bimera is found TRUE is returned,
+otherwise FALSE. Bimeras that are one-off from exact are also identified if
+the allowOneOff argument is TRUE.
 }
 \seealso{
-\code{\link{isBimeraDenovo}, \link{isBimeraOneOff}}
+\code{\link{isBimeraDenovo}}
 }
 

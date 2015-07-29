@@ -1,5 +1,3 @@
-#' @export
-#' 
 getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
   if(nchar(parent) == nchar(sq)) { # Use banding if applicable
     al <- nwalign(parent, sq, band=maxShift)
@@ -16,14 +14,14 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 }
 
 ################################################################################
-#' 
-#' Determine if input sequence is an exact bimera of putative parent sequences.
+#' Determine if input sequence is a bimera of putative parent sequences.
 #' 
 #' This function attempts to find an exact bimera of the parent sequences that
 #' matches the input sequence. A bimera is a two-parent chimera, in which the
 #' left side is made up of one parent sequence, and the right-side made up of
-#' a second parent sequence. If an exact bimera is found (no mismatches are
-#' allowed, but strict shifts are allowed) TRUE is returned, otherwise FALSE.
+#' a second parent sequence. If an exact bimera is found TRUE is returned, 
+#' otherwise FALSE. Bimeras that are one-off from exact are also identified if
+#' the allowOneOff argument is TRUE.
 #' 
 #' @param sq (Required). A \code{character(1)}.
 #'  The sequence being evaluated as a possible bimera.
@@ -32,10 +30,22 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 #'  A vector of possible "parent" sequence that could form the left and right
 #'  sides of the bimera.
 #'   
+#' @param allowOneOff (Optional). A \code{logical(1)}. Default is TRUE.
+#'   If TRUE, sq will be identified as a bimera if it is one mismatch or indel away 
+#'   from an exact bimera.
+#' 
+#' @param minOneOffParentDistance (Optional). A \code{numeric(1)}. Default is 4.
+#'   Only sequences with at least this many mismatches to sq are considered as possible
+#'   "parents" when flagging one-off bimeras. There is no such screen when identifying
+#'   exact bimeras.
+#'   
+#' @param maxShift (Optional). A \code{numeric(1)}. Default is 16.
+#'   Maximum shift allowed when aligning sequences to potential "parents".
+#' 
 #' @return \code{logical(1)}.
-#'  TRUE if sq is an exact bimera of two of the parents. Otherwise FALSE.
+#'  TRUE if sq is a bimera of two of the parents. Otherwise FALSE.
 #'
-#' @seealso \code{\link{isBimeraDenovo}, \link{isBimeraOneOff}}
+#' @seealso \code{\link{isBimeraDenovo}}
 #' @export
 #' 
 isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
@@ -80,7 +90,7 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' @param minParentAbundance (Optional). A \code{numeric(1)}. Default is 100.
 #'   Only sequences at least this abundant can be "parents".
 #' 
-#' @param allowOneOff (Optional). A \code{logical(1)}. Default is FALSE.
+#' @param allowOneOff (Optional). A \code{logical(1)}. Default is TRUE.
 #'   If TRUE, sequences that have one mismatch or indel to an exact bimera are also
 #'   flagged.
 #' 
@@ -91,12 +101,15 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #'   
 #' @param maxShift (Optional). A \code{numeric(1)}. Default is 16.
 #'   Maximum shift allowed when aligning sequences to potential "parents".
-#'   
+#' 
+#' @return \code{logical} of length the number of input unique sequences.
+#'  TRUE if sequence is a bimera of more abundant "parent" sequences. Otherwise FALSE.
+#'
 #' @seealso \code{\link{isBimera}}
 #' 
 #' @export
 #' 
-isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
   unqs <- as.uniques(unqs)
   abunds <- unname(unqs)
   seqs <- names(unqs)
@@ -117,18 +130,18 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbunda
   return(bims)
 }
 
-#' @export 
 isShiftedPair <- function(sq1, sq2, minOverlap=20) {
   al <- nwalign(sq1, sq2, band=-1)
   foo <- dadac:::C_eval_pair(al[1], al[2])
   return(foo["match"] < nchar(sq1) && foo["match"] < nchar(sq2) && foo["match"] >= minOverlap && foo["mismatch"]==0 && foo["indel"]==0)
 }
-#' @export
+
 isShift <- function(sq, pars, minOverlap=20) {
   return(any(sapply(pars, function(par) isShiftedPair(sq, par))))
 }
 ################################################################################
-#' Identify bimeras de-novo from collections of unique sequences.
+#' Identify sequences that are identical to a more abundant sequence up to an
+#' overall shift from a collection of unique sequences.
 #' 
 #' This function is a wrapper around isShift for collections of DADA denoised
 #' sequences. Each sequence is evaluated against a set of "parents" drawn from the
@@ -140,6 +153,9 @@ isShift <- function(sq, pars, minOverlap=20) {
 #' @param minOverlap (Optional). A \code{numeric(1)}. Default is 20.
 #'   Minimum overlap required to call something a shift.
 #'   
+#' @return \code{logical} of length the number of input unique sequences.
+#'  TRUE if sequence is an exact shift of a more abundant sequence. Otherwise FALSE.
+#'
 #' @seealso \code{\link{isBimera}}
 #' 
 #' @export

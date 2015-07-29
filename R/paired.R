@@ -22,20 +22,22 @@
 #' @param minOverlap (Optional). A \code{numeric(1)} of the minimum overlap
 #'  required for merging the forward and reverse reads. Default is 20.
 #'
-#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Defaults FALSE.
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
-#' @return Dataframe.
-#'  $abundance: Number of reads corresponding to this forward/reverse combination.
-#'  $sequence: The merged sequence if match=TRUE. Otherwise an empty sequence, i.e. "";
-#'  $forward: The index of the forward denoised genotypes.
-#'  $reverse: The index of the reverse denoised genotype.
-#'  $nmatch: Number of matching nts in the overlap region.
-#'  $nmismatch: Number of mismatching nts in the overlap region.
-#'  $nindel: Number of indels in the overlap region.
-#'  $match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
-#'          FALSE otherwise.
-#'
-#' Also will propagate forward columns indicated in the keep argument from the $clustering data.frames of the
+#' @return Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
+#' \itemize{
+#'  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
+#'  \item{$sequence: The merged sequence if match=TRUE. Otherwise an empty sequence, i.e. "".}
+#'  \item{$forward: The index of the forward denoised genotypes.}
+#'  \item{$reverse: The index of the reverse denoised genotype.}
+#'  \item{$nmatch: Number of matching nts in the overlap region.}
+#'  \item{$nmismatch: Number of mismatching nts in the overlap region.}
+#'  \item{$nindel: Number of indels in the overlap region.}
+#'  \item{$match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
+#'          FALSE otherwise.}
+#' }
+#' 
+#' The columns specified in the keep argument will also be propagated from the $clustering data.frames of the
 #'  forward and reverse dada objects.
 #'
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}

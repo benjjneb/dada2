@@ -5,7 +5,7 @@
 \title{Identify bimeras de-novo from collections of unique sequences.}
 \usage{
 isBimeraDenovo(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8,
-  allowOneOff = FALSE, minOneOffParentDistance = 4, maxShift = 16,
+  allowOneOff = TRUE, minOneOffParentDistance = 4, maxShift = 16,
   verbose = FALSE)
 }
 \arguments{
@@ -18,7 +18,7 @@ isBimeraDenovo(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8,
 \item{minParentAbundance}{(Optional). A \code{numeric(1)}. Default is 100.
   Only sequences at least this abundant can be "parents".}
 
-\item{allowOneOff}{(Optional). A \code{logical(1)}. Default is FALSE.
+\item{allowOneOff}{(Optional). A \code{logical(1)}. Default is TRUE.
   If TRUE, sequences that have one mismatch or indel to an exact bimera are also
   flagged.}
 
@@ -29,6 +29,10 @@ isBimeraDenovo(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8,
 
 \item{maxShift}{(Optional). A \code{numeric(1)}. Default is 16.
   Maximum shift allowed when aligning sequences to potential "parents".}
+}
+\value{
+\code{logical} of length the number of input unique sequences.
+ TRUE if sequence is a bimera of more abundant "parent" sequences. Otherwise FALSE.
 }
 \description{
 This function is a wrapper around isBimera for collections of DADA denoised
