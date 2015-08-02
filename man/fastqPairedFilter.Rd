@@ -13,7 +13,7 @@ fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c("#", "#"),
 
 \item{fout}{(Required). A \code{character(2)} naming the path to the output file.
 
-FURTHER ARGUMENTS can be provided as a length 1 or legnth 2 vector. If provided as a length 1
+FURTHER ARGUMENTS can be provided as a length 1 or length 2 vector. If provided as a length 1
 vector the same criteria is used for forward and reverse. If provided as a length 2 vector, the
 first value is used for the forward reads, the second value for the reverse reads.}
 

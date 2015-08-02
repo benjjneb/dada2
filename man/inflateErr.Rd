@@ -2,13 +2,24 @@
 % Please edit documentation in R/errorModels.R
 \name{inflateErr}
 \alias{inflateErr}
-\title{Function that inflates an error rate matrix by a specified factor. Accounts for saturation.
-  new_err_rate <- err_rate * inflate / (1 + (inflate-1) * err_rate)}
+\title{Inflates an error rate matrix by a specified factor accounting for saturation.}
 \usage{
-inflateErr(err, inflation = 1, inflateNonSubs = FALSE)
+inflateErr(err, inflation, inflateSelfTransitions = FALSE)
+}
+\arguments{
+\item{err}{Required. A matrix of error rates (16 rows, named "A2A", "A2C", ...).}
+
+\item{inflation}{Required. The factor with which to inflate the transition rates.}
+
+\item{inflateSelfTransitions}{Optional. If True, self-transitions (eg. A->A) also inflated.
+ Default is FALSE.}
+}
+\value{
+An error rate matrix of the same dimensions as the input error rate matrix.
 }
 \description{
-Function that inflates an error rate matrix by a specified factor. Accounts for saturation.
+Error rates are "inflated" by the specified factor, while saturating so that rates
+cannot exceed 1. The formula is:
   new_err_rate <- err_rate * inflate / (1 + (inflate-1) * err_rate)
 }
 

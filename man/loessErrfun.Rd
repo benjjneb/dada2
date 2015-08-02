@@ -2,11 +2,25 @@
 % Please edit documentation in R/errorModels.R
 \name{loessErrfun}
 \alias{loessErrfun}
-\title{A loess fit for the error rates}
+\title{Use a loess fit to estimate error rates from transition counts.}
 \usage{
 loessErrfun(trans)
 }
+\arguments{
+\item{trans}{(Required). A matrix of the observed transition counts. Must be 16 rows,
+with the rows named "A2A", "A2C", ...}
+}
+\value{
+A numeric matrix with 16 rows and the same number of columns as trans.
+ The estimated error rates for each transition (row, eg. "A2C") and quality score
+ (column, eg. 31), as determined by loess smoothing over the quality scores within
+ each transition category.
+}
 \description{
-A loess fit for the error rates
+This function accepts a matrix of observed transitions (eg. row 2 = A->C) by
+the quality score (eg. col 31 = Q30). It returns a matrix of estimated error
+rates of the same shape. Error rates are estimates by loess fitting each
+transition (i.e. A->C, A->G, A->T) as a fucnction of the quality score, and
+taking the self-transitions (i.e. A->A) as the left-over probability.
 }
 

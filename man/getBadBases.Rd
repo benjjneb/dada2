@@ -37,6 +37,6 @@ error rates are significantly higher than expected by the assigned quality
 score. This function identifies those bad bases.
 }
 \seealso{
-\code{\link{getBadBases}}
+\code{\link{isBadBaseFP}}
 }
 
