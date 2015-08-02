@@ -95,49 +95,7 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE, qeff=FALSE){
   close(f)
   return(list(uniques=derepCounts, quals=derepQuals, map=derepMap))
 }
-################################################################################
-#' Load .uniques file
-#' 
-#' This is a custom interface to read.table for loading .uniques format
-#'  files. The .uniques format is a delimited text file (tab-delimited by default)
-#'  with the abundance in column 1 and the ASCII sequence in column 2.
-#'
-#' @param fl (Required). \code{character(1)}.
-#'  The file path to the .uniques file,
-#'  a delimited text table file containing unique sequences and their abundances.
-#'  
-#' @param colClasses (Optional). \code{character}.
-#'  The classes of the columns in the delimited text file.
-#'  Defaults to \code{c("integer", "character")}.
-#'  See \code{\link[utils]{read.table}} for more information.
-#' 
-#' @param ... (Optional). Additional arguments passed on to \code{\link[utils]{read.table}}.
-#'
-#' @return Named integer vector. Named by sequence, valued by abundance.
-#'
-#' @export
-#' 
-importUniques <- function(fl, colClasses = c("integer", "character"), ...){
-  unqs <- read.table(fl, colClasses = colClasses, ...)
-  # Check that things worked as expected.
-  if(ncol(unqs) != 2) stop(paste("Unexpected number of columns:", ncol(unqs)))
-  if(class(unqs[,2]) != "character") stop(paste("Integer/sequence pairs required(1)."))
-  if(class(unqs[,1]) != "integer") {
-    if(class(unqs[,1]) != "numeric") {
-      stop(paste("Integer/sequence pairs required(2)."))
-    }
-    foo <- as.integer(unqs[,1])
-    if(all.equal(foo, unqs[,1])) {
-      unqs[,1] <- as.integer(unqs[,1])
-    } else {
-      stop(paste("Integer/sequence pairs required(3)."))
-    }
-  }
-  # Checks are done, create the uniques vector.
-  rvec <- unqs[,1]
-  names(rvec) <- unqs[,2]
-  return(rvec)
-}
+
 ################################################################################
 #  DEPRECATED DEPRECATED DEPRECATED
 #' Read and Dereplicate a Fastq file containing multiple samples.

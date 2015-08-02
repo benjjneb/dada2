@@ -36,8 +36,8 @@
 #'
 #' @param compress (Optional). A \code{logical(1)} indicating whether the output should be gz compressed.
 #' 
-#' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
-#'    
+#' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.  
+#'     
 #' @seealso 
 #'  \code{\link{fastqPairedFilter}}
 #' 

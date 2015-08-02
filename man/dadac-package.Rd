@@ -10,7 +10,9 @@ Some prose about the virtues of DADA here.
 \author{
 Benjamin Callahan \email{benjamin.j.callahan@gmail.com}
 
-Paul J. McMurdie II \email{mcmurdie@stanford.edu}
+Paul J McMurdie II \email{mcmurdie@stanford.edu}
+
+Michael Rosen \email{eigenrosen@gmail.com}
 
 Susan Holmes \email{susan@stat.stanford.edu}
 }

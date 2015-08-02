@@ -113,7 +113,6 @@ mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character
   ups
 }
 
-#' @export
 sameOrder <- function(fnF, fnR) {
   matched <- TRUE
   fF <- FastqStreamer(fnF)
