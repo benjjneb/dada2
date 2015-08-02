@@ -24,6 +24,12 @@ loessErrfun <- function(trans) {
     } # for(ntj in c("A","C","G","T"))
   } # for(nti in c("A","C","G","T"))
   
+  # HACKY
+  MAX_ERROR_RATE <- 0.25
+  MIN_ERROR_RATE <- 1e-7
+  est[est>MAX_ERROR_RATE] <- MAX_ERROR_RATE
+  est[est<MIN_ERROR_RATE] <- MIN_ERROR_RATE
+  
   # Expand the err matrix with the self-transition probs
   err <- rbind(1-colSums(est[1:3,]), est[1:3,],
                est[4,], 1-colSums(est[4:6,]), est[5:6,],

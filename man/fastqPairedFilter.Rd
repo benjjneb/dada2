@@ -2,13 +2,66 @@
 % Please edit documentation in R/filter.R
 \name{fastqPairedFilter}
 \alias{fastqPairedFilter}
-\title{This filters paired read files, keeping only those reads which pass in both forward and reverse files}
+\title{fastqPairedFilter filters and trims paired forward and reverse fastq files.}
 \usage{
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c("#", "#"),
   truncLen = c(0, 0), trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf,
   Inf), n = 1e+06, compress = TRUE, verbose = FALSE)
 }
+\arguments{
+\item{fn}{(Required). A \code{character(2)} naming the paths to the forward/reverse fastq files.}
+
+\item{fout}{(Required). A \code{character(2)} naming the path to the output file.
+
+FURTHER ARGUMENTS can be provided as a length 1 or legnth 2 vector. If provided as a length 1
+vector the same criteria is used for forward and reverse. If provided as a length 2 vector, the
+first value is used for the forward reads, the second value for the reverse reads.}
+
+\item{maxN}{(Optional). After truncation, sequences with more than maxN Ns will be discarded.
+   Default is 0. Currently dada() does not allow Ns.}
+
+\item{truncQ}{(Optional). Truncate reads at the first instance of a quality score less than
+   or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
+   sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding.}
+
+\item{truncLen}{(Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
+   this are discarded.}
+
+\item{trimLeft}{(Optional). Remove trimLeft nucleotides from the start of each read. If both
+   truncLen and trimLeft are used, all filtered reads will have length truncLen-trimLeft.}
+
+\item{minQ}{(Optional). After truncation, reads contain a quality score below minQ will be discarded.}
+
+\item{maxEE}{(Optional). After truncation, reads with higher than maxEE "expected errors" will be discarded.
+ Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
+
+\item{n}{(Optional). The number of records (reads) to read in and filter at any one time.
+ This controls the peak memory requirement so that very large fastq files are supported.
+ Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.}
+
+\item{compress}{(Optional). A \code{logical(1)} indicating whether the output should be gz compressed.}
+
+\item{verbose}{(Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.}
+}
 \description{
-This filters paired read files, keeping only those reads which pass in both forward and reverse files
+fastqPairedFilter takes in two input fastq file (can be compressed), filters them based on several
+user-definable criteria, and outputs those reads which pass the filter in both directions along
+with their associated qualities to two new fastq file (also can be compressed). Several functions
+in the ShortRead package are leveraged to do this filtering. The filtered forward/reverse reads
+remain identically ordered.
+}
+\details{
+fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
+(http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but applied to forward and reverse
+reads simultaneously.
+}
+\seealso{
+\code{\link{fastqFilter}}
+
+ \code{\link[ShortRead]{FastqStreamer}}
+
+ \code{\link[ShortRead]{srFilter}}
+
+ \code{\link[ShortRead]{trimTails}}
 }
 

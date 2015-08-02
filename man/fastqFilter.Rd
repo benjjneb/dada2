@@ -40,9 +40,9 @@ fastqFilter(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0,
 \item{verbose}{(Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.}
 }
 \description{
-fastqFilter takes an input fastq file (can be compressed) and filters it based on several
-user-definable criteria, and outputs those reads which pass the filter, and their associated
-qualities, to a new fastq file (also can be compressed). Several functions in the ShortRead
+fastqFilter takes an input fastq file (can be compressed), filters it based on several
+user-definable criteria, and outputs those reads which pass the filter and their associated
+qualities to a new fastq file (also can be compressed). Several functions in the ShortRead
 package are leveraged to do this filtering.
 }
 \details{
@@ -50,7 +50,9 @@ fastqFilter replicates most of the functionality of the fastq_filter command in 
 (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html).
 }
 \seealso{
-\code{\link[ShortRead]{FastqStreamer}}
+\code{\link{fastqPairedFilter}}
+
+ \code{\link[ShortRead]{FastqStreamer}}
 
  \code{\link[ShortRead]{srFilter}}
 

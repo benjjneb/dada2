@@ -26,9 +26,11 @@ derepFastq(fl, n = 1e+06, verbose = FALSE, qeff = FALSE)
 }
 \value{
 List.
- $uniques: Named integer vector. Named by the unique sequence, valued by abundance.
- $quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.
- $map: Integer vector of the index of the unique (in $uniques) corresponding to each read.
+\itemize{
+ \item{$uniques: Named integer vector. Named by the unique sequence, valued by abundance.}
+ \item{#quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.}
+ \item{$map: Integer vector of the index of the unique (in $uniques) corresponding to each read.}
+}
 }
 \description{
 This is a custom interface to \code{\link[ShortRead]{FastqStreamer}}

@@ -1,8 +1,8 @@
 #' fastqFilter filters and trims fastq files.
 #' 
-#' fastqFilter takes an input fastq file (can be compressed) and filters it based on several
-#' user-definable criteria, and outputs those reads which pass the filter, and their associated
-#' qualities, to a new fastq file (also can be compressed). Several functions in the ShortRead
+#' fastqFilter takes an input fastq file (can be compressed), filters it based on several
+#' user-definable criteria, and outputs those reads which pass the filter and their associated
+#' qualities to a new fastq file (also can be compressed). Several functions in the ShortRead
 #' package are leveraged to do this filtering.
 #' 
 #' fastqFilter replicates most of the functionality of the fastq_filter command in usearch
@@ -39,6 +39,8 @@
 #' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
 #'    
 #' @seealso 
+#'  \code{\link{fastqPairedFilter}}
+#' 
 #'  \code{\link[ShortRead]{FastqStreamer}}
 #'  
 #'  \code{\link[ShortRead]{srFilter}}
@@ -109,11 +111,65 @@ fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN
   }
 }
 
-#' This filters paired read files, keeping only those reads which pass in both forward and reverse files
+#' fastqPairedFilter filters and trims paired forward and reverse fastq files.
+#' 
+#' fastqPairedFilter takes in two input fastq file (can be compressed), filters them based on several
+#' user-definable criteria, and outputs those reads which pass the filter in both directions along
+#' with their associated qualities to two new fastq file (also can be compressed). Several functions
+#' in the ShortRead package are leveraged to do this filtering. The filtered forward/reverse reads
+#' remain identically ordered.
+#' 
+#' fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
+#' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but applied to forward and reverse
+#' reads simultaneously.
+#' 
+#' @param fn (Required). A \code{character(2)} naming the paths to the forward/reverse fastq files.
+#'   
+#' @param fout (Required). A \code{character(2)} naming the path to the output file.
+#' 
+#' FURTHER ARGUMENTS can be provided as a length 1 or length 2 vector. If provided as a length 1
+#' vector the same criteria is used for forward and reverse. If provided as a length 2 vector, the
+#' first value is used for the forward reads, the second value for the reverse reads.
+#' 
+#' @param truncQ (Optional). Truncate reads at the first instance of a quality score less than
+#'    or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
+#'    sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding. 
+#'  
+#' @param truncLen (Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
+#'    this are discarded.
+#'  
+#' @param trimLeft (Optional). Remove trimLeft nucleotides from the start of each read. If both
+#'    truncLen and trimLeft are used, all filtered reads will have length truncLen-trimLeft.
+#'  
+#' @param maxN (Optional). After truncation, sequences with more than maxN Ns will be discarded.
+#'    Default is 0. Currently dada() does not allow Ns.
+#'  
+#' @param minQ (Optional). After truncation, reads contain a quality score below minQ will be discarded.
+#'
+#' @param maxEE (Optional). After truncation, reads with higher than maxEE "expected errors" will be discarded.
+#'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
+#'  
+#' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
+#'  This controls the peak memory requirement so that very large fastq files are supported. 
+#'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
+#'
+#' @param compress (Optional). A \code{logical(1)} indicating whether the output should be gz compressed.
+#' 
+#' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
+#'    
+#' @seealso 
+#'  \code{\link{fastqFilter}}
+#' 
+#'  \code{\link[ShortRead]{FastqStreamer}}
+#'  
+#'  \code{\link[ShortRead]{srFilter}}
+#'  
+#'  \code{\link[ShortRead]{trimTails}}
 #' 
 #' @export
+#' @import ShortRead
 fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
-  # Warning: This assumes that forward/reverse reads are paired by line
+  # Warning: This assumes that forward/reverse reads are in the same order
   # IT DOES NOT CHECK THE ID LINES
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")

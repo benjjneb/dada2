@@ -17,7 +17,7 @@ uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000, ...)
 \item{mode}{A character string flag passed on to \code{\link[ShortRead]{writeFasta}}
  indicating the type of file writing mode. Default is \code{"w"}.}
 
-\item{width}{The number of characters per line in the file.
+\item{width}{The number of characters per line in the file. Default is 20000.
  Passed on to \code{\link[ShortRead]{writeFasta}}.}
 
 \item{...}{Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.}

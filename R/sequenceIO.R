@@ -23,9 +23,11 @@
 #'  Default is \code{FALSE}, no messages.
 #'
 #' @return List. 
-#'  $uniques: Named integer vector. Named by the unique sequence, valued by abundance.
-#'  $quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.
-#'  $map: Integer vector of the index of the unique (in $uniques) corresponding to each read.
+#' \itemize{
+#'  \item{$uniques: Named integer vector. Named by the unique sequence, valued by abundance.}
+#'  \item{#quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.}
+#'  \item{$map: Integer vector of the index of the unique (in $uniques) corresponding to each read.}
+#' }
 #'
 #' @export
 #' @import ShortRead 
@@ -296,7 +298,7 @@ qtables2 <- function(x, qeff = FALSE) {
 #' @param mode A character string flag passed on to \code{\link[ShortRead]{writeFasta}}
 #'  indicating the type of file writing mode. Default is \code{"w"}.
 #'  
-#' @param width The number of characters per line in the file.
+#' @param width The number of characters per line in the file. Default is 20000.
 #'  Passed on to \code{\link[ShortRead]{writeFasta}}.
 #'  
 #' @param ... Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.
