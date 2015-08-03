@@ -25,11 +25,11 @@ derepFastq(fl, n = 1e+06, verbose = FALSE, qeff = FALSE)
  Default is \code{FALSE}, no messages.}
 }
 \value{
-List.
+Class "derep". A list with three members.
 \itemize{
  \item{$uniques: Named integer vector. Named by the unique sequence, valued by abundance.}
- \item{#quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.}
- \item{$map: Integer vector of the index of the unique (in $uniques) corresponding to each read.}
+ \item{$quals: Numeric matrix of average quality scores by position for each unique. Uniques are rows, positions are cols.}
+ \item{$map: Integer vector of length the number of reads, and value the index (in $uniques) of the unique to which that read was assigned.}
 }
 }
 \description{

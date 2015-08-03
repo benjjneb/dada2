@@ -48,7 +48,7 @@ dada(uniques, quals = NULL, err, err_function = NULL,
    eg. dada(unq, err=err_in, OMEGA_A=1e-50, MAX_CLUST=50)}
 }
 \value{
-A multi-item List with the following named values...
+Class "dada". A multi-item List with the following named values...
 \itemize{
  \item{$genotypes: }{Integer vector, named by sequence valued by abundance, of the denoised genotypes.}
  \item{$clustering: }{An informative data.frame containing information on each cluster.}

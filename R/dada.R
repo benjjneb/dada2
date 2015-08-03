@@ -43,7 +43,7 @@
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
 #'    eg. dada(unq, err=err_in, OMEGA_A=1e-50, MAX_CLUST=50) 
 #'
-#' @return A multi-item List with the following named values...
+#' @return Class "dada". A multi-item List with the following named values...
 #' \itemize{
 #'  \item{$genotypes: }{Integer vector, named by sequence valued by abundance, of the denoised genotypes.}
 #'  \item{$clustering: }{An informative data.frame containing information on each cluster.}
@@ -255,7 +255,14 @@ dada <- function(uniques, quals=NULL,
     rval2[[i]]$call <- call
   }
   names(rval2) <- names(uniques)
-  if(length(rval2) == 1) { rval2 <- rval2[[1]] } # Unlist if just a single uniques vector provided
+  if(length(rval2) == 1) {  # Unlist if just a single uniques vector provided
+    rval2 <- rval2[[1]]
+    class(rval2) <- "dada"
+  } else {
+    for(i in seq_along(rval2)) {
+      class(rval2[[i]] <- "dada")
+    }
+  }
 
-  rval2
+  return(rval2)
 }
