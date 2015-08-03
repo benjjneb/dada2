@@ -132,7 +132,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbunda
 
 isShiftedPair <- function(sq1, sq2, minOverlap=20) {
   al <- nwalign(sq1, sq2, band=-1)
-  foo <- dadac:::C_eval_pair(al[1], al[2])
+  foo <- dada2:::C_eval_pair(al[1], al[2])
   return(foo["match"] < nchar(sq1) && foo["match"] < nchar(sq2) && foo["match"] >= minOverlap && foo["mismatch"]==0 && foo["indel"]==0)
 }
 

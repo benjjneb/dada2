@@ -45,7 +45,7 @@ nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GA
 #' @export 
 nwhamming <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
-  out <- dadac:::C_eval_pair(al[1], al[2])
+  out <- dada2:::C_eval_pair(al[1], al[2])
   return(out["mismatch"]+out["indel"])
 })
 

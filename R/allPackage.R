@@ -1,4 +1,4 @@
-#' DADA package
+#' DADA2 package
 #'
 #' Some prose about the virtues of DADA here.
 #'
@@ -6,7 +6,7 @@
 #' @import Biobase
 #' @import BiocGenerics
 #' 
-#' @name dadac-package
+#' @name dada2-package
 #' 
 #' @author Benjamin Callahan \email{benjamin.j.callahan@@gmail.com}
 #' @author Paul J McMurdie II \email{mcmurdie@@stanford.edu}

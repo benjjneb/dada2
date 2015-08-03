@@ -9,26 +9,26 @@
 #' @param gap_p desc
 #' @param band desc
 C_nwalign <- function(s1, s2, score, gap_p, band) {
-    .Call('dadac_C_nwalign', PACKAGE = 'dadac', s1, s2, score, gap_p, band)
+    .Call('dada2_C_nwalign', PACKAGE = 'dada2', s1, s2, score, gap_p, band)
 }
 
 #' Calculates the number of matches/mismatches/internal_indels in an alignment.
 #' 
 C_eval_pair <- function(s1, s2) {
-    .Call('dadac_C_eval_pair', PACKAGE = 'dadac', s1, s2)
+    .Call('dada2_C_eval_pair', PACKAGE = 'dada2', s1, s2)
 }
 
 #' Calculates the size of perfect overlap on the left and right side
 #' of the child sequence (s2) to the aligned parent (s1).
 #' 
 C_get_overlaps <- function(s1, s2, allow, max_shift) {
-    .Call('dadac_C_get_overlaps', PACKAGE = 'dadac', s1, s2, allow, max_shift)
+    .Call('dada2_C_get_overlaps', PACKAGE = 'dada2', s1, s2, allow, max_shift)
 }
 
 #' Calculates the consensus of two sequences (first sequence wins mismatches).
 #' 
 C_pair_consensus <- function(s1, s2) {
-    .Call('dadac_C_pair_consensus', PACKAGE = 'dadac', s1, s2)
+    .Call('dada2_C_pair_consensus', PACKAGE = 'dada2', s1, s2)
 }
 
 #' Generate the kmer-distance and the alignment distance from the
@@ -50,7 +50,7 @@ C_pair_consensus <- function(s1, s2) {
 #'
 #' @export
 evaluate_kmers <- function(seqs, kmer_size, score, gap, band, max_aligns) {
-    .Call('dadac_evaluate_kmers', PACKAGE = 'dadac', seqs, kmer_size, score, gap, band, max_aligns)
+    .Call('dada2_evaluate_kmers', PACKAGE = 'dada2', seqs, kmer_size, score, gap, band, max_aligns)
 }
 
 #' Quantify the number of alignments altered by banding at the given BAND_SIZE.
@@ -73,14 +73,14 @@ evaluate_kmers <- function(seqs, kmer_size, score, gap, band, max_aligns) {
 #'
 #' @export
 evaluate_band <- function(seqs, score, gap, band_size, max_aligns) {
-    .Call('dadac_evaluate_band', PACKAGE = 'dadac', seqs, score, gap, band_size, max_aligns)
+    .Call('dada2_evaluate_band', PACKAGE = 'dada2', seqs, score, gap, band_size, max_aligns)
 }
 
 getSingletonCDF <- function(err, nnt, maxD) {
-    .Call('dadac_getSingletonCDF', PACKAGE = 'dadac', err, nnt, maxD)
+    .Call('dada2_getSingletonCDF', PACKAGE = 'dada2', err, nnt, maxD)
 }
 
-#' @useDynLib dadac
+#' @useDynLib dada2
 #' @importFrom Rcpp evalCpp
 NULL
 
@@ -90,10 +90,10 @@ NULL
 #'
 #' @export
 dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose) {
-    .Call('dadac_dada_uniques', PACKAGE = 'dadac', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose)
+    .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose)
 }
 
 # Register entry points for exported C++ functions
 methods::setLoadAction(function(ns) {
-    .Call('dadac_RcppExport_registerCCallable', PACKAGE = 'dadac')
+    .Call('dada2_RcppExport_registerCCallable', PACKAGE = 'dada2')
 })

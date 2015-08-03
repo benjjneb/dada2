@@ -22,14 +22,14 @@
 #' 
 #' @examples 
 #' # Examples here.
-#' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
+#' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
 #' test1 = derepFastq(testFile, verbose = TRUE)
 #' test1$quals[test1$quals > 40] <- 40
 #' res1 <- dada(uniques = test1$uniques, quals = test1$quals,
-#'              err = dadac:::inflateErr(tperr1, 2), 
+#'              err = dada2:::inflateErr(tperr1, 2), 
 #'              OMEGA_A = 1e-40, 
 #'              USE_QUALS = TRUE, 
-#'              err_function = makeErrfun(threepiece, dadac:::tp_init_parms), 
+#'              err_function = loessErrfun, 
 #'              self_consist = TRUE) 
 #' plot_substitutions(res1)
 plot_substitutions = function(dadaOut, facetByGrp = TRUE){

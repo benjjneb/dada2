@@ -2,7 +2,7 @@
 #include <Rcpp.h>
 
 using namespace Rcpp;
-//' @useDynLib dadac
+//' @useDynLib dada2
 //' @importFrom Rcpp evalCpp
 
 B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose, bool inflate);
