@@ -122,9 +122,12 @@ dada <- function(uniques, quals=NULL,
   }
   
   # Validate err matrix
-  if(!( is.numeric(err) && nrow(err) == 16 && all(err>=0)))
-  { stop("Invalid error matrix.") }
+  if(!is.numeric(err)) stop("Error matrix must be numeric.")
+  if(!(nrow(err)==16)) stop("Error matrix must have 16 rows (A2A, A2C, ...).")
+  if(!all(err>=0)) stop("All error matrix entries must be >= 0.")
+  if(!all(err<=1)) stop("All error matrix entries must be <=1.")
   if(any(err==0)) warning("Zero in error matrix.")
+  # Might want to check for summed transitions from NT < 1 also.
   
   # Validate err_model
   if(!opts$USE_QUALS) {
@@ -210,6 +213,14 @@ dada <- function(uniques, quals=NULL,
       err[13:16,1] <- err[13:16,1]/sum(err[13:16,1])
     }
 
+    if(self_consist) { # Validate err matrix
+      if(!is.numeric(err)) stop("Error matrix returned by err_function not numeric.")
+      if(!(nrow(err)==16)) stop("Error matrix returned by err_function does not have 16 rows.")
+      if(!all(err>=0)) stop("Error matrix returned by err_function has entries <0.")
+      if(!all(err<=1)) stop("Error matrix returned by err_function has entries >1.")
+      if(any(err==0)) warning("Error matrix returned by err_function has 0 entries.")      
+    }
+    
     # Termination condition for self_consist loop
     if((!self_consist) || identical(cur, prev) || (nconsist >= opts$MAX_CONSIST)) {
       break

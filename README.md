@@ -1,7 +1,7 @@
 dada2
 =====
 
-Bioconductor/R interface package for the Divisive Amplicon Denoising Algorithm. Usable for Illumina of pyrosequenced amplicon data.
+Bioconductor/R interface package for the Divisive Amplicon Denoising Algorithm. Usable for Illumina and (soon) pyrosequenced amplicon data.
 
 Planned feature improvements are publicly catalogued at the main DADA2 development site on github; specifically on the "Issues" page for DADA2:
 
