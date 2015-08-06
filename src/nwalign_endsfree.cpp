@@ -222,13 +222,12 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
  differs from al[0]
  */
 Sub *al2subs(char **al) {
-  int i, i0, i1, bytes, align_length, len0, nsubs;
+  int i, i0, i1, align_length, len0, nsubs;
   bool is_nt0, is_nt1;
   char *al0, *al1; // dummy pointers to the sequences in the alignment
   
   // define dummy pointer to key string
   char *pkey;
-  int key_size = 0; // key buffer bytes written
   
   if(!al) { // Null alignment (outside kmer thresh) -> Null sub
     Sub *sub = NULL;

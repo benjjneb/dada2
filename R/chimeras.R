@@ -84,10 +84,12 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' @param unqs (Required). A named integer vector or data.frame with "sequence" and "abundance" cols.
 #'   This contains the sequences (and corresponding abundances) to be checked for bimeras.
 #'   
-#' @param minFoldParentOverAbundance (Optional). A \code{numeric(1)}. Default is 10.
-#'   Only sequences at least this much-fold more abundant than a sequence can be its "parents".
+#' @param minFoldParentOverAbundance (Optional). A \code{numeric(1)}. Default is 1.
+#'   Only sequences more than this-fold abundant than a sequence can be its "parents".
+#'   Default is intentionally permissive, as aggressively removing potential chimeras
+#'    is the conservative choice for downstream analysis.
 #'   
-#' @param minParentAbundance (Optional). A \code{numeric(1)}. Default is 100.
+#' @param minParentAbundance (Optional). A \code{numeric(1)}. Default is 8.
 #'   Only sequences at least this abundant can be "parents".
 #' 
 #' @param allowOneOff (Optional). A \code{logical(1)}. Default is TRUE.
@@ -109,7 +111,7 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' 
 #' @export
 #' 
-isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
   unqs <- as.uniques(unqs)
   abunds <- unname(unqs)
   seqs <- names(unqs)

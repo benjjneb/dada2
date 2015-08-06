@@ -112,8 +112,8 @@ Rcpp::DataFrame b_get_quality_subs(B *b) {
   Raw *raw, *center;
   
   // Storage for counts for each qual and each nti->ntj
-  int32_t nts_by_qual[1 + 4][QMAX-QMIN+1] = {0};
-  int32_t subs_by_qual[1 + 16][QMAX-QMIN+1] = {0};
+  int32_t nts_by_qual[1 + 4][QMAX-QMIN+1] = {{0}};
+  int32_t subs_by_qual[1 + 16][QMAX-QMIN+1] = {{0}};
   
   if(b->use_quals) {
     for(i=0;i<b->nclust;i++) {
@@ -351,8 +351,8 @@ Rcpp::DataFrame b_get_positional_subs(B *b) {
   int i, j, f, s, sub_ind;
   Fam *fam;
   Sub *sub;
-  int32_t nts_by_pos[1+4][SEQLEN] = {0};
-  int32_t subs_by_pos[1+16][SEQLEN] = {0};
+  int32_t nts_by_pos[1+4][SEQLEN] = {{0}};
+  int32_t subs_by_pos[1+16][SEQLEN] = {{0}};
   
   for(i=0;i<b->nclust;i++) {
     for(j=0;j<strlen(b->bi[i]->seq);j++) {

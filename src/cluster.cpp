@@ -688,7 +688,7 @@ bool b_shuffle(B *b) {
  cluster they are currently in. Cluster centers cannot move.
 */
 bool b_shuffle_oneway(B *b) {
-  int i, f, r, j, foo, inew;
+  int i, f, r, inew;
   int ibest, index;
   bool shuffled = false;
   Raw *raw;
@@ -963,9 +963,8 @@ void b_center_update(B *b) {
   is then assigned to bi->seq
 */
 void bi_make_consensus(Bi *bi, bool use_quals) {
-  int i,f,r,s,nti0,nti1,pos,maxc,maxi;
-  char seq[SEQLEN];
-  double counts[4][SEQLEN] = {0.0};
+  int i,f,r,s,nti0,nti1,pos;
+  double counts[4][SEQLEN] = {{0.0}};
   Sub *sub = NULL;
   Raw *raw;
   

@@ -192,6 +192,7 @@ double get_pS(Fam *fam, Bi *bi, B *b) {
   return pval;
 }
 
+// I AM BROKEN RIGHT NOW BECAUSE OF CHANGE IN ERR MATRIX STUFF!!!!!!!!!
 void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD) {
   int i, j, k, d;
   size_t index;
@@ -414,7 +415,7 @@ void b_make_pS_lookup(B *b) {
   b->nlam = nlam;
 }
 
-// [[Rcpp::export]]
+// I AM BROKEN RIGHT NOW BECAUSE OF CHANGE IN ERR MATRIX STUFF!!!!!!!!!
 Rcpp::DataFrame getSingletonCDF(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD) {
   int i, j;
   // Copy err into a C style array

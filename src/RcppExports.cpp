@@ -92,38 +92,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// getSingletonCDF
-Rcpp::DataFrame getSingletonCDF(Rcpp::NumericMatrix err, std::vector<int> nnt, int maxD);
-static SEXP dada2_getSingletonCDF_try(SEXP errSEXP, SEXP nntSEXP, SEXP maxDSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type err(errSEXP);
-    Rcpp::traits::input_parameter< std::vector<int> >::type nnt(nntSEXP);
-    Rcpp::traits::input_parameter< int >::type maxD(maxDSEXP);
-    __result = Rcpp::wrap(getSingletonCDF(err, nnt, maxD));
-    return __result;
-END_RCPP_RETURN_ERROR
-}
-RcppExport SEXP dada2_getSingletonCDF(SEXP errSEXP, SEXP nntSEXP, SEXP maxDSEXP) {
-    SEXP __result;
-    {
-        Rcpp::RNGScope __rngScope;
-        __result = PROTECT(dada2_getSingletonCDF_try(errSEXP, nntSEXP, maxDSEXP));
-    }
-    Rboolean __isInterrupt = Rf_inherits(__result, "interrupted-error");
-    if (__isInterrupt) {
-        UNPROTECT(1);
-        Rf_onintr();
-    }
-    Rboolean __isError = Rf_inherits(__result, "try-error");
-    if (__isError) {
-        SEXP __msgSEXP = Rf_asChar(__result);
-        UNPROTECT(1);
-        Rf_error(CHAR(__msgSEXP));
-    }
-    UNPROTECT(1);
-    return __result;
-}
 // dada_uniques
 Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose);
 RcppExport SEXP dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP use_singletonsSEXP, SEXP omegaSSEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP qminSEXP, SEXP qmaxSEXP, SEXP final_consensusSEXP, SEXP verboseSEXP) {
@@ -159,14 +127,12 @@ END_RCPP
 static int dada2_RcppExport_validate(const char* sig) { 
     static std::set<std::string> signatures;
     if (signatures.empty()) {
-        signatures.insert("Rcpp::DataFrame(*getSingletonCDF)(Rcpp::NumericMatrix,std::vector<int>,int)");
     }
     return signatures.find(sig) != signatures.end();
 }
 
 // registerCCallable (register entry points for exported C++ functions)
 RcppExport SEXP dada2_RcppExport_registerCCallable() { 
-    R_RegisterCCallable("dada2", "dada2_getSingletonCDF", (DL_FUNC)dada2_getSingletonCDF_try);
     R_RegisterCCallable("dada2", "dada2_RcppExport_validate", (DL_FUNC)dada2_RcppExport_validate);
     return R_NilValue;
 }

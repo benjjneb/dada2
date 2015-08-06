@@ -272,7 +272,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
 }
 
 B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose, bool inflate) {
-  int i, f, r;
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;

@@ -76,10 +76,6 @@ evaluate_band <- function(seqs, score, gap, band_size, max_aligns) {
     .Call('dada2_evaluate_band', PACKAGE = 'dada2', seqs, score, gap, band_size, max_aligns)
 }
 
-getSingletonCDF <- function(err, nnt, maxD) {
-    .Call('dada2_getSingletonCDF', PACKAGE = 'dada2', err, nnt, maxD)
-}
-
 #' @useDynLib dada2
 #' @importFrom Rcpp evalCpp
 NULL
