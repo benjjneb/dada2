@@ -19,8 +19,15 @@
 #' @param mapR (Required). An integer vector map from read index to unique index.
 #'  The map returned by derepFastq() for the reverse reads.
 #'
+#' @param keepMismatch(Optional). A \code{logical(1)}. Default is False.
+#'  If true, the pairs that did not match are retained in the return data.frame.
+#'
 #' @param minOverlap (Optional). A \code{numeric(1)} of the minimum overlap
 #'  required for merging the forward and reverse reads. Default is 20.
+#'
+#' @param propagateCol (Optional). Character vector. Default is empty.
+#'  The mergePairs return data.frame will include copies of columns with names specified
+#'  in the dada()$clustering data.frame.
 #'
 #' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
@@ -35,17 +42,15 @@
 #'  \item{$nindel: Number of indels in the overlap region.}
 #'  \item{$match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
 #'          FALSE otherwise.}
+#'  \item{$...: Additional columns specified in the propagateCol argument.}
 #' }
 #' 
-#' The columns specified in the keep argument will also be propagated from the $clustering data.frames of the
-#'  forward and reverse dada objects.
-#'
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}
 #'
 #' @export
 #' @import Biostrings 
 #' 
-mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character(0), verbose=TRUE, align=TRUE) {
+mergePairs <- function(dadaF, mapF, dadaR, mapR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE, align=TRUE) {
   rF <- dadaF$map[mapF]
   rR <- dadaR$map[mapR]
   if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
@@ -55,51 +60,24 @@ mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character
   Funqseq <- unname(dadaF$clustering$sequence[ups$forward])
   Runqseq <- as(reverseComplement(DNAStringSet(unname(dadaR$clustering$sequence[ups$reverse]))), "character")
   
-  if(align) { # Use unbanded N-W align to compare forward/reverse
-    # May want to adjust align params here, but for now just using dadaOpt
-    alvecs <- mapply(function(x,y) nwalign(x,y,band=-1), Funqseq, Runqseq, SIMPLIFY=FALSE)
-    outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
-    ups$nmatch <- outs[,1]
-    ups$nmismatch <- outs[,2]
-    ups$nindel <- outs[,3]
-    ups$match <- (ups$nmatch > minOverlap) & (ups$nmismatch==0) & (ups$nindel==0)
-    # Make the sequence
-    ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
-  } else { # No align, just grep, to compare forward/reverse
-    Fstart <- mapply(function(x,y) gregexpr(x,y)[[1]], subseq(Runqseq,1,minOverlap), Funqseq, SIMPLIFY=FALSE)
-    # Returns a list of integer vectors, which may be -1 (no match), length1 and positive (1 match) or len>1 (multiple matches)
-    # Make that a flat vector
-    Fstarts <- c(Fstart, recursive=TRUE)
-    # Record which pair each match corresponds to
-    pairs <- rep(seq(length(Funqseq)), times=sapply(Fstart, length))
-    # And get the start/end of the overlap subseqs for each
-    Fstarts[Fstarts==-1] <- 1
-    Fends <- nchar(Funqseq[pairs])
-    Rstarts <- rep(1, length(Fstarts))
-    Rends <- Rstarts + Fends - Fstarts
-    Rends[Rends > nchar(Runqseq[pairs])] <- nchar(Runqseq[pairs])[Rends > nchar(Runqseq[pairs])]
-    
-    # Determine what matches
-    matches <- mapply(function(x,y) x==y, subseq(Funqseq[pairs], Fstarts, Fends), subseq(Runqseq[pairs], Rstarts, Rends))
-  
-    # Take the first match in each pair set (which should be the longest overlap), or the first non-match if no match
-    mat <- unname(cbind(pairs, matches, Fstarts, Fends, Rstarts, Rends))
-    mat <- mat[!duplicated(mat[,c(1,2)]),] # drop duplicates in pairs/match (ASSUMES earlier matches are first and preferred)
-    fmat <- mat[mat[,2]==1,] # Take those that were paired
-    fmat <- rbind(fmat, mat[!mat[,1] %in% fmat[,1],]) # Add those that weren't
-    fmat <- fmat[order(fmat[,1]),] # And put it in order
-  
-    ups$match <- as.logical(fmat[,2])
-    ups$sequence <- paste0(Funqseq, subseq(Runqseq,fmat[,6]+1,nchar(Runqseq))) ## WHAT IS SEQ WHEN !MATCH??
-  }
+  # Use unbanded N-W align to compare forward/reverse
+  # May want to adjust align params here, but for now just using dadaOpt
+  alvecs <- mapply(function(x,y) nwalign(x,y,band=-1), Funqseq, Runqseq, SIMPLIFY=FALSE)
+  outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
+  ups$nmatch <- outs[,1]
+  ups$nmismatch <- outs[,2]
+  ups$nindel <- outs[,3]
+  ups$match <- (ups$nmatch > minOverlap) & (ups$nmismatch==0) & (ups$nindel==0)
+  # Make the sequence
+  ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
 
   # Add abundance and sequence to the output data.frame
   tab <- table(pairdf$forward, pairdf$reverse)
   ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
   ups$sequence[!ups$match] <- ""
   # Add columns from forward/reverse clustering
-  keep <- keep[keep %in% colnames(dadaF$clustering)]
-  for(col in keep) {
+  propagateCol <- propagateCol[propagateCol %in% colnames(dadaF$clustering)]
+  for(col in propagateCol) {
     ups[,paste0("F.",col)] <- dadaF$clustering[ups$forward,col]
     ups[,paste0("R.",col)] <- dadaR$clustering[ups$reverse,col]
   }
@@ -110,6 +88,8 @@ mergePairs <- function(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep=character
   if(verbose) {
     cat(sum(ups$abundance[ups$match]), "paired-reads (in", sum(ups$match), "unique pairings) successfully merged out of", sum(ups$abundance), "(in", nrow(ups), "pairings) input.\n")
   }
+  
+  if(!keepMismatch) { ups <- ups[ups$match,] }
   ups
 }
 

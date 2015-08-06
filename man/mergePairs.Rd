@@ -4,8 +4,8 @@
 \alias{mergePairs}
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
-mergePairs(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep = character(0),
-  verbose = TRUE, align = TRUE)
+mergePairs(dadaF, mapF, dadaR, mapR, keepMismatch = FALSE, minOverlap = 20,
+  propagateCol = character(0), verbose = TRUE, align = TRUE)
 }
 \arguments{
 \item{dadaF}{(Required). Output of dada() function.
@@ -23,7 +23,14 @@ mergePairs(dadaF, mapF, dadaR, mapR, minOverlap = 20, keep = character(0),
 \item{minOverlap}{(Optional). A \code{numeric(1)} of the minimum overlap
  required for merging the forward and reverse reads. Default is 20.}
 
+\item{propagateCol}{(Optional). Character vector. Default is empty.
+ The mergePairs return data.frame will include copies of columns with names specified
+ in the dada()$clustering data.frame.}
+
 \item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
+
+\item{keepMismatch(Optional).}{A \code{logical(1)}. Default is False.
+ If true, the pairs that did not match are retained in the return data.frame.}
 }
 \value{
 Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
@@ -37,10 +44,8 @@ Dataframe. One row for each unique pairing of forward/reverse denoised sequences
  \item{$nindel: Number of indels in the overlap region.}
  \item{$match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
          FALSE otherwise.}
+ \item{$...: Additional columns specified in the propagateCol argument.}
 }
-
-The columns specified in the keep argument will also be propagated from the $clustering data.frames of the
- forward and reverse dada objects.
 }
 \description{
 This function takes the output of dada() and the map from read to unique index
