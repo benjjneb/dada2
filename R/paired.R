@@ -48,7 +48,6 @@
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}
 #'
 #' @export
-#' @import Biostrings 
 #' 
 mergePairs <- function(dadaF, mapF, dadaR, mapR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE, align=TRUE) {
   rF <- dadaF$map[mapF]
@@ -93,6 +92,9 @@ mergePairs <- function(dadaF, mapF, dadaR, mapR, keepMismatch=FALSE, minOverlap 
   ups
 }
 
+#' @importFrom ShortRead FastqStreamer
+#' @importFrom ShortRead id
+#' @importFrom ShortRead yield
 sameOrder <- function(fnF, fnR) {
   matched <- TRUE
   fF <- FastqStreamer(fnF)

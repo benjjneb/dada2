@@ -48,7 +48,16 @@
 #'  \code{\link[ShortRead]{trimTails}}
 #' 
 #' @export
-#' @import ShortRead
+#' 
+#' @importFrom ShortRead FastqStreamer
+#' @importFrom ShortRead yield
+#' @importFrom ShortRead writeFastq
+#' @importFrom ShortRead trimTails
+#' @importFrom ShortRead nFilter
+#' @importFrom Biostrings quality
+#' @importFrom Biostrings narrow
+#' @importFrom Biostrings width
+#' 
 fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
   # See also filterFastq in the ShortRead package
   start <- max(1, trimLeft + 1)
@@ -167,7 +176,16 @@ fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN
 #'  \code{\link[ShortRead]{trimTails}}
 #' 
 #' @export
-#' @import ShortRead
+#' 
+#' @importFrom ShortRead FastqStreamer
+#' @importFrom ShortRead yield
+#' @importFrom ShortRead writeFastq
+#' @importFrom ShortRead trimTails
+#' @importFrom ShortRead nFilter
+#' @importFrom Biostrings quality
+#' @importFrom Biostrings narrow
+#' @importFrom Biostrings width
+#' 
 fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
   # Warning: This assumes that forward/reverse reads are in the same order
   # IT DOES NOT CHECK THE ID LINES
@@ -276,7 +294,9 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), trun
   }
 }
 
-#' @import ShortRead
+# # @importFrom ShortRead :::.check_type_and_length
+#' @importFrom ShortRead srFilter
+#' @importFrom Biostrings quality
 minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
 {
   ShortRead:::.check_type_and_length(minQ, "numeric", 1)
@@ -285,7 +305,9 @@ minQFilter <- function (minQ = 0L, .name = "MinQFilter")
   }, name = .name)
 }
 
-#' @import ShortRead
+# # @importFrom ShortRead :::.check_type_and_length
+#' @importFrom Biostrings quality
+#' @importFrom ShortRead srFilter
 maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter") 
 {
   ShortRead:::.check_type_and_length(maxEE, "numeric", 1)
@@ -294,7 +316,8 @@ maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter")
   }, name = .name)
 }
 
-#' @import ShortRead
+# # @importFrom ShortRead :::.check_type_and_length
+#' @importFrom Biostrings width
 minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
   ShortRead:::.check_type_and_length(minLen, "numeric", 1)
   srFilter(function(x) {

@@ -15,7 +15,10 @@
 #' 
 #' @importFrom reshape2 melt
 #' @importFrom reshape2 dcast
-#' @import data.table
+#' @importFrom data.table data.table
+#' @importFrom data.table setnames
+#' @importFrom data.table dcast.data.table
+#' @importFrom data.table :=
 #' @import ggplot2
 #' 
 #' @export
@@ -101,7 +104,8 @@ plot_substitutions = function(dadaOut, facetByGrp = TRUE){
 #'  
 #' @export
 #' @import ggplot2
-#' @import gridExtra
+#' @importFrom gridExtra grid.arrange
+#' 
 showErrors <- function(dq, nti, ntj="all", erri=TRUE, erro=TRUE, ...) {
   ACGT <- c("A", "C", "G", "T")
   if(ntj == "all") {

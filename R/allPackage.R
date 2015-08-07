@@ -1,10 +1,6 @@
 #' DADA2 package
 #'
 #' Some prose about the virtues of DADA here.
-#'
-#' @import methods
-#' @import Biobase
-#' @import BiocGenerics
 #' 
 #' @name dada2-package
 #' 

@@ -2,8 +2,7 @@
 % Please edit documentation in R/sequenceIO.R
 \name{qtables2}
 \alias{qtables2}
-\title{Internal function to replicate tables functionality while also returning average quals and a map
-from reads to uniques}
+\title{Internal tables function}
 \usage{
 qtables2(x, qeff = FALSE)
 }
@@ -11,4 +10,5 @@ qtables2(x, qeff = FALSE)
 Internal function to replicate tables functionality while also returning average quals and a map
 from reads to uniques
 }
+\keyword{internal}
 
