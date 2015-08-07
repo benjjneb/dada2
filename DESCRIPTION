@@ -1,21 +1,22 @@
 Package: dada2
 Type: Package
 Title: DADA2: Algorithm for Amplicon Sequence Denoising
-Version: 0.4.3
+Version: 0.9.0
+Date: 2015-08-06
 Author: Ben Callahan, Paul McMurdie, Susan Holmes
 Maintainer: Bioconductor Package Maintainer
- <maintainer@bioconductor.org>
+    <maintainer@bioconductor.org>
 Description: This is a package.
 License: LGPL-3 | file LICENSE
 LazyLoad: yes
-Depends: 
+Depends:
     R (>= 3.1.0),
-    BiocGenerics (>= 0.10.0),
-    Biostrings (>= 2.32.1),
     Rcpp (>= 0.11.2)
 Imports:
     Biobase,
     methods,
+    BiocGenerics (>= 0.10.0),
+    Biostrings (>= 2.32.1),
     ggplot2 (>= 1.0),
     gridExtra (>= 0.9),
     data.table (>= 1.9.4),
@@ -29,3 +30,17 @@ VignetteBuilder: knitr
 biocViews: Microbiome, Sequencing
 LinkingTo: Rcpp
 LazyData: true
+Collate:
+    'RcppExports.R'
+    'Rmisc.R'
+    'allClasses.R'
+    'allPackage.R'
+    'chimeras.R'
+    'dada.R'
+    'dadaOptions.R'
+    'errorModels.R'
+    'filter.R'
+    'paired.R'
+    'plot-methods.R'
+    'sequenceIO.R'
+    'show-methods.R'

@@ -4,7 +4,7 @@
 \alias{isBimeraDenovo}
 \title{Identify bimeras de-novo from collections of unique sequences.}
 \usage{
-isBimeraDenovo(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8,
+isBimeraDenovo(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8,
   allowOneOff = TRUE, minOneOffParentDistance = 4, maxShift = 16,
   verbose = FALSE)
 }
@@ -12,10 +12,12 @@ isBimeraDenovo(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8,
 \item{unqs}{(Required). A named integer vector or data.frame with "sequence" and "abundance" cols.
   This contains the sequences (and corresponding abundances) to be checked for bimeras.}
 
-\item{minFoldParentOverAbundance}{(Optional). A \code{numeric(1)}. Default is 10.
-  Only sequences at least this much-fold more abundant than a sequence can be its "parents".}
+\item{minFoldParentOverAbundance}{(Optional). A \code{numeric(1)}. Default is 1.
+  Only sequences more than this-fold abundant than a sequence can be its "parents".
+  Default is intentionally permissive, as aggressively removing potential chimeras
+   is the conservative choice for downstream analysis.}
 
-\item{minParentAbundance}{(Optional). A \code{numeric(1)}. Default is 100.
+\item{minParentAbundance}{(Optional). A \code{numeric(1)}. Default is 8.
   Only sequences at least this abundant can be "parents".}
 
 \item{allowOneOff}{(Optional). A \code{logical(1)}. Default is TRUE.

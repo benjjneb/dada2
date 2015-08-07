@@ -71,7 +71,7 @@ hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
 
 #' @export
 #' @import ggplot2
-#' @import gridExtra
+#' @importFrom gridExtra grid.arrange
 showSubPos <- function(subpos, ...) {
   subpos$pos <- seq(nrow(subpos))
   subpos <- subpos[1:match(0,subpos$nts)-1,]
