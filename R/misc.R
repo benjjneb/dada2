@@ -1,11 +1,9 @@
-#' @export
 isHit100 <- function(clust, fn) {
   bb <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
   bbHit100 <- bb[bb$identity == 100 & bb$coverage == nchar(clust[match(bb$seqid,clust$id),"sequence"]),]
   return(clust$id %in% bbHit100$seqid)
 }
 
-#' @export
 isOneOff <- function(clust, fn) {
   hit <- isHit100(clust, fn)
   bball <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
@@ -26,7 +24,6 @@ isOneOff <- function(clust, fn) {
   return(oneOff)
 }
 
-#' @export
 checkConvergence <- function(dadaO) {
   sapply(dadaO$err_in, function(x) sum(abs(dadaO$err_out-x)))
 }
@@ -49,13 +46,11 @@ nwhamming <- Vectorize(function(s1, s2, ...) {
   return(out["mismatch"]+out["indel"])
 })
 
-#' @export 
 nweval <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   C_eval_pair(al[1], al[2])
 })
 
-#' @export
 strdiff <- function(s1, s2) {
   xx = unlist(strsplit(s1,""))
   yy = unlist(strsplit(s2,""))
@@ -84,24 +79,6 @@ showSubPos <- function(subpos, ...) {
   grid.arrange(pAll, pAll, pA, pC, pG, pT, nrow=3, ...)
 }
 
-#' @export
-getIll <- function(fn, remove_singletons = FALSE) {
-  if(is.numeric(fn)) {
-    fn <- paste0("~/Desktop/Illumina/metaID-", fn, "_R1.fastq.gz")
-  }
-  ill <- derepFastq(fn)
-  ill <- filterNs(ill)
-  if(remove_singletons) { ill <- ill[ill>1] }
-  ill
-}
-
-#' @export
-filterNs <- function(unqs) { # For now all Ns must be removed
-  acgts <- sapply(names(unqs), function(x) nchar(gsub("[ACGT]", "", x))==0)
-  unqs[acgts]  
-}
-
-#' @export
 subseqUniques <- function(unqs, start, end) {
   subnms <- subseq(names(unqs), start, end)
   newNames <- unique(subnms)
@@ -114,7 +91,6 @@ subseqUniques <- function(unqs, start, end) {
   newUniques[sapply(names(newUniques), function(nm) nchar(nm) == (end-start+1))]
 }
 
-#' @export
 mergeUniques <- function(unqsList, ...) {
   if(!is.list(unqsList) && length(list(...))>=1) {
     unqsList = list(unqsList, unlist(unname(list(...))))
@@ -132,16 +108,18 @@ mergeUniques <- function(unqsList, ...) {
 }
 
 #' @export
-as.uniques <- function(df) {
-  if(is.integer(df) && length(names(df)) != 0 && !any(is.na(names(df)))) { # Named integer vector already
-    return(df)
-  } else if(all(c("genotypes", "clustering") %in% names(df))) {  # dada return 
-    return(df$genotypes)
-  } else if(is.data.frame(df) && all(c("sequence", "abundance") %in% colnames(df))) {
-    unqs <- as.integer(df$abundance)
-    names(unqs) <- df$sequence
+as.uniques <- function(foo) {
+  if(is.integer(foo) && length(names(foo)) != 0 && !any(is.na(names(foo)))) { # Named integer vector already
+    return(foo)
+  } else if(class(foo) == "dada") {  # dada return 
+    return(foo$genotypes)
+  } else if(class(foo) == "derep") {
+    return(foo$uniques)
+  } else if(is.data.frame(foo) && all(c("sequence", "abundance") %in% colnames(foo))) {
+    unqs <- as.integer(foo$abundance)
+    names(unqs) <- foo$sequence
     return(unqs)
   } else {
-    stop("Unrecognized format: Requires named integer vector, dada object or $clustering data.frame.")
+    stop("Unrecognized format: Requires named integer vector, dada, derep, or a data.frame with $sequence and $abundance columns.")
   }
 }

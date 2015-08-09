@@ -86,18 +86,21 @@ plot_substitutions = function(dadaOut, facetByGrp = TRUE){
 #' 
 #' @param dq Required. A dada return object.
 #' 
-#' @param nti Required. The base from which errors are displayed.
-#' 
+#' @param nti Optional. Default "all". Choice of "A", "C", "G", "T".
 #' @param ntj Optional. Default "all". Choice of "A", "C", "G", "T".
 #'  The error rate from nti->ntj will be plotted. If "all" is selected,
-#'  the error rate from nti to all 4 other bases will be plotted.
+#'  the error rate from all 4 nti, or to all 4 ntj, will be plotted.
 #'  
-#' @param erri Optional. Default TRUE.
-#'  A \code{logical(1)} determining whether to plot the input error rates.
-#'
-#' @param erro Optional. Default TRUE.
-#'  A \code{logical(1)} determining whether to plot the output error rates.
+#' @param err_out Optional. Default TRUE.
+#'  A \code{logical(1)} determining whether to plot the output error rates (solid).
 #' 
+#' @param err_in Optional. Default FALSE.
+#'  A \code{logical(1)} determining whether to plot the input error rates (dashed).
+#'
+#' @param nominal_q Optional. Default FALSE.
+#'  A \code{logical(1)} determining whether to plot the expected error rate (red) if the
+#'  quality score exactly matched its nominal definition: Q = -10 log10(p_err).
+#'
 #' @return A \code{\link{ggplot2}} object that will be rendered
 #'  to default device if \code{\link{print}ed},
 #'  or can be stored and further modified.
@@ -106,18 +109,29 @@ plot_substitutions = function(dadaOut, facetByGrp = TRUE){
 #' @import ggplot2
 #' @importFrom gridExtra grid.arrange
 #' 
-showErrors <- function(dq, nti, ntj="all", erri=TRUE, erro=TRUE, ...) {
+showErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nominal_q=FALSE, ...) {
   ACGT <- c("A", "C", "G", "T")
-  if(ntj == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, erri, erro, title=paste(x, "->", y)), nti, ACGT, SIMPLIFY=FALSE)
+  if(!(nti %in% c(ACGT, "all") && (ntj %in% c(ACGT, "all")))) {
+    stop("nti and ntj must be a nucleotide (A/C/G/T) or all.")
+  }
+  if(nti == "all" && ntj == "all") {
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q), rep(ACGT, each=4), rep(ACGT,4), SIMPLIFY=FALSE)
+    do.call(grid.arrange, c(err_plots, ncol=4))
+  }
+  else if(nti == "all") {
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q), ACGT, ntj, SIMPLIFY=FALSE)
+    do.call(grid.arrange, c(err_plots, ncol=2))  
+  }
+  else if(ntj == "all") {
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q), nti, ACGT, SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=2))
   } else {
-    .showErrors(dq, nti, ntj, erri, erro)
+    .showErrors(dq, nti, ntj, err_out, err_in, nominal_q)
   }
 }
 
 #' @import ggplot2
-.showErrors <- function(dq, nti, ntj, erri=TRUE, erro=TRUE, ...) {
+.showErrors <- function(dq, nti, ntj, err_out=TRUE, err_in=FALSE, nominal_q=FALSE, ...) {
   ACGT <- c("A", "C", "G", "T")
   tij <- 4*(which(ACGT==nti)-1) + which(ACGT==ntj)
   nij <- paste0(nti,"2",ntj)
@@ -125,24 +139,37 @@ showErrors <- function(dq, nti, ntj="all", erri=TRUE, erro=TRUE, ...) {
   subdf$qave <- as.numeric(rownames(subdf))
   subdf[,nij] <- subdf[,nij]/(subdf[,paste0(nti,"2A")]+subdf[,paste0(nti,"2C")]+subdf[,paste0(nti,"2G")]+subdf[,paste0(nti,"2T")])
   
-  if(erri) {
+  p <- ggplot(data=subdf, aes_string(x="qave", y=paste0("log10(",nij,")")), ...)
+  p <- p + geom_point(na.rm=TRUE)
+
+  if(err_in) {
     erridf <- dq$err_in
     if(is.list(erridf)) erridf <- erridf[[1]]
     erridf <- as.data.frame(t(erridf))
     colnames(erridf) <- paste0(rep(ACGT, each=4), "2", ACGT)
     rownames(erridf) <- seq(dq$opts$QMIN, dq$opts$QMAX, length.out=nrow(erridf))
     erridf$qave <- as.numeric(rownames(erridf))
+    p <- p + geom_line(data=erridf, linetype="dashed")
   }
   
-  if(!("err_out" %in% ls(dq))) erro <- FALSE
-  if(erro) {
+  if(!("err_out" %in% ls(dq))) err_out <- FALSE
+  if(err_out) {
     errodf <- as.data.frame(t(dq$err_out))
     errodf$qave <- as.numeric(rownames(errodf))
+    p <- p + geom_line(data=errodf)
   }
   
-  p <- ggplot(data=subdf, aes_string(x="qave", y=paste0("log10(",nij,")")), ...)
-  p <- p + geom_point()
-  if(erri) p <- p + geom_line(data=erridf)
-  if(erro) p <- p + geom_line(data=errodf, linetype="dashed")
+  if(nominal_q) {
+    qq <- subdf$qave
+    if(nti != ntj) { 
+      nom_err <- (1/3) * 10^(-qq/10)
+    } else {
+      nom_err <- 1. - 10^(-qq/10)
+    }
+    nomqdf <- data.frame(qave=qq, nom=nom_err)
+    colnames(nomqdf)[[2]] <- nij
+    p <- p + geom_line(data=nomqdf, color="red")
+  }
+  
   return(p)
 }

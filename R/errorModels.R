@@ -74,7 +74,7 @@ loessErrfun <- function(trans) {
 inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
   t_errs <- c("A2C", "A2G", "A2T", "C2A", "C2G", "C2T", "G2A", "G2C", "G2T", "T2A", "T2C", "T2G")
   err[t_errs,] <- (err[t_errs,] * inflation)/(1 + (inflation-1) * err[t_errs,])
-  if(inflateNonSubs) { # Also inflate the non-substitution probabilities
+  if(inflateSelfTransitions) { # Also inflate the non-substitution probabilities
     t_nonsubs <- c("A2A", "C2C", "G2G", "T2T")
     err[t_nonsubs,] <- (err[t_nonsubs,] * inflation)/(1 + (inflation-1) * err[t_nonsubs,])
   }

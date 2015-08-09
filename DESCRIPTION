@@ -32,7 +32,6 @@ LinkingTo: Rcpp
 LazyData: true
 Collate:
     'RcppExports.R'
-    'Rmisc.R'
     'allClasses.R'
     'allPackage.R'
     'chimeras.R'
@@ -40,6 +39,7 @@ Collate:
     'dadaOptions.R'
     'errorModels.R'
     'filter.R'
+    'misc.R'
     'paired.R'
     'plot-methods.R'
     'sequenceIO.R'

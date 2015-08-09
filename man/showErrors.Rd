@@ -4,22 +4,27 @@
 \alias{showErrors}
 \title{Plot error rates from after dada processing.}
 \usage{
-showErrors(dq, nti, ntj = "all", erri = TRUE, erro = TRUE, ...)
+showErrors(dq, nti = "all", ntj = "all", err_out = TRUE, err_in = FALSE,
+  nominal_q = FALSE, ...)
 }
 \arguments{
 \item{dq}{Required. A dada return object.}
 
-\item{nti}{Required. The base from which errors are displayed.}
+\item{nti}{Optional. Default "all". Choice of "A", "C", "G", "T".}
 
 \item{ntj}{Optional. Default "all". Choice of "A", "C", "G", "T".
  The error rate from nti->ntj will be plotted. If "all" is selected,
- the error rate from nti to all 4 other bases will be plotted.}
+ the error rate from all 4 nti, or to all 4 ntj, will be plotted.}
 
-\item{erri}{Optional. Default TRUE.
- A \code{logical(1)} determining whether to plot the input error rates.}
+\item{err_out}{Optional. Default TRUE.
+ A \code{logical(1)} determining whether to plot the output error rates (solid).}
 
-\item{erro}{Optional. Default TRUE.
- A \code{logical(1)} determining whether to plot the output error rates.}
+\item{err_in}{Optional. Default FALSE.
+ A \code{logical(1)} determining whether to plot the input error rates (dashed).}
+
+\item{nominal_q}{Optional. Default FALSE.
+ A \code{logical(1)} determining whether to plot the expected error rate (red) if the
+ quality score exactly matched its nominal definition: Q = -10 log10(p_err).}
 }
 \value{
 A \code{\link{ggplot2}} object that will be rendered
