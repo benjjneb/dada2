@@ -7,17 +7,22 @@
 #' Note: This function assumes that the fastq files for the forward and reverse reads
 #' were in the same order.
 #' 
-#' @param dadaF (Required). Output of dada() function.
-#'  The output list returned by the dada() function on the forward reads.
+#' @param dadaF (Required). A dada-class object or list of such objects.
+#'  The output of dada() function on the forward reads.
 #' 
-#' @param mapF (Required). An integer vector map from read index to unique index.
-#'  The map returned by derepFastq() for the forward reads.
+#' @param derepF (Required). A derep-class object or list of such objects.
+#'  The derep-class object returned by derepFastq() that was used as the input to the
+#'  dada-class object passed to the dadaF argument. If a list is provided, this matching
+#'  must be maintained at every position.
+#'  
+#'  Alternatively the map itself (derepFastq()$map) can be provided in place of the
+#'  derep-class object.
 #'   
-#' @param dadaR (Required). Output of dada() function.
-#'  The output list returned by the dada() function on the reverse reads.
+#' @param dadaR (Required). A dada-class object or list of such objects.
+#'  The output of dada() function on the forward reads.
 #' 
-#' @param mapR (Required). An integer vector map from read index to unique index.
-#'  The map returned by derepFastq() for the reverse reads.
+#' @param derepR (Required). A derep-class object or list of such objects.
+#'  See derepF description, but for the reverse reads.
 #'
 #' @param keepMismatch(Optional). A \code{logical(1)}. Default is False.
 #'  If true, the pairs that did not match are retained in the return data.frame.
@@ -49,7 +54,12 @@
 #'
 #' @export
 #' 
-mergePairs <- function(dadaF, mapF, dadaR, mapR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE) {
+mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE) {
+  if(class(derepF) == "derep") mapF <- derepF$map
+  else mapF <- derepF
+  if(class(derepR) == "derep") mapR <- derepR$map
+  else mapR <- derepR
+  if(!(is.integer(mapF) && is.integer(mapR))) stop("Incorrect format of derep arguments.")
   rF <- dadaF$map[mapF]
   rR <- dadaR$map[mapR]
   if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")

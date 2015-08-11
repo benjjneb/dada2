@@ -4,21 +4,26 @@
 \alias{mergePairs}
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
-mergePairs(dadaF, mapF, dadaR, mapR, keepMismatch = FALSE, minOverlap = 20,
-  propagateCol = character(0), verbose = TRUE)
+mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
+  minOverlap = 20, propagateCol = character(0), verbose = TRUE)
 }
 \arguments{
-\item{dadaF}{(Required). Output of dada() function.
- The output list returned by the dada() function on the forward reads.}
+\item{dadaF}{(Required). A dada-class object or list of such objects.
+ The output of dada() function on the forward reads.}
 
-\item{mapF}{(Required). An integer vector map from read index to unique index.
- The map returned by derepFastq() for the forward reads.}
+\item{derepF}{(Required). A derep-class object or list of such objects.
+ The derep-class object returned by derepFastq() that was used as the input to the
+ dada-class object passed to the dadaF argument. If a list is provided, this matching
+ must be maintained at every position.
 
-\item{dadaR}{(Required). Output of dada() function.
- The output list returned by the dada() function on the reverse reads.}
+ Alternatively the map itself (derepFastq()$map) can be provided in place of the
+ derep-class object.}
 
-\item{mapR}{(Required). An integer vector map from read index to unique index.
- The map returned by derepFastq() for the reverse reads.}
+\item{dadaR}{(Required). A dada-class object or list of such objects.
+ The output of dada() function on the forward reads.}
+
+\item{derepR}{(Required). A derep-class object or list of such objects.
+ See derepF description, but for the reverse reads.}
 
 \item{minOverlap}{(Optional). A \code{numeric(1)} of the minimum overlap
  required for merging the forward and reverse reads. Default is 20.}
