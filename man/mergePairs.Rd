@@ -5,7 +5,7 @@
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
 mergePairs(dadaF, mapF, dadaR, mapR, keepMismatch = FALSE, minOverlap = 20,
-  propagateCol = character(0), verbose = TRUE, align = TRUE)
+  propagateCol = character(0), verbose = TRUE)
 }
 \arguments{
 \item{dadaF}{(Required). Output of dada() function.

@@ -2,20 +2,20 @@
 #' 
 #' The dada function takes as input the unique sequences in an amplicon sequencing sample paired
 #'  with their abundances, and returns the sample genotypes paired with their abundances
-#'  inferred by the Divisive Amplicon Denoising Algorithm (Rosen, Callahan, Fisher, Holmes 2012).
+#'  inferred by the Divisive Amplicon Denoising Algorithm:
+#'  (Rosen, Callahan, Fisher, Holmes 2012; Callahan, McMurdie, Rosen, Han, Johnson, Holmes 2015).
 #'
-#' @param uniques (Required). Named integer vector or list of named integer vectors.
-#'  Each uniques vector is an integer vector of abundances, named by the unique DNA
-#'    sequence to which that abundance corresponds.
-#'  Sequences are only allowed to contain A/C/G/T characters.
-#'  A list of such vectors can be provided, in which case the error model will be 
-#'    shared across these samples when denoising.
+#' @param derep (Required). A derep-class object, the output of derepFastq.
+#'  The derep object contains the $uniques named integer vector of abundances, named by the unique
+#'  DNA sequence to which that abundance corresponds. It also contains $quals, a numeric matrix of 
+#'  the associated consensus quality scores (by averaging) with a row for each corresponding unique
+#'  in the uniques vector, and a column for each sequence position. If USE_QUALS = TRUE then the 
+#'  dada() error model uses the associated consensus quality scores.
 #'  
-#' @param quals (Optional). Numeric matrix containing average quality scores for each unique at each position.
-#'  The quals matrix has a row for each corresponding unique in the uniques vector, and a column for each
-#'  sequence position. So nrow(quals) == length(uniques) and ncol(quals) == nchar(uniques[[foo]]).
+#'  A list of derep objects can be provided, in which case each will be independently denoised but
+#'  the error model will be shared across these samples when denoising.
 #'  
-#' @param err (Required). 16xN numeric matrix.
+#' @param err (Required). 16xN numeric matrix. Each entry must be between 0 and 1.
 #'  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
 #'  Rows correspond to the 16 possible transitions (t_ij) indexed as so... 
 #'    1:A->A,  2:A->C,  3:A->G,  4:A->T,  5:C->A,  6:C->C,  7:C->G,  8:C->T,
@@ -27,39 +27,42 @@
 #'  If USE_QUALS = FALSE, the matrix must have only one column, which corresponds to the estimated error rate for that transition.
 #'    err[t_ij, 1] = Prob(j in sequence | i in sample genotype).
 #'  
-#' @param err_function (Optional). Function.
-#'   If USE_QUALS = TRUE, err_function(dada()$trans_out) is computed and taken to be the new err matrix.
-#'    If self_consist = TRUE, the next iteration if the dada() algorithm will use this new err, and this
+#' @param errorEstimationFunction (Optional). Function. Default Null.
+#'   If USE_QUALS = TRUE, errorEstimationFunction(dada()$trans_out) is computed and taken to be the new err matrix.
+#'    If selfConsist = TRUE, the next iteration of the dada algorithm will use these new error rates, and this
 #'    will continue until the loop terminates due to convergence (or by hitting MAX_CONSIST). If
-#'    self_consist=FALSE, err_function is only used to calculate return value $err_out, but otherwise
+#'    selfConsist=FALSE, errorEstimationFunction is only used to calculate return value $err_out, but otherwise
 #'    has no effect on the algorithm.
 #'   
 #'   If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).
 #'  
-#' @param self_consist (Optional). \code{logical(1)}
+#' @param selfConsist (Optional). \code{logical(1)}. Default FALSE.
 #'  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat
 #'  the algorithm using the newly estimated error rates. This continues until convergence.
 #'
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
-#'    eg. dada(unq, err=err_in, OMEGA_A=1e-50, MAX_CLUST=50) 
+#'    eg. dada(unq, err=err_in, USE_QUALS=TRUE, OMEGA_A=1e-50, MAX_CLUST=50). See \code{\link{setDadaOpt}}
+#'    for a discussion of the various dada options. 
 #'
 #' @return A \code{\link{dada-class}} object. 
 #'   
-#'  Not that if \code{self_consist=TRUE}, 
+#'  Not that if \code{selfConsist=TRUE}, 
 #'  then \code{$err_in} is a list of length the number of times 
-#'  through the self_consist loop corresponding to the err used in each iteration. 
+#'  through the selfConsist loop corresponding to the err used in each iteration. 
 #'  \code{$err_out} is the final estimated error rate.
 #'   
 #'  If a list of uniques vectors was provided (i.e. multiple samples)
-#'  then a list of the above output lists
-#'  is returned corresponding to each input sample.
+#'  then a list of the \code{\link{dada-class}} objects is returned corresponding
+#'  to each input sample.
 #'  
+#' @seealso \code{\link{derepFastq}}, \code{\link{setDadaOpt}}
+#'
 #' @export
 #'
-dada <- function(uniques, quals=NULL,
+dada <- function(derep, #!!!!!
                  err,
-                 err_function = NULL,
-                 self_consist = FALSE, ...) {
+                 errorEstimationFunction = NULL,
+                 selfConsist = FALSE, ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
@@ -73,39 +76,32 @@ dada <- function(uniques, quals=NULL,
     }
   }
   
-  # If a single vector, make into a length 1 list
-  if(!is.list(uniques)) { uniques <- list(uniques) }
-  if(opts$USE_QUALS && is.null(quals)) { stop("Must provide quals if USE_QUALS is TRUE.") }
-  if(!is.null(quals) && !is.list(quals)) { quals <- list(quals) }
+  # If a single derep object, make into a length 1 list
+  if(class(derep) == "derep") { derep <- list(derep) }
+  if(opts$USE_QUALS && any(is.null(lapply(derep, function(x) x$quals)))) { stop("The input derep object(s) must include quals if USE_QUALS is TRUE.") }
   
-  # Validate uniques vector(s)
-  for(i in seq_along(uniques)) {
-    if(!(is.integer(uniques[[i]]))) {
-      if(is.numeric(uniques[[i]]) && all.equal(uniques[[i]], as.integer(uniques[[i]]))) {
-        nms <- names(uniques[[i]])
-        uniques[[i]] <- as.integer(uniques[[i]])
-        names(uniques[[i]]) <- nms
-      } else {
-        stop("Invalid uniques vector. Must be integer valued.")
-      }
+  # Validate derep object(s)
+  for(i in seq_along(derep)) {
+    if(!class(derep[[i]]) == "derep") stop("The derep argument must be a derep-class object or list of derep-class objects.")
+    if(!(is.integer(derep[[i]]$uniques))) {
+      stop("Invalid derep$uniques vector. Must be integer valued.")
     }
-    if(!(all(sapply(names(uniques[[i]]), function(x) nchar(gsub("[ACGT]", "", x))==0, USE.NAMES=FALSE)))) {
-      stop("Invalid uniques vector. Names must be sequences made up only of A/C/G/T.")
+    if(!(all(sapply(names(derep[[i]]$uniques), function(x) nchar(gsub("[ACGT]", "", x))==0, USE.NAMES=FALSE)))) {
+      stop("Invalid derep$uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
   }
 
   # Validate quals matrix(es)
-  if(!is.null(quals)) {
-    if(length(uniques) != length(quals)) { stop("Must be a qual matrix for each uniques vector.") }
-    for(i in seq(length(uniques))) {
-      if(nrow(quals[[i]]) != length(uniques[[i]])) {
-        stop("Qual matrices must have one row for each unique.")
+  if(opts$USE_QUALS) {
+    for(i in seq_along(derep)) {
+      if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) {
+        stop("derep$qual matrices must have one row for each derep$unique sequence.")
       }
-      if(any(sapply(names(uniques), nchar) > ncol(quals[[i]]))) {
-        stop("Qual matrices must have at least as many columns as the sequence length.")
+      if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) {
+        stop("derep$qual matrices must have as many columns as the length of the derep$unique sequences.")
       }
-      if(min(quals[[i]]) < opts$QMIN || max(quals[[i]] > opts$QMAX)) {
-        stop("Invalid quality matrix. Quality values must be between QMIN and QMAX.")
+      if(min(derep[[i]]$quals) < opts$QMIN || max(derep[[i]]$quals > opts$QMAX)) {
+        stop("Invalid derep$qual matrix. Quality values must be between QMIN and QMAX.")
       }
     }
   }
@@ -120,17 +116,17 @@ dada <- function(uniques, quals=NULL,
   
   # Validate err_model
   if(!opts$USE_QUALS) {
-    if(!is.null(err_function)) warning("The err_function argument is ignored when USE_QUALS is FALSE.")
-    err_function = NULL  # NULL error function has different meaning depending on USE_QUALS
+    if(!is.null(errorEstimationFunction)) warning("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
+    errorEstimationFunction = NULL  # NULL error function has different meaning depending on USE_QUALS
   } else {
-    if(is.null(err_function)) { 
-      if(self_consist) {
-        stop("Must provide an error function if USE_QUALS and self_consist=TRUE.")
+    if(is.null(errorEstimationFunction)) { 
+      if(selfConsist) {
+        stop("Must provide an error function if USE_QUALS and selfConsist=TRUE.")
       } else {
         message("No error function provided, no post-dada error estimates ($err_out) will be inferred.") 
       }
     } else {
-      if(!is.function(err_function)) stop("Must provide a function for err_function.")
+      if(!is.function(errorEstimationFunction)) stop("Must provide a function for errorEstimationFunction.")
 #      if(any(names(formals(err_model)) != c("parms", "qave"))) stop("err_model must be a function of two named arguments: err_model(parms, qave).")
     }
   }
@@ -139,7 +135,7 @@ dada <- function(uniques, quals=NULL,
   cur <- NULL
   nconsist <- 1
   errs <- list()
-  # The main loop, run once, or repeat until err repeats if self_consist=T
+  # The main loop, run once, or repeat until err repeats if selfConsist=T
 
   repeat{
     clustering <- list()
@@ -151,15 +147,16 @@ dada <- function(uniques, quals=NULL,
     prev <- cur
     errs[[nconsist]] <- err
 
-    for(i in seq(length(uniques))) {
-      if(is.null(quals)) { qi <- matrix(0, nrow=0, ncol=0) }
-      else { qi <- unname(t(quals[[i]])) } # Need transpose so that sequences are columns
+    for(i in seq_along(derep)) {
+      if(!opts$USE_QUALS) { qi <- matrix(0, nrow=0, ncol=0) }
+      else { qi <- unname(t(derep[[i]]$quals)) } # Need transpose so that sequences are columns
+
       if(nconsist == 1) {
-        cat("Sample", i, "-", sum(uniques[[i]]), "reads in", length(uniques[[i]]), "unique sequences.\n")
+        cat("Sample", i, "-", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
       } else if(i==1) {
         cat("   Consist step", nconsist, "\n")
       }
-      res <- dada_uniques(names(uniques[[i]]), unname(uniques[[i]]), err, qi, 
+      res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), err, qi, 
                           opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
@@ -173,6 +170,7 @@ dada <- function(uniques, quals=NULL,
                           opts[["VERBOSE"]])
       
       # Augment the returns
+      # ... nothing here for now
       
       # List the returns
       clustering[[i]] <- res$clustering
@@ -182,17 +180,17 @@ dada <- function(uniques, quals=NULL,
       map[[i]] <- res$map
       exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
-      if(!is.null(quals)) colnames(trans[[i]]) <- seq(opts$QMIN, opts$QMAX)  # Assumes C sides is returning one col for each integer from QMIN to QMAX
+      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(opts$QMIN, opts$QMAX)  # Assumes C sides is returning one col for each integer from QMIN to QMAX
     }
     # Accumulate the sub matrix
     cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient
     
     # Estimate the new error model (if applicable)
     if(opts$USE_QUALS) {
-      if(is.null(err_function)) {
+      if(is.null(errorEstimationFunction)) {
         err <- NULL
       } else {
-        err <- err_function(cur)
+        err <- errorEstimationFunction(cur)
       }
     } else { # Not using quals, MLE estimate for each transition type
       err <- cur + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
@@ -202,23 +200,23 @@ dada <- function(uniques, quals=NULL,
       err[13:16,1] <- err[13:16,1]/sum(err[13:16,1])
     }
 
-    if(self_consist) { # Validate err matrix
-      if(!is.numeric(err)) stop("Error matrix returned by err_function not numeric.")
-      if(!(nrow(err)==16)) stop("Error matrix returned by err_function does not have 16 rows.")
-      if(!all(err>=0)) stop("Error matrix returned by err_function has entries <0.")
-      if(!all(err<=1)) stop("Error matrix returned by err_function has entries >1.")
-      if(any(err==0)) warning("Error matrix returned by err_function has 0 entries.")      
+    if(selfConsist) { # Validate err matrix
+      if(!is.numeric(err)) stop("Error matrix returned by errorEstimationFunction not numeric.")
+      if(!(nrow(err)==16)) stop("Error matrix returned by errorEstimationFunction does not have 16 rows.")
+      if(!all(err>=0)) stop("Error matrix returned by errorEstimationFunction has entries <0.")
+      if(!all(err<=1)) stop("Error matrix returned by errorEstimationFunction has entries >1.")
+      if(any(err==0)) warning("Error matrix returned by errorEstimationFunction has 0 entries.")      
     }
     
-    # Termination condition for self_consist loop
-    if((!self_consist) || identical(cur, prev) || (nconsist >= opts$MAX_CONSIST)) {
+    # Termination condition for selfConsist loop
+    if((!selfConsist) || identical(cur, prev) || (nconsist >= opts$MAX_CONSIST)) {
       break
     } 
     nconsist <- nconsist+1
   } # repeat
 
   cat("\n")
-  if(self_consist) {
+  if(selfConsist) {
     if(nconsist >= opts$MAX_CONSIST) {
       warning("dada: Self-consistency loop terminated before convergence.")
     } else {
@@ -227,23 +225,23 @@ dada <- function(uniques, quals=NULL,
   }
   
   # Construct return object
-  # A single return list if one uniques vector provided.
-  # A list of return lists if multiple uniques vectors provided (of length=# of uniques vectors provided).
-  rval2 = replicate(length(uniques), list(genotypes=NULL, clustering=NULL, quality=NULL, subpos=NULL, trans=NULL, map=NULL, uniques=NULL,
+  # A single dada-class object if one derep object provided.
+  # A list of dada-class objects if multiple derep objects provided.
+  rval2 = replicate(length(derep), list(genotypes=NULL, clustering=NULL, quality=NULL, subpos=NULL, trans=NULL, map=NULL, uniques_in=NULL,
                                           err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
-  for(i in seq_along(uniques)) {
+  for(i in seq_along(derep)) {
     # Convert cur$genotypes to the named integer vector being used as the uniques format
-    rval2[[i]]$genotypes <- as.integer(clustering[[i]]$abundance)
-    names(rval2[[i]]$genotypes) <- clustering[[i]]$sequence
+    rval2[[i]]$genotypes <- as.uniques(clustering[[i]])
+##!    names(rval2[[i]]$genotypes) <- clustering[[i]]$sequence
     rval2[[i]]$clustering <- clustering[[i]]
     rval2[[i]]$quality <- clusterquals[[i]]
     rval2[[i]]$subpos <- subpos[[i]]
     rval2[[i]]$trans <- trans[[i]]
     rval2[[i]]$map <- map[[i]]
-    rval2[[i]]$uniques <- uniques[[i]]
+    rval2[[i]]$uniques_in <- derep[[i]]$uniques
     rval2[[i]]$exp <- exp[[i]]
     # Return the error rate(s) used as well as the final estimated error matrix
-    if(self_consist) { # Did a self-consist loop
+    if(selfConsist) { # Did a self-consist loop
       rval2[[i]]$err_in <- errs
     } else {
       rval2[[i]]$err_in <- errs[[1]]
@@ -254,8 +252,8 @@ dada <- function(uniques, quals=NULL,
     rval2[[i]]$opts <- opts
     rval2[[i]]$call <- call
   }
-  names(rval2) <- names(uniques)
-  if(length(rval2) == 1) {  # Unlist if just a single uniques vector provided
+  names(rval2) <- names(derep)
+  if(length(rval2) == 1) {  # Unlist if just a single derep object provided
     rval2 <- rval2[[1]]
     rval2 <- as(rval2, "dada")
   } else {

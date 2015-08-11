@@ -49,7 +49,7 @@
 #'
 #' @export
 #' 
-mergePairs <- function(dadaF, mapF, dadaR, mapR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE, align=TRUE) {
+mergePairs <- function(dadaF, mapF, dadaR, mapR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE) {
   rF <- dadaF$map[mapF]
   rR <- dadaR$map[mapR]
   if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")

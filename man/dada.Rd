@@ -4,22 +4,20 @@
 \alias{dada}
 \title{dada infers the sample sequence in amplicon data.}
 \usage{
-dada(uniques, quals = NULL, err, err_function = NULL,
-  self_consist = FALSE, ...)
+dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
 }
 \arguments{
-\item{uniques}{(Required). Named integer vector or list of named integer vectors.
- Each uniques vector is an integer vector of abundances, named by the unique DNA
-   sequence to which that abundance corresponds.
- Sequences are only allowed to contain A/C/G/T characters.
- A list of such vectors can be provided, in which case the error model will be
-   shared across these samples when denoising.}
+\item{derep}{(Required). A derep-class object, the output of derepFastq.
+ The derep object contains the $uniques named integer vector of abundances, named by the unique
+ DNA sequence to which that abundance corresponds. It also contains $quals, a numeric matrix of
+ the associated consensus quality scores (by averaging) with a row for each corresponding unique
+ in the uniques vector, and a column for each sequence position. If USE_QUALS = TRUE then the
+ dada() error model uses the associated consensus quality scores.
 
-\item{quals}{(Optional). Numeric matrix containing average quality scores for each unique at each position.
- The quals matrix has a row for each corresponding unique in the uniques vector, and a column for each
- sequence position. So nrow(quals) == length(uniques) and ncol(quals) == nchar(uniques[[foo]]).}
+ A list of derep objects can be provided, in which case each will be independently denoised but
+ the error model will be shared across these samples when denoising.}
 
-\item{err}{(Required). 16xN numeric matrix.
+\item{err}{(Required). 16xN numeric matrix. Each entry must be between 0 and 1.
  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
  Rows correspond to the 16 possible transitions (t_ij) indexed as so...
    1:A->A,  2:A->C,  3:A->G,  4:A->T,  5:C->A,  6:C->C,  7:C->G,  8:C->T,
@@ -31,37 +29,42 @@ dada(uniques, quals = NULL, err, err_function = NULL,
  If USE_QUALS = FALSE, the matrix must have only one column, which corresponds to the estimated error rate for that transition.
    err[t_ij, 1] = Prob(j in sequence | i in sample genotype).}
 
-\item{err_function}{(Optional). Function.
-  If USE_QUALS = TRUE, err_function(dada()$trans_out) is computed and taken to be the new err matrix.
-   If self_consist = TRUE, the next iteration if the dada() algorithm will use this new err, and this
+\item{errorEstimationFunction}{(Optional). Function. Default Null.
+  If USE_QUALS = TRUE, errorEstimationFunction(dada()$trans_out) is computed and taken to be the new err matrix.
+   If selfConsist = TRUE, the next iteration of the dada algorithm will use these new error rates, and this
    will continue until the loop terminates due to convergence (or by hitting MAX_CONSIST). If
-   self_consist=FALSE, err_function is only used to calculate return value $err_out, but otherwise
+   selfConsist=FALSE, errorEstimationFunction is only used to calculate return value $err_out, but otherwise
    has no effect on the algorithm.
 
   If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).}
 
-\item{self_consist}{(Optional). \code{logical(1)}
+\item{selfConsist}{(Optional). \code{logical(1)}. Default FALSE.
  When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat
  the algorithm using the newly estimated error rates. This continues until convergence.}
 
 \item{...}{(Optional). All dada_opts can be passed in as arguments to the dada() function.
-   eg. dada(unq, err=err_in, OMEGA_A=1e-50, MAX_CLUST=50)}
+   eg. dada(unq, err=err_in, USE_QUALS=TRUE, OMEGA_A=1e-50, MAX_CLUST=50). See \code{\link{setDadaOpt}}
+   for a discussion of the various dada options.}
 }
 \value{
 A \code{\link{dada-class}} object.
 
- Not that if \code{self_consist=TRUE},
+ Not that if \code{selfConsist=TRUE},
  then \code{$err_in} is a list of length the number of times
- through the self_consist loop corresponding to the err used in each iteration.
+ through the selfConsist loop corresponding to the err used in each iteration.
  \code{$err_out} is the final estimated error rate.
 
  If a list of uniques vectors was provided (i.e. multiple samples)
- then a list of the above output lists
- is returned corresponding to each input sample.
+ then a list of the \code{\link{dada-class}} objects is returned corresponding
+ to each input sample.
 }
 \description{
 The dada function takes as input the unique sequences in an amplicon sequencing sample paired
  with their abundances, and returns the sample genotypes paired with their abundances
- inferred by the Divisive Amplicon Denoising Algorithm (Rosen, Callahan, Fisher, Holmes 2012).
+ inferred by the Divisive Amplicon Denoising Algorithm:
+ (Rosen, Callahan, Fisher, Holmes 2012; Callahan, McMurdie, Rosen, Han, Johnson, Holmes 2015).
+}
+\seealso{
+\code{\link{derepFastq}}, \code{\link{setDadaOpt}}
 }
 
