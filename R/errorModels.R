@@ -26,7 +26,7 @@ loessErrfun <- function(trans) {
         rlogp <- log10((errs+1)/tot)  # 1 psuedocount for each err, but if tot=0 will give NA
         rlogp[is.infinite(rlogp)] <- NA
         df <- data.frame(q=qq, errs=errs, tot=tot, rlogp=rlogp)
-        mod.lo <- loess(rlogp ~ q, df, weight=errs)
+        mod.lo <- loess(rlogp ~ q, df, weights=errs)
         #        mod.lo <- loess(rlogp ~ q, df)
         pred <- predict(mod.lo, qq)
         maxrli <- max(which(!is.na(pred)))
@@ -111,7 +111,7 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 #'  The minimum times a single base position must drive the formation of a new cluster
 #'    before it can be considered a "bad base".
 #'
-#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Defaults FALSE.
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
 #' @return Logical vector of length the number of inferred sequences. 
 #'  TRUE if inferred sequence a false positive.

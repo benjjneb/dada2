@@ -4,7 +4,7 @@
 \alias{derepFastq}
 \title{Read and Dereplicate a Fastq file.}
 \usage{
-derepFastq(fl, n = 1e+06, verbose = FALSE, qeff = FALSE)
+derepFastq(fl, n = 1e+06, verbose = FALSE)
 }
 \arguments{
 \item{fl}{(Required). Character.
@@ -31,14 +31,5 @@ A \code{\link{derep-class}} object.
 This is a custom interface to \code{\link[ShortRead]{FastqStreamer}}
 for dereplicating amplicon sequences from a fastq or compressed fastq file,
 while also controlling peak memory requirement to support large files.
-}
-\examples{
-# Test that chunk-size, `n`, does not affect the result.
-testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
-test1 = derepFastq(testFile, verbose = TRUE)
-test2 = derepFastq(testFile, 35, TRUE)
-test3 = derepFastq(testFile, 100, TRUE)
-all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
-all.equal(test1$uniques, test3$uniques[names(test1$uniques)])
 }
 

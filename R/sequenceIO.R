@@ -28,15 +28,15 @@
 #' @importFrom ShortRead FastqStreamer
 #' @importFrom ShortRead yield
 #'
-#' @examples 
-#' # Test that chunk-size, `n`, does not affect the result.
-#' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
-#' test1 = derepFastq(testFile, verbose = TRUE)
-#' test2 = derepFastq(testFile, 35, TRUE)
-#' test3 = derepFastq(testFile, 100, TRUE)
-#' all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
-#' all.equal(test1$uniques, test3$uniques[names(test1$uniques)])
-derepFastq <- function(fl, n = 1e6, verbose = FALSE, qeff=FALSE){
+## @examples 
+## # Test that chunk-size, `n`, does not affect the result.
+## testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
+## test1 = derepFastq(testFile, verbose = TRUE)
+## test2 = derepFastq(testFile, 35, TRUE)
+## test3 = derepFastq(testFile, 100, TRUE)
+## all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
+## all.equal(test1$uniques, test3$uniques[names(test1$uniques)])
+derepFastq <- function(fl, n = 1e6, verbose = FALSE){
   if(verbose){
     message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
   }
@@ -44,7 +44,7 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE, qeff=FALSE){
   f <- FastqStreamer(fl, n = n)
   suppressWarnings(fq <- yield(f))
   
-  out <- qtables2(fq, qeff)
+  out <- qtables2(fq, FALSE)
   
   derepCounts <- out$uniques
   derepQuals <- out$cum_quals
@@ -56,7 +56,7 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE, qeff=FALSE){
     if(verbose){
       message(".", appendLF = FALSE)
     }
-    out <- qtables2(fq, qeff)
+    out <- qtables2(fq, FALSE)
     # identify sequences already present in `derepCounts`
     alreadySeen <- names(out$uniques) %in% names(derepCounts)
     # Sum these values, if any
@@ -75,7 +75,7 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE, qeff=FALSE){
     derepMap <- c(derepMap, new2old[out$map])
   }
   derepQuals <- derepQuals/derepCounts # Average
-  if(qeff) derepQuals <- -10*log10(derepQuals)  # Convert back to effective Q value
+###  if(qeff) derepQuals <- -10*log10(derepQuals)  # Convert back to effective Q value
   # Sort by decreasing abundance
   ord <- order(derepCounts, decreasing=TRUE)
   derepCounts <- derepCounts[ord]

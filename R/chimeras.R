@@ -45,6 +45,8 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 #' @return \code{logical(1)}.
 #'  TRUE if sq is a bimera of two of the parents. Otherwise FALSE.
 #'
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
+#'
 #' @seealso \code{\link{isBimeraDenovo}}
 #' @export
 #' 
@@ -107,6 +109,8 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' @return \code{logical} of length the number of input unique sequences.
 #'  TRUE if sequence is a bimera of more abundant "parent" sequences. Otherwise FALSE.
 #'
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
+#'
 #' @seealso \code{\link{isBimera}}
 #' 
 #' @export
@@ -157,6 +161,8 @@ isShift <- function(sq, pars, minOverlap=20) {
 #'   
 #' @return \code{logical} of length the number of input unique sequences.
 #'  TRUE if sequence is an exact shift of a more abundant sequence. Otherwise FALSE.
+#'
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
 #' @seealso \code{\link{isBimera}}
 #' 

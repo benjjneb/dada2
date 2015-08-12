@@ -29,13 +29,13 @@
 #' test1 = derepFastq(testFile, verbose = TRUE)
 #' test1$quals[test1$quals > 40] <- 40
 #' res1 <- dada(uniques = test1$uniques, quals = test1$quals,
-#'              err = dada2:::inflateErr(tperr1, 2), 
+#'              err = inflateErr(tperr1, 2), 
 #'              OMEGA_A = 1e-40, 
 #'              USE_QUALS = TRUE, 
 #'              err_function = loessErrfun, 
 #'              self_consist = TRUE) 
 #' plot_substitutions(res1)
-plot_substitutions = function(dadaOut, facetByGrp = TRUE){
+plotSubstitutions = function(dadaOut, facetByGrp = TRUE){
   transdt = data.table(melt(dadaOut$trans))
   setnames(transdt, c("Substitution", "Quality", "Count"))
   transdt[, Sub1 := substr(Substitution, 1, 1)]
@@ -81,7 +81,7 @@ plot_substitutions = function(dadaOut, facetByGrp = TRUE){
 #' 
 #' This function plots the observed freuency of substitutions for each transition
 #' (eg. A->C) as a function of the associated quality score. It also plots the error
-#' raates passed in to this instantiation of the dada algorithm, and the output error
+#' rates passed in to this instantiation of the dada algorithm, and the output error
 #' rates if they exist.
 #' 
 #' @param dq Required. A dada return object.
@@ -100,6 +100,9 @@ plot_substitutions = function(dadaOut, facetByGrp = TRUE){
 #' @param nominal_q Optional. Default FALSE.
 #'  A \code{logical(1)} determining whether to plot the expected error rate (red) if the
 #'  quality score exactly matched its nominal definition: Q = -10 log10(p_err).
+#'  
+#' @param ...
+#'  Further arguments that are passed to the ggplot() function.
 #'
 #' @return A \code{\link{ggplot2}} object that will be rendered
 #'  to default device if \code{\link{print}ed},
@@ -109,24 +112,24 @@ plot_substitutions = function(dadaOut, facetByGrp = TRUE){
 #' @import ggplot2
 #' @importFrom gridExtra grid.arrange
 #' 
-showErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nominal_q=FALSE, ...) {
+plotErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nominal_q=FALSE, ...) {
   ACGT <- c("A", "C", "G", "T")
   if(!(nti %in% c(ACGT, "all") && (ntj %in% c(ACGT, "all")))) {
     stop("nti and ntj must be a nucleotide (A/C/G/T) or all.")
   }
   if(nti == "all" && ntj == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q), rep(ACGT, each=4), rep(ACGT,4), SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q, ...), rep(ACGT, each=4), rep(ACGT,4), SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=4))
   }
   else if(nti == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q), ACGT, ntj, SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q, ...), ACGT, ntj, SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=2))  
   }
   else if(ntj == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q), nti, ACGT, SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q, ...), nti, ACGT, SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=2))
   } else {
-    .showErrors(dq, nti, ntj, err_out, err_in, nominal_q)
+    .showErrors(dq, nti, ntj, err_out, err_in, nominal_q, ...)
   }
 }
 
@@ -173,3 +176,18 @@ showErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nom
   
   return(p)
 }
+
+#' @import ggplot2
+#' @importFrom gridExtra grid.arrange
+plotSubPos <- function(subpos, ...) {
+  subpos$pos <- seq(nrow(subpos))
+  subpos <- subpos[1:match(0,subpos$nts)-1,]
+  p <- ggplot(data=subpos, aes(x=pos))
+  pA <- p + geom_line(aes(y=A2C/(1+A)), color="red") + geom_line(aes(y=A2G/(1+A)), color="orange") + geom_line(aes(y=A2T/(1+A)), color="blue") + ylab("Subs at As")
+  pC <- p + geom_line(aes(y=C2A/(1+C)), color="grey") + geom_line(aes(y=C2G/(1+C)), color="orange") + geom_line(aes(y=C2T/(1+C)), color="blue") + ylab("Subs at Cs")
+  pG <- p + geom_line(aes(y=G2A/(1+G)), color="grey") + geom_line(aes(y=G2C/(1+G)), color="red") + geom_line(aes(y=G2T/(1+G)), color="blue") + ylab("Subs at Gs")
+  pT <- p + geom_line(aes(y=T2A/(1+T)), color="grey") + geom_line(aes(y=T2C/(1+T)), color="red") + geom_line(aes(y=T2G/(1+T)), color="orange") + ylab("Subs at Ts")
+  pAll <- p + geom_line(aes(y=subs/nts)) + ylab("Sub rate (all nts)")
+  grid.arrange(pAll, pAll, pA, pC, pG, pT, nrow=3, ...)
+}
+

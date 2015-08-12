@@ -25,6 +25,9 @@ mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
 \item{derepR}{(Required). A derep-class object or list of such objects.
  See derepF description, but for the reverse reads.}
 
+\item{keepMismatch}{(Optional). A \code{logical(1)}. Default is False.
+ If true, the pairs that did not match are retained in the return data.frame.}
+
 \item{minOverlap}{(Optional). A \code{numeric(1)} of the minimum overlap
  required for merging the forward and reverse reads. Default is 20.}
 
@@ -33,9 +36,6 @@ mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
  in the dada()$clustering data.frame.}
 
 \item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
-
-\item{keepMismatch(Optional).}{A \code{logical(1)}. Default is False.
- If true, the pairs that did not match are retained in the return data.frame.}
 }
 \value{
 Dataframe. One row for each unique pairing of forward/reverse denoised sequences.

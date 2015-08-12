@@ -7,15 +7,15 @@
 C_nwalign(s1, s2, score, gap_p, band)
 }
 \arguments{
-\item{s1}{desc}
+\item{s1}{A length-1 character verctor of sequence 1.}
 
-\item{s2}{desc}
+\item{s2}{A length-1 character verctor of sequence 2.}
 
-\item{score}{desc}
+\item{score}{The 4x4 score matrix for nucleotide transitions.}
 
-\item{gap_p}{desc}
+\item{gap_p}{The gap penalty.}
 
-\item{band}{desc}
+\item{band}{The band size (-1 turns off banding).}
 }
 \description{
 Exposes ends-free Needleman-Wunsh alignment to R.

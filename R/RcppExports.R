@@ -2,17 +2,20 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' Exposes ends-free Needleman-Wunsh alignment to R.
-#' @export
-#' @param s1 desc
-#' @param s2 desc
-#' @param score desc
-#' @param gap_p desc
-#' @param band desc
+#'
+#' @param s1 A length-1 character verctor of sequence 1.
+#' @param s2 A length-1 character verctor of sequence 2.
+#' @param score The 4x4 score matrix for nucleotide transitions.
+#' @param gap_p The gap penalty.
+#' @param band The band size (-1 turns off banding).
 C_nwalign <- function(s1, s2, score, gap_p, band) {
     .Call('dada2_C_nwalign', PACKAGE = 'dada2', s1, s2, score, gap_p, band)
 }
 
 #' Calculates the number of matches/mismatches/internal_indels in an alignment.
+#' 
+#' @param s1 A length-1 character verctor of sequence 1.
+#' @param s2 A length-1 character verctor of sequence 2.
 #' 
 C_eval_pair <- function(s1, s2) {
     .Call('dada2_C_eval_pair', PACKAGE = 'dada2', s1, s2)

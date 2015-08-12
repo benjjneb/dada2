@@ -31,6 +31,8 @@ isBimeraDenovo(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8,
 
 \item{maxShift}{(Optional). A \code{numeric(1)}. Default is 16.
   Maximum shift allowed when aligning sequences to potential "parents".}
+
+\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
 \value{
 \code{logical} of length the number of input unique sequences.

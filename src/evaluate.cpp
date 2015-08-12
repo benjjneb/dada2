@@ -4,12 +4,12 @@ using namespace Rcpp;
 
 //------------------------------------------------------------------
 //' Exposes ends-free Needleman-Wunsh alignment to R.
-//' @export
-//' @param s1 desc
-//' @param s2 desc
-//' @param score desc
-//' @param gap_p desc
-//' @param band desc
+//'
+//' @param s1 A length-1 character verctor of sequence 1.
+//' @param s2 A length-1 character verctor of sequence 2.
+//' @param score The 4x4 score matrix for nucleotide transitions.
+//' @param gap_p The gap penalty.
+//' @param band The band size (-1 turns off banding).
 // [[Rcpp::export]]
 Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
   int i, j;
@@ -52,6 +52,9 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
 
 //------------------------------------------------------------------
 //' Calculates the number of matches/mismatches/internal_indels in an alignment.
+//' 
+//' @param s1 A length-1 character verctor of sequence 1.
+//' @param s2 A length-1 character verctor of sequence 2.
 //' 
 // [[Rcpp::export]]
 Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {

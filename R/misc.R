@@ -42,7 +42,7 @@ nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GA
 #' @export 
 nwhamming <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
-  out <- dada2:::C_eval_pair(al[1], al[2])
+  out <- C_eval_pair(al[1], al[2])
   return(out["mismatch"]+out["indel"])
 })
 
@@ -64,23 +64,8 @@ rc <- Vectorize(function(x) as(reverseComplement(DNAString(x)), "character"))
 #' @export
 hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
 
-#' @export
-#' @import ggplot2
-#' @importFrom gridExtra grid.arrange
-showSubPos <- function(subpos, ...) {
-  subpos$pos <- seq(nrow(subpos))
-  subpos <- subpos[1:match(0,subpos$nts)-1,]
-  p <- ggplot(data=subpos, aes(x=pos))
-  pA <- p + geom_line(aes(y=A2C/(1+A)), color="red") + geom_line(aes(y=A2G/(1+A)), color="orange") + geom_line(aes(y=A2T/(1+A)), color="blue") + ylab("Subs at As")
-  pC <- p + geom_line(aes(y=C2A/(1+C)), color="grey") + geom_line(aes(y=C2G/(1+C)), color="orange") + geom_line(aes(y=C2T/(1+C)), color="blue") + ylab("Subs at Cs")
-  pG <- p + geom_line(aes(y=G2A/(1+G)), color="grey") + geom_line(aes(y=G2C/(1+G)), color="red") + geom_line(aes(y=G2T/(1+G)), color="blue") + ylab("Subs at Gs")
-  pT <- p + geom_line(aes(y=T2A/(1+T)), color="grey") + geom_line(aes(y=T2C/(1+T)), color="red") + geom_line(aes(y=T2G/(1+T)), color="orange") + ylab("Subs at Ts")
-  pAll <- p + geom_line(aes(y=subs/nts)) + ylab("Sub rate (all nts)")
-  grid.arrange(pAll, pAll, pA, pC, pG, pT, nrow=3, ...)
-}
-
 subseqUniques <- function(unqs, start, end) {
-  subnms <- subseq(names(unqs), start, end)
+  subnms <- substr(names(unqs), start, end)
   newNames <- unique(subnms)
   newUniques <- as.integer(rep(0,length(newNames)))
   names(newUniques) <- newNames

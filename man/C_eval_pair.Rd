@@ -6,6 +6,11 @@
 \usage{
 C_eval_pair(s1, s2)
 }
+\arguments{
+\item{s1}{A length-1 character verctor of sequence 1.}
+
+\item{s2}{A length-1 character verctor of sequence 2.}
+}
 \description{
 Calculates the number of matches/mismatches/internal_indels in an alignment.
 }

@@ -13,6 +13,8 @@ isShiftDenovo(unqs, minOverlap = 20, verbose = FALSE)
 
 \item{minOverlap}{(Optional). A \code{numeric(1)}. Default is 20.
   Minimum overlap required to call something a shift.}
+
+\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
 \value{
 \code{logical} of length the number of input unique sequences.

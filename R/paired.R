@@ -24,7 +24,7 @@
 #' @param derepR (Required). A derep-class object or list of such objects.
 #'  See derepF description, but for the reverse reads.
 #'
-#' @param keepMismatch(Optional). A \code{logical(1)}. Default is False.
+#' @param keepMismatch (Optional). A \code{logical(1)}. Default is False.
 #'  If true, the pairs that did not match are retained in the return data.frame.
 #'
 #' @param minOverlap (Optional). A \code{numeric(1)} of the minimum overlap

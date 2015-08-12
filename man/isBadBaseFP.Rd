@@ -30,7 +30,7 @@ isBadBaseFP(clust, subpos, minFraction = 0.51, omegaB = 1e-10,
  The minimum times a single base position must drive the formation of a new cluster
    before it can be considered a "bad base".}
 
-\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Defaults FALSE.}
+\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
 \value{
 Logical vector of length the number of inferred sequences.
