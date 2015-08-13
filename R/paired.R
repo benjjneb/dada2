@@ -66,8 +66,8 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOver
   
   pairdf <- data.frame(sequence = "", abundance=0, forward=rF, reverse=rR)
   ups <- unique(pairdf) # The unique forward/reverse pairs of denoised sequences
-  Funqseq <- unname(dadaF$clustering$sequence[ups$forward])
-  Runqseq <- as(reverseComplement(DNAStringSet(unname(dadaR$clustering$sequence[ups$reverse]))), "character")
+  Funqseq <- unname(as.character(dadaF$clustering$sequence[ups$forward]))
+  Runqseq <- as(reverseComplement(DNAStringSet(unname(as.character(dadaR$clustering$sequence[ups$reverse])))), "character")
   
   # Use unbanded N-W align to compare forward/reverse
   # May want to adjust align params here, but for now just using dadaOpt

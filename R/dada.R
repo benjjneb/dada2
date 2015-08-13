@@ -170,6 +170,7 @@ dada <- function(derep, #!!!!!
                           opts[["VERBOSE"]])
       
       # Augment the returns
+      res$clustering$sequence <- as.character(res$clustering$sequence)
       # ... nothing here for now
       
       # List the returns
