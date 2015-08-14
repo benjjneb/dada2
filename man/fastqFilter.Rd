@@ -4,9 +4,8 @@
 \alias{fastqFilter}
 \title{fastqFilter filters and trims fastq files.}
 \usage{
-fastqFilter(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0,
-  maxN = 0, minQ = 0, maxEE = Inf, n = 1e+06, compress = TRUE,
-  verbose = FALSE)
+fastqFilter(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0,
+  minQ = 0, maxEE = Inf, n = 1e+06, compress = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{fn}{(Required). A character string naming the path to the fastq file, or an R connection.}
@@ -14,7 +13,7 @@ fastqFilter(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0,
 \item{fout}{(Required). A character string naming the path to the output file, or an R connection.}
 
 \item{truncQ}{(Optional). Truncate reads at the first instance of a quality score less than
-   or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
+   or equal to truncQ. Default is 2, a special quality score indicating the end of good quality
    sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding.}
 
 \item{truncLen}{(Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than

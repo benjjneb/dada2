@@ -4,7 +4,7 @@
 \alias{fastqPairedFilter}
 \title{fastqPairedFilter filters and trims paired forward and reverse fastq files.}
 \usage{
-fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c("#", "#"),
+fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf,
   Inf), n = 1e+06, compress = TRUE, verbose = FALSE)
 }
@@ -21,11 +21,12 @@ first value is used for the forward reads, the second value for the reverse read
    Default is 0. Currently dada() does not allow Ns.}
 
 \item{truncQ}{(Optional). Truncate reads at the first instance of a quality score less than
-   or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
+   or equal to truncQ. Default is 2, a special quality score indicating the end of good quality
    sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding.}
 
 \item{truncLen}{(Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
-   this are discarded.}
+   this are discarded. THIS PARAMETER TRIMS ALL READS TO THE SAME LENGTH WHICH IS NEEDED FOR THE
+   dada() FUNCTION!}
 
 \item{trimLeft}{(Optional). Remove trimLeft nucleotides from the start of each read. If both
    truncLen and trimLeft are used, all filtered reads will have length truncLen-trimLeft.}

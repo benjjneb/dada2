@@ -13,7 +13,7 @@
 #' @param fout (Required). A character string naming the path to the output file, or an R connection.
 #' 
 #' @param truncQ (Optional). Truncate reads at the first instance of a quality score less than
-#'    or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
+#'    or equal to truncQ. Default is 2, a special quality score indicating the end of good quality
 #'    sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding. 
 #'  
 #' @param truncLen (Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
@@ -58,7 +58,7 @@
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' 
-fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
   # See also filterFastq in the ShortRead package
   start <- max(1, trimLeft + 1)
   end <- truncLen
@@ -141,11 +141,12 @@ fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN
 #' first value is used for the forward reads, the second value for the reverse reads.
 #' 
 #' @param truncQ (Optional). Truncate reads at the first instance of a quality score less than
-#'    or equal to truncQ. Default is "#", a special quality score indicating the end of good quality
+#'    or equal to truncQ. Default is 2, a special quality score indicating the end of good quality
 #'    sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding. 
 #'  
 #' @param truncLen (Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
-#'    this are discarded.
+#'    this are discarded. THIS PARAMETER TRIMS ALL READS TO THE SAME LENGTH WHICH IS NEEDED FOR THE
+#'    dada() FUNCTION!
 #'  
 #' @param trimLeft (Optional). Remove trimLeft nucleotides from the start of each read. If both
 #'    truncLen and trimLeft are used, all filtered reads will have length truncLen-trimLeft.
@@ -186,7 +187,7 @@ fastqFilter <- function(fn, fout, truncQ = "#", truncLen = 0, trimLeft = 0, maxN
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c("#","#"), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
   # Warning: This assumes that forward/reverse reads are in the same order
   # IT DOES NOT CHECK THE ID LINES
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")

@@ -89,6 +89,9 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE){
             " total sequences read.")
   }
   close(f)
+  if(sum(tabulate(nchar(names(derepCounts)))>0) > 1) {
+    warning("Not all sequences were the same length. dada(...) requires same length input sequences. See truncLen parameter in ?fastqFilter or ?fastqPairedFilter.")
+  }
   rval <- list(uniques=derepCounts, quals=derepQuals, map=derepMap)
   rval <- as(rval, "derep")
   return(rval)
