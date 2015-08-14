@@ -15,6 +15,8 @@
 #'  A list of derep objects can be provided, in which case each will be independently denoised but
 #'  the error model will be shared across these samples when denoising.
 #'  
+#'  The dada(...) function requires that all input sequences have been trimmed to the same length.
+#'  
 #' @param err (Required). 16xN numeric matrix. Each entry must be between 0 and 1.
 #'  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
 #'  Rows correspond to the 16 possible transitions (t_ij) indexed as so... 
@@ -89,6 +91,9 @@ dada <- function(derep, #!!!!!
     if(!(all(sapply(names(derep[[i]]$uniques), function(x) nchar(gsub("[ACGT]", "", x))==0, USE.NAMES=FALSE)))) {
       stop("Invalid derep$uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
+    if(sum(tabulate(nchar(names(derep[[i]]$uniques)))>0) > 1) {
+      stop("Invalid derep$uniques vector. All sequences must be the same length.")
+    }
   }
 
   # Validate quals matrix(es)
@@ -99,6 +104,9 @@ dada <- function(derep, #!!!!!
       }
       if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) {
         stop("derep$qual matrices must have as many columns as the length of the derep$unique sequences.")
+      }
+      if(any(is.na(derep[[i]]$quals))) {
+        stop("NAs in derep$qual matrix. Check that all input sequences were the same length.")
       }
       if(min(derep[[i]]$quals) < opts$QMIN || max(derep[[i]]$quals > opts$QMAX)) {
         stop("Invalid derep$qual matrix. Quality values must be between QMIN and QMAX.")
