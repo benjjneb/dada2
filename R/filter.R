@@ -88,7 +88,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
     # Trim on truncQ 
     # Convert numeric quality score to the corresponding ascii character
     if(is.numeric(truncQ)) {
-      enc <- ShortRead::encoding(quality(fq))
+      enc <- encoding(quality(fq))
       ind <- which(enc==truncQ)
       if(length(ind) != 1) stop("Encoding for this truncQ value not found.")
       truncQ <- names(enc)[[ind]]
@@ -245,8 +245,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     # Trim on truncQ
     # Convert numeric quality score to the corresponding ascii character
     if(is.numeric(truncQ)) {
-      encF <- ShortRead::encoding(quality(fqF))
-      encR <- ShortRead::encoding(quality(fqR))
+      encF <- encoding(quality(fqF))
+      encR <- encoding(quality(fqR))
       indF <- which(encF==truncQ[[1]])
       indR <- which(encR==truncQ[[2]])
       if(!(length(indF) == 1 && length(indR) == 1)) stop("Encoding for this truncQ value not found.")
