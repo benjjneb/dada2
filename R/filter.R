@@ -54,9 +54,11 @@
 #' @importFrom ShortRead writeFastq
 #' @importFrom ShortRead trimTails
 #' @importFrom ShortRead nFilter
+#' @importFrom ShortRead encoding
 #' @importFrom Biostrings quality
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
+#' @importFrom Biostrings end
 #' 
 fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
   # See also filterFastq in the ShortRead package
@@ -86,7 +88,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
     # Trim on truncQ 
     # Convert numeric quality score to the corresponding ascii character
     if(is.numeric(truncQ)) {
-      enc <- encoding(quality(fq))
+      enc <- ShortRead::encoding(quality(fq))
       ind <- which(enc==truncQ)
       if(length(ind) != 1) stop("Encoding for this truncQ value not found.")
       truncQ <- names(enc)[[ind]]
@@ -183,9 +185,11 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' @importFrom ShortRead writeFastq
 #' @importFrom ShortRead trimTails
 #' @importFrom ShortRead nFilter
+#' @importFrom ShortRead encoding
 #' @importFrom Biostrings quality
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
+#' @importFrom Biostrings end
 #' 
 fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
   # Warning: This assumes that forward/reverse reads are in the same order
@@ -241,8 +245,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     # Trim on truncQ
     # Convert numeric quality score to the corresponding ascii character
     if(is.numeric(truncQ)) {
-      encF <- encoding(quality(fqF))
-      encR <- encoding(quality(fqR))
+      encF <- ShortRead::encoding(quality(fqF))
+      encR <- ShortRead::encoding(quality(fqR))
       indF <- which(encF==truncQ[[1]])
       indR <- which(encR==truncQ[[2]])
       if(!(length(indF) == 1 && length(indR) == 1)) stop("Encoding for this truncQ value not found.")
@@ -297,6 +301,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
 
 # # @importFrom ShortRead :::.check_type_and_length
 #' @importFrom ShortRead srFilter
+#' @importFrom ShortRead SRFilterResult
 #' @importFrom Biostrings quality
 minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
 {
@@ -308,6 +313,7 @@ minQFilter <- function (minQ = 0L, .name = "MinQFilter")
 
 # # @importFrom ShortRead :::.check_type_and_length
 #' @importFrom Biostrings quality
+#' @importFrom ShortRead SRFilterResult
 #' @importFrom ShortRead srFilter
 maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter") 
 {
@@ -319,6 +325,8 @@ maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter")
 
 # # @importFrom ShortRead :::.check_type_and_length
 #' @importFrom Biostrings width
+#' @importFrom ShortRead SRFilterResult
+#' @importFrom ShortRead srFilter
 minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
   ShortRead:::.check_type_and_length(minLen, "numeric", 1)
   srFilter(function(x) {

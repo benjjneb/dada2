@@ -5,7 +5,7 @@
 \title{Plot error rates from after dada processing.}
 \usage{
 plotErrors(dq, nti = "all", ntj = "all", err_out = TRUE, err_in = FALSE,
-  nominal_q = FALSE, ...)
+  nominalQ = FALSE, ...)
 }
 \arguments{
 \item{dq}{Required. A dada return object.}
@@ -22,7 +22,7 @@ plotErrors(dq, nti = "all", ntj = "all", err_out = TRUE, err_in = FALSE,
 \item{err_in}{Optional. Default FALSE.
  A \code{logical(1)} determining whether to plot the input error rates (dashed).}
 
-\item{nominal_q}{Optional. Default FALSE.
+\item{nominalQ}{Optional. Default FALSE.
  A \code{logical(1)} determining whether to plot the expected error rate (red) if the
  quality score exactly matched its nominal definition: Q = -10 log10(p_err).}
 

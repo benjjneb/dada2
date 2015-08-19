@@ -97,7 +97,7 @@ plotSubstitutions = function(dadaOut, facetByGrp = TRUE){
 #' @param err_in Optional. Default FALSE.
 #'  A \code{logical(1)} determining whether to plot the input error rates (dashed).
 #'
-#' @param nominal_q Optional. Default FALSE.
+#' @param nominalQ Optional. Default FALSE.
 #'  A \code{logical(1)} determining whether to plot the expected error rate (red) if the
 #'  quality score exactly matched its nominal definition: Q = -10 log10(p_err).
 #'  
@@ -112,29 +112,29 @@ plotSubstitutions = function(dadaOut, facetByGrp = TRUE){
 #' @import ggplot2
 #' @importFrom gridExtra grid.arrange
 #' 
-plotErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nominal_q=FALSE, ...) {
+plotErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nominalQ=FALSE, ...) {
   ACGT <- c("A", "C", "G", "T")
   if(!(nti %in% c(ACGT, "all") && (ntj %in% c(ACGT, "all")))) {
     stop("nti and ntj must be a nucleotide (A/C/G/T) or all.")
   }
   if(nti == "all" && ntj == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q, ...), rep(ACGT, each=4), rep(ACGT,4), SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominalQ, ...), rep(ACGT, each=4), rep(ACGT,4), SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=4))
   }
   else if(nti == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q, ...), ACGT, ntj, SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominalQ, ...), ACGT, ntj, SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=2))  
   }
   else if(ntj == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominal_q, ...), nti, ACGT, SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominalQ, ...), nti, ACGT, SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=2))
   } else {
-    .showErrors(dq, nti, ntj, err_out, err_in, nominal_q, ...)
+    .showErrors(dq, nti, ntj, err_out, err_in, nominalQ, ...)
   }
 }
 
 #' @import ggplot2
-.showErrors <- function(dq, nti, ntj, err_out=TRUE, err_in=FALSE, nominal_q=FALSE, ...) {
+.showErrors <- function(dq, nti, ntj, err_out=TRUE, err_in=FALSE, nominalQ=FALSE, ...) {
   ACGT <- c("A", "C", "G", "T")
   tij <- 4*(which(ACGT==nti)-1) + which(ACGT==ntj)
   nij <- paste0(nti,"2",ntj)
@@ -162,7 +162,7 @@ plotErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nom
     p <- p + geom_line(data=errodf)
   }
   
-  if(nominal_q) {
+  if(nominalQ) {
     qq <- subdf$qave
     if(nti != ntj) { 
       nom_err <- (1/3) * 10^(-qq/10)

@@ -152,6 +152,7 @@ qtables2 <- function(x, qeff = FALSE) {
 #' @param ... Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.
 #' 
 #' @importFrom ShortRead writeFasta
+#' @importFrom ShortRead ShortRead
 #' @importFrom Biostrings DNAStringSet
 #' @importFrom Biostrings BStringSet
 #' @export

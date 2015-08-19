@@ -15,7 +15,9 @@ dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
  dada() error model uses the associated consensus quality scores.
 
  A list of derep objects can be provided, in which case each will be independently denoised but
- the error model will be shared across these samples when denoising.}
+ the error model will be shared across these samples when denoising.
+
+ The dada(...) function requires that all input sequences have been trimmed to the same length.}
 
 \item{err}{(Required). 16xN numeric matrix. Each entry must be between 0 and 1.
  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).

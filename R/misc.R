@@ -58,10 +58,20 @@ strdiff <- function(s1, s2) {
   data.frame(pos=dd,nt0=xx[dd],nt1=yy[dd])
 }
 
-#' @export
-rc <- Vectorize(function(x) as(reverseComplement(DNAString(x)), "character"))
+#' @importFrom Biostrings DNAString
+#' @importFrom Biostrings DNAStringSet
+#' @importFrom Biostrings reverseComplement
+rc <- function(sqs) {
+  if(length(sqs) < 1) {
+    return(character(0))
+  } else if(length(sqs) == 1) {
+    as(reverseComplement(DNAString(sqs)), "character")
+  } else {
+    as(reverseComplement(DNAStringSet(sqs)), "character")
+  }
+}
+#  rc <- Vectorize(function(x) as(reverseComplement(DNAString(x)), "character"))
 
-#' @export
 hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
 
 subseqUniques <- function(unqs, start, end) {
