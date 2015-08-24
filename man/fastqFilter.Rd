@@ -48,6 +48,12 @@ package are leveraged to do this filtering.
 fastqFilter replicates most of the functionality of the fastq_filter command in usearch
 (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html).
 }
+\examples{
+\dontrun{
+ fastqFilter("/path/to/sample_reads.fastq", "/path/to/filtered_reads.fastq", maxN=0, maxEE=2)
+ fastqFilter("/path/to/sample_reads.fastq", "/path/to/filtered_reads.fastq", trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
+}
+}
 \seealso{
 \code{\link{fastqPairedFilter}}
 

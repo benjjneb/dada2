@@ -1,18 +1,3 @@
-getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
-  if(nchar(parent) == nchar(sq)) { # Use banding if applicable
-    al <- nwalign(parent, sq, band=maxShift)
-  } else {
-    al <- nwalign(parent, sq, band=-1)
-  }
-  lr <- C_get_overlaps(al[1], al[2], 0, maxShift)
-  if(allowOneOff) {
-    lr1 <- C_get_overlaps(al[1], al[2], 1, maxShift)
-    diff1 <- C_eval_pair(al[1], al[2])
-    lr <- c(lr,lr1,diff1)
-  }
-  return(lr)
-}
-
 ################################################################################
 #' Determine if input sequence is a bimera of putative parent sequences.
 #' 
@@ -116,7 +101,7 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' @export
 #' 
 isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
-  unqs <- as.uniques(unqs)
+  unqs <- getUniques(unqs)
   abunds <- unname(unqs)
   seqs <- names(unqs)
   
@@ -136,15 +121,23 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
   return(bims)
 }
 
-isShiftedPair <- function(sq1, sq2, minOverlap=20) {
-  al <- nwalign(sq1, sq2, band=-1)
-  foo <- dada2:::C_eval_pair(al[1], al[2])
-  return(foo["match"] < nchar(sq1) && foo["match"] < nchar(sq2) && foo["match"] >= minOverlap && foo["mismatch"]==0 && foo["indel"]==0)
+#' Internal function that finds the best overlap between two sequences.
+#' Uses NW alignment with ends-free gapping.
+getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
+  if(nchar(parent) == nchar(sq)) { # Use banding if applicable
+    al <- nwalign(parent, sq, band=maxShift)
+  } else {
+    al <- nwalign(parent, sq, band=-1)
+  }
+  lr <- C_get_overlaps(al[1], al[2], 0, maxShift)
+  if(allowOneOff) {
+    lr1 <- C_get_overlaps(al[1], al[2], 1, maxShift)
+    diff1 <- C_eval_pair(al[1], al[2])
+    lr <- c(lr,lr1,diff1)
+  }
+  return(lr)
 }
 
-isShift <- function(sq, pars, minOverlap=20) {
-  return(any(sapply(pars, function(par) isShiftedPair(sq, par))))
-}
 ################################################################################
 #' Identify sequences that are identical to a more abundant sequence up to an
 #' overall shift from a collection of unique sequences.
@@ -169,7 +162,7 @@ isShift <- function(sq, pars, minOverlap=20) {
 #' @export
 #' 
 isShiftDenovo <- function(unqs, minOverlap = 20, verbose=FALSE) {
-  unqs <- as.uniques(unqs)
+  unqs <- getUniques(unqs)
   abunds <- unname(unqs)
   seqs <- names(unqs)
   
@@ -184,4 +177,17 @@ isShiftDenovo <- function(unqs, minOverlap = 20, verbose=FALSE) {
   }
   shifts <- mapply(loopFun, seqs, abunds)
   return(shifts)
+}
+
+
+#' Internal function that determines if two sequences are identical up to a shift
+#' Uses NW alignment with ends-free gapping
+isShiftedPair <- function(sq1, sq2, minOverlap=20) {
+  al <- nwalign(sq1, sq2, band=-1)
+  foo <- dada2:::C_eval_pair(al[1], al[2])
+  return(foo["match"] < nchar(sq1) && foo["match"] < nchar(sq2) && foo["match"] >= minOverlap && foo["mismatch"]==0 && foo["indel"]==0)
+}
+
+isShift <- function(sq, pars, minOverlap=20) {
+  return(any(sapply(pars, function(par) isShiftedPair(sq, par))))
 }

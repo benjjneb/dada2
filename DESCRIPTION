@@ -36,7 +36,6 @@ Collate:
     'allPackage.R'
     'chimeras.R'
     'dada.R'
-    'dadaOptions.R'
     'errorModels.R'
     'filter.R'
     'misc.R'

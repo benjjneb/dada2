@@ -87,7 +87,6 @@ NULL
 #' 
 #' @return List.
 #'
-#' @export
 dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose) {
     .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose)
 }

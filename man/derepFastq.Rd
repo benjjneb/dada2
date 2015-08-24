@@ -7,11 +7,11 @@
 derepFastq(fl, n = 1e+06, verbose = FALSE)
 }
 \arguments{
-\item{fl}{(Required). Character.
+\item{fl}{(Required). \code{character(1)}.
  The file path to the fastq or fastq.gz file.
  Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.}
 
-\item{n}{(Optional). A \code{numeric(1)} indicating
+\item{n}{(Optional). \code{numeric(1)}.
  the maximum number of records (reads) to parse and dereplicate
  at any one time. This controls the peak memory requirement
  so that large fastq files are supported.
@@ -19,8 +19,8 @@ derepFastq(fl, n = 1e+06, verbose = FALSE)
  See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
  which is passed on.}
 
-\item{verbose}{(Optional). A \code{logical(1)} indicating
- whether to throw any standard R \code{\link{message}}s
+\item{verbose}{(Optional). \code{logical(1)}.
+ Whether or not to throw standard R \code{\link{message}}s
  on the intermittent and final status of the dereplication.
  Default is \code{FALSE}, no messages.}
 }
@@ -31,5 +31,14 @@ A \code{\link{derep-class}} object.
 This is a custom interface to \code{\link[ShortRead]{FastqStreamer}}
 for dereplicating amplicon sequences from a fastq or compressed fastq file,
 while also controlling peak memory requirement to support large files.
+}
+\examples{
+\dontrun{
+# Test that chunk-size, `n`, does not affect the result.
+ testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
+ test1 = derepFastq(testFile, verbose = TRUE)
+ test2 = derepFastq(testFile, 35, TRUE)
+ all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
+}
 }
 

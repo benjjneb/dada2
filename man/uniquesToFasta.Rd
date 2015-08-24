@@ -7,12 +7,12 @@
 uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000, ...)
 }
 \arguments{
-\item{unqs}{The uniques object. E.g. the output of \code{\link{derepFastq}}.}
+\item{unqs}{The uniques vector. E.g. the $uniques from the output of \code{\link{derepFastq}}.}
 
 \item{fout}{The file path of the output file. The file you want to write.}
 
 \item{ids}{A character vector of sequence ids, one for each element in \code{unqs}.
- Default value is \code{NULL}, in which case an arbitrary ID is assigned.}
+ Default value is \code{NULL}, in which case a uchime-compatible ID is assigned.}
 
 \item{mode}{A character string flag passed on to \code{\link[ShortRead]{writeFasta}}
  indicating the type of file writing mode. Default is \code{"w"}.}
@@ -23,7 +23,13 @@ uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000, ...)
 \item{...}{Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.}
 }
 \description{
-Basically a wrapper for writeFastq in the ShortRead package.
-Format is suitable for uchime.
+A wrapper for writeFastq in the ShortRead package.
+Default output format is compatible with uchime.
+}
+\examples{
+\dontrun{
+ uniquesToFasta(derep.sample1$uniques, "/path/to/output.fasta")
+ uniquesToFasta(derep.sample1$uniques, "/path/to/output.fasta", ids=paste0("Sequence", seq(length(derep.sample1$uniques))))
+}
 }
 

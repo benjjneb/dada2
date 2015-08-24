@@ -12,7 +12,6 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
 //' 
 //' @return List.
 //'
-//' @export
 // [[Rcpp::export]]
 Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abundances,
                         Rcpp::NumericMatrix err,

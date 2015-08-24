@@ -1,38 +1,35 @@
 ################################################################################
 #' Merge paired forward and reverse reads after DADA denoising.
 #' 
-#' This function takes the output of dada() and the map from read to unique index
-#' returned by derepFastq()$map for both the forward and reverse data set. It attempts
-#' to merge each pair of reads, rejecting any which do not perfectly overlap.
-#' Note: This function assumes that the fastq files for the forward and reverse reads
-#' were in the same order.
+#' This function attempts each denoised pair of forward and reverse reads, rejecting any 
+#' which do not perfectly overlap. Note: This function assumes that the fastq files for the 
+#' forward and reverse reads were in the same order.
 #' 
-#' @param dadaF (Required). A dada-class object or list of such objects.
+#' @param dadaF (Required). A \code{\link{dada-class}} object.
 #'  The output of dada() function on the forward reads.
 #' 
-#' @param derepF (Required). A derep-class object or list of such objects.
+#' @param derepF (Required). A \code{\link{derep-class}} object.
 #'  The derep-class object returned by derepFastq() that was used as the input to the
-#'  dada-class object passed to the dadaF argument. If a list is provided, this matching
-#'  must be maintained at every position.
+#'  dada-class object passed to the dadaF argument.
 #'  
 #'  Alternatively the map itself (derepFastq()$map) can be provided in place of the
 #'  derep-class object.
 #'   
-#' @param dadaR (Required). A dada-class object or list of such objects.
-#'  The output of dada() function on the forward reads.
+#' @param dadaR (Required). A \code{\link{dada-class}} object.
+#'  The output of dada() function on the reverse reads.
 #' 
-#' @param derepR (Required). A derep-class object or list of such objects.
+#' @param derepR (Required). A \code{\link{derep-class}} object.
 #'  See derepF description, but for the reverse reads.
 #'
 #' @param keepMismatch (Optional). A \code{logical(1)}. Default is False.
 #'  If true, the pairs that did not match are retained in the return data.frame.
 #'
-#' @param minOverlap (Optional). A \code{numeric(1)} of the minimum overlap
+#' @param minOverlap (Optional). A \code{numeric(1)} of the minimum length of the overlap (in nucleotides)
 #'  required for merging the forward and reverse reads. Default is 20.
 #'
-#' @param propagateCol (Optional). Character vector. Default is empty.
+#' @param propagateCol (Optional). \code{character}. Default is \code{character(0)}.
 #'  The mergePairs return data.frame will include copies of columns with names specified
-#'  in the dada()$clustering data.frame.
+#'  in the dada-class$clustering data.frame.
 #'
 #' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
@@ -40,8 +37,8 @@
 #' \itemize{
 #'  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
 #'  \item{$sequence: The merged sequence if match=TRUE. Otherwise an empty sequence, i.e. "".}
-#'  \item{$forward: The index of the forward denoised genotypes.}
-#'  \item{$reverse: The index of the reverse denoised genotype.}
+#'  \item{$forward: The index of the forward denoised sequence.}
+#'  \item{$reverse: The index of the reverse denoised sequence.}
 #'  \item{$nmatch: Number of matching nts in the overlap region.}
 #'  \item{$nmismatch: Number of mismatching nts in the overlap region.}
 #'  \item{$nindel: Number of indels in the overlap region.}
@@ -53,6 +50,12 @@
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}
 #'
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#'  mergePairs(dada.forward, derep.forward, dada.reverse, derep.reverse)
+#'  mergePairs(dada.forward, derep.forward, dada.reverse, derep.reverse, keepMismatch=TRUE, propagateCol=c("birth_hamming", "birth_fold"))
+#' }
 #' 
 mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE) {
   if(class(derepF) == "derep") mapF <- derepF$map

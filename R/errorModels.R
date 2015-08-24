@@ -119,8 +119,6 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 #'
 #' @seealso \code{\link{getBadBases}}
 #'
-#' @export
-#' 
 isBadBaseFP <- function(clust, subpos, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
   bb <- getBadBases(clust, subpos, omegaB, minOccurence, verbose=verbose)
   fps <- tapply(subpos$pos, subpos$clust, function(x) mean(x %in% bb) >= minFraction)
@@ -163,8 +161,6 @@ isBadBaseFP <- function(clust, subpos, minFraction = 0.51, omegaB = 1e-10, minOc
 #'
 #' @seealso \code{\link{isBadBaseFP}}
 #'
-#' @export
-#' 
 getBadBases <- function(clust, subpos, omegaB = 1e-20, minOccurence = 4, verbose=FALSE) {
   oos <- which(clust$birth_ham == 1)
   oopos <- subpos[subpos$clust %in% oos,]

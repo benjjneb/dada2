@@ -2,71 +2,88 @@
 % Please edit documentation in R/dada.R
 \name{dada}
 \alias{dada}
-\title{dada infers the sample sequence in amplicon data.}
+\title{High resolution sample inference from amplicon data.}
 \usage{
 dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
 }
 \arguments{
-\item{derep}{(Required). A derep-class object, the output of derepFastq.
- The derep object contains the $uniques named integer vector of abundances, named by the unique
- DNA sequence to which that abundance corresponds. It also contains $quals, a numeric matrix of
- the associated consensus quality scores (by averaging) with a row for each corresponding unique
- in the uniques vector, and a column for each sequence position. If USE_QUALS = TRUE then the
- dada() error model uses the associated consensus quality scores.
+\item{derep}{(Required). A derep-class object, the output of \code{\link{derepFastq}}.
 
- A list of derep objects can be provided, in which case each will be independently denoised but
- the error model will be shared across these samples when denoising.
-
- The dada(...) function requires that all input sequences have been trimmed to the same length.}
+ A list of derep objects can be provided, in which case each will be independently denoised with
+ a shared error model.}
 
 \item{err}{(Required). 16xN numeric matrix. Each entry must be between 0 and 1.
+
  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
+
  Rows correspond to the 16 possible transitions (t_ij) indexed as so...
    1:A->A,  2:A->C,  3:A->G,  4:A->T,  5:C->A,  6:C->C,  7:C->G,  8:C->T,
    9:G->A, 10:G->C, 11:G->G, 12:G->T, 13:T->A, 14:T->C, 15:T->G, 16:T->T
 
- If USE_QUALS = TRUE, the columns correspond to a linear interpolation of quality score from QMIN and QMAX, eg. seq(QMIN, QMAX, by=QSTEP).
-   err[t_ij, round((q_ave-QMIN)/QSTEP) + 1] = Prob(j in sequence | i in sample genotype and q_ave).
-
- If USE_QUALS = FALSE, the matrix must have only one column, which corresponds to the estimated error rate for that transition.
-   err[t_ij, 1] = Prob(j in sequence | i in sample genotype).}
+ Columns correspond to consensus quality scores. Typically there are 41 columns for the quality scores 0-40.
+ However, if USE_QUALS=FALSE, the matrix must have only one column.}
 
 \item{errorEstimationFunction}{(Optional). Function. Default Null.
-  If USE_QUALS = TRUE, errorEstimationFunction(dada()$trans_out) is computed and taken to be the new err matrix.
-   If selfConsist = TRUE, the next iteration of the dada algorithm will use these new error rates, and this
-   will continue until the loop terminates due to convergence (or by hitting MAX_CONSIST). If
-   selfConsist=FALSE, errorEstimationFunction is only used to calculate return value $err_out, but otherwise
-   has no effect on the algorithm.
 
-  If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).}
+ If USE_QUALS = TRUE, \code{errorEstimationFunction(dada()$trans_out)} is computed after sample inference finishes
+   and the return value is used as the new estimate of the err matrix.
+
+ If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).}
 
 \item{selfConsist}{(Optional). \code{logical(1)}. Default FALSE.
- When true, DADA will re-estimate error rates after inferring sample genotypes, and then repeat
- the algorithm using the newly estimated error rates. This continues until convergence.}
+
+ If selfConsist = TRUE, the algorithm will alternate between sample inference and error rate estimation until convergence.
+   Error rate estimation is performed by the errorEstimationFunction, which must be provided to use selfConsist mode.
+
+ If selfConsist=FALSE the algorithm performs one round of sample inference based on the provided err matrix.}
 
 \item{...}{(Optional). All dada_opts can be passed in as arguments to the dada() function.
-   eg. dada(unq, err=err_in, USE_QUALS=TRUE, OMEGA_A=1e-50, MAX_CLUST=50). See \code{\link{setDadaOpt}}
-   for a discussion of the various dada options.}
+
+ See \code{\link{setDadaOpt}} for a discussion of the various dada options.}
 }
 \value{
-A \code{\link{dada-class}} object.
-
- Not that if \code{selfConsist=TRUE},
- then \code{$err_in} is a list of length the number of times
- through the selfConsist loop corresponding to the err used in each iteration.
- \code{$err_out} is the final estimated error rate.
-
- If a list of uniques vectors was provided (i.e. multiple samples)
- then a list of the \code{\link{dada-class}} objects is returned corresponding
- to each input sample.
+A \code{\link{dada-class}} object or list of such objects of a list of derep objects was provided.
 }
 \description{
-The dada function takes as input the unique sequences in an amplicon sequencing sample paired
- with their abundances, and returns the sample genotypes paired with their abundances
- inferred by the Divisive Amplicon Denoising Algorithm:
- (Rosen, Callahan, Fisher, Holmes 2012; Callahan, McMurdie, Rosen, Han, Johnson, Holmes 2015).
+The dada function takes as input dereplicated amplicon sequencing reads and returns the inferred composition
+ of the sample (or samples). Put another way, dada removes all sequencing errors to reveal the members of the
+ sequenced community.
+}
+\details{
+If dada is run in selfConsist=TRUE mode, the algorithm will infer both the sample composition and
+ the parameters of its error model from the data.
+
+dada() implements the Divisive Amplicon Denoising Algorithm as described in:
+
+Briefly, DADA implements a statiscal test for the notion that a specific sequence was seen too many times
+ to have been caused by amplicon errors from currently inferred sample sequences. Overly-abundant
+ sequences are used as the seeds of new clusters of sequencing reads, and the final set of clusters
+ is taken to represent the denoised composition of the sample. A more detailed explanation of the algorithm
+ is found in two publications:
+
+\itemize{
+ \item{Callahan, B. J., McMurdie, P. J., Rosen, M. J., Han, A. W., Johnson, A. J., & Holmes, S. P. (2015). DADA2: High resolution sample inference from amplicon data. bioRxiv, 024034.}
+ \item{Rosen, M. J., Callahan, B. J., Fisher, D. S., & Holmes, S. P. (2012). Denoising PCR-amplified metagenome data. BMC bioinformatics, 13(1), 283.}
+}
+
+DADA depends on a parametric error model of substitutions. Thus the quality of its sample inference is affected
+ by the accuracy of the estimated error rates. DADA's selfConsist mode allows these error rates to be inferred
+ from the data.
+
+All of DADA's comparisons between sequences depend on pairwise alignments. This step is the most computationally
+ intensive part of the algorithm, and two alignment heuristics have been implemented for speed: A kmer-distance
+ screen and a banded Needleman-Wunsch alignmemt. See \code{\link{setDadaOpt}}.
+}
+\examples{
+\dontrun{
+ dada(derep.sample1, err=tperr1)
+ dada(list(sam1=derep.sample1, sam2=derep.sample2), err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+ dada(derep.sample1, err=tperr1, BAND_SIZE=32, OMEGA_A=1e-20)
+}
 }
 \seealso{
-\code{\link{derepFastq}}, \code{\link{setDadaOpt}}
+\code{\link{derepFastq}}
+
+ \code{\link{setDadaOpt}}
 }
 

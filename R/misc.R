@@ -1,34 +1,72 @@
-isHit100 <- function(clust, fn) {
-  bb <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
-  bbHit100 <- bb[bb$identity == 100 & bb$coverage == nchar(clust[match(bb$seqid,clust$id),"sequence"]),]
-  return(clust$id %in% bbHit100$seqid)
-}
-
-isOneOff <- function(clust, fn) {
-  hit <- isHit100(clust, fn)
-  bball <- read.table(fn, comment.char="#", col.names=c("seqid", "subject", "identity", "coverage", "mismatches", "gaps", "seq_start", "seq_end", "sub_start", "sub_end", "e", "score"))
-  bb <- bball[bball$coverage == nchar(clust[match(bball$seqid,clust$id),"sequence"]),] # Only full length hits
-  tab <- tapply(bb$identity, bb$seqid, max)
-  tab <- tab[match(clust$id, names(tab))]
-  seqlens <- nchar(clust$sequence)
-  oneOff <- tab<100 & (abs(tab - 100.0*(seqlens-1)/seqlens) < 0.01)
-  oneOff[is.na(oneOff)] <- FALSE # happens if no hits were full coverage
-  names(oneOff) <- clust$id # Also drop the name to NA so fix here
-  # Also get coverage-1 matches
-  # But still wont catch mismatches within the first or last couple of nts that cutoff more than 1 nt...
-  bb <- bball[bball$coverage == nchar(clust[match(bball$seqid,clust$id),"sequence"])-1,] # Full length-1 hits
-  bb <- bb[bb$identity==100,]
-  oneOff <- oneOff | clust$id %in% bb$seqid
-  # Make sure not a hit
-  oneOff[hit] <- FALSE
-  return(oneOff)
-}
-
-checkConvergence <- function(dadaO) {
-  sapply(dadaO$err_in, function(x) sum(abs(dadaO$err_out-x)))
-}
-
+################################################################################
+#' Get the vector of unique sequence.
+#' 
+#' This function extracts the uniques vector from several different data objects, including
+#'  \code{\link{dada-class}}, \code{\link{derep-class}} and \code{data.frame} objects that have both
+#'  $sequence and $abundance columns.
+#'  The return value is of the "uniques vector": An integer vector that is named by the
+#'  unique sequence and valued by abundance. If input is already a "uniques vector", that same vector
+#'  will be returned.
+#' 
+#' @param object (Required). The object from which to extract the uniques vector.
+#' 
+#' @return \code{integer}.
+#'  An integer vector named by unique sequence and valued by abundance.
+#' 
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#'  getUniques(dada.sample1)
+#'  getUniques(merged.df)
+#'  getUniques()
+#' }
+#' 
+getUniques <- function(object) {
+  if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
+    return(object)
+  } else if(class(object) == "dada") {  # dada return 
+    return(object$denoised)
+  } else if(class(object) == "derep") {
+    return(object$uniques)
+  } else if(is.data.frame(object) && all(c("sequence", "abundance") %in% colnames(object))) {
+    unqs <- as.integer(object$abundance)
+    names(unqs) <- object$sequence
+    return(unqs)
+  } else {
+    stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, or a data.frame with $sequence and $abundance columns.")
+  }
+}
+
+################################################################################
+#' Needlman-Wunsch alignment with ends-free gapping.
+#' 
+#' This function performs a Needleman-Wunsch alignment with free gaps at the ends of the sequences.
+#' 
+#' @param s1 (Required). \code{character(1)}. The first sequence to align. A/C/G/T only.
+#' 
+#' @param s2 (Required). \code{character(1)}. The second sequence to align. A/C/G/T only.
+#' 
+#' @param score (Optional). A 4x4 numeric matrix.
+#'  The transition scores to use for the alignment. Default is getDadaOpt("SCORE_MATRIX").
+#' 
+#' @param gap (Optional). A \code{numeric(1)}. The gap penalty.
+#'  Default is getDadaOpt("GAP_PENALTY").
+#'  
+#' @param band (Optional). A \code{numeric(1)}. The band size.
+#'  This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
+#'  Default is getDadaOpt("BAND_SIZE").
+#'  
+#' @return \code{character(2)}. The aligned sequences.
+#' 
+#' @export
+#' 
+#' @examples
+#'  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATACAGGCTAGCGGCGGACGGGTGAGTAACACGTGGGTAACCTGCCCAAGAGATCGGGATAACACCTGGAAACAGATGCTAATACCGGATAACAACAGATGATGCCTATCAACTGTTTAAAAGATGGTTCTGCTATCACTCTTGGATGGACCTGCG"
+#'  sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGTAACACGTGGGTGATCTGCCCTGTACTTCGGGATAAGCTTGGGAAACTGGGTCTAATACCGGATAGGACAACTTTTTGGATATTGTTGTGGAAAGCTTTTGCGGTATGGGATGAGCTCGCGGCCTATCAGCTTGTTGGTGGGGTAATGGCCTAC"
+#'  nwalign(sq1, sq2)
+#'  nwalign(sq1, sq2, band=-1)
+#' 
 nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
   if(nchar(s1) >= 1000 || nchar(s2) >= 1000) stop("Can only align strings up to 999 nts in length.")
@@ -39,7 +77,28 @@ nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GA
   C_nwalign(s1, s2, score, gap, band)
 }
 
-#' @export 
+################################################################################
+#' Hamming distance after Needlman-Wunsch alignment with ends-free gapping.
+#' 
+#' This function performs a Needleman-Wunsch alignment with free gaps at the ends of the sequences, and then counts
+#' the number of mismatches and indels in that alignment. Gaps at the beginning and end are ignored.
+#' 
+#' @param s1 (Required). \code{character(1)}. The first sequence to align. A/C/G/T only.
+#' 
+#' @param s2 (Required). \code{character(1)}. The second sequence to align. A/C/G/T only.
+#' 
+#' @param ... (Optional). Further arguments to pass on to \code{\link{nwalign}}.
+#' 
+#' @return \code{integer(1)}. The total number of mismatches and gaps, excluding gaps at the beginning and end of the alignment.
+#' 
+#' @export
+#' 
+#' @examples
+#'  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATACAGGCTAGCGGCGGACGGGTGAGTAACACGTGGGTAACCTGCCCAAGAGATCGGGATAACACCTGGAAACAGATGCTAATACCGGATAACAACAGATGATGCCTATCAACTGTTTAAAAGATGGTTCTGCTATCACTCTTGGATGGACCTGCG"
+#'  sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGTAACACGTGGGTGATCTGCCCTGTACTTCGGGATAAGCTTGGGAAACTGGGTCTAATACCGGATAGGACAACTTTTTGGATATTGTTGTGGAAAGCTTTTGCGGTATGGGATGAGCTCGCGGCCTATCAGCTTGTTGGTGGGGTAATGGCCTAC"
+#'  nwhamming(sq1, sq2)
+#'  nwhamming(sq1, sq2, band=-1)
+#' 
 nwhamming <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   out <- C_eval_pair(al[1], al[2])
@@ -58,6 +117,8 @@ strdiff <- function(s1, s2) {
   data.frame(pos=dd,nt0=xx[dd],nt1=yy[dd])
 }
 
+hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
+
 #' @importFrom Biostrings DNAString
 #' @importFrom Biostrings DNAStringSet
 #' @importFrom Biostrings reverseComplement
@@ -70,51 +131,8 @@ rc <- function(sqs) {
     as(reverseComplement(DNAStringSet(sqs)), "character")
   }
 }
-#  rc <- Vectorize(function(x) as(reverseComplement(DNAString(x)), "character"))
 
-hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
-
-subseqUniques <- function(unqs, start, end) {
-  subnms <- substr(names(unqs), start, end)
-  newNames <- unique(subnms)
-  newUniques <- as.integer(rep(0,length(newNames)))
-  names(newUniques) <- newNames
-  for(i in seq(length(unqs))) {
-    newnm <- subnms[[i]]
-    newUniques[[newnm]] <- newUniques[[newnm]] + unqs[[i]]
-  }
-  newUniques[sapply(names(newUniques), function(nm) nchar(nm) == (end-start+1))]
+checkConvergence <- function(dadaO) {
+  sapply(dadaO$err_in, function(x) sum(abs(dadaO$err_out-x)))
 }
 
-mergeUniques <- function(unqsList, ...) {
-  if(!is.list(unqsList) && length(list(...))>=1) {
-    unqsList = list(unqsList, unlist(unname(list(...))))
-  }
-  concat <- c(unlist(unqsList))
-  unqs <- unique(names(concat))
-  mrg <- as.integer(rep(0, length(unqs)))
-  names(mrg) <- unqs
-  # Probably a better way to do this than for loop...
-  for(i in seq(length(concat))) {
-    unq <- names(concat)[[i]]
-    mrg[[unq]] <- mrg[[unq]] + concat[[i]]
-  }
-  mrg
-}
-
-#' @export
-as.uniques <- function(foo) {
-  if(is.integer(foo) && length(names(foo)) != 0 && !any(is.na(names(foo)))) { # Named integer vector already
-    return(foo)
-  } else if(class(foo) == "dada") {  # dada return 
-    return(foo$genotypes)
-  } else if(class(foo) == "derep") {
-    return(foo$uniques)
-  } else if(is.data.frame(foo) && all(c("sequence", "abundance") %in% colnames(foo))) {
-    unqs <- as.integer(foo$abundance)
-    names(unqs) <- foo$sequence
-    return(unqs)
-  } else {
-    stop("Unrecognized format: Requires named integer vector, dada, derep, or a data.frame with $sequence and $abundance columns.")
-  }
-}

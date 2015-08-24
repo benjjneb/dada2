@@ -53,16 +53,22 @@ remain identically ordered.
 }
 \details{
 fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
-(http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but applied to forward and reverse
-reads simultaneously.
+(http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but only pairs of reads that both
+pass the filter are retained.
+}
+\examples{
+\dontrun{
+ fastqPairedFilter(c("/path/to/forward.fastq", "/path/to/reverse.fastq"), c("/path/to/filtF.fastq", /path/to/filtR.fastq"), maxN=0, maxEE=2)
+ fastqPairedFilter(c("/path/to/forward.fastq", "/path/to/reverse.fastq"), c("/path/to/filtF.fastq", /path/to/filtR.fastq"), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
+}
 }
 \seealso{
 \code{\link{fastqFilter}}
 
- \code{\link[ShortRead]{FastqStreamer}}
+\code{\link[ShortRead]{FastqStreamer}}
 
- \code{\link[ShortRead]{srFilter}}
+\code{\link[ShortRead]{srFilter}}
 
- \code{\link[ShortRead]{trimTails}}
+\code{\link[ShortRead]{trimTails}}
 }
 

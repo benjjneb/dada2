@@ -118,23 +118,23 @@ plotErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nom
     stop("nti and ntj must be a nucleotide (A/C/G/T) or all.")
   }
   if(nti == "all" && ntj == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominalQ, ...), rep(ACGT, each=4), rep(ACGT,4), SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .plotErrors(dq, x, y, err_out, err_in, nominalQ, ...), rep(ACGT, each=4), rep(ACGT,4), SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=4))
   }
   else if(nti == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominalQ, ...), ACGT, ntj, SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .plotErrors(dq, x, y, err_out, err_in, nominalQ, ...), ACGT, ntj, SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=2))  
   }
   else if(ntj == "all") {
-    err_plots <- mapply(function(x,y) .showErrors(dq, x, y, err_out, err_in, nominalQ, ...), nti, ACGT, SIMPLIFY=FALSE)
+    err_plots <- mapply(function(x,y) .plotErrors(dq, x, y, err_out, err_in, nominalQ, ...), nti, ACGT, SIMPLIFY=FALSE)
     do.call(grid.arrange, c(err_plots, ncol=2))
   } else {
-    .showErrors(dq, nti, ntj, err_out, err_in, nominalQ, ...)
+    .plotErrors(dq, nti, ntj, err_out, err_in, nominalQ, ...)
   }
 }
 
 #' @import ggplot2
-.showErrors <- function(dq, nti, ntj, err_out=TRUE, err_in=FALSE, nominalQ=FALSE, ...) {
+.plotErrors <- function(dq, nti, ntj, err_out=TRUE, err_in=FALSE, nominalQ=FALSE, ...) {
   ACGT <- c("A", "C", "G", "T")
   tij <- 4*(which(ACGT==nti)-1) + which(ACGT==ntj)
   nij <- paste0(nti,"2",ntj)

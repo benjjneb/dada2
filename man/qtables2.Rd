@@ -7,7 +7,7 @@
 qtables2(x, qeff = FALSE)
 }
 \description{
-Internal function to replicate tables functionality while also returning average quals and a map
+Internal function to replicate ShortRead::tables functionality while also returning average quals and a map
 from reads to uniques
 }
 \keyword{internal}

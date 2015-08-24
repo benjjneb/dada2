@@ -60,8 +60,13 @@
 #' @importFrom Biostrings width
 #' @importFrom Biostrings end
 #' 
+#' @examples
+#' \dontrun{
+#'  fastqFilter("/path/to/sample_reads.fastq", "/path/to/filtered_reads.fastq", maxN=0, maxEE=2)
+#'  fastqFilter("/path/to/sample_reads.fastq", "/path/to/filtered_reads.fastq", trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
+#' }
+#' 
 fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
-  # See also filterFastq in the ShortRead package
   start <- max(1, trimLeft + 1)
   end <- truncLen
   if(end < start) { end = NA }
@@ -131,8 +136,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' remain identically ordered.
 #' 
 #' fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
-#' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but applied to forward and reverse
-#' reads simultaneously.
+#' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but only pairs of reads that both
+#' pass the filter are retained.
 #' 
 #' @param fn (Required). A \code{character(2)} naming the paths to the forward/reverse fastq files.
 #'   
@@ -168,15 +173,15 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' @param compress (Optional). A \code{logical(1)} indicating whether the output should be gz compressed.
 #' 
 #' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
-#'    
-#' @seealso 
-#'  \code{\link{fastqFilter}}
 #' 
-#'  \code{\link[ShortRead]{FastqStreamer}}
-#'  
-#'  \code{\link[ShortRead]{srFilter}}
-#'  
-#'  \code{\link[ShortRead]{trimTails}}
+#' @seealso 
+#' \code{\link{fastqFilter}}
+#' 
+#' \code{\link[ShortRead]{FastqStreamer}}
+#' 
+#' \code{\link[ShortRead]{srFilter}}
+#' 
+#' \code{\link[ShortRead]{trimTails}}
 #' 
 #' @export
 #' 
@@ -190,6 +195,13 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' @importFrom Biostrings end
+#' 
+#' @examples
+#'
+#' \dontrun{
+#'  fastqPairedFilter(c("/path/to/forward.fastq", "/path/to/reverse.fastq"), c("/path/to/filtF.fastq", /path/to/filtR.fastq"), maxN=0, maxEE=2)
+#'  fastqPairedFilter(c("/path/to/forward.fastq", "/path/to/reverse.fastq"), c("/path/to/filtF.fastq", /path/to/filtR.fastq"), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
+#' }
 #' 
 fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
   # Warning: This assumes that forward/reverse reads are in the same order
