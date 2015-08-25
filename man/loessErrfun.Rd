@@ -23,4 +23,9 @@ rates of the same shape. Error rates are estimates by loess fitting each
 transition (i.e. A->C, A->G, A->T) as a fucnction of the quality score, and
 taking the self-transitions (i.e. A->A) as the left-over probability.
 }
+\examples{
+derep1 <- derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+dada1 <- dada(derep1, err=tperr1)
+err.new <- loessErrfun(dada1$trans)
+}
 

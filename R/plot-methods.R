@@ -24,15 +24,11 @@
 #' @export
 #' 
 #' @examples 
-#' # Examples here.
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"), verbose = TRUE)
-#' res1 <- dada(derep1,
-#'              err = inflateErr(tperr1, 2), 
-#'              errorEstimationFunction = loessErrfun, 
-#'              selfConsist = TRUE) 
-#' plotSubstitutions(res1)
+#' dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun, selfConsist = TRUE) 
+#' plotComplementarySubstitutions(dada1)
 #' 
-plotSubstitutions = function(dadaOut, facetByGrp = TRUE){
+plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
   transdt = data.table(melt(dadaOut$trans))
   setnames(transdt, c("Substitution", "Quality", "Count"))
   transdt[, Sub1 := substr(Substitution, 1, 1)]
@@ -74,117 +70,73 @@ plotSubstitutions = function(dadaOut, facetByGrp = TRUE){
   return(p1)
 }
 
-#' Plot error rates from after dada processing.
+#' Plot error rates after dada processing.
 #' 
-#' This function plots the observed freuency of substitutions for each transition
-#' (eg. A->C) as a function of the associated quality score. It also plots the error
-#' rates passed in to this instantiation of the dada algorithm, and the output error
-#' rates if they exist.
+#' This function plots the observed frequency of each transition
+#' (eg. A->C) as a function of the associated quality score. It also plots the final
+#' estimated error rates (if they exist). The initial input rates and the expected error
+#' rates under the nominal definition of quality scores can also be included.
 #' 
-#' @param dq Required. A dada return object.
+#' @param dq Required. A \code{\link{dada-class}} object.
 #' 
-#' @param nti Optional. Default "all". Choice of "A", "C", "G", "T".
-#' @param ntj Optional. Default "all". Choice of "A", "C", "G", "T".
-#'  The error rate from nti->ntj will be plotted. If "all" is selected,
-#'  the error rate from all 4 nti, or to all 4 ntj, will be plotted.
+#' @param nti Optional. Default c("A","C","G","T"). Some combination of the 4 DNA nucleotides.
+#' @param ntj Optional. Default c("A","C","G","T"). Some combination of the 4 DNA nucleotides.
+#'  The error rates from nti->ntj will be plotted. If multiple nti or ntj are chosen,
+#'   error rates from each-to-each will be plotted in a grid.
 #'  
 #' @param err_out Optional. Default TRUE.
 #'  A \code{logical(1)} determining whether to plot the output error rates (solid).
 #' 
 #' @param err_in Optional. Default FALSE.
-#'  A \code{logical(1)} determining whether to plot the input error rates (dashed).
+#'  A \code{logical(1)} determining whether to plot the initial input error rates (dashed).
 #'
 #' @param nominalQ Optional. Default FALSE.
 #'  A \code{logical(1)} determining whether to plot the expected error rate (red) if the
 #'  quality score exactly matched its nominal definition: Q = -10 log10(p_err).
 #'  
-#' @param ...
-#'  Further arguments that are passed to the ggplot() function.
-#'
 #' @return A \code{\link{ggplot2}} object that will be rendered
 #'  to default device if \code{\link{print}ed},
 #'  or can be stored and further modified.
 #'  
 #' @export
 #' @import ggplot2
-#' @importFrom gridExtra grid.arrange
+#' @importFrom reshape2 melt
 #' 
-plotErrors <- function(dq, nti="all", ntj="all", err_out=TRUE, err_in=FALSE, nominalQ=FALSE, ...) {
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"), verbose = TRUE)
+#' dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun, selfConsist = TRUE) 
+#' plotErrors(dada1)
+#' plotErrors(dada1, "A", "C")
+#' plotErrors(dada1, nti="A", ntj=c("A","C","G","T"), err_in=TRUE, nominalQ=TRUE)
+#' 
+plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_out=TRUE, err_in=FALSE, nominalQ=FALSE) {
   ACGT <- c("A", "C", "G", "T")
-  if(!(nti %in% c(ACGT, "all") && (ntj %in% c(ACGT, "all")))) {
-    stop("nti and ntj must be a nucleotide (A/C/G/T) or all.")
+  if(!(all(nti %in% ACGT) && all(ntj %in% ACGT)) || any(duplicated(nti)) || any(duplicated(ntj))) {
+    stop("nti and ntj must be nucleotide(s): A/C/G/T.")
   }
-  if(nti == "all" && ntj == "all") {
-    err_plots <- mapply(function(x,y) .plotErrors(dq, x, y, err_out, err_in, nominalQ, ...), rep(ACGT, each=4), rep(ACGT,4), SIMPLIFY=FALSE)
-    do.call(grid.arrange, c(err_plots, ncol=4))
-  }
-  else if(nti == "all") {
-    err_plots <- mapply(function(x,y) .plotErrors(dq, x, y, err_out, err_in, nominalQ, ...), ACGT, ntj, SIMPLIFY=FALSE)
-    do.call(grid.arrange, c(err_plots, ncol=2))  
-  }
-  else if(ntj == "all") {
-    err_plots <- mapply(function(x,y) .plotErrors(dq, x, y, err_out, err_in, nominalQ, ...), nti, ACGT, SIMPLIFY=FALSE)
-    do.call(grid.arrange, c(err_plots, ncol=2))
+  transdf = melt(dq$trans, factorsAsStrings=TRUE)
+  colnames(transdf) <- c("Transition", "Qual", "count")
+  transdf$from <- substr(transdf$Transition, 1, 1)
+  transdf$to <- substr(transdf$Transition, 3, 3)
+  tot.count <- tapply(transdf$count, list(transdf$from, transdf$Qual), sum)
+  transdf$tot <- mapply(function(x,y) tot.count[x,y], transdf$from, as.character(transdf$Qual))
+  transdf$Observed <- transdf$count/transdf$tot
+  if(!is.null(dq$err_out)) {
+    transdf$Estimated <- mapply(function(x,y) dq$err_out[x,y], transdf$Transition, as.character(transdf$Qual))
   } else {
-    .plotErrors(dq, nti, ntj, err_out, err_in, nominalQ, ...)
+    transdf$Estimated <- NA
   }
+  # If selfConsist, then err_in is a list. Use the first err_in, the initial error rates provided.
+  ei <- dq$err_in; if(is.list(ei)) ei <- ei[[1]]
+  transdf$Input <- mapply(function(x,y) ei[x,y], transdf$Transition, as.character(transdf$Qual))
+  transdf$Nominal <- (1/3)*10^-(transdf$Qual/10)
+  transdf$Nominal[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")] <- 1 - 10^-(transdf$Qual[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")]/10)
+  
+  p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual, y=log10(Observed))) + geom_point(na.rm=TRUE)
+  if(err_out && !is.null(dq$err_out))  p <- p + geom_line(aes(y=log10(Estimated)))
+  if(err_in)   p <- p + geom_line(aes(y=log10(Input)), linetype="dashed")
+  if(nominalQ) p <- p + geom_line(aes(y=log10(Nominal)), color="red")
+  p <- p + facet_wrap(~Transition, nrow=length(nti))
+  p <- p + xlab("Consensus quality score") + ylab("Error frequency (log10)")
+  p
 }
-
-#' @import ggplot2
-.plotErrors <- function(dq, nti, ntj, err_out=TRUE, err_in=FALSE, nominalQ=FALSE, ...) {
-  ACGT <- c("A", "C", "G", "T")
-  tij <- 4*(which(ACGT==nti)-1) + which(ACGT==ntj)
-  nij <- paste0(nti,"2",ntj)
-  subdf <- as.data.frame(t(dq$trans))
-  subdf$qave <- as.numeric(rownames(subdf))
-  subdf[,nij] <- subdf[,nij]/(subdf[,paste0(nti,"2A")]+subdf[,paste0(nti,"2C")]+subdf[,paste0(nti,"2G")]+subdf[,paste0(nti,"2T")])
-  
-  p <- ggplot(data=subdf, aes_string(x="qave", y=paste0("log10(",nij,")")), ...)
-  p <- p + geom_point(na.rm=TRUE)
-
-  if(err_in) {
-    erridf <- dq$err_in
-    if(is.list(erridf)) erridf <- erridf[[1]]
-    erridf <- as.data.frame(t(erridf))
-    colnames(erridf) <- paste0(rep(ACGT, each=4), "2", ACGT)
-    rownames(erridf) <- seq(dq$opts$QMIN, dq$opts$QMAX, length.out=nrow(erridf))
-    erridf$qave <- as.numeric(rownames(erridf))
-    p <- p + geom_line(data=erridf, linetype="dashed")
-  }
-  
-  if(!("err_out" %in% ls(dq))) err_out <- FALSE
-  if(err_out) {
-    errodf <- as.data.frame(t(dq$err_out))
-    errodf$qave <- as.numeric(rownames(errodf))
-    p <- p + geom_line(data=errodf)
-  }
-  
-  if(nominalQ) {
-    qq <- subdf$qave
-    if(nti != ntj) { 
-      nom_err <- (1/3) * 10^(-qq/10)
-    } else {
-      nom_err <- 1. - 10^(-qq/10)
-    }
-    nomqdf <- data.frame(qave=qq, nom=nom_err)
-    colnames(nomqdf)[[2]] <- nij
-    p <- p + geom_line(data=nomqdf, color="red")
-  }
-  
-  return(p)
-}
-
-#' @import ggplot2
-#' @importFrom gridExtra grid.arrange
-plotSubPos <- function(subpos, ...) {
-  subpos$pos <- seq(nrow(subpos))
-  subpos <- subpos[1:match(0,subpos$nts)-1,]
-  p <- ggplot(data=subpos, aes(x=pos))
-  pA <- p + geom_line(aes(y=A2C/(1+A)), color="red") + geom_line(aes(y=A2G/(1+A)), color="orange") + geom_line(aes(y=A2T/(1+A)), color="blue") + ylab("Subs at As")
-  pC <- p + geom_line(aes(y=C2A/(1+C)), color="grey") + geom_line(aes(y=C2G/(1+C)), color="orange") + geom_line(aes(y=C2T/(1+C)), color="blue") + ylab("Subs at Cs")
-  pG <- p + geom_line(aes(y=G2A/(1+G)), color="grey") + geom_line(aes(y=G2C/(1+G)), color="red") + geom_line(aes(y=G2T/(1+G)), color="blue") + ylab("Subs at Gs")
-  pT <- p + geom_line(aes(y=T2A/(1+T)), color="grey") + geom_line(aes(y=T2C/(1+T)), color="red") + geom_line(aes(y=T2G/(1+T)), color="orange") + ylab("Subs at Ts")
-  pAll <- p + geom_line(aes(y=subs/nts)) + ylab("Sub rate (all nts)")
-  grid.arrange(pAll, pAll, pA, pC, pG, pT, nrow=3, ...)
-}
-

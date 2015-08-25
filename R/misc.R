@@ -1,12 +1,12 @@
 ################################################################################
-#' Get the vector of unique sequence.
+#' Get the "uniques vector": Integer vector named by sequence and valued by abundance.
 #' 
-#' This function extracts the uniques vector from several different data objects, including
+#' This function extracts the "uniques vector" from several different data objects, including
 #'  \code{\link{dada-class}}, \code{\link{derep-class}} and \code{data.frame} objects that have both
 #'  $sequence and $abundance columns.
-#'  The return value is of the "uniques vector": An integer vector that is named by the
-#'  unique sequence and valued by abundance. If input is already a "uniques vector", that same vector
-#'  will be returned.
+#'  The return value is an integer vector named by sequence and valued by abundance. If input is already
+#'  a "uniques vector", that same vector will be returned.
+#'  The uniques format is used by several functions within the dada2 package.
 #' 
 #' @param object (Required). The object from which to extract the uniques vector.
 #' 
@@ -24,18 +24,44 @@
 #' 
 getUniques <- function(object) {
   if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
-    return(object)
+    unqs <- object
   } else if(class(object) == "dada") {  # dada return 
-    return(object$denoised)
+    unqs <- object$denoised
   } else if(class(object) == "derep") {
-    return(object$uniques)
+    unqs <- object$uniques
   } else if(is.data.frame(object) && all(c("sequence", "abundance") %in% colnames(object))) {
     unqs <- as.integer(object$abundance)
     names(unqs) <- object$sequence
-    return(unqs)
   } else {
     stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, or a data.frame with $sequence and $abundance columns.")
   }
+  if(any(duplicated(names(unqs)))) message("Duplicate sequences detected.")
+  return(unqs)
+}
+
+################################################################################
+#' Get vector of sequences.
+#' 
+#' This function extracts the unique sequences from several different data objects, including
+#'  \code{\link{dada-class}}, \code{\link{derep-class}} and \code{data.frame} objects that have both
+#'  $sequence and $abundance columns. This function wraps the \code{\link{getUniques}} function, but
+#'  return only the names (i.e. the sequences).
+#' 
+#' @param object (Required). The object from which to extract the sequences.
+#' 
+#' @return \code{character}. A character vector of the sequences.
+#' 
+#' @export
+#' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' dada1 <- dada(derep1, err=tperr1)
+#' getSequences(derep1)
+#' getSequences(dada1)
+#' getSequences(dada1$clustering)
+#' 
+getSequences <- function(object) {
+  return(names(getUniques(object)))
 }
 
 ################################################################################
@@ -94,10 +120,10 @@ nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GA
 #' @export
 #' 
 #' @examples
-#'  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATACAGGCTAGCGGCGGACGGGTGAGTAACACGTGGGTAACCTGCCCAAGAGATCGGGATAACACCTGGAAACAGATGCTAATACCGGATAACAACAGATGATGCCTATCAACTGTTTAAAAGATGGTTCTGCTATCACTCTTGGATGGACCTGCG"
-#'  sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGTAACACGTGGGTGATCTGCCCTGTACTTCGGGATAAGCTTGGGAAACTGGGTCTAATACCGGATAGGACAACTTTTTGGATATTGTTGTGGAAAGCTTTTGCGGTATGGGATGAGCTCGCGGCCTATCAGCTTGTTGGTGGGGTAATGGCCTAC"
-#'  nwhamming(sq1, sq2)
-#'  nwhamming(sq1, sq2, band=-1)
+#' sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATACAGGCTAGCGGCGGACGGGTGAGTAACACGTGGGTAACCTGCCCAAGAGATCGGGATAACACCTGGAAACAGATGCTAATACCGGATAACAACAGATGATGCCTATCAACTGTTTAAAAGATGGTTCTGCTATCACTCTTGGATGGACCTGCG"
+#' sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGTAACACGTGGGTGATCTGCCCTGTACTTCGGGATAAGCTTGGGAAACTGGGTCTAATACCGGATAGGACAACTTTTTGGATATTGTTGTGGAAAGCTTTTGCGGTATGGGATGAGCTCGCGGCCTATCAGCTTGTTGGTGGGGTAATGGCCTAC"
+#' nwhamming(sq1, sq2)
+#' nwhamming(sq1, sq2, band=-1)
 #' 
 nwhamming <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)

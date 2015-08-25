@@ -233,6 +233,12 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2) {
 //' @return DataFrame.
 //'
 //' @export
+//' 
+//' @examples
+//' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+//' kmerdf <- evaluate_kmers(getSequences(derep1), 5, getDadaOpt("SCORE_MATRIX"), getDadaOpt("GAP_PENALTY"), 16, 1000)
+//' plot(kmerdf$kmer, kmerdf$align)
+//' 
 // [[Rcpp::export]]
 Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, size_t max_aligns) {
   int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
@@ -297,25 +303,26 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
 
 
 //------------------------------------------------------------------
-//' Quantify the number of alignments altered by banding at the given BAND_SIZE.
-//'
-//' @param seqs (Required). Character.
-//'  A vector containing all unique sequences in the data set.
-//'  Only A/C/G/T allowed.
-//' 
-//' @param score (Required). Numeric matrix (4x4).
-//' The score matrix used during the alignment. Coerced to integer.
-//'
-//' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
-//' 
-//' @param band_size (Required). A \code{numeric(1)} giving the band size to consider.
-//'
-//' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
-//' pairwise alignments to do.
-//'
-//' @return DataFrame.
-//'
-//' @export
+// ----------- NEED BETTER EVALUATION THAN THIS --------------------
+// Quantify the number of alignments altered by banding at the given BAND_SIZE.
+//
+// @param seqs (Required). Character.
+//  A vector containing all unique sequences in the data set.
+//  Only A/C/G/T allowed.
+// 
+// @param score (Required). Numeric matrix (4x4).
+// The score matrix used during the alignment. Coerced to integer.
+//
+// @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
+// 
+// @param band_size (Required). A \code{numeric(1)} giving the band size to consider.
+//
+// @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
+// pairwise alignments to do.
+//
+// @return DataFrame.
+//
+// @export
 // [[Rcpp::export]]
 Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, size_t max_aligns) {
   int i, j, n_iters, stride, nseqs, len1 = 0, len2 = 0;

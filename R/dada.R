@@ -54,7 +54,8 @@ assign("VERBOSE", FALSE, envir=dada_opts)
 #' @param selfConsist (Optional). \code{logical(1)}. Default FALSE.
 #' 
 #'  If selfConsist = TRUE, the algorithm will alternate between sample inference and error rate estimation until convergence.
-#'    Error rate estimation is performed by the errorEstimationFunction, which must be provided to use selfConsist mode.
+#'    Error rate estimation is performed by the errorEstimationFunction, which is required for selfConsist mode. If dada is
+#'    run in selfConsist mode without specifying this function, the default loessErrfun will be used.
 #'    
 #'  If selfConsist=FALSE the algorithm performs one round of sample inference based on the provided err matrix.
 #'   
@@ -95,11 +96,11 @@ assign("VERBOSE", FALSE, envir=dada_opts)
 #' @export
 #'
 #' @examples
-#' test1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-#' test2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
-#' dada(test1, err=tperr1)
-#' dada(list(sam1=test1, sam2=test2), err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
-#' dada(test1, err=inflateErr(tperr1,2), BAND_SIZE=32, OMEGA_A=1e-20)
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
+#' dada(derep1, err=tperr1)
+#' dada(list(sam1=derep1, sam2=derep2), err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' dada(derep1, err=inflateErr(tperr1,2), BAND_SIZE=32, OMEGA_A=1e-20)
 #'
 dada <- function(derep,
                  err,
@@ -169,7 +170,8 @@ dada <- function(derep,
   } else {
     if(is.null(errorEstimationFunction)) { 
       if(selfConsist) {
-        stop("Must provide an error function if USE_QUALS and selfConsist=TRUE.")
+        warning("Did not provide an error function for selfConsist mode, using the default loessErrfun.")
+        errorEstimationFunction <- loessErrfun
       } else {
         message("No error function provided, no post-dada error estimates ($err_out) will be inferred.") 
       }

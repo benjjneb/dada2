@@ -2,31 +2,29 @@
 % Please edit documentation in R/plot-methods.R
 \name{plotErrors}
 \alias{plotErrors}
-\title{Plot error rates from after dada processing.}
+\title{Plot error rates after dada processing.}
 \usage{
-plotErrors(dq, nti = "all", ntj = "all", err_out = TRUE, err_in = FALSE,
-  nominalQ = FALSE, ...)
+plotErrors(dq, nti = c("A", "C", "G", "T"), ntj = c("A", "C", "G", "T"),
+  err_out = TRUE, err_in = FALSE, nominalQ = FALSE)
 }
 \arguments{
-\item{dq}{Required. A dada return object.}
+\item{dq}{Required. A \code{\link{dada-class}} object.}
 
-\item{nti}{Optional. Default "all". Choice of "A", "C", "G", "T".}
+\item{nti}{Optional. Default c("A","C","G","T"). Some combination of the 4 DNA nucleotides.}
 
-\item{ntj}{Optional. Default "all". Choice of "A", "C", "G", "T".
- The error rate from nti->ntj will be plotted. If "all" is selected,
- the error rate from all 4 nti, or to all 4 ntj, will be plotted.}
+\item{ntj}{Optional. Default c("A","C","G","T"). Some combination of the 4 DNA nucleotides.
+ The error rates from nti->ntj will be plotted. If multiple nti or ntj are chosen,
+  error rates from each-to-each will be plotted in a grid.}
 
 \item{err_out}{Optional. Default TRUE.
  A \code{logical(1)} determining whether to plot the output error rates (solid).}
 
 \item{err_in}{Optional. Default FALSE.
- A \code{logical(1)} determining whether to plot the input error rates (dashed).}
+ A \code{logical(1)} determining whether to plot the initial input error rates (dashed).}
 
 \item{nominalQ}{Optional. Default FALSE.
  A \code{logical(1)} determining whether to plot the expected error rate (red) if the
  quality score exactly matched its nominal definition: Q = -10 log10(p_err).}
-
-\item{...}{Further arguments that are passed to the ggplot() function.}
 }
 \value{
 A \code{\link{ggplot2}} object that will be rendered
@@ -34,9 +32,16 @@ A \code{\link{ggplot2}} object that will be rendered
  or can be stored and further modified.
 }
 \description{
-This function plots the observed freuency of substitutions for each transition
-(eg. A->C) as a function of the associated quality score. It also plots the error
-rates passed in to this instantiation of the dada algorithm, and the output error
-rates if they exist.
+This function plots the observed frequency of each transition
+(eg. A->C) as a function of the associated quality score. It also plots the final
+estimated error rates (if they exist). The initial input rates and the expected error
+rates under the nominal definition of quality scores can also be included.
+}
+\examples{
+derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"), verbose = TRUE)
+dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun, selfConsist = TRUE)
+plotErrors(dada1)
+plotErrors(dada1, "A", "C")
+plotErrors(dada1, nti="A", ntj=c("A","C","G","T"), err_in=TRUE, nominalQ=TRUE)
 }
 

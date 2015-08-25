@@ -15,6 +15,12 @@
 #'  each transition category.
 #' 
 #' @export
+#' 
+#' @examples
+#' derep1 <- derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' dada1 <- dada(derep1, err=tperr1)
+#' err.new <- loessErrfun(dada1$trans)
+#' 
 loessErrfun <- function(trans) {
   qq <- as.numeric(colnames(trans))
   est <- matrix(0, nrow=0, ncol=length(qq))
@@ -57,20 +63,25 @@ loessErrfun <- function(trans) {
 
 #' Inflates an error rate matrix by a specified factor accounting for saturation.
 #' 
-#' Error rates are "inflated" by the specified factor, while saturating so that rates
+#' Error rates are "inflated" by the specified factor, while appropriately saturating so that rates
 #' cannot exceed 1. The formula is:
 #'   new_err_rate <- err_rate * inflate / (1 + (inflate-1) * err_rate)
 #'   
-#' @param err Required. A matrix of error rates (16 rows, named "A2A", "A2C", ...).
+#' @param err (Required). A matrix of error rates (16 rows, named "A2A", "A2C", ...).
 #' 
-#' @param inflation Required. The factor with which to inflate the transition rates.
+#' @param inflation (Required). The factor with which to inflate the transition rates.
 #' 
-#' @param inflateSelfTransitions Optional. If True, self-transitions (eg. A->A) also inflated.
+#' @param inflateSelfTransitions (Optional). If True, self-transitions (eg. A->A) also inflated.
 #'  Default is FALSE.
 #'  
 #' @return An error rate matrix of the same dimensions as the input error rate matrix.
 #'  
 #' @export
+#' 
+#' @examples
+#'  tperr2 <- inflateErr(tperr1, 2)
+#'  tperr3.all <- inflateErr(tperr1, 3, inflateSelfTransitions=TRUE)
+#' 
 inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
   t_errs <- c("A2C", "A2G", "A2T", "C2A", "C2G", "C2T", "G2A", "G2C", "G2T", "T2A", "T2C", "T2G")
   err[t_errs,] <- (err[t_errs,] * inflation)/(1 + (inflation-1) * err[t_errs,])
@@ -82,43 +93,44 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 }
 
 ################################################################################
-#' Identify False Positive inferred sequences due to bad bases.
-#' 
-#' Illumina sequencing sometimes produces "bad bases", positions at which 
-#' error rates are significantly higher than expected by the assigned quality
-#' score. This function identifies the inferred sequences that are likely to
-#' have been driven by those bad bases.
-#' 
-#' @param clust (Required). The $clustering data frame from the dada() output.
-#'   May be subsetted from the original prior to using this function.
-#' 
-#' @param subpos (Required). The $subpos data frame from the dada() output.
-#' 
-#' @param minFraction (Optional). A \code{numeric(1)}. Default is 0.51.
-#'  The minimum fraction of bad bases among the base positions used to infer the
-#'  sequence required to call the inferred sequence a false positive.
-#'   
-#' @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
-#'  The p-value threshhold below which a base is assigned as "bad".
-#'  The p-value is calculated by the number of repeated occurences of a particular
-#'    base position individually driving the formation of a new cluster. Bad bases 
-#'    drive many new "1-away" clustes.
-#'  The null hypothesis being tested is that real differences are distributed
-#'    uniformly along the sequence. This is not true, biological differences are
-#'    non-uniform, so this pvalue threshhold should be set conservatively.
-#' 
-#' @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
-#'  The minimum times a single base position must drive the formation of a new cluster
-#'    before it can be considered a "bad base".
-#'
-#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
-#'
-#' @return Logical vector of length the number of inferred sequences. 
-#'  TRUE if inferred sequence a false positive.
-#'  FALSE otherwise.
-#'
-#' @seealso \code{\link{getBadBases}}
-#'
+#  --------------------- REQUIRES FURTHER TESTING --------------------------
+# Identify False Positive inferred sequences due to bad bases.
+# 
+# Illumina sequencing sometimes produces "bad bases", positions at which 
+# error rates are significantly higher than expected by the assigned quality
+# score. This function identifies the inferred sequences that are likely to
+# have been driven by those bad bases.
+# 
+# @param clust (Required). The $clustering data frame from the dada() output.
+#   May be subsetted from the original prior to using this function.
+# 
+# @param subpos (Required). The $subpos data frame from the dada() output.
+# 
+# @param minFraction (Optional). A \code{numeric(1)}. Default is 0.51.
+#  The minimum fraction of bad bases among the base positions used to infer the
+#  sequence required to call the inferred sequence a false positive.
+#   
+# @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
+#  The p-value threshhold below which a base is assigned as "bad".
+#  The p-value is calculated by the number of repeated occurences of a particular
+#    base position individually driving the formation of a new cluster. Bad bases 
+#    drive many new "1-away" clustes.
+#  The null hypothesis being tested is that real differences are distributed
+#    uniformly along the sequence. This is not true, biological differences are
+#    non-uniform, so this pvalue threshhold should be set conservatively.
+# 
+# @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
+#  The minimum times a single base position must drive the formation of a new cluster
+#    before it can be considered a "bad base".
+#
+# @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
+#
+# @return Logical vector of length the number of inferred sequences. 
+#  TRUE if inferred sequence a false positive.
+#  FALSE otherwise.
+#
+# @seealso \code{\link{getBadBases}}
+#
 isBadBaseFP <- function(clust, subpos, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
   bb <- getBadBases(clust, subpos, omegaB, minOccurence, verbose=verbose)
   fps <- tapply(subpos$pos, subpos$clust, function(x) mean(x %in% bb) >= minFraction)
@@ -131,36 +143,37 @@ isBadBaseFP <- function(clust, subpos, minFraction = 0.51, omegaB = 1e-10, minOc
 }
 
 ################################################################################
-#' Identify bad base positions.
-#' 
-#' Illumina sequencing sometimes produces "bad bases", positions at which 
-#' error rates are significantly higher than expected by the assigned quality
-#' score. This function identifies those bad bases.
-#' 
-#' @param clust (Required). The $clustering data frame from the dada() output.
-#'   May be subsetted from the original prior to using this function.
-#'   
-#' @param subpos (Required). The $subpos data frame from the dada() output.
-#' 
-#' @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
-#'  The p-value threshhold below which a base is assigned as "bad".
-#'  The p-value is calculated by the number of repeated occurences of a particular
-#'    base position individually driving the formation of a new cluster. Bad bases 
-#'    drive many new "1-away" clustes.
-#'  The null hypothesis being tested is that real differences are distributed
-#'    uniformly along the sequence. This is not true, biological differences are
-#'    non-uniform, so this pvalue threshhold should be set conservatively.
-#' 
-#' @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
-#'  The minimum times a single base position must drive the formation of a new cluster
-#'    before it can be considered a "bad base".
-#'
-#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Defaults FALSE.
-#'
-#' @return Integer vector of the bad base positions. 
-#'
-#' @seealso \code{\link{isBadBaseFP}}
-#'
+#  --------------------- REQUIRES FURTHER TESTING --------------------------
+# Identify bad base positions.
+# 
+# Illumina sequencing sometimes produces "bad bases", positions at which 
+# error rates are significantly higher than expected by the assigned quality
+# score. This function identifies those bad bases.
+# 
+# @param clust (Required). The $clustering data frame from the dada() output.
+#   May be subsetted from the original prior to using this function.
+#   
+# @param subpos (Required). The $subpos data frame from the dada() output.
+# 
+# @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
+#  The p-value threshhold below which a base is assigned as "bad".
+#  The p-value is calculated by the number of repeated occurences of a particular
+#    base position individually driving the formation of a new cluster. Bad bases 
+#    drive many new "1-away" clustes.
+#  The null hypothesis being tested is that real differences are distributed
+#    uniformly along the sequence. This is not true, biological differences are
+#    non-uniform, so this pvalue threshhold should be set conservatively.
+# 
+# @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
+#  The minimum times a single base position must drive the formation of a new cluster
+#    before it can be considered a "bad base".
+#
+# @param verbose (Optional). \code{logical(1)} indicating verbose text output. Defaults FALSE.
+#
+# @return Integer vector of the bad base positions. 
+#
+# @seealso \code{\link{isBadBaseFP}}
+#
 getBadBases <- function(clust, subpos, omegaB = 1e-20, minOccurence = 4, verbose=FALSE) {
   oos <- which(clust$birth_ham == 1)
   oopos <- subpos[subpos$clust %in% oos,]

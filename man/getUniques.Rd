@@ -2,7 +2,7 @@
 % Please edit documentation in R/misc.R
 \name{getUniques}
 \alias{getUniques}
-\title{Get the vector of unique sequence.}
+\title{Get the "uniques vector": Integer vector named by sequence and valued by abundance.}
 \usage{
 getUniques(object)
 }
@@ -14,12 +14,12 @@ getUniques(object)
  An integer vector named by unique sequence and valued by abundance.
 }
 \description{
-This function extracts the uniques vector from several different data objects, including
+This function extracts the "uniques vector" from several different data objects, including
  \code{\link{dada-class}}, \code{\link{derep-class}} and \code{data.frame} objects that have both
  $sequence and $abundance columns.
- The return value is of the "uniques vector": An integer vector that is named by the
- unique sequence and valued by abundance. If input is already a "uniques vector", that same vector
- will be returned.
+ The return value is an integer vector named by sequence and valued by abundance. If input is already
+ a "uniques vector", that same vector will be returned.
+ The uniques format is used by several functions within the dada2 package.
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

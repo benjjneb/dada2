@@ -7,19 +7,23 @@
 inflateErr(err, inflation, inflateSelfTransitions = FALSE)
 }
 \arguments{
-\item{err}{Required. A matrix of error rates (16 rows, named "A2A", "A2C", ...).}
+\item{err}{(Required). A matrix of error rates (16 rows, named "A2A", "A2C", ...).}
 
-\item{inflation}{Required. The factor with which to inflate the transition rates.}
+\item{inflation}{(Required). The factor with which to inflate the transition rates.}
 
-\item{inflateSelfTransitions}{Optional. If True, self-transitions (eg. A->A) also inflated.
+\item{inflateSelfTransitions}{(Optional). If True, self-transitions (eg. A->A) also inflated.
  Default is FALSE.}
 }
 \value{
 An error rate matrix of the same dimensions as the input error rate matrix.
 }
 \description{
-Error rates are "inflated" by the specified factor, while saturating so that rates
+Error rates are "inflated" by the specified factor, while appropriately saturating so that rates
 cannot exceed 1. The formula is:
   new_err_rate <- err_rate * inflate / (1 + (inflate-1) * err_rate)
+}
+\examples{
+tperr2 <- inflateErr(tperr1, 2)
+ tperr3.all <- inflateErr(tperr1, 3, inflateSelfTransitions=TRUE)
 }
 

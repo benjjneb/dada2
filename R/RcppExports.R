@@ -39,29 +39,16 @@ C_pair_consensus <- function(s1, s2) {
 #' @return DataFrame.
 #'
 #' @export
+#' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' kmerdf <- evaluate_kmers(getSequences(derep1), 5, getDadaOpt("SCORE_MATRIX"), getDadaOpt("GAP_PENALTY"), 16, 1000)
+#' plot(kmerdf$kmer, kmerdf$align)
+#' 
 evaluate_kmers <- function(seqs, kmer_size, score, gap, band, max_aligns) {
     .Call('dada2_evaluate_kmers', PACKAGE = 'dada2', seqs, kmer_size, score, gap, band, max_aligns)
 }
 
-#' Quantify the number of alignments altered by banding at the given BAND_SIZE.
-#'
-#' @param seqs (Required). Character.
-#'  A vector containing all unique sequences in the data set.
-#'  Only A/C/G/T allowed.
-#' 
-#' @param score (Required). Numeric matrix (4x4).
-#' The score matrix used during the alignment. Coerced to integer.
-#'
-#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
-#' 
-#' @param band_size (Required). A \code{numeric(1)} giving the band size to consider.
-#'
-#' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
-#' pairwise alignments to do.
-#'
-#' @return DataFrame.
-#'
-#' @export
 evaluate_band <- function(seqs, score, gap, band_size, max_aligns) {
     .Call('dada2_evaluate_band', PACKAGE = 'dada2', seqs, score, gap, band_size, max_aligns)
 }
