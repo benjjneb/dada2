@@ -57,10 +57,12 @@ fastqPairedFilter replicates most of the functionality of the fastq_filter comma
 pass the filter are retained.
 }
 \examples{
-\dontrun{
- fastqPairedFilter(c("/path/to/forward.fastq", "/path/to/reverse.fastq"), c("/path/to/filtF.fastq", /path/to/filtR.fastq"), maxN=0, maxEE=2)
- fastqPairedFilter(c("/path/to/forward.fastq", "/path/to/reverse.fastq"), c("/path/to/filtF.fastq", /path/to/filtR.fastq"), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
-}
+testFastqF = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+testFastqR = system.file("extdata", "sam1R.fastq.gz", package="dada2")
+filtFastqF <- tempfile(fileext=".fastq.gz")
+filtFastqR <- tempfile(fileext=".fastq.gz")
+fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
+fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
 }
 \seealso{
 \code{\link{fastqFilter}}

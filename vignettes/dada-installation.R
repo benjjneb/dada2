@@ -4,19 +4,19 @@
 #  biocLite("ShortRead", suppressUpdates = FALSE)
 
 ## ----install-packages, eval=FALSE----------------------------------------
-#  install.packages("path/to/dadac",
+#  install.packages("path/to/dada2",
 #                   repos = NULL,
 #                   type = "source",
 #                   dependencies = c("Depends", "Suggests","Imports"))
 
 ## ----install-github-example, eval=FALSE----------------------------------
-#  install.packages("~/github/dadac",
+#  install.packages("~/github/dada2",
 #                   repos = NULL,
 #                   type = "source",
 #                   dependencies = c("Depends", "Suggests","Imports"))
 
 ## ----packageVersion------------------------------------------------------
-packageVersion("dadac")
+packageVersion("dada2")
 
 ## ----bioc-install-missing, eval=FALSE------------------------------------
 #  source("http://bioconductor.org/biocLite.R")
@@ -25,13 +25,13 @@ packageVersion("dadac")
 #  # ... and so on
 
 ## ----install-packages-rev2, eval=FALSE-----------------------------------
-#  install.packages("path/to/dadac",
+#  install.packages("path/to/dada2",
 #                   repos = NULL,
 #                   type = "source",
 #                   dependencies = c("Depends", "Suggests","Imports"))
 
-## ----load-dadac, message=FALSE-------------------------------------------
-library("dadac")
+## ----load-dada2, message=FALSE-------------------------------------------
+library("dada2")
 
 ## ----documentation-example, eval=FALSE, message=FALSE--------------------
 #  ?dada
@@ -48,7 +48,7 @@ library("dadac")
 #                       0.003, 0.991, 0.003, 0.003, 0.003,
 #                       0.003, 0.991),
 #                     nrow=4, byrow=T)
-#  test_fastq_file = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
+#  test_fastq_file = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
 #  uniques <- derepFastq(fl = test_fastq_file)
 #  uniques.dada <- dada(uniques = uniques$uniques, quals = uniques$quals)
 #  uniques.dada.consistent <- dada(uniques, err_init, score, gap_penalty, self_consist = TRUE)
@@ -63,14 +63,14 @@ library("dadac")
 # `r length(uniques.dada.consistent$genotypes)` in `uniques.dada.consistent`?
 
 ## ----compute-performance-1, eval=FALSE-----------------------------------
-#  group_0_25_file = system.file("extdata", "group_0-25.uniques.gz", package="dadac")
+#  group_0_25_file = system.file("extdata", "group_0-25.uniques.gz", package="dada2")
 #  bu = importUniques(group_0_25_file)
 #  length(bu)
 #  library("microbenchmark")
 #  microbenchmark(dada(bu, err = err_init, ), times=10)
 
 ## ----compute-performance-2, eval=FALSE-----------------------------------
-#  group_0_30_file = system.file("extdata", "group_0-30.uniques.gz", package="dadac")
+#  group_0_30_file = system.file("extdata", "group_0-30.uniques.gz", package="dada2")
 #  bu = NULL
 #  bu <- importUniques(group_0_30_file)
 #  length(bu)

@@ -80,7 +80,7 @@ double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
     
     if(use_quals) {
       if(!sub->q1) {
-        printf("Warning: Missing quality information when computing lambda.\n");
+        Rprintf("Warning: Missing quality information when computing lambda.\n");
       }
       else {     // Incorporate the qualities. HACKY FOR NOW
         qual = sub->q1[s];
@@ -94,7 +94,7 @@ double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals) {
     lambda = lambda * trans;
   }
 
-  if(lambda < 0 || lambda > 1) { printf("Error: Over- or underflow OF lambda: %.4e\n", lambda); }
+  if(lambda < 0 || lambda > 1) { Rprintf("Error: Over- or underflow OF lambda: %.4e\n", lambda); }
 
   return lambda;
 }
@@ -267,7 +267,7 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
         for(first=1;first<NERRS;first++) {
           if(nerr[first]>0) { break; }
           if(first==(NERRS-1)) {  // Error checking
-            printf("Error: Partition iteration failed in getCDF!\n");
+            Rprintf("Error: Partition iteration failed in getCDF.\n");
             return;
           }
         }
@@ -318,8 +318,8 @@ void b_make_pS_lookup(B *b) {
   
   // Error and exit if requested OmegaS would exceed or near double precision
   if(b->reads * DBL_PRECISION > b->omegaS) {
-    printf("Error: Doubles not precise enough to meet requested OmegaS.\n");
-    printf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
+    Rprintf("Error: Doubles not precise enough to meet requested OmegaS.\n");
+    Rprintf("       Re-run DADA with singletons turned off or a less stringent OmegaS.\n");
     
     b_free(b);
     Rcpp::stop("Cannot meet requested OmegaS.");
@@ -387,8 +387,8 @@ void b_make_pS_lookup(B *b) {
   
   // Warn if couldnt make lookup big enough to get OmegaS
   if((1.0 - temp_cdf.back()) * b->reads > b->omegaS) {
-    printf("Warning: Cannot calculate singleton pvals small enough to meet requested OmegaS.\n");
-    printf("         Running DADA with singletons turned off.\n");
+    Rprintf("Warning: Cannot calculate singleton pvals small enough to meet requested OmegaS.\n");
+    Rprintf("         Running DADA with singletons turned off.\n");
     b->lams = NULL;
     b->cdf = NULL;
     b->use_singletons = false;
@@ -397,7 +397,7 @@ void b_make_pS_lookup(B *b) {
   
   // Copy into C style arrays
   // Kind of silly, at some point might be worthwhile doing the full C++ conversion
-//  if(VERBOSE) { printf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
+//  if(VERBOSE) { Rprintf("b_new: The least most significant possible pval = %.4e, pS* ~ %.4e (maxD=%i, ave_nnt=%i,%i,%i,%i)\n", 1.0-(temp_cdf.back()), b->reads*(1.0-(temp_cdf.back())), maxD, ave_nnt[0], ave_nnt[1], ave_nnt[2], ave_nnt[3]); }
   lams = (double *) malloc(temp_lambdas.size() * sizeof(double)); //E
   if (lams == NULL)  Rcpp::stop("Memory allocation failed!");
   cdf = (double *) malloc(temp_cdf.size() * sizeof(double)); //E

@@ -3,13 +3,16 @@
 using namespace Rcpp;
 
 //------------------------------------------------------------------
-//' Exposes ends-free Needleman-Wunsh alignment to R.
-//'
-//' @param s1 A length-1 character verctor of sequence 1.
-//' @param s2 A length-1 character verctor of sequence 2.
-//' @param score The 4x4 score matrix for nucleotide transitions.
-//' @param gap_p The gap penalty.
-//' @param band The band size (-1 turns off banding).
+// Exposes ends-free Needleman-Wunsh alignment to R.
+//
+// @param s1 A \code{character(1)} of DNA sequence 1.
+// @param s2 A \code{character(1)} of DNA sequence 2.
+// @param score The 4x4 score matrix for nucleotide transitions.
+// @param gap_p The gap penalty.
+// @param band The band size (-1 turns off banding).
+// 
+// @return A \code{character(2)}. The aligned strings.
+// 
 // [[Rcpp::export]]
 Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
   int i, j;
@@ -33,12 +36,6 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
   int2nt(al[0], al[0]);
   int2nt(al[1], al[1]);
 
-//  printf("SCORE:\n");
-//  for(i=0;i<4;i++) { printf("{%i, %i, %i, %i}\n",c_score[i][0],c_score[i][1],c_score[i][2],c_score[i][3]); }
-//  printf("\nGAP: %i, BAND: %i\n", gap_p, band);
-//  printf("ALIGN:\n");
-//  printf("%s\n%s\n", al[0], al[1]);
-
   Rcpp::CharacterVector rval;
   rval.push_back(std::string(al[0]));
   rval.push_back(std::string(al[1]));
@@ -51,17 +48,20 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
 }
 
 //------------------------------------------------------------------
-//' Calculates the number of matches/mismatches/internal_indels in an alignment.
-//' 
-//' @param s1 A length-1 character verctor of sequence 1.
-//' @param s2 A length-1 character verctor of sequence 2.
-//' 
+// Calculates the number of matches/mismatches/internal_indels in an alignment.
+// 
+// @param s1 A \code{character(1)} of DNA sequence 1.
+// @param s2 A \code{character(1)} of DNA sequence 2.
+// 
+// @return A named \code{integer(3)}. The count of match, mismatch and indel in the alignment.
+//  Ignores indels at the ends of the alignment. 
+// 
 // [[Rcpp::export]]
 Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
   int match, mismatch, indel, start, end;
   bool s1gap, s2gap;
   if(s1.size() != s2.size()) {
-    printf("Warning: Aligned strings are not the same length.\n");
+    Rprintf("Warning: Aligned strings are not the same length.\n");
     return R_NilValue;
   }
 
@@ -101,15 +101,20 @@ Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
 }
 
 //------------------------------------------------------------------
-//' Calculates the size of perfect overlap on the left and right side
-//' of the child sequence (s2) to the aligned parent (s1).
-//' 
+// Calculates the size of perfect overlap on the left and right side
+// of the child sequence (s2) to the aligned parent (s1).
+// 
+// @param s1 A \code{character(1)} of DNA sequence 1.
+// @param s2 A \code{character(1)} of DNA sequence 2.
+// @param allow A \code{integer(1)} How many mismatches+indels to allow in an overlap.
+// @param max_shift A \code{integer(1)} of the maximum alignment shift allowed.
+// 
 // [[Rcpp::export]]
 Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, int max_shift) {
   int left, right, start, end, i, diff;
   bool s1gap, s2gap, is_nt1, is_nt2;
   if(s1.size() != s2.size()) {
-    printf("Warning: Aligned strings are not the same length.\n");
+    Rprintf("Warning: Aligned strings are not the same length.\n");
     return R_NilValue;
   }
 
@@ -172,12 +177,17 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, in
 }
 
 //------------------------------------------------------------------
-//' Calculates the consensus of two sequences (first sequence wins mismatches).
-//' 
+// Calculates the consensus of two sequences (first sequence wins mismatches).
+// 
+// @param s1 A \code{character(1)} of DNA sequence 1.
+// @param s2 A \code{character(1)} of DNA sequence 2.
+// 
+// @return A \code{character(1)} of the consensus DNA sequence.
+// 
 // [[Rcpp::export]]
 Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2) {
   if(s1.size() != s2.size()) {
-    printf("Warning: Aligned strings are not the same length.\n");
+    Rprintf("Warning: Aligned strings are not the same length.\n");
     return R_NilValue;
   }
   
@@ -207,11 +217,15 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2) {
 //' @param seqs (Required). Character.
 //'  A vector containing all unique sequences in the data set.
 //'  Only A/C/G/T allowed.
+//'  
+//' @param kmer_size (Required). A \code{numeric(1)}. The size of the kmer to test (eg. 5-mer).
 //' 
 //' @param score (Required). Numeric matrix (4x4).
 //' The score matrix used during the alignment. Coerced to integer.
 //'
 //' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
+//'
+//' @param band (Required). A \code{numeric(1)} giving the band-size for the NW alignments.
 //'
 //' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
 //' pairwise alignments to do.

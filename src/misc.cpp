@@ -3,15 +3,15 @@
 
 void err_print(double err[4][4]) {
   for(int i=0;i<4;i++) {
-    if(i==0)  { printf("{"); }
-    else      { printf(" "); }
-    printf("{");
+    if(i==0)  { Rprintf("{"); }
+    else      { Rprintf(" "); }
+    Rprintf("{");
     for(int j=0;j<4;j++) {
-      printf("%.6f", err[i][j]);
-      if(j<3) { printf(", "); }
+      Rprintf("%.6f", err[i][j]);
+      if(j<3) { Rprintf(", "); }
     }
-    if(i<3) { printf("},\n"); }
-    else    { printf("}}\n"); }
+    if(i<3) { Rprintf("},\n"); }
+    else    { Rprintf("}}\n"); }
   }
 }
 
@@ -20,12 +20,12 @@ void align_print(char **al) {
   if(!al) { return; }
   al0 = al[0]; al1 = al[1];
   
-  printf("%s\n", ntstr(al0));
+  Rprintf("%s\n", ntstr(al0));
   for(int i=0;i<strlen(al0);i++) {
-    if(al0[i] == al1[i]) { printf("|"); }
-    else { printf(" "); }
+    if(al0[i] == al1[i]) { Rprintf("|"); }
+    else { Rprintf(" "); }
   }
-  printf("\n%s\n", ntstr(al1));
+  Rprintf("\n%s\n", ntstr(al1));
   
 }
 
@@ -33,7 +33,7 @@ void b_dump(B *b, char *fn) {
   int i, f, r, index;
   FILE *fp;
   fp = fopen(fn, "w");
-  if(fp == NULL) { printf("Null file pointer!\n"); }
+  if(fp == NULL) { Rprintf("Null file pointer!\n"); }
   
   for(index=0;index<b->nraw;index++) {
     for(i=0;i<b->nclust;i++) {
@@ -53,29 +53,29 @@ void b_dump(B *b, char *fn) {
  These functions implement an eye-friendly printout of the cluster structure:
 */
 void raw_print(Raw *raw) {
-  printf("\t\t\tRaw %i with %i reads\n", raw->index, raw->reads);
+  Rprintf("\t\t\tRaw %i with %i reads\n", raw->index, raw->reads);
 }
 
 void fam_print(Fam *fam, int f) {
-  printf("\t\tFam %i with %i reads in %i raws.\n", f, fam->reads, fam->nraw);
+  Rprintf("\t\tFam %i with %i reads in %i raws.\n", f, fam->reads, fam->nraw);
   for(int r=0; r<fam->nraw; r++) {
     raw_print(fam->raw[r]);
   }
 }
 
 void bi_print(Bi *bi, int i) {
-  printf("\tCluster %i with %i reads in %i fams...\n", i, bi->reads, bi->nfam);
+  Rprintf("\tCluster %i with %i reads in %i fams...\n", i, bi->reads, bi->nfam);
   for(int f=0; f<bi->nfam; f++) {
     fam_print(bi->fam[f], f);
   }
 }
 
 void b_print(B *b) {
-  printf("\nClustering of %i raws in %i clusters.........\n", b->nraw, b->nclust);
+  Rprintf("\nClustering of %i raws in %i clusters.........\n", b->nraw, b->nclust);
   for(int i=0; i<b->nclust; i++) {
     bi_print(b->bi[i], i);
   }
-  printf("\n");
+  Rprintf("\n");
 }
 
 /* nt2int takes an input string (iseq) and converts it to numeric indices,
@@ -108,7 +108,7 @@ void nt2int(char *oseq, const char *iseq) {
       *oseq = 6;
       break;
     default:
-      printf("invalid character in input:%c.\n",*iseq);
+      Rprintf("invalid character in input:%c.\n",*iseq);
       *oseq = '\0';
     }
   }

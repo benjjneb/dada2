@@ -49,10 +49,10 @@ fastqFilter replicates most of the functionality of the fastq_filter command in 
 (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html).
 }
 \examples{
-\dontrun{
- fastqFilter("/path/to/sample_reads.fastq", "/path/to/filtered_reads.fastq", maxN=0, maxEE=2)
- fastqFilter("/path/to/sample_reads.fastq", "/path/to/filtered_reads.fastq", trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
-}
+testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+filtFastq <- tempfile(fileext=".fastq.gz")
+fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
+fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 }
 \seealso{
 \code{\link{fastqPairedFilter}}

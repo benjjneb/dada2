@@ -9,12 +9,12 @@ isBimeraDenovo(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8,
   verbose = FALSE)
 }
 \arguments{
-\item{unqs}{(Required). A named integer vector or data.frame with "sequence" and "abundance" cols.
-  This contains the sequences (and corresponding abundances) to be checked for bimeras.}
+\item{unqs}{(Required). A "uniques vector" or any object that can be coerced into one with \code{\link{getUniques}}.
+  This named integer vector is named by the sequences to be checked for bimeras and valued by their abundances.}
 
 \item{minFoldParentOverAbundance}{(Optional). A \code{numeric(1)}. Default is 1.
   Only sequences more than this-fold abundant than a sequence can be its "parents".
-  Default is intentionally permissive, as aggressively removing potential chimeras
+  Default is intentionally permissive, as aggressively removing chimeras
    is the conservative choice for downstream analysis.}
 
 \item{minParentAbundance}{(Optional). A \code{numeric(1)}. Default is 8.
@@ -43,6 +43,12 @@ This function is a wrapper around isBimera for collections of DADA denoised
 sequences. Each sequence is evaluated against a set of "parents" drawn from the
 sequence collection that are sufficiently more abundant than the sequence
 being evaluated.
+}
+\examples{
+derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+isBimeraDenovo(dada1)
+isBimeraDenovo(getUniques(dada1), minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 }
 \seealso{
 \code{\link{isBimera}}

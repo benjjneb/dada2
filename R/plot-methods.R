@@ -25,16 +25,13 @@
 #' 
 #' @examples 
 #' # Examples here.
-#' testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
-#' test1 = derepFastq(testFile, verbose = TRUE)
-#' test1$quals[test1$quals > 40] <- 40
-#' res1 <- dada(uniques = test1$uniques, quals = test1$quals,
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"), verbose = TRUE)
+#' res1 <- dada(derep1,
 #'              err = inflateErr(tperr1, 2), 
-#'              OMEGA_A = 1e-40, 
-#'              USE_QUALS = TRUE, 
-#'              err_function = loessErrfun, 
-#'              self_consist = TRUE) 
-#' plot_substitutions(res1)
+#'              errorEstimationFunction = loessErrfun, 
+#'              selfConsist = TRUE) 
+#' plotSubstitutions(res1)
+#' 
 plotSubstitutions = function(dadaOut, facetByGrp = TRUE){
   transdt = data.table(melt(dadaOut$trans))
   setnames(transdt, c("Substitution", "Quality", "Count"))

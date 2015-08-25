@@ -8,10 +8,8 @@ using namespace Rcpp;
 B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose, bool inflate);
 
 //------------------------------------------------------------------
-//' Run DADA on the provided unique sequences/abundance pairs. 
-//' 
-//' @return List.
-//'
+// C interface to run DADA on the provided unique sequences/abundance pairs. 
+// 
 // [[Rcpp::export]]
 Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abundances,
                         Rcpp::NumericMatrix err,
@@ -285,7 +283,7 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
-    if(verbose) printf("----------- New Cluster C%i -----------\n", newi);
+    if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
     b_lambda_update(bb, use_kmers, kdist_cutoff, errMat, verbose);
     
     if(inflate) { // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
@@ -303,9 +301,9 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
     do {
       shuffled = b_shuffle(bb);
       b_e_update(bb);
-      if(verbose) { printf("S"); }
+      if(verbose) { Rprintf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
-    if(verbose && nshuffle >= MAX_SHUFFLE) { printf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
+    if(verbose && nshuffle >= MAX_SHUFFLE) { Rprintf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
     
     b_fam_update(bb, verbose); // If centers can move, must have lambda_update before fam_update
     b_p_update(bb);
@@ -313,7 +311,7 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) )
   
   if(final_consensus) { b_make_consensus(bb); }
-  if(verbose) printf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
+  if(verbose) Rprintf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
   
   return bb;
 }

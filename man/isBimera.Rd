@@ -26,8 +26,6 @@ isBimera(sq, parents, allowOneOff = TRUE, minOneOffParentDistance = 4,
 
 \item{maxShift}{(Optional). A \code{numeric(1)}. Default is 16.
   Maximum shift allowed when aligning sequences to potential "parents".}
-
-\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
 \value{
 \code{logical(1)}.
@@ -40,6 +38,11 @@ left side is made up of one parent sequence, and the right-side made up of
 a second parent sequence. If an exact bimera is found TRUE is returned,
 otherwise FALSE. Bimeras that are one-off from exact are also identified if
 the allowOneOff argument is TRUE.
+}
+\examples{
+derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+unqs1 <- getUniques(derep1)
+isBimera(names(unqs1)[[20]], names(unqs1)[1:10])
 }
 \seealso{
 \code{\link{isBimeraDenovo}}

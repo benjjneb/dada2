@@ -12,10 +12,14 @@ evaluate_kmers(seqs, kmer_size, score, gap, band, max_aligns)
  A vector containing all unique sequences in the data set.
  Only A/C/G/T allowed.}
 
+\item{kmer_size}{(Required). A \code{numeric(1)}. The size of the kmer to test (eg. 5-mer).}
+
 \item{score}{(Required). Numeric matrix (4x4).
 The score matrix used during the alignment. Coerced to integer.}
 
 \item{gap}{(Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.}
+
+\item{band}{(Required). A \code{numeric(1)} giving the band-size for the NW alignments.}
 
 \item{max_aligns}{(Required). A \code{numeric(1)} giving the (maximum) number of
 pairwise alignments to do.}

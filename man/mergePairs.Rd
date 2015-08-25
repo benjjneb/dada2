@@ -40,7 +40,7 @@ mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
 Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
 \itemize{
  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
- \item{$sequence: The merged sequence if match=TRUE. Otherwise an empty sequence, i.e. "".}
+ \item{$sequence: The merged sequence if match=TRUE. Otherwise an empty string, i.e. "".}
  \item{$forward: The index of the forward denoised sequence.}
  \item{$reverse: The index of the reverse denoised sequence.}
  \item{$nmatch: Number of matching nts in the overlap region.}
@@ -57,10 +57,12 @@ which do not perfectly overlap. Note: This function assumes that the fastq files
 forward and reverse reads were in the same order.
 }
 \examples{
-\dontrun{
- mergePairs(dada.forward, derep.forward, dada.reverse, derep.reverse)
- mergePairs(dada.forward, derep.forward, dada.reverse, derep.reverse, keepMismatch=TRUE, propagateCol=c("birth_hamming", "birth_fold"))
-}
+derepF = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+derepR = derepFastq(system.file("extdata", "sam1R.fastq.gz", package="dada2"))
+dadaF <- dada(derepF, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+dadaR <- dada(derepR, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+mergePairs(dadaF, derepF, dadaR, derepR)
+mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch=TRUE, propagateCol=c("birth_hamming", "birth_fold"))
 }
 \seealso{
 \code{\link{derepFastq}}, \code{\link{dada}}

@@ -22,10 +22,10 @@ This function extracts the uniques vector from several different data objects, i
  will be returned.
 }
 \examples{
-\dontrun{
- getUniques(dada.sample1)
- getUniques(merged.df)
- getUniques()
-}
+derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+dada1 <- dada(derep1, err=tperr1)
+getUniques(derep1)
+getUniques(dada1)
+getUniques(dada1$clustering)
 }
 

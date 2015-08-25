@@ -33,12 +33,10 @@ for dereplicating amplicon sequences from a fastq or compressed fastq file,
 while also controlling peak memory requirement to support large files.
 }
 \examples{
-\dontrun{
 # Test that chunk-size, `n`, does not affect the result.
- testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
- test1 = derepFastq(testFile, verbose = TRUE)
- test2 = derepFastq(testFile, 35, TRUE)
- all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
-}
+testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+derep1 = derepFastq(testFastq, verbose = TRUE)
+derep1.35 = derepFastq(testFastq, 35, TRUE)
+all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 }
 

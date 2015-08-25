@@ -28,7 +28,7 @@ Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax
         raw = b->bi[i]->fam[f]->raw[r];
         sub = b->bi[i]->sub[raw->index]; // The sub object includes the map between the center and the raw positions
         if(!sub) {
-          if(VERBOSE) { printf("Warning: No sub for R%i in C%i.\n", r, i); }
+          if(VERBOSE) { Rprintf("Warning: No sub for R%i in C%i.\n", r, i); }
           continue;
         }
         
@@ -80,7 +80,7 @@ Rcpp::DataFrame get_sublong(B *b, bool has_quals) {
               continue;
             }
           } else {
-            if(VERBOSE) { printf("Warning: No sub for R%i in C%i\n", r, i); }
+            if(VERBOSE) { Rprintf("Warning: No sub for R%i in C%i\n", r, i); }
             continue;
           }
           nt0 = b->bi[i]->seq[pos0];  // Remember these are 1=A, 2=C, 3=G, 4=T
@@ -123,7 +123,7 @@ Rcpp::DataFrame b_get_quality_subs(B *b) {
           raw = b->bi[i]->fam[f]->raw[r];
           sub = b->bi[i]->sub[raw->index]; // The sub object includes the map between the center and the raw positions
           if(!sub) {
-            if(VERBOSE) { printf("Warning: No sub for R%i in C%i.\n", r, i); }
+            if(VERBOSE) { Rprintf("Warning: No sub for R%i in C%i.\n", r, i); }
             continue;
           }
           
@@ -274,7 +274,7 @@ void b_get_trans_matrix(B *b, int32_t obs[4][4]) {
       prev = total;
       total += b->bi[i]->reads;
       if(total < prev) { // OVERFLOW
-        printf("OVERFLOW IN b_get_trans_matrix!!!!!!\n");
+        Rprintf("OVERFLOW IN b_get_trans_matrix.\n");
       }
     }
     
@@ -370,7 +370,7 @@ Rcpp::DataFrame b_get_positional_subs(B *b) {
           subs_by_pos[sub_ind][sub->pos[s]] += fam->reads;
         }
       } else {  // Fams should never have NULL subs
-        printf("Warning: Output fam C%iF%i had a NULL sub.\n", i, f);
+        Rprintf("Warning: Output fam C%iF%i had a NULL sub.\n", i, f);
       }
     } // for(f=0;f<b->bi[i]->nfam;f++)
   }

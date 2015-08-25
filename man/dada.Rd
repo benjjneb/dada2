@@ -75,11 +75,11 @@ All of DADA's comparisons between sequences depend on pairwise alignments. This 
  screen and a banded Needleman-Wunsch alignmemt. See \code{\link{setDadaOpt}}.
 }
 \examples{
-\dontrun{
- dada(derep.sample1, err=tperr1)
- dada(list(sam1=derep.sample1, sam2=derep.sample2), err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
- dada(derep.sample1, err=tperr1, BAND_SIZE=32, OMEGA_A=1e-20)
-}
+test1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+test2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
+dada(test1, err=tperr1)
+dada(list(sam1=test1, sam2=test2), err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+dada(test1, err=inflateErr(tperr1,2), BAND_SIZE=32, OMEGA_A=1e-20)
 }
 \seealso{
 \code{\link{derepFastq}}

@@ -39,17 +39,17 @@ Download the zipped package (attached) and unzip it.
 Start a fresh R session, and enter the following.
 
 ```{r install-packages, eval=FALSE}
-install.packages("path/to/dadac",
+install.packages("path/to/dada2",
                  repos = NULL,
                  type = "source",
                  dependencies = c("Depends", "Suggests","Imports"))
 ```
 
-For example, if the dadac source code directory was in `~/github/dadac`,
+For example, if the dada2 source code directory was in `~/github/dada2`,
 then the following would work.
 
 ```{r install-github-example, eval=FALSE}
-install.packages("~/github/dadac",
+install.packages("~/github/dada2",
                  repos = NULL,
                  type = "source",
                  dependencies = c("Depends", "Suggests","Imports"))
@@ -58,7 +58,7 @@ install.packages("~/github/dadac",
 Check Package Version
 
 ```{r packageVersion}
-packageVersion("dadac")
+packageVersion("dada2")
 ```
 
 
@@ -79,12 +79,12 @@ biocLite("missing_package_2")
 # ... and so on
 ```
 
-### 4. Re-attempt dadac Installation
+### 4. Re-attempt dada2 Installation
 
 Now once again, after dependencies have been installed.
 
 ```{r install-packages-rev2, eval=FALSE}
-install.packages("path/to/dadac",
+install.packages("path/to/dada2",
                  repos = NULL,
                  type = "source",
                  dependencies = c("Depends", "Suggests","Imports"))
@@ -108,8 +108,8 @@ I would love to hear about.
 
 ### 1. Load Package, Explore Function Documentation
 
-```{r load-dadac, message=FALSE}
-library("dadac")
+```{r load-dada2, message=FALSE}
+library("dada2")
 ```
 
 Now that the package is loaded,
@@ -136,7 +136,7 @@ err_init <- matrix(c(0.991, 0.003, 0.003, 0.003,
                      0.003, 0.991, 0.003, 0.003, 0.003, 
                      0.003, 0.991),
                    nrow=4, byrow=T)
-test_fastq_file = system.file("extdata", "test-nonunique.fastq.gz", package="dadac")
+test_fastq_file = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
 uniques <- derepFastq(fl = test_fastq_file)
 uniques.dada <- dada(uniques = uniques$uniques, quals = uniques$quals)
 uniques.dada.consistent <- dada(uniques, err_init, score, gap_penalty, self_consist = TRUE)
@@ -158,7 +158,7 @@ length(uniques.dada.consistent$genotypes)
 THIS IS OLD!!
 
 ```{r compute-performance-1, eval=FALSE}
-group_0_25_file = system.file("extdata", "group_0-25.uniques.gz", package="dadac")
+group_0_25_file = system.file("extdata", "group_0-25.uniques.gz", package="dada2")
 bu = importUniques(group_0_25_file)
 length(bu)
 library("microbenchmark")
@@ -171,7 +171,7 @@ How long does this expression take?
 THIS IS OLD!
 
 ```{r compute-performance-2, eval=FALSE}
-group_0_30_file = system.file("extdata", "group_0-30.uniques.gz", package="dadac")
+group_0_30_file = system.file("extdata", "group_0-30.uniques.gz", package="dada2")
 bu = NULL
 bu <- importUniques(group_0_30_file)
 length(bu)

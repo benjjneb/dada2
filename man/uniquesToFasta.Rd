@@ -27,9 +27,9 @@ A wrapper for writeFastq in the ShortRead package.
 Default output format is compatible with uchime.
 }
 \examples{
-\dontrun{
- uniquesToFasta(derep.sample1$uniques, "/path/to/output.fasta")
- uniquesToFasta(derep.sample1$uniques, "/path/to/output.fasta", ids=paste0("Sequence", seq(length(derep.sample1$uniques))))
-}
+derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+outfile <- tempfile(fileext=".fasta")
+uniquesToFasta(getUniques(derep1), outfile)
+uniquesToFasta(getUniques(derep1), outfile, ids=paste0("Sequence", seq(length(getUniques(derep1)))))
 }
 

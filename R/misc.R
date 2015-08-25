@@ -16,11 +16,11 @@
 #' @export
 #' 
 #' @examples
-#' \dontrun{
-#'  getUniques(dada.sample1)
-#'  getUniques(merged.df)
-#'  getUniques()
-#' }
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' dada1 <- dada(derep1, err=tperr1)
+#' getUniques(derep1)
+#' getUniques(dada1)
+#' getUniques(dada1$clustering)
 #' 
 getUniques <- function(object) {
   if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already

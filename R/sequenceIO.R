@@ -29,13 +29,11 @@
 #' @importFrom ShortRead yield
 #'
 #' @examples 
-#' \dontrun{
 #' # Test that chunk-size, `n`, does not affect the result.
-#'  testFile = system.file("extdata", "test-nonunique.fastq.gz", package="dada2")
-#'  test1 = derepFastq(testFile, verbose = TRUE)
-#'  test2 = derepFastq(testFile, 35, TRUE)
-#'  all.equal(test1$uniques, test2$uniques[names(test1$uniques)])
-#' }
+#' testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' derep1 = derepFastq(testFastq, verbose = TRUE)
+#' derep1.35 = derepFastq(testFastq, 35, TRUE)
+#' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
 derepFastq <- function(fl, n = 1e6, verbose = FALSE){
   if(verbose){
@@ -159,10 +157,10 @@ qtables2 <- function(x, qeff = FALSE) {
 #' @export
 #' 
 #' @examples
-#' \dontrun{
-#'  uniquesToFasta(derep.sample1$uniques, "/path/to/output.fasta")
-#'  uniquesToFasta(derep.sample1$uniques, "/path/to/output.fasta", ids=paste0("Sequence", seq(length(derep.sample1$uniques))))
-#' }
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' outfile <- tempfile(fileext=".fasta")
+#' uniquesToFasta(getUniques(derep1), outfile)
+#' uniquesToFasta(getUniques(derep1), outfile, ids=paste0("Sequence", seq(length(getUniques(derep1)))))
 #' 
 uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w", width=20000, ...) {
   unqs <- getUniques(unqs)

@@ -139,7 +139,7 @@ Raw *fam_pop_raw(Fam *fam, int r) {
     fam->nraw--;
     fam->reads -= pop->reads;
   } else {  // Trying to pop an out of range raw
-    printf("fam_pop_raw: Not enough raws %i (%i)\n", r, fam->nraw);
+    Rprintf("fam_pop_raw: Not enough raws %i (%i)\n", r, fam->nraw);
     pop = NULL;
   }
   return pop;
@@ -166,7 +166,7 @@ Raw *bi_pop_raw(Bi *bi, int f, int r) {
       bi->sub[pop->index] = NULL;     ///! Free the sub
     }
   } else {  // Trying to pop an out of range raw
-    printf("bi_pop_raw: not enough fams %i (%i)\n", f, bi->nfam);
+    Rprintf("bi_pop_raw: not enough fams %i (%i)\n", f, bi->nfam);
     pop = NULL;
   }
   return pop;
@@ -194,7 +194,7 @@ Fam *bi_pop_fam(Bi *bi, int f) {
       bi->update_e = true;
     }
   } else {  // Trying to pop an out of range fam
-    printf("bi_pop_fam: not enough fams %i (%i)\n", f, bi->nfam);
+    Rprintf("bi_pop_fam: not enough fams %i (%i)\n", f, bi->nfam);
     pop = NULL;
   }
   return pop;
@@ -223,7 +223,7 @@ void bi_shove_raw(Bi *bi, Raw *raw) {
  UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED
  */
 void bi_add_raw(Bi *bi, Raw *raw) {
-//  printf("bi_add_raw\n");
+//  Rprintf("bi_add_raw\n");
   Sub *sub;
   int foo, result;
   char buf[10];  // holds sprintf("%i", fam_index)
@@ -453,7 +453,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
   for (i = 0; i < b->nclust; i++) {
     if(b->bi[i]->update_lambda) {   // center sequence for Bi[i] has changed
       // update alignments and lambda of all raws to this sequence
-      if(verbose) { printf("C%iLU:", i); }
+      if(verbose) { Rprintf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
         // get sub object
         sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
@@ -472,7 +472,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
         // Store lambda and set self
         b->bi[i]->lambda[index] = lambda;
         if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
-        if(index == TARGET_RAW) { printf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
+        if(index == TARGET_RAW) { Rprintf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
       }
       b->bi[i]->update_lambda = false;
       b->bi[i]->update_fam = true;
@@ -518,7 +518,7 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
       bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, false, 1., band_size);
-      if(verbose) printf("F");
+      if(verbose) Rprintf("F");
       // DOESN'T UPDATE LAMBDA HERE, THAT ONLY HAPPENS IN COMPUTE_LAMBDA
     }
   }
@@ -563,7 +563,7 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
 void b_fam_update(B *b, bool verbose) {
   for (int i=0; i<b->nclust; i++) {
     if(b->bi[i]->update_fam) {  // center has changed or a raw has been shoved EITHER DIRECTION breaking the fam structure
-      if(verbose) { printf("C%iFU:", i); }
+      if(verbose) { Rprintf("C%iFU:", i); }
       bi_fam_update(b->bi[i], b->score, b->gap_pen, b->band_size, b->use_quals, verbose);
     }
   }
@@ -663,8 +663,8 @@ bool b_shuffle(B *b) {
         if(maxe > b->bi[i]->e[index]) {
           if(index == b->bi[i]->center->index) {  // Check if center
             if(VERBOSE) {
-              printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
-              printf("Attempted: Raw %i from C%i to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
+              Rprintf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
+              Rprintf("Attempted: Raw %i from C%i to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
                   index, i, ibest, \
                   b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
                   b->bi[ibest]->e[index], b->bi[ibest]->sub[index]->key, b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
@@ -708,8 +708,8 @@ bool b_shuffle_oneway(B *b) {
         if(newe > b->bi[i]->e[index]) {
           if(index == b->bi[i]->center->index) {  // Check if center
             if(VERBOSE) {
-              printf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
-              printf("Attempted: Raw %i from C%i to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
+              Rprintf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
+              Rprintf("Attempted: Raw %i from C%i to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
                   index, i, ibest, \
                   b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
                   b->bi[ibest]->e[index], b->bi[ibest]->sub[index]->key, b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
@@ -772,7 +772,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
       fam = b->bi[i]->fam[f];
       
       if(!fam->sub) {  // This shouldn't happen
-        printf("Warning: Fam has null sub in b_bud.\n");
+        Rprintf("Warning: Fam has null sub in b_bud.\n");
         continue; 
       }
 
@@ -818,11 +818,11 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
         }
         qave = qave/((double)birth_sub->nsubs * fam->reads);
       }
-      printf("\nNew cluster from Raw %i in C%iF%i: ", fam->center->index, mini, minf);
+      Rprintf("\nNew cluster from Raw %i in C%iF%i: ", fam->center->index, mini, minf);
       fold = ((double) fam->reads)/b->bi[mini]->e[fam->center->index];
-      printf(" p*=%.3e, n/E(n)=%.1e (%.1e fold per sub)\n", pA, fold, fold/birth_sub->nsubs);
-      printf("Reads: %i, E: %.2e, Nsubs: %i, Ave Qsub:%.1f\n", fam->reads, b->bi[mini]->e[fam->center->index], birth_sub->nsubs, qave);
-      printf("%s\n", ntstr(birth_sub->key));
+      Rprintf(" p*=%.3e, n/E(n)=%.1e (%.1e fold per sub)\n", pA, fold, fold/birth_sub->nsubs);
+      Rprintf("Reads: %i, E: %.2e, Nsubs: %i, Ave Qsub:%.1f\n", fam->reads, b->bi[mini]->e[fam->center->index], birth_sub->nsubs, qave);
+      Rprintf("%s\n", ntstr(birth_sub->key));
     }
     
     bi_center_update(b->bi[i]);
@@ -845,7 +845,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
       if(fam->sub) {
         hamming = fam->sub->nsubs;
       } else { 
-        printf("Warning: Fam has null sub in b_bud.\n");
+        Rprintf("Warning: Fam has null sub in b_bud.\n");
         hamming = 1; // An unmotivated default here
       }
       
@@ -879,7 +879,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
     }
 
     if(verbose) { 
-      printf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, pS, fam->lambda);
+      Rprintf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, pS, fam->lambda);
     }
     
     bi_center_update(b->bi[i]);
@@ -888,7 +888,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
   }
 
   // No significant abundance or singleton pval
-  if(verbose) { printf("\nNo significant pval, no new cluster.\n"); }
+  if(verbose) { Rprintf("\nNo significant pval, no new cluster.\n"); }
   return 0;
 }
 
@@ -940,9 +940,9 @@ void bi_center_update(Bi *bi) {
     bi->update_lambda = true;
     bi->update_fam = true;
     if(VERBOSE) {
-      printf("bi_c_u: New center raw %i (%i)\n", bi->fam[maxf]->raw[maxr]->index, bi->fam[maxf]->raw[maxr]->reads);
-      printf("\tNew(%i): %s\n", (int) bi->fam[maxf]->raw[maxr]->length, ntstr(bi->fam[maxf]->raw[maxr]->seq));
-      printf("\tOld(%i): %s\n", (int) strlen(bi->seq), ntstr(bi->seq));
+      Rprintf("bi_c_u: New center raw %i (%i)\n", bi->fam[maxf]->raw[maxr]->index, bi->fam[maxf]->raw[maxr]->reads);
+      Rprintf("\tNew(%i): %s\n", (int) bi->fam[maxf]->raw[maxr]->length, ntstr(bi->fam[maxf]->raw[maxr]->seq));
+      Rprintf("\tOld(%i): %s\n", (int) strlen(bi->seq), ntstr(bi->seq));
     }
     bi->center = bi->fam[maxf]->raw[maxr];
     strcpy(bi->seq,bi->fam[maxf]->raw[maxr]->seq);

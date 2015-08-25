@@ -175,3 +175,14 @@ getBadBases <- function(clust, subpos, omegaB = 1e-20, minOccurence = 4, verbose
   return(bad_bases)
 }
 
+#' An empirical error matrix.
+#'
+#' A dataset containing the error matrix estimated by DADA2 from the mock community featured
+#' in Schirmer 2015 (metaID 35).
+#'
+#' @format A numerical matrix with 16 rows and 41 columns.
+#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
+#'  Columns correspond to consensus quality scores 0 to 40.
+#'  
+#' @name tperr1
+NULL

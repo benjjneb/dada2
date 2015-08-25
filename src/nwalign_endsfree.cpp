@@ -92,10 +92,10 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   int diag, left, up;
   
   if(len1 > SEQLEN || len2 > SEQLEN) {
-    printf("Sequence too long to align.\n");
+    Rprintf("Sequence too long to align.\n");
     return(NULL);
   }
-      
+  
   // Fill out left columns of d, p.
   for (i = 0; i <= len1; i++) {
     d[i][0] = 0; // ends-free gap

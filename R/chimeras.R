@@ -30,10 +30,13 @@
 #' @return \code{logical(1)}.
 #'  TRUE if sq is a bimera of two of the parents. Otherwise FALSE.
 #'
-#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
-#'
 #' @seealso \code{\link{isBimeraDenovo}}
 #' @export
+#' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' unqs1 <- getUniques(derep1)
+#' isBimera(names(unqs1)[[20]], names(unqs1)[1:10])
 #' 
 isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
   # (l0,r0) or (l0,r0,l1,r1,match,mismatch,indel) if allowOneOff
@@ -68,12 +71,12 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' sequence collection that are sufficiently more abundant than the sequence
 #' being evaluated.
 #' 
-#' @param unqs (Required). A named integer vector or data.frame with "sequence" and "abundance" cols.
-#'   This contains the sequences (and corresponding abundances) to be checked for bimeras.
+#' @param unqs (Required). A "uniques vector" or any object that can be coerced into one with \code{\link{getUniques}}.
+#'   This named integer vector is named by the sequences to be checked for bimeras and valued by their abundances.
 #'   
 #' @param minFoldParentOverAbundance (Optional). A \code{numeric(1)}. Default is 1.
 #'   Only sequences more than this-fold abundant than a sequence can be its "parents".
-#'   Default is intentionally permissive, as aggressively removing potential chimeras
+#'   Default is intentionally permissive, as aggressively removing chimeras
 #'    is the conservative choice for downstream analysis.
 #'   
 #' @param minParentAbundance (Optional). A \code{numeric(1)}. Default is 8.
@@ -100,6 +103,12 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' 
 #' @export
 #' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' isBimeraDenovo(dada1)
+#' isBimeraDenovo(getUniques(dada1), minFoldParentOverAbundance = 2, allowOneOff=FALSE)
+#' 
 isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
   unqs <- getUniques(unqs)
   abunds <- unname(unqs)
@@ -121,8 +130,8 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
   return(bims)
 }
 
-#' Internal function that finds the best overlap between two sequences.
-#' Uses NW alignment with ends-free gapping.
+# Internal function that finds the best overlap between two sequences.
+# Uses NW alignment with ends-free gapping.
 getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
   if(nchar(parent) == nchar(sq)) { # Use banding if applicable
     al <- nwalign(parent, sq, band=maxShift)
@@ -140,14 +149,14 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 
 ################################################################################
 #' Identify sequences that are identical to a more abundant sequence up to an
-#' overall shift from a collection of unique sequences.
+#' overall shift.
 #' 
 #' This function is a wrapper around isShift for collections of DADA denoised
 #' sequences. Each sequence is evaluated against a set of "parents" drawn from the
 #' sequence collection that are more abundant than the sequence being evaluated.
 #' 
-#' @param unqs (Required). A named integer vector or data.frame with "sequence" and "abundance" cols.
-#'   This contains the sequences (and corresponding abundances) to be checked for shifts.
+#' @param unqs (Required). A "uniques vector" or any object that can be coerced into one with \code{\link{getUniques}}.
+#'   This named integer vector is named by the sequences to be checked for bimeras and valued by their abundances.
 #'   
 #' @param minOverlap (Optional). A \code{numeric(1)}. Default is 20.
 #'   Minimum overlap required to call something a shift.
@@ -160,6 +169,12 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 #' @seealso \code{\link{isBimera}}
 #' 
 #' @export
+#' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' isShiftDenovo(dada1)
+#' isShiftDenovo(getUniques(dada1), minOverlap=50, verbose=TRUE)
 #' 
 isShiftDenovo <- function(unqs, minOverlap = 20, verbose=FALSE) {
   unqs <- getUniques(unqs)
@@ -180,11 +195,19 @@ isShiftDenovo <- function(unqs, minOverlap = 20, verbose=FALSE) {
 }
 
 
-#' Internal function that determines if two sequences are identical up to a shift
-#' Uses NW alignment with ends-free gapping
+# Internal function that determines if two sequences are identical up to a shift
+# Uses NW alignment with ends-free gapping
+# 
+# @param sq1 A \code{character(1)}. The first DNA sequence.
+# 
+# @param sq2 A \code{character(1)}. The second DNA sequence.
+# 
+# @param minOverlap (Optional). A \code{numeric(1)}. Default is 20.
+#   Minimum overlap required to call something a shift.
+#   
 isShiftedPair <- function(sq1, sq2, minOverlap=20) {
   al <- nwalign(sq1, sq2, band=-1)
-  foo <- dada2:::C_eval_pair(al[1], al[2])
+  foo <- C_eval_pair(al[1], al[2])
   return(foo["match"] < nchar(sq1) && foo["match"] < nchar(sq2) && foo["match"] >= minOverlap && foo["mismatch"]==0 && foo["indel"]==0)
 }
 

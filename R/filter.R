@@ -61,10 +61,10 @@
 #' @importFrom Biostrings end
 #' 
 #' @examples
-#' \dontrun{
-#'  fastqFilter("/path/to/sample_reads.fastq", "/path/to/filtered_reads.fastq", maxN=0, maxEE=2)
-#'  fastqFilter("/path/to/sample_reads.fastq", "/path/to/filtered_reads.fastq", trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
-#' }
+#' testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' filtFastq <- tempfile(fileext=".fastq.gz")
+#' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
+#' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
 fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
   start <- max(1, trimLeft + 1)
@@ -198,10 +198,12 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' 
 #' @examples
 #'
-#' \dontrun{
-#'  fastqPairedFilter(c("/path/to/forward.fastq", "/path/to/reverse.fastq"), c("/path/to/filtF.fastq", /path/to/filtR.fastq"), maxN=0, maxEE=2)
-#'  fastqPairedFilter(c("/path/to/forward.fastq", "/path/to/reverse.fastq"), c("/path/to/filtF.fastq", /path/to/filtR.fastq"), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
-#' }
+#' testFastqF = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' testFastqR = system.file("extdata", "sam1R.fastq.gz", package="dada2")
+#' filtFastqF <- tempfile(fileext=".fastq.gz")
+#' filtFastqR <- tempfile(fileext=".fastq.gz")
+#' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
+#' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
 #' 
 fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
   # Warning: This assumes that forward/reverse reads are in the same order
