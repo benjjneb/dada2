@@ -39,6 +39,7 @@ Collate:
     'errorModels.R'
     'filter.R'
     'misc.R'
+    'multiSample.R'
     'paired.R'
     'plot-methods.R'
     'sequenceIO.R'

@@ -13,19 +13,22 @@
 #' @examples
 #' # examples
 setMethod("show", "derep", function(object){
-  cat("derep-class: object describing dereplicated sequences", fill=TRUE)
+  cat("derep-class: R object describing dereplicated sequencing reads", fill=TRUE)
   if( length(object$uniques) > 0 ){
-    cat("Sum of counts:", sum(object$uniques, na.rm = TRUE), fill = TRUE)
-  }
-  cat("Uniques (`$uniques`) length: ", length(object$uniques), fill = TRUE)
-  if( length(names(object$uniques)) > 0 ){
-    cat(names(object$uniques)[1], "\n...", fill = TRUE)
+    cat("(`$uniques`):", sum(object$uniques, na.rm = TRUE), "reads in",
+        length(names(object$uniques)), "unique sequences\n")
+    seqlens <- nchar(names(object$uniques))
+    cat("  Sequence lengths: min =", min(seqlens), "- median =", median(seqlens),
+        "- max =", max(seqlens), fill=TRUE)
   }
   if( length(object$quals) > 0 & inherits(object$quals, "matrix")){
-    cat("Quality Matrix, (`$quals`) dimension: ", dim(object$quals), fill = TRUE)
+    cat("(`$quals`): Quality matrix dimension: ", dim(object$quals), fill = TRUE)
+    quals <- as.vector(object$quals)
+    cat("  Consensus quality scores: min =", min(quals), "- median =", median(quals),
+        "- max =", max(quals), fill=TRUE)
   }
   if( length(object$map) > 0 ){
-    cat("Dereplication Map (`$map`): ", object$map[1L:5L], "...", fill = TRUE)
+    cat("(`$map`): Map from reads to unique sequences: ", object$map[1L:5L], "...", fill = TRUE)
   }
 })
 ############################################################################

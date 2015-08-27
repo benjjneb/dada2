@@ -117,16 +117,15 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
   loopFun <- function(sq, abund) {
     pars <- seqs[(abunds>(minFoldParentOverAbundance*abund) & abunds>minParentAbundance)]
     if(length(pars) == 0) {
-      if(verbose) print("No possible parents.")
       return(FALSE)
     } else if (length(pars) == 1) {
-      if(verbose) print("Only one possible parent.")
       return(FALSE)
     } else {
       isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
     }
   }
   bims <- mapply(loopFun, seqs, abunds)
+  if(verbose) message("Identified ", sum(bims), " bimeras out of ", length(bims), " input sequences.")
   return(bims)
 }
 
