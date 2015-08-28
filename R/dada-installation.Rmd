@@ -1,0 +1,111 @@
+---
+title: "DADA2 Installation"
+author: "Ben Callahan, Paul McMurdie, Susan Holmes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Installation and Testing}
+  \usepackage[utf8]{inputenc}
+---
+
+
+## Installation Instructions
+
+### 0. Install External Dependencies
+
+The following instructions assume that you have installed R 
+and have installed 
+[Xcode](https://developer.apple.com/xcode/downloads/)
+(Mac) or 
+[Rtools](http://cran.r-project.org/bin/windows/Rtools/)
+(Windows); as well as 
+[Bioconductor](http://bioconductor.org/install/).
+
+For Bioconductor,
+start a fresh R session, and enter the following.
+
+```{r bioc-install, eval=FALSE}
+source("http://bioconductor.org/biocLite.R")
+biocLite(suppressUpdates = FALSE)
+biocLite("ShortRead", suppressUpdates = FALSE)
+```
+
+### 1. Download and unzip.
+
+Download [the zipped package](https://github.com/benjjneb/dada2/archive/master.zip) and unzip it.
+
+### 2. Attempt installation from within R
+
+Start a fresh R session, and enter the following.
+
+```{r install-packages, eval=FALSE}
+install.packages("path/to/dada2",
+                 repos = NULL,
+                 type = "source",
+                 dependencies = c("Depends", "Suggests","Imports"))
+```
+
+For example, if the dada2 source code directory was in `~/github/dada2`,
+then the following would work.
+
+```{r install-github-example, eval=FALSE}
+install.packages("~/github/dada2",
+                 repos = NULL,
+                 type = "source",
+                 dependencies = c("Depends", "Suggests","Imports"))
+```
+
+Check Package Version
+
+```{r packageVersion}
+packageVersion("dada2")
+```
+
+
+### 3. Troubleshoot Dependencies (Optional)
+
+At this point, 
+there may be complaints about missing dependencies.
+To install missing dependencies on either
+[CRAN](http://cran.r-project.org/)
+or
+[Bioconductor](http://bioconductor.org/install/), 
+start a fresh R session, and enter the following.
+
+```{r bioc-install-missing, eval=FALSE}
+source("http://bioconductor.org/biocLite.R")
+biocLite("missing_package_1")
+biocLite("missing_package_2")
+# ... and so on
+```
+
+### 4. Re-attempt dada2 Installation
+
+Now once again, after dependencies have been installed.
+
+```{r install-packages-rev2, eval=FALSE}
+install.packages("path/to/dada2",
+                 repos = NULL,
+                 type = "source",
+                 dependencies = c("Depends", "Suggests","Imports"))
+```
+
+You should now be done, if installation was successful.
+If not, do panic, and post a message to [the issue tracker](https://github.com/benjjneb/dada2/issues).
+
+### 5. Load Package, Explore Function Documentation
+
+```{r load-dada2, message=FALSE}
+library("dada2")
+```
+
+Now that the package is loaded,
+look at the help files for the main implemented functions.
+
+```{r documentation-example, eval=FALSE, message=FALSE}
+help(package="dada2")
+?derepFastq
+?dada
+```
+
+You are ready to use DADA2!
