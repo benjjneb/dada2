@@ -132,11 +132,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 # Internal function that finds the best overlap between two sequences.
 # Uses NW alignment with ends-free gapping.
 getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
-  if(nchar(parent) == nchar(sq)) { # Use banding if applicable
-    al <- nwalign(parent, sq, band=maxShift)
-  } else {
-    al <- nwalign(parent, sq, band=-1)
-  }
+  al <- nwalign(parent, sq, band=maxShift)
   lr <- C_get_overlaps(al[1], al[2], 0, maxShift)
   if(allowOneOff) {
     lr1 <- C_get_overlaps(al[1], al[2], 1, maxShift)

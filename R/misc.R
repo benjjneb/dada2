@@ -96,9 +96,9 @@ getSequences <- function(object) {
 nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
   if(nchar(s1) >= 1000 || nchar(s2) >= 1000) stop("Can only align strings up to 999 nts in length.")
-  if(nchar(s1) != nchar(s2)) {
-    if(band != -1) message("Sequences of unequal length must use unbanded alignment.")
-    band = -1
+  if(nchar(s1) != nchar(s2) && band >= 0) {
+    band <- band + abs(nchar(s1)-nchar(s2))
+    # Band must be expanded to allow the shorter sequence to be shifted appropriately
   }
   C_nwalign(s1, s2, score, gap, band)
 }
@@ -135,6 +135,14 @@ nweval <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   C_eval_pair(al[1], al[2])
 })
+
+nwextract <- function(query, ref, ...) {
+  al <- nwalign(query, ref, ...)
+  ntq <- gregexpr("[ACGT]", al[[1]])
+  rval <- substr(al[[2]], min(ntq[[1]]), max(ntq[[1]]))
+  rval <- gsub("-", "", rval)
+  rval
+}
 
 strdiff <- function(s1, s2) {
   xx = unlist(strsplit(s1,""))

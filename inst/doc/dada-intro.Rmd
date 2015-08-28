@@ -1,0 +1,14 @@
+---
+title: "DADA Introduction"
+author: "Ben Callahan, Paul McMurdie, Susan Holmes"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{DADA Introduction}
+  \usepackage[utf8]{inputenc}
+---
+
+
+Need to include a vignette here...

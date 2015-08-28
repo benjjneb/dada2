@@ -7,10 +7,9 @@
 makeSequenceTable(samples)
 }
 \arguments{
-\item{samples}{(Required). A \code{list}.
- The samples to include in the sequence table. Names are propagated to the rownames
- of the return matrix. Samples can be provided in any format that can
- be processed by \code{\link{getUniques}}.}
+\item{samples}{(Required). A \code{list} of the samples to include in the sequence table.
+Names are propagated to the rownames of the return matrix. Samples can be provided in any
+format that can be processed by \code{\link{getUniques}}.}
 }
 \value{
 Integer \code{matrix}.

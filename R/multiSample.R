@@ -4,10 +4,9 @@
 #' This function contructs a sequence table (analogous to an OTU table) from
 #' the provided list of samples. 
 #' 
-#' @param samples (Required). A \code{list}.
-#'  The samples to include in the sequence table. Names are propagated to the rownames
-#'  of the return matrix. Samples can be provided in any format that can
-#'  be processed by \code{\link{getUniques}}.
+#' @param samples (Required). A \code{list} of the samples to include in the sequence table. 
+#' Names are propagated to the rownames of the return matrix. Samples can be provided in any
+#' format that can be processed by \code{\link{getUniques}}.
 #' 
 #' @return Integer \code{matrix}.
 #' A row for each sample, and a column for each unique sequence across all the samples.
