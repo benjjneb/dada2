@@ -10,11 +10,11 @@ Peer reviewed publication: In progress.
 
 ### Installation
 
-Installation instructions are available on the DADA2 website.
+Installation instructions are available on [the DADA2 front page](http://benjjneb.github.io/dada2/).
 
 ### Tutorial
 
-A walkthrough of the DADA2 pipeline for paired end Illumina Miseq data is available on the DADA2 website.
+A walkthrough of the DADA2 pipeline for paired end Illumina Miseq data is available on [the DADA2 front page](http://benjjneb.github.io/dada2/).
 
 ### Other Resources
 
