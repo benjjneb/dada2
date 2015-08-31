@@ -61,7 +61,7 @@ The reverse reads have significantly worse quality, especially towards the end o
 
 ## Perform filtering and trimming
 
-The trimming parameters were decided by inspecting the quality profiles. The filtering parameters we'll use are standard: maxN=0 (DADA2 requires no Ns), truncQ=2 (quality score 2 in Illumina means "stop using this read") and maxEE=2. The maxEE parameter sets the maximum number of "expected errors" allowed in a read. Setting a threshold on expected errors is (a better filter than simply averaging quality scores)[http://www.drive5.com/usearch/manual/expected_errors.html]. We use the fastqPairedFilter function to filter the forward and reverse reads together.
+The trimming parameters were decided by inspecting the quality profiles. The filtering parameters we'll use are standard: maxN=0 (DADA2 requires no Ns), truncQ=2 (quality score 2 in Illumina means "stop using this read") and maxEE=2. The maxEE parameter sets the maximum number of "expected errors" allowed in a read. Setting a threshold on expected errors is [a better filter than simply averaging quality scores](http://www.drive5.com/usearch/manual/expected_errors.html). We use the fastqPairedFilter function to filter the forward and reverse reads together.
 
 **Filter the forward and reverse reads**:
 ```{r message=FALSE, warning=FALSE}
