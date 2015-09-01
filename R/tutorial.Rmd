@@ -5,7 +5,7 @@ output: html_document
 
 # Overview
 
-Here we will go through the DADA2 pipeline on a small multi-sample dataset. The starting point is a set of Illumina-sequenced paired-end fastq files that have been split (or demultiplexed) by sample and which have barcodes/adapters already removed. The end product will be a sequence table, analogous to the ubiquitous "OTU table", which records the number of times sample sequences were observed in each sample. The key difference between the output of DADA2 and standard OTU analyses is that DADA2 infers sample sequences exactly rather than clustering sequencines into fuzzy OTUs which hide and complicate biological variation.
+Here we will go through the DADA2 pipeline on a small multi-sample dataset. The starting point is a set of Illumina-sequenced paired-end fastq files that have been split (or demultiplexed) by sample and which have barcodes/adapters already removed. The end product will be a sequence table, analogous to the ubiquitous "OTU table", which records the number of times sample sequences were observed in each sample. The key difference between the output of DADA2 and standard OTU analyses is that DADA2 infers sample sequences exactly rather than clustering reads into fuzzy OTUs which hide and complicate biological variation.
 
 # Getting ready
 
@@ -61,7 +61,7 @@ The reverse reads have significantly worse quality, especially towards the end o
 
 ## Perform filtering and trimming
 
-The trimming parameters were decided by inspecting the quality profiles. The filtering parameters we'll use are standard: maxN=0 (DADA2 requires no Ns), truncQ=2 (quality score 2 in Illumina means "stop using this read") and maxEE=2. The maxEE parameter sets the maximum number of "expected errors" allowed in a read. Setting a threshold on expected errors is [a better filter than simply averaging quality scores](http://www.drive5.com/usearch/manual/expected_errors.html). We use the fastqPairedFilter function to filter the forward and reverse reads together.
+The trimming parameters were decided by inspecting the quality profiles. The filtering parameters we'll use are standard: maxN=0 (DADA2 requires no Ns), truncQ=2 (quality score 2 in Illumina means "stop using this read") and maxEE=2. The maxEE parameter sets the maximum number of "expected errors" allowed in a read. Setting a threshold on expected errors is [a better filter than simply averaging quality scores](http://www.drive5.com/usearch/manual/expected_errors.html). We use the fastqPairedFilter function to jointly filter the forward and reverse reads.
 
 **Filter the forward and reverse reads**:
 ```{r message=FALSE, warning=FALSE}
@@ -76,9 +76,9 @@ We now have trimmed and filtered fastq files. The preceding filtering can be rep
 
 # Dereplication
 
-In the dereplication step, all reads with identical sequences are combined into "unique sequences" with a corresponding abundance, i.e. the number of reads with that unique sequence. Dereplication is a part of most pipelines because it reduces lessens computation time by elminating repeated comparisons of identical sequences.
+In the dereplication step, all reads with identical sequences are combined into "unique sequences" with a corresponding abundance, i.e. the number of reads with that unique sequence. Dereplication is a part of most pipelines because it reduces computation time by eliminating repeated comparisons of identical sequences.
 
-Dereplication in the DADA2 pipeline has a crucial difference: **DADA2 retains a summary of the quality information associated with each unique sequence**. DADA2 constructs a "consensus" quality profile for each unique sequence by averaging the positional qualities from the dereplicated reads. These consensus quality profiles inform the error model of the subsequent denoising step, significantly increasing DADA2's accuracy.
+Dereplication in the DADA2 pipeline has one crucial addition: **DADA2 retains a summary of the quality information associated with each unique sequence**. DADA2 constructs a "consensus" quality profile for each unique sequence by averaging the positional qualities from the dereplicated reads. These consensus quality profiles inform the error model of the subsequent denoising step, significantly increasing DADA2's accuracy.
 
 **Dereplicate the filtered fastq files**:
 ```{r message=FALSE}
@@ -103,7 +103,7 @@ Dereplicated sequences are stored in the $uniques integer vector, which is named
 
 We are now ready to apply DADA2's core sample inference algorithm to the dereplicated sequences. 
 
-But first a key consideration: DADA2 depends on a parametric error model, and we do not know the error rates for this dataset. Fortunately, DADA2 can jointly infer the error-rate parameters and the composition of the sample, at the cost of additional computation time. This is done by implementing an EM-like algorithm in which the error rates and the sample are alternately estimated until convergence.
+First a key consideration: DADA2 depends on a parametric error model, and we do not know the error rates for this dataset. Fortunately, DADA2 can jointly infer the error-rate parameters and the composition of the sample, at the cost of additional computation time. This is done by implementing an EM-like algorithm in which the error rates and the sample are alternately estimated until convergence.
 
 To perform this joint inference with dada(...) we pass it the selfConsist=TRUE flag, and specify the errorEstimationFunction = loessErrfun (the current default option). As is common in optimization problems we still must provide an initial guess at the error rates. For this we take a previously estimated set of error rates (tperr1, included with the package) and inflate them, as it is better to start with error rates that are too high than too low.
 
@@ -118,16 +118,16 @@ Inspecting the dada-class object returned by dada:
 dadaFs[[1]]
 ```
 
-The dada algorithm inferred 130 real sequences out of 1860 input unique sequences in the first sample. There is much more to the dada-class return object than this (see help("dada-class") for some info), including multiple diagnostics about the quality of the inference, but that is a subject for another tutorial. Let's do one check on the quality of the error-rate estimation though before continuing though.
+The dada algorithm inferred 130 real sequences out of 1860 input unique sequences in the first sample. There is much more to the dada-class return object than this (see help("dada-class") for some info), including multiple diagnostics about the quality of the inference, but that is a subject for another tutorial. Let's do one check on the quality of the error-rate estimation though before continuing.
 
 **Visualize estimated error rates**:
 ```{r}
 plotErrors(dadaFs[[1]], "A", nominalQ=TRUE)
 ```
 
-Here we only plotted the error rates from A. The points are the observed error rates for each consensus quality score. The black line is the estimated error rate after convergence. The red line is the error rate expected under the nominal definition of the Q-value.
+Here we only plotted the error rates from A. The points are the observed error rates for each consensus quality score. The black line is the estimated error rates after convergence. The red line is the error rates expected under the nominal definition of the Q-value.
 
-Everything looks reasonable here, and we can proceed with confidence.
+Everything looks reasonable. We proceed with confidence.
 
 # Identify chimeras
 
@@ -147,7 +147,7 @@ The fraction of chimeras varies between samples, but can be substantial. Here ch
 
 # Merge paired reads
 
-We now merge the denoised forward and reverse reads together. Note that in the DADA2 pipeline merging is perfomed after denoising the forward and reverse reads independently. The core function here is mergePairs. Remember that mergePairs depends on the forward and reverse reads being in matching order at the time they were dereplicated!
+We now merge the denoised forward and reverse reads together. Note that in the DADA2 pipeline merging is perfomed **after** denoising the forward read and the reverse reads. The core function here is mergePairs. Remember that mergePairs depends on the forward and reverse reads being in matching order at the time they were dereplicated!
 
 **Merge the denoised forward and reverse reads**:
 ```{r message=FALSE}
@@ -171,7 +171,7 @@ head(mergers.nochim[["Mock"]][,c("sequence", "abundance")], n=2)
 
 # Evaluate accuracy
 
-One of the provided samples was of a "mock community", in which 20 known strains were mixed together and amplicon-sequenced (the mock community is supposed to be 21 strains, but P. acnes was absent in this instance). The reference sequences corresponding to these strains were provided along with the fastq files in downloaded zip archive. So we compare sample sequence inferred by DADA2 in the mock community to its expected composition.
+One of the provided samples was of a "mock community", in which 20 known strains were mixed together and amplicon-sequenced (the mock community is supposed to be 21 strains, but P. acnes was absent in this instance). The reference sequences corresponding to these strains were provided along with the fastq files in the downloaded zip archive. We compare the sample sequence inferred by DADA2 to the expected composition of the mock community.
 
 **DADA2 accuracy on mock community**:
 ```{r}
