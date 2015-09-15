@@ -54,8 +54,6 @@ The dada function takes as input dereplicated amplicon sequencing reads and retu
 If dada is run in selfConsist=TRUE mode, the algorithm will infer both the sample composition and
  the parameters of its error model from the data.
 
-dada() implements the Divisive Amplicon Denoising Algorithm as described in:
-
 Briefly, DADA implements a statiscal test for the notion that a specific sequence was seen too many times
  to have been caused by amplicon errors from currently inferred sample sequences. Overly-abundant
  sequences are used as the seeds of new clusters of sequencing reads, and the final set of clusters

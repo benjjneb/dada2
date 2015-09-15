@@ -100,7 +100,7 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOver
   rownames(ups) <- paste0("s", ups$forward, "_", ups$reverse)
   
   if(verbose) {
-    message(sum(ups$abundance[ups$match]), "paired-reads (in", sum(ups$match), "unique pairings) successfully merged out of", sum(ups$abundance), "(in", nrow(ups), "pairings) input.\n")
+    message(sum(ups$abundance[ups$match]), " paired-reads (in ", sum(ups$match), " unique pairings) successfully merged out of ", sum(ups$abundance), "(in", nrow(ups), " pairings) input.\n")
   }
   
   if(!keepMismatch) { ups <- ups[ups$match,] }
