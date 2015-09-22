@@ -5,7 +5,8 @@
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
 mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
-  minOverlap = 20, propagateCol = character(0), verbose = TRUE)
+  minOverlap = 20, propagateCol = character(0), verbose = TRUE,
+  concatenate = FALSE)
 }
 \arguments{
 \item{dadaF}{(Required). A \code{\link{dada-class}} object.
@@ -35,6 +36,9 @@ mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
  in the dada-class$clustering data.frame.}
 
 \item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
+
+\item{concatenate}{(Optional). \code{logical(1)} indicates whether to concatenate paired reads instead of attempting to merge.
+ Default FALSE.}
 }
 \value{
 Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
@@ -54,7 +58,8 @@ Dataframe. One row for each unique pairing of forward/reverse denoised sequences
 \description{
 This function attempts each denoised pair of forward and reverse reads, rejecting any
 which do not perfectly overlap. Note: This function assumes that the fastq files for the
-forward and reverse reads were in the same order.
+forward and reverse reads were in the same order. Use of the concatenate option will
+result in concatenating forward and reverse reads without attempting a merge/alignment step.
 }
 \examples{
 derepF = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

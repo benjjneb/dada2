@@ -3,7 +3,8 @@
 #' 
 #' This function attempts each denoised pair of forward and reverse reads, rejecting any 
 #' which do not perfectly overlap. Note: This function assumes that the fastq files for the 
-#' forward and reverse reads were in the same order.
+#' forward and reverse reads were in the same order. Use of the concatenate option will
+#' result in concatenating forward and reverse reads without attempting a merge/alignment step.
 #' 
 #' @param dadaF (Required). A \code{\link{dada-class}} object.
 #'  The output of dada() function on the forward reads.
@@ -33,6 +34,9 @@
 #'
 #' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
+#' @param concatenate (Optional). \code{logical(1)} indicates whether to concatenate paired reads instead of attempting to merge.
+#'  Default FALSE.
+#' 
 #' @return Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
 #' \itemize{
 #'  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
@@ -48,7 +52,7 @@
 #' }
 #' 
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}
-#'
+#' @importFrom Biostrings reverseComplement
 #' @export
 #' 
 #' @examples
@@ -59,7 +63,7 @@
 #' mergePairs(dadaF, derepF, dadaR, derepR)
 #' mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch=TRUE, propagateCol=c("birth_hamming", "birth_fold"))
 #' 
-mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE) {
+mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE, concatenate=FALSE) {
   if(class(derepF) == "derep") mapF <- derepF$map
   else mapF <- derepF
   if(class(derepR) == "derep") mapR <- derepR$map
@@ -74,17 +78,28 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOver
   Funqseq <- unname(as.character(dadaF$clustering$sequence[ups$forward]))
   Runqseq <- rc(unname(as.character(dadaR$clustering$sequence[ups$reverse])))
   
-  # Use unbanded N-W align to compare forward/reverse
-  # May want to adjust align params here, but for now just using dadaOpt
-  alvecs <- mapply(function(x,y) nwalign(x,y,band=-1), Funqseq, Runqseq, SIMPLIFY=FALSE)
-  outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
-  ups$nmatch <- outs[,1]
-  ups$nmismatch <- outs[,2]
-  ups$nindel <- outs[,3]
-  ups$match <- (ups$nmatch > minOverlap) & (ups$nmismatch==0) & (ups$nindel==0)
-  # Make the sequence
-  ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
-
+  if (concatenate == TRUE) {
+    # Simply concatenate the sequences together and 
+    # check if this needs RC or not
+    ups$sequence <- mapply(function(x,y) paste0(x,rep("N", 10), reverseComplement(y)), Funqseq, Runqseq, SIMPLIFY=FALSE);  
+    ups$nmatch <- 0
+    ups$nmismatch <- 0
+    ups$nindel <- 0
+    ups$match <- TRUE
+  } else {
+    # Align forward and reverse reads.
+    # Use unbanded N-W align to compare forward/reverse
+    # May want to adjust align params here, but for now just using dadaOpt
+    alvecs <- mapply(function(x,y) nwalign(x,y,band=-1), Funqseq, Runqseq, SIMPLIFY=FALSE)
+    outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
+    ups$nmatch <- outs[,1]
+    ups$nmismatch <- outs[,2]
+    ups$nindel <- outs[,3]
+    ups$match <- (ups$nmatch > minOverlap) & (ups$nmismatch==0) & (ups$nindel==0)
+    # Make the sequence
+    ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
+  }
+  
   # Add abundance and sequence to the output data.frame
   tab <- table(pairdf$forward, pairdf$reverse)
   ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
