@@ -36,7 +36,8 @@ mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
  in the dada-class$clustering data.frame.}
 
 \item{justConcatenate}{(Optional). \code{logical(1)}, Default FALSE.
- If TRUE, reads are concatenated rather than merged, with a 10N spacer inserted between them.}
+ If TRUE, the forward and reverse-complemented reverse read are concatenated rather than merged,
+   with a NNNNNNNNNN (10 Ns) spacer inserted between them.}
 
 \item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
