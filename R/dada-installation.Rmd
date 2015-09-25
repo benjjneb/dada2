@@ -30,11 +30,21 @@ biocLite(suppressUpdates = FALSE)
 biocLite("ShortRead", suppressUpdates = FALSE)
 ```
 
-### 1. Download and unzip.
+### 1. Install using devtools
 
-Download [the zipped package](https://github.com/benjjneb/dada2/archive/master.zip) and unzip it.
+The easiest method is to use the devtools package to install from github:
 
-### 2. Attempt installation from within R
+```{r devtools-install, eval=FALSE}
+install.packages("devtools")
+library("devtools")
+devtools::install_github("benjjneb/dada2")
+```
+
+If that worked you're done (see step 4)! If it failed on missing dependencies, goto step 2.
+
+### 1a. Install manually from source
+
+Alternatively, you can install from the source by hand. Download [the zipped package](https://github.com/benjjneb/dada2/archive/master.zip) and unzip it.
 
 Start a fresh R session, and enter the following.
 
@@ -61,8 +71,7 @@ Check Package Version
 packageVersion("dada2")
 ```
 
-
-### 3. Troubleshoot Dependencies (Optional)
+### 2. Troubleshoot Dependencies (Optional)
 
 At this point, 
 there may be complaints about missing dependencies.
@@ -79,10 +88,17 @@ biocLite("missing_package_2")
 # ... and so on
 ```
 
-### 4. Re-attempt dada2 Installation
+### 3. Re-attempt dada2 Installation
 
-Now once again, after dependencies have been installed.
+Install again, after dependencies have been installed.
 
+Devtools method:
+```{r devtools-install-rev2, eval=FALSE}
+library("devtools")
+devtools::install_github("benjjneb/dada2")
+```
+
+Manual install from source method:
 ```{r install-packages-rev2, eval=FALSE}
 install.packages("path/to/dada2",
                  repos = NULL,
@@ -91,9 +107,9 @@ install.packages("path/to/dada2",
 ```
 
 You should now be done, if installation was successful.
-If not, do panic, and post a message to [the issue tracker](https://github.com/benjjneb/dada2/issues).
+If not, do not panic, and post a message to [the issue tracker](https://github.com/benjjneb/dada2/issues).
 
-### 5. Load Package, Explore Function Documentation
+### 4. Load Package, Explore Function Documentation
 
 ```{r load-dada2, message=FALSE}
 library("dada2")

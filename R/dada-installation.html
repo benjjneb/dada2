@@ -66,12 +66,17 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <span class="kw">biocLite</span>(<span class="dt">suppressUpdates =</span> <span class="ot">FALSE</span>)
 <span class="kw">biocLite</span>(<span class="st">&quot;ShortRead&quot;</span>, <span class="dt">suppressUpdates =</span> <span class="ot">FALSE</span>)</code></pre>
 </div>
-<div id="download-and-unzip." class="section level3">
-<h3>1. Download and unzip.</h3>
-<p>Download <a href="https://github.com/benjjneb/dada2/archive/master.zip">the zipped package</a> and unzip it.</p>
+<div id="install-using-devtools" class="section level3">
+<h3>1. Install using devtools</h3>
+<p>The easiest method is to use the devtools package to install from github:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">install.packages</span>(<span class="st">&quot;devtools&quot;</span>)
+<span class="kw">library</span>(<span class="st">&quot;devtools&quot;</span>)
+devtools::<span class="kw">install_github</span>(<span class="st">&quot;benjjneb/dada2&quot;</span>)</code></pre>
+<p>If that worked you’re done (see step 4)! If it failed on missing dependencies, goto step 2.</p>
 </div>
-<div id="attempt-installation-from-within-r" class="section level3">
-<h3>2. Attempt installation from within R</h3>
+<div id="a.-install-manually-from-source" class="section level3">
+<h3>1a. Install manually from source</h3>
+<p>Alternatively, you can install from the source by hand. Download <a href="https://github.com/benjjneb/dada2/archive/master.zip">the zipped package</a> and unzip it.</p>
 <p>Start a fresh R session, and enter the following.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">install.packages</span>(<span class="st">&quot;path/to/dada2&quot;</span>,
                  <span class="dt">repos =</span> <span class="ot">NULL</span>,
@@ -84,10 +89,10 @@ code > span.er { color: #ff0000; font-weight: bold; }
                  <span class="dt">dependencies =</span> <span class="kw">c</span>(<span class="st">&quot;Depends&quot;</span>, <span class="st">&quot;Suggests&quot;</span>,<span class="st">&quot;Imports&quot;</span>))</code></pre>
 <p>Check Package Version</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">packageVersion</span>(<span class="st">&quot;dada2&quot;</span>)</code></pre>
-<pre><code>## [1] '0.9.3'</code></pre>
+<pre><code>## [1] '0.9.5'</code></pre>
 </div>
 <div id="troubleshoot-dependencies-optional" class="section level3">
-<h3>3. Troubleshoot Dependencies (Optional)</h3>
+<h3>2. Troubleshoot Dependencies (Optional)</h3>
 <p>At this point, there may be complaints about missing dependencies. To install missing dependencies on either <a href="http://cran.r-project.org/">CRAN</a> or <a href="http://bioconductor.org/install/">Bioconductor</a>, start a fresh R session, and enter the following.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">source</span>(<span class="st">&quot;http://bioconductor.org/biocLite.R&quot;</span>)
 <span class="kw">biocLite</span>(<span class="st">&quot;missing_package_1&quot;</span>)
@@ -95,16 +100,20 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <span class="co"># ... and so on</span></code></pre>
 </div>
 <div id="re-attempt-dada2-installation" class="section level3">
-<h3>4. Re-attempt dada2 Installation</h3>
-<p>Now once again, after dependencies have been installed.</p>
+<h3>3. Re-attempt dada2 Installation</h3>
+<p>Install again, after dependencies have been installed.</p>
+<p>Devtools method:</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;devtools&quot;</span>)
+devtools::<span class="kw">install_github</span>(<span class="st">&quot;benjjneb/dada2&quot;</span>)</code></pre>
+<p>Manual install from source method:</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">install.packages</span>(<span class="st">&quot;path/to/dada2&quot;</span>,
                  <span class="dt">repos =</span> <span class="ot">NULL</span>,
                  <span class="dt">type =</span> <span class="st">&quot;source&quot;</span>,
                  <span class="dt">dependencies =</span> <span class="kw">c</span>(<span class="st">&quot;Depends&quot;</span>, <span class="st">&quot;Suggests&quot;</span>,<span class="st">&quot;Imports&quot;</span>))</code></pre>
-<p>You should now be done, if installation was successful. If not, do panic, and post a message to <a href="https://github.com/benjjneb/dada2/issues">the issue tracker</a>.</p>
+<p>You should now be done, if installation was successful. If not, do not panic, and post a message to <a href="https://github.com/benjjneb/dada2/issues">the issue tracker</a>.</p>
 </div>
 <div id="load-package-explore-function-documentation" class="section level3">
-<h3>5. Load Package, Explore Function Documentation</h3>
+<h3>4. Load Package, Explore Function Documentation</h3>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;dada2&quot;</span>)</code></pre>
 <p>Now that the package is loaded, look at the help files for the main implemented functions.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">help</span>(<span class="dt">package=</span><span class="st">&quot;dada2&quot;</span>)
