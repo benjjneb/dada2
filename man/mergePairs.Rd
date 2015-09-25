@@ -5,8 +5,8 @@
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
 mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
-  minOverlap = 20, propagateCol = character(0), verbose = TRUE,
-  concatenate = FALSE)
+  minOverlap = 20, propagateCol = character(0), justConcatenate = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{dadaF}{(Required). A \code{\link{dada-class}} object.
@@ -35,10 +35,10 @@ mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
  The mergePairs return data.frame will include copies of columns with names specified
  in the dada-class$clustering data.frame.}
 
-\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
+\item{justConcatenate}{(Optional). \code{logical(1)}, Default FALSE.
+ If TRUE, reads are concatenated rather than merged, with a 10N spacer inserted between them.}
 
-\item{concatenate}{(Optional). \code{logical(1)} indicates whether to concatenate paired reads instead of attempting to merge.
- Default FALSE.}
+\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
 \value{
 Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
@@ -67,7 +67,8 @@ derepR = derepFastq(system.file("extdata", "sam1R.fastq.gz", package="dada2"))
 dadaF <- dada(derepF, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 dadaR <- dada(derepR, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 mergePairs(dadaF, derepF, dadaR, derepR)
-mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch=TRUE, propagateCol=c("birth_hamming", "birth_fold"))
+mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch=TRUE, propagateCol=c("birth_ham", "birth_fold"))
+mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 }
 \seealso{
 \code{\link{derepFastq}}, \code{\link{dada}}

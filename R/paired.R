@@ -32,11 +32,12 @@
 #'  The mergePairs return data.frame will include copies of columns with names specified
 #'  in the dada-class$clustering data.frame.
 #'
+#' @param justConcatenate (Optional). \code{logical(1)}, Default FALSE.
+#'  If TRUE, the forward and reverse-complemented reverse read are concatenated rather than merged,
+#'    with a NNNNNNNNNN (10 Ns) spacer inserted between them.
+#' 
 #' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
-#' @param concatenate (Optional). \code{logical(1)} indicates whether to concatenate paired reads instead of attempting to merge.
-#'  Default FALSE.
-#' 
 #' @return Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
 #' \itemize{
 #'  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
@@ -52,7 +53,6 @@
 #' }
 #' 
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}
-#' @importFrom Biostrings reverseComplement
 #' @export
 #' 
 #' @examples
@@ -61,9 +61,10 @@
 #' dadaF <- dada(derepF, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' dadaR <- dada(derepR, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' mergePairs(dadaF, derepF, dadaR, derepR)
-#' mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch=TRUE, propagateCol=c("birth_hamming", "birth_fold"))
+#' mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch=TRUE, propagateCol=c("birth_ham", "birth_fold"))
+#' mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 #' 
-mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), verbose=TRUE, concatenate=FALSE) {
+mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), justConcatenate=FALSE, verbose=FALSE) {
   if(class(derepF) == "derep") mapF <- derepF$map
   else mapF <- derepF
   if(class(derepR) == "derep") mapR <- derepR$map
@@ -78,10 +79,10 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOver
   Funqseq <- unname(as.character(dadaF$clustering$sequence[ups$forward]))
   Runqseq <- rc(unname(as.character(dadaR$clustering$sequence[ups$reverse])))
   
-  if (concatenate == TRUE) {
+  if (justConcatenate == TRUE) {
     # Simply concatenate the sequences together and 
     # check if this needs RC or not
-    ups$sequence <- mapply(function(x,y) paste0(x,rep("N", 10), reverseComplement(y)), Funqseq, Runqseq, SIMPLIFY=FALSE);  
+    ups$sequence <- mapply(function(x,y) paste0(x,"NNNNNNNNNN", rc(y)), Funqseq, Runqseq, SIMPLIFY=FALSE);  
     ups$nmatch <- 0
     ups$nmismatch <- 0
     ups$nindel <- 0
