@@ -240,7 +240,7 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2) {
 //' plot(kmerdf$kmer, kmerdf$align)
 //' 
 // [[Rcpp::export]]
-Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, size_t max_aligns) {
+Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, unsigned int max_aligns) {
   int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
   char *seq1, *seq2;
 
@@ -263,7 +263,7 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
     stride = 1;
   }
 
-  size_t npairs = 0;
+  unsigned int npairs = 0;
   Rcpp::NumericVector adist(max_aligns);
   Rcpp::NumericVector kdist(max_aligns);
   Sub *sub;
@@ -324,7 +324,7 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
 //
 // @export
 // [[Rcpp::export]]
-Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, size_t max_aligns) {
+Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, unsigned int max_aligns) {
   int i, j, n_iters, stride, nseqs, len1 = 0, len2 = 0;
   char *seq1, *seq2;
 
@@ -347,8 +347,8 @@ Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatr
     stride = 1;
   }
 
-  size_t npairs = 0;
-  size_t differ = 0;
+  unsigned int npairs = 0;
+  unsigned int differ = 0;
   Sub *sub, *sub_band;
 
   for(i=0;i<nseqs;i=i+stride) {

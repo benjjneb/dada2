@@ -92,7 +92,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // evaluate_kmers
-Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, size_t max_aligns);
+Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, unsigned int max_aligns);
 RcppExport SEXP dada2_evaluate_kmers(SEXP seqsSEXP, SEXP kmer_sizeSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -102,13 +102,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
     Rcpp::traits::input_parameter< int >::type gap(gapSEXP);
     Rcpp::traits::input_parameter< int >::type band(bandSEXP);
-    Rcpp::traits::input_parameter< size_t >::type max_aligns(max_alignsSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type max_aligns(max_alignsSEXP);
     __result = Rcpp::wrap(evaluate_kmers(seqs, kmer_size, score, gap, band, max_aligns));
     return __result;
 END_RCPP
 }
 // evaluate_band
-Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, size_t max_aligns);
+Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, unsigned int max_aligns);
 RcppExport SEXP dada2_evaluate_band(SEXP seqsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP band_sizeSEXP, SEXP max_alignsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
@@ -117,7 +117,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
     Rcpp::traits::input_parameter< int >::type gap(gapSEXP);
     Rcpp::traits::input_parameter< int >::type band_size(band_sizeSEXP);
-    Rcpp::traits::input_parameter< size_t >::type max_aligns(max_alignsSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type max_aligns(max_alignsSEXP);
     __result = Rcpp::wrap(evaluate_band(seqs, score, gap, band_size, max_aligns));
     return __result;
 END_RCPP
