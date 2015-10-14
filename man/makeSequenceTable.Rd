@@ -4,12 +4,16 @@
 \alias{makeSequenceTable}
 \title{Construct a sample-by-sequence observation matrix.}
 \usage{
-makeSequenceTable(samples)
+makeSequenceTable(samples, orderBy = "abundance")
 }
 \arguments{
 \item{samples}{(Required). A \code{list} of the samples to include in the sequence table.
 Names are propagated to the rownames of the return matrix. Samples can be provided in any
 format that can be processed by \code{\link{getUniques}}.}
+
+\item{orderBy}{(Optional). String. Default is "abundance".
+Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
+Valid values: "abundance", "nsamples", NULL.}
 }
 \value{
 Integer \code{matrix}.

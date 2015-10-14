@@ -32,8 +32,12 @@ getUniques <- function(object) {
   } else if(is.data.frame(object) && all(c("sequence", "abundance") %in% colnames(object))) {
     unqs <- as.integer(object$abundance)
     names(unqs) <- object$sequence
-  } else {
-    stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, or a data.frame with $sequence and $abundance columns.")
+  } else if(class(object) == "matrix" && !any(is.na(colnames(object)))) { # Tabled sequences
+    unqs <- as.integer(colSums(object))
+    names(unqs) <- colnames(object)
+  }
+  else {
+    stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
   }
   if(any(duplicated(names(unqs)))) message("Duplicate sequences detected.")
   return(unqs)
