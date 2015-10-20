@@ -31,7 +31,7 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
   if(!is.list(samples)) { stop("Requires a list of samples.") }
   unqs <- lapply(samples, getUniques)
   unqsqs <- unique(do.call(c, lapply(unqs, names)))
-  if(length(unique(nchar(unqsqs)))) { message("The sequences being tabled vary in length.") }
+  if(length(unique(nchar(unqsqs)))>1) { message("The sequences being tabled vary in length.") }
   rval <- matrix(0, nrow=length(unqs), ncol=length(unqsqs))
   # Samples are rows, columns are sequences
   colnames(rval) <- unqsqs

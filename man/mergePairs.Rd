@@ -5,7 +5,7 @@
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
 mergePairs(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch = 0,
-  outputRejects = FALSE, propagateCol = character(0),
+  returnRejects = FALSE, propagateCol = character(0),
   justConcatenate = FALSE, verbose = FALSE)
 }
 \arguments{
@@ -29,9 +29,9 @@ mergePairs(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch = 0,
  required for merging the forward and reverse reads. Default is 20.}
 
 \item{maxMismatch}{(Optional). A \code{numeric(1)} of the maximum mismatches allowed in the overlap region.
- Default is 0 (requires exact matching).}
+ Default is 0 (i.e. only exact matches in the overlap region are accepted).}
 
-\item{outputRejects}{(Optional). A \code{logical(1)}. Default is False.
+\item{returnRejects}{(Optional). A \code{logical(1)}. Default is False.
  If true, the pairs that that were rejected based on mismatches in the overlap
  region are retained in the return data.frame.}
 
@@ -74,7 +74,7 @@ derepR = derepFastq(system.file("extdata", "sam1R.fastq.gz", package="dada2"))
 dadaF <- dada(derepF, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 dadaR <- dada(derepR, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 mergePairs(dadaF, derepF, dadaR, derepR)
-mergePairs(dadaF, derepF, dadaR, derepR, outputRejects=TRUE, propagateCol=c("birth_ham", "birth_fold"))
+mergePairs(dadaF, derepF, dadaR, derepR, returnRejects=TRUE, propagateCol=c("birth_ham", "birth_fold"))
 mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 }
 \seealso{
