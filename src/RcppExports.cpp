@@ -91,6 +91,19 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// C_pair_consensus2
+Rcpp::CharacterVector C_pair_consensus2(std::string s1, std::string s2, int prefer);
+RcppExport SEXP dada2_C_pair_consensus2(SEXP s1SEXP, SEXP s2SEXP, SEXP preferSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< int >::type prefer(preferSEXP);
+    __result = Rcpp::wrap(C_pair_consensus2(s1, s2, prefer));
+    return __result;
+END_RCPP
+}
 // evaluate_kmers
 Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, unsigned int max_aligns);
 RcppExport SEXP dada2_evaluate_kmers(SEXP seqsSEXP, SEXP kmer_sizeSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {

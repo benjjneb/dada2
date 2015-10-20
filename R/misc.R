@@ -39,7 +39,11 @@ getUniques <- function(object) {
   else {
     stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
   }
-  if(any(duplicated(names(unqs)))) message("Duplicate sequences detected.")
+  #### ENFORCE UNIQUENESS HERE!!!
+  if(any(duplicated(names(unqs)))) {
+    unqs <- tapply(unqs, names(unqs), sum)
+    message("Duplicate sequences detected and merged.")
+  }
   return(unqs)
 }
 

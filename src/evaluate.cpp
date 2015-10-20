@@ -21,6 +21,7 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
 
   seq1 = (char *) malloc(s1.size()+1); //E
   seq2 = (char *) malloc(s2.size()+1); //E
+  if (seq1 == NULL || seq2 == NULL)  Rcpp::stop("Memory allocation failed.");
   strcpy(seq1, s1.c_str());
   strcpy(seq2, s2.c_str());
   nt2int(seq1, seq1);
@@ -192,6 +193,7 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2) {
   }
   
   char *oseq = (char *) malloc(s1.size()+1); //E
+  if (oseq == NULL)  Rcpp::stop("Memory allocation failed.");
   for(int i=0;i<s1.size();i++) {
     if(s1[i] == s2[i]) {
       oseq[i] = s1[i];
@@ -204,6 +206,56 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2) {
     }
   }
   oseq[s1.size()] = '\0';
+
+  std::string ostr(oseq);
+  free(oseq);
+  return(ostr);
+}
+
+//------------------------------------------------------------------
+// Calculates the consensus of two sequences (first sequence wins mismatches).
+// 
+// @param s1 A \code{character(1)} of DNA sequence 1.
+// @param s2 A \code{character(1)} of DNA sequence 2.
+// 
+// @return A \code{character(1)} of the consensus DNA sequence.
+// 
+// [[Rcpp::export]]
+Rcpp::CharacterVector C_pair_consensus2(std::string s1, std::string s2, int prefer) {
+  int i;
+  if(s1.size() != s2.size()) {
+    Rprintf("Warning: Aligned strings are not the same length.\n");
+    return R_NilValue;
+  }
+  
+  char *oseq = (char *) malloc(s1.size()+1); //E
+  if (oseq == NULL)  Rcpp::stop("Memory allocation failed.");
+  for(i=0;i<s1.size();i++) {
+    if(s1[i] == s2[i]) {
+      oseq[i] = s1[i];
+    } else if(s2[i] == '-') {
+      oseq[i] = s1[i];
+    } else if(s1[i] == '-') {
+      oseq[i] = s2[i];
+    } else {
+      if(prefer==1) {
+        oseq[i] = s1[i]; // s1 wins mismatches
+      } else if(prefer==2) {
+        oseq[i] = s2[i];
+      } else {
+        oseq[i] = 'N'; // Should never happen
+      }
+    }
+  }
+  // Remove any remaining gaps
+  int j=0;
+  for(i=0;i<s1.size();i++) {
+    if(oseq[i] != '-') {
+      oseq[j]=oseq[i];
+      j++;
+    }
+  }
+  oseq[j] = '\0';
 
   std::string ostr(oseq);
   free(oseq);

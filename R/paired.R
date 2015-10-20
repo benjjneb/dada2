@@ -2,7 +2,8 @@
 #' Merge paired forward and reverse reads after DADA denoising.
 #' 
 #' This function attempts each denoised pair of forward and reverse reads, rejecting any 
-#' which do not perfectly overlap. Note: This function assumes that the fastq files for the 
+#' which do not sufficiently overlap or which contain too many (>0 by default) mismatches in the
+#' overlap region. Note: This function assumes that the fastq files for the 
 #' forward and reverse reads were in the same order. Use of the concatenate option will
 #' result in concatenating forward and reverse reads without attempting a merge/alignment step.
 #' 
@@ -22,11 +23,15 @@
 #' @param derepR (Required). A \code{\link{derep-class}} object.
 #'  See derepF description, but for the reverse reads.
 #'
-#' @param keepMismatch (Optional). A \code{logical(1)}. Default is False.
-#'  If true, the pairs that did not match are retained in the return data.frame.
-#'
 #' @param minOverlap (Optional). A \code{numeric(1)} of the minimum length of the overlap (in nucleotides)
 #'  required for merging the forward and reverse reads. Default is 20.
+#'
+#' @param maxMismatch (Optional). A \code{numeric(1)} of the maximum mismatches allowed in the overlap region.
+#'  Default is 0 (i.e. only exact matches in the overlap region are accepted).
+#'  
+#' @param returnRejects (Optional). A \code{logical(1)}. Default is False.
+#'  If true, the pairs that that were rejected based on mismatches in the overlap
+#'  region are retained in the return data.frame.
 #'
 #' @param propagateCol (Optional). \code{character}. Default is \code{character(0)}.
 #'  The mergePairs return data.frame will include copies of columns with names specified
@@ -41,13 +46,14 @@
 #' @return Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
 #' \itemize{
 #'  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
-#'  \item{$sequence: The merged sequence if match=TRUE. Otherwise an empty string, i.e. "".}
+#'  \item{$sequence: The merged sequence.}
 #'  \item{$forward: The index of the forward denoised sequence.}
 #'  \item{$reverse: The index of the reverse denoised sequence.}
 #'  \item{$nmatch: Number of matching nts in the overlap region.}
 #'  \item{$nmismatch: Number of mismatching nts in the overlap region.}
 #'  \item{$nindel: Number of indels in the overlap region.}
-#'  \item{$match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
+#'  \item{$prefer: The sequence used for the overlap region. 1=forward; 2=reverse.}
+#'  \item{$accept: TRUE if overlap between forward and reverse denoised sequences was at least minOverlap and had at most maxMismatch differences.
 #'          FALSE otherwise.}
 #'  \item{$...: Additional columns specified in the propagateCol argument.}
 #' }
@@ -61,10 +67,10 @@
 #' dadaF <- dada(derepF, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' dadaR <- dada(derepR, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' mergePairs(dadaF, derepF, dadaR, derepR)
-#' mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch=TRUE, propagateCol=c("birth_ham", "birth_fold"))
+#' mergePairs(dadaF, derepF, dadaR, derepR, returnRejects=TRUE, propagateCol=c("birth_ham", "birth_fold"))
 #' mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 #' 
-mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOverlap = 20, propagateCol=character(0), justConcatenate=FALSE, verbose=FALSE) {
+mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch=0, returnRejects=FALSE, propagateCol=character(0), justConcatenate=FALSE, verbose=FALSE) {
   if(class(derepF) == "derep") mapF <- derepF$map
   else mapF <- derepF
   if(class(derepR) == "derep") mapR <- derepR$map
@@ -86,7 +92,8 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOver
     ups$nmatch <- 0
     ups$nmismatch <- 0
     ups$nindel <- 0
-    ups$match <- TRUE
+    ups$prefer <- NA
+    ups$accept <- TRUE
   } else {
     # Align forward and reverse reads.
     # Use unbanded N-W align to compare forward/reverse
@@ -96,15 +103,20 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOver
     ups$nmatch <- outs[,1]
     ups$nmismatch <- outs[,2]
     ups$nindel <- outs[,3]
-    ups$match <- (ups$nmatch > minOverlap) & (ups$nmismatch==0) & (ups$nindel==0)
+    ups$prefer <- 1 + (dadaR$clustering$n0[ups$reverse] > dadaR$clustering$n0[ups$forward])
+    ups$accept <- (ups$nmatch > minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
     # Make the sequence
-    ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
+    #    ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
+    ups$sequence <- mapply(C_pair_consensus2, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer);
+    # Additional param to indicate whether 1:forward or 2:reverse takes precedence
+    # Must also strip out any indels in the return
+    # This function is only used here.
   }
   
   # Add abundance and sequence to the output data.frame
   tab <- table(pairdf$forward, pairdf$reverse)
   ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
-  ups$sequence[!ups$match] <- ""
+  ups$sequence[!ups$accept] <- ""
   # Add columns from forward/reverse clustering
   propagateCol <- propagateCol[propagateCol %in% colnames(dadaF$clustering)]
   for(col in propagateCol) {
@@ -114,12 +126,15 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, keepMismatch=FALSE, minOver
   # Sort output by abundance and name
   ups <- ups[order(ups$abundance, decreasing=TRUE),]
   rownames(ups) <- paste0("s", ups$forward, "_", ups$reverse)
+  if(!returnRejects) { ups <- ups[ups$accept,] }
   
+  if(any(duplicated(ups$sequence))) {
+    message("Duplicate sequences in merged output.")
+  }
   if(verbose) {
-    message(sum(ups$abundance[ups$match]), " paired-reads (in ", sum(ups$match), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.\n")
+    message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
   }
   
-  if(!keepMismatch) { ups <- ups[ups$match,] }
   ups
 }
 

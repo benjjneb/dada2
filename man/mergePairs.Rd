@@ -4,9 +4,9 @@
 \alias{mergePairs}
 \title{Merge paired forward and reverse reads after DADA denoising.}
 \usage{
-mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
-  minOverlap = 20, propagateCol = character(0), justConcatenate = FALSE,
-  verbose = FALSE)
+mergePairs(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch = 0,
+  outputRejects = FALSE, propagateCol = character(0),
+  justConcatenate = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{dadaF}{(Required). A \code{\link{dada-class}} object.
@@ -25,11 +25,15 @@ mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
 \item{derepR}{(Required). A \code{\link{derep-class}} object.
  See derepF description, but for the reverse reads.}
 
-\item{keepMismatch}{(Optional). A \code{logical(1)}. Default is False.
- If true, the pairs that did not match are retained in the return data.frame.}
-
 \item{minOverlap}{(Optional). A \code{numeric(1)} of the minimum length of the overlap (in nucleotides)
  required for merging the forward and reverse reads. Default is 20.}
+
+\item{maxMismatch}{(Optional). A \code{numeric(1)} of the maximum mismatches allowed in the overlap region.
+ Default is 0 (requires exact matching).}
+
+\item{outputRejects}{(Optional). A \code{logical(1)}. Default is False.
+ If true, the pairs that that were rejected based on mismatches in the overlap
+ region are retained in the return data.frame.}
 
 \item{propagateCol}{(Optional). \code{character}. Default is \code{character(0)}.
  The mergePairs return data.frame will include copies of columns with names specified
@@ -45,20 +49,22 @@ mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch = FALSE,
 Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
 \itemize{
  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
- \item{$sequence: The merged sequence if match=TRUE. Otherwise an empty string, i.e. "".}
+ \item{$sequence: The merged sequence.}
  \item{$forward: The index of the forward denoised sequence.}
  \item{$reverse: The index of the reverse denoised sequence.}
  \item{$nmatch: Number of matching nts in the overlap region.}
  \item{$nmismatch: Number of mismatching nts in the overlap region.}
  \item{$nindel: Number of indels in the overlap region.}
- \item{$match: TRUE if a perfect match between the forward and reverse denoised sequences of at least MIN_OVERLAP.
+ \item{$prefer: The sequence used for the overlap region. 1=forward; 2=reverse.}
+ \item{$accept: TRUE if overlap between forward and reverse denoised sequences was at least minOverlap and had at most maxMismatch differences.
          FALSE otherwise.}
  \item{$...: Additional columns specified in the propagateCol argument.}
 }
 }
 \description{
 This function attempts each denoised pair of forward and reverse reads, rejecting any
-which do not perfectly overlap. Note: This function assumes that the fastq files for the
+which do not sufficiently overlap or which contain too many (>0 by default) mismatches in the
+overlap region. Note: This function assumes that the fastq files for the
 forward and reverse reads were in the same order. Use of the concatenate option will
 result in concatenating forward and reverse reads without attempting a merge/alignment step.
 }
@@ -68,7 +74,7 @@ derepR = derepFastq(system.file("extdata", "sam1R.fastq.gz", package="dada2"))
 dadaF <- dada(derepF, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 dadaR <- dada(derepR, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 mergePairs(dadaF, derepF, dadaR, derepR)
-mergePairs(dadaF, derepF, dadaR, derepR, keepMismatch=TRUE, propagateCol=c("birth_ham", "birth_fold"))
+mergePairs(dadaF, derepF, dadaR, derepR, outputRejects=TRUE, propagateCol=c("birth_ham", "birth_fold"))
 mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 }
 \seealso{
