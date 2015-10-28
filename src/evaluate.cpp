@@ -135,7 +135,7 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, in
     end--;
     s1gap = s1gap && (s1[end] == '-');
     s2gap = s2gap && (s2[end] == '-');
-  } while((s1gap || s2gap) && end > s1.size()-max_shift && end > start);
+  } while((s1gap || s2gap) && end > s1.size()-1-max_shift && end > start);
 
 
   // Count the length of alignment with <= allow indels/mismatches from the left and right sides
