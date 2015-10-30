@@ -108,11 +108,6 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
     p[0][j] = 2;
   }
   
-  for (j = 0; j <= len2; j++) {
-    d[0][j] = 0; // ends-free gap
-    p[0][j] = 2;
-  }
-
   // Fill out band boundaries of d.
   if(band>=0 && band<len1) {
     for(i=0;i<=len1;i++) {
