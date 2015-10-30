@@ -65,6 +65,10 @@ evaluate_band <- function(seqs, score, gap, band_size, max_aligns) {
     .Call('dada2_evaluate_band', PACKAGE = 'dada2', seqs, score, gap, band_size, max_aligns)
 }
 
+C_nwvec <- function(s1, s2, score, gap_p, band) {
+    .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, score, gap_p, band)
+}
+
 # Register entry points for exported C++ functions
 methods::setLoadAction(function(ns) {
     .Call('dada2_RcppExport_registerCCallable', PACKAGE = 'dada2')

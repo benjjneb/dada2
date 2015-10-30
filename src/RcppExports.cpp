@@ -135,6 +135,21 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// C_nwvec
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band);
+RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP bandSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
+    Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
+    Rcpp::traits::input_parameter< int >::type band(bandSEXP);
+    __result = Rcpp::wrap(C_nwvec(s1, s2, score, gap_p, band));
+    return __result;
+END_RCPP
+}
 
 // validate (ensure exported C++ functions exist before calling them)
 static int dada2_RcppExport_validate(const char* sig) { 
