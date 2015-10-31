@@ -157,7 +157,7 @@ head(mergers[[1]])
 
 We now have a data.frame for each sample with the merged $sequence, its $abundance, and the indices of the merged $forward and $reverse denoised sequences. Paired reads that did not exactly overlap were removed by mergePairs. We now remove the chimeras we identified previously in the forward and reverse denoised sequences:
 
-** Remove chimeras **:
+**Remove chimeras**:
 ```{r}
 mergers.nochim <- mapply(function(mm, bF, bR) mm[!bF[mm$forward] & !bR[mm$reverse],], mergers, bimFs, bimRs, SIMPLIFY=FALSE)
 ```
@@ -193,7 +193,7 @@ Sample inference is complete, and we can now construct the "sequence table" anal
 
 **Construct sequence table**:
 ```{r}
-seqtab <- makeSequenceTable(mergers[names(mergers) != "Mock"])
+seqtab <- makeSequenceTable(mergers.nochim[names(mergers.nochim) != "Mock"])
 table(nchar(colnames(seqtab)))
 length(unique(substr(colnames(seqtab), 1, 230)))
 dim(seqtab)
@@ -203,7 +203,7 @@ This is the final product of the DADA2 pipeline: the sequence table that contain
 
 **Here ends the DADA2 portion of the tutorial**.
 
-# Bonus: Further analysis in phyloseq
+# Bonus: Handoff to phyloseq
 
 The DADA2 pipeline produced a sequence table which is appropriate for further analysis in phyloseq. We don't have all the information we might want yet, for instance we have not yet assigned taxonomies, but we can import the data we have into phyloseq and perform some basic analyses. We'll include the small amount of metadata we have -- the samples are named by the gender (G), mouse subject number (X) and the day post-weaning (Y) it was sampled (eg. GXDY).
 
