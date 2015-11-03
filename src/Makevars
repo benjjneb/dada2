@@ -1,0 +1,1 @@
+PKG_CXXFLAGS = -Rpass=loop-vectorize -Rpass-analysis=loop-vectorize

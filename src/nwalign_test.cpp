@@ -11,6 +11,7 @@ using namespace Rcpp;
 char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_p, int band) {
   int row, col;
   int i,j;
+  size_t index;
   int len1 = strlen(s1);
   int len2 = strlen(s2);
   int d[800][800]; // d: DP matrix
@@ -19,6 +20,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
   // HAVE TO FIX THIS!!
   int dbuf[2*SEQLEN+1];
   int pbuf[2*SEQLEN+1];
+  int diag_buf[SEQLEN];
   int diag, left, up, entry, pentry;
 //  int excess1, excess2;
   
@@ -27,23 +29,44 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
 //  excess1 = len1>len2 ? len1-len2 : 0;
 //  excess2 = len2>len1 ? len2-len1 : 0;
 
+  // Simplifying to match/mismatch alignment
+  int match = score[0][0];
+  int mismatch = score[0][2];
+
   // assuming len1=len2 for now
+  // assuming band is even for now
   if(band>=0 && band<len1) {
-    center=band+1;
+    center=1 + band/2;
   } else {
-    center=len1+1;
+    center=1 + len1/2;
   }
   
+  // Initialize top to -9999
+  for(row=0;row<band;row++) {
+    for(col=0;col<=center+band+1;col++) {
+      d[row][col] = -9999;
+      p[row][col] = 0; // Should never be queried
+    }
+  }
+  
+  // Fill out starting point
+  d[0][center] = 0;
+  p[row][col] = 0; // Should never be queried
+  
   // Fill out "left" "column" of d, p.
-  for (row=0,col=center; col>=0; row++, col--) {
+  for(row=1, col=center-1; col>0; row+=2, col--) {
     d[row][col] = 0; // ends-free gap
     p[row][col] = 3;
+    d[row+1][col] = 0; // ends-free gap
+    p[row+1][col] = 3;
   }
   
   // Fill out "top" "row" of d, p.
-  for (row=0,col=center; col<=len2+center; row++, col++) { // perf: can cut off at band
-    d[row][col] = 0; // ends-free gap
-    p[row][col] = 2;
+  for (row=1,col=center+1; col<=center+band/2; row+=2, col++) {
+    d[row][col-1] = 0; // ends-free gap
+    p[row][col-1] = 2;
+    d[row+1][col] = 0; // ends-free gap
+    p[row+1][col] = 2;
   }
     
   // Fill out band boundaries
@@ -53,17 +76,24 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
     }
   }
   if(band>=0 && band<len2) {
-    for(row=0;row<=len1+len2;row++) {
-      d[row][center+band+1] = -9999;
+    for(row=0;row<=len1+len2;row+=2) {
+      d[row][center+band/2+1] = -9999;
+      d[row+1][center+band/2] = -9999;
+      d[row+1][center+band/2+1] = -9999;
     }
   }
   
   // Fill out top wedge (Row 1 taken care of by ends-free)
-  for(row=2;row<center;row++) {
-    for(col=center-(row-1);col<=center+(row-1);col++) { // ONLY HALF THE ENTRIES NEED TO BE LOOPED OVER
+  int col_min, col_max;
+  const int *ptr_left, *ptr_diag, *ptr_up;
+  for(row=2;row<band;row+=2) { // If band odd, could broach band in last row?
+    // Fill out even row
+    col_min = center-row/2+1;  // avoid ends-free part
+    col_max = center+row/2-1;  // avoid ends-free part
+    for(col=col_min,i=row-2,j=0;col<=col_max;col++,i--,j++) {
       left = d[row-1][col-1] + gap_p;
-      diag = d[row-2][col] + score[s1[(row+(col-center))/2 - 1]-1][s2[(row-(col-center))/2 - 1]-1];
-      up = d[row-1][col+1] + gap_p;
+      diag = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+      up = d[row-1][col] + gap_p;
       
       entry = up >= left ? up : left;
       pentry = up >= left ? 3 : 2;
@@ -73,19 +103,42 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
       d[row][col] = entry; // Vectorizes if this points to another array
       p[row][col] = pentry;
     }
+    
+    // Fill out odd row (row+1)
+    col_min--; // Because avoided ends-free previously
+    
+    for(col=col_min,i=row-1,j=0;col<=col_max;col++,i--,j++) { // avoid ends-free part
+      left = d[row][col] + gap_p;
+      diag = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
+      up = d[row][col+1] + gap_p;
+      
+      entry = up >= left ? up : left;
+      pentry = up >= left ? 3 : 2;
+      pentry = entry >= diag ? pentry : 1;
+      entry = entry >= diag ? entry : diag;
+
+      d[row+1][col] = entry; // Vectorizes if this points to another array
+      p[row+1][col] = pentry;
+    }
   }
 
-  // Fill out banded body (and bottom wedge)
-  ////!!! MAKING MATCH/MISMATCH HERE
-  int match = score[0][0];
-  int mismatch = score[0][2];
-  for(row=center;row<=len1+len2;row++) {
+  // Fill out banded body
+  for(row=band;row<=len1+len2-band;row+=2) { // Using fact that len1+len2=even, overlapping by 1 row with next part
+    // Fill out even row
+    col_min = 1;
+    col_max = center+band/2;
+    ptr_left = &d[row-1][col_min-1];
+    ptr_diag = &d[row-2][col_min];
+    ptr_up = &d[row-1][col_min];
 //    #pragma clang loop vectorize(enable)
-    for(col=1;col<=center+band;col++) { // ONLY HALF THE ENTRIES NEED TO BE LOOPED OVER
-      left = d[row-1][col-1] + gap_p;
-//      diag = d[row-2][col] + score[s1[(row+(col-center))/2 - 1]-1][s2[(row-(col-center))/2 - 1]-1];
-      diag = d[row-2][col] + s1[col] == s2[col] ? match : mismatch;
-      up = d[row-1][col+1] + gap_p;
+    for(col=col_min,i=row/2+band/2-1,j=row/2-band/2-1;col<=col_max;col++,i--,j++) {
+      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+    }
+    for(col=1;col<=center+band/2;col++) {
+      left = (*ptr_left++) + gap_p;
+      diag = diag_buf[col];
+      up = (*ptr_up++) + gap_p;
+//      Rprintf("%i,%i: l=%i,d=%i,u=%i\n", row, col, left, diag, up);
       
       entry = up >= left ? up : left;
       pentry = up >= left ? 3 : 2;
@@ -95,22 +148,90 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
       dbuf[col] = entry; // Vectorizes if this points to another array
       pbuf[col] = pentry;
     }
-    memcpy(&d[row][1], &dbuf[1], (2*band+1)*sizeof(int));
-    memcpy(&p[row][1], &pbuf[1], (2*band+1)*sizeof(int));
+    memcpy(&d[row][1], &dbuf[1], (band+1)*sizeof(int));
+    memcpy(&p[row][1], &pbuf[1], (band+1)*sizeof(int));
+    
+    // Fill out odd row
+    col_max--;
+    ptr_left = &d[row][col_min];
+    ptr_diag = &d[row-1][col_min];
+    ptr_up = &d[row][col_min+1];
+
+    for(col=col_min,i=row/2+band/2-1,j=row/2-band/2;col<=col_max;col++,i--,j++) {
+      diag_buf[col] = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
+    }
+    for(col=col_min;col<=col_max;col++) {
+      left = (*ptr_left++) + gap_p;
+      diag = diag_buf[col];
+      up = (*ptr_up++) + gap_p;
+      
+      entry = up >= left ? up : left;
+      pentry = up >= left ? 3 : 2;
+      pentry = entry >= diag ? pentry : 1;
+      entry = entry >= diag ? entry : diag;
+
+      dbuf[col] = entry; // Vectorizes if this points to another array
+      pbuf[col] = pentry;
+    }
+    memcpy(&d[row+1][1], &dbuf[1], band*sizeof(int));
+    memcpy(&p[row+1][1], &pbuf[1], band*sizeof(int));
+  } // for(row=band;row<=len1+len2;row+=2) (Banded body)
+
+  // Fill out bottom wedge
+  for(row=len1+len2-band+1;row<=len1+len2;row+=2) { // Using fact that len1+len2=even, starting on odd row now
+    // Fill out odd row
+    col_min = center-(1+len1+len2-row)/2;  // includes ends-free part
+    col_max = center+(1+len1+len2-row)/2-1;  // includes ends-free part
+    
+    for(col=col_min,i=len1-1,j=row-len1-1;col<=col_max;col++,i--,j++) { // includes ends-free part, could make limit based on j<=len2
+      left = d[row-1][col] + (i==(len1-1) ? 0 : gap_p);
+      diag = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+      up = d[row-1][col+1] + (j==(len2-1) ? 0 : gap_p);
+//      Rprintf("%i,%i (%i,%i): l=%i,d=%i,u=%i\n", row, col, i,j, left, diag, up);
+//      Rprintf("\td=%i=%i+%i (%i,%i)\n", diag, d[row-2][col], (s1[i] == s2[j] ? match : mismatch), (int) s1[i], (int) s2[j]);
+      
+      entry = up >= left ? up : left;
+      pentry = up >= left ? 3 : 2;
+      pentry = entry >= diag ? pentry : 1;
+      entry = entry >= diag ? entry : diag;
+
+      d[row][col] = entry; // Vectorizes if this points to another array
+      p[row][col] = pentry;
+    }
+    
+    col_min++; // Because avoided ends-free previously
+    // Fill out even row (row+1)
+    for(col=col_min,i=len1-1,j=row-len1;col<=col_max;col++,i--,j++) {
+      left = d[row][col-1] + (i==(len1-1) ? 0 : gap_p);
+      diag = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
+      up = d[row][col] + (j==(len2-1) ? 0 : gap_p);
+//      Rprintf("%i,%i (%i,%i): l=%i,d=%i,u=%i\n", row+1, col, i, j, left, diag, up);
+//      Rprintf("\td=%i=%i+%i (%i,%i)\n", diag, d[row-1][col], (s1[i] == s2[j] ? match : mismatch), (int) s1[i], (int) s2[j]);
+      
+      entry = up >= left ? up : left;
+      pentry = up >= left ? 3 : 2;
+      pentry = entry >= diag ? pentry : 1;
+      entry = entry >= diag ? entry : diag;
+
+      d[row+1][col] = entry; // Vectorizes if this points to another array
+      p[row+1][col] = pentry;
+    }
+    
+    
   }
 
 /*
-  for(row=0;row<10;row++) {
-    for(col=center-6;col<=center+6;col++) {
+  for(row=len1+len2-10;row<=len1+len2;row++) {
+    for(col=0;col<=center+band/2+1;col++) {
       Rprintf("%i,",p[row][col]);
     }
     Rprintf("\n");
   }
   Rprintf("\n");
 
-  for(row=0;row<10;row++) {
-    for(col=center-6;col<=center+6;col++) {
-      Rprintf("%i,",d[row][col]);
+  for(row=len1+len2-10;row<=len1+len2;row++) {
+    for(col=0;col<=center+band/2+1;col++) {
+      Rprintf("%+04i,",d[row][col]);
     }
     Rprintf("\n");
   }
@@ -121,13 +242,13 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
   char al1[2*SEQLEN+1];
   
   // Trace back over p to form the alignment.
-  unsigned int len_al = 0;
+  size_t len_al = 0;
   i = len1;
   j = len2;
   
   while ( i > 0 || j > 0 ) {
     ///v Rprintf("ij=(%i,%i), rc=(%i,%i), p[][]=%i\n", i,j,i+j,center-(i-j), p[i+j][center-(i-j)]);
-    switch ( p[i+j][center-(i-j)] ) {
+    switch ( p[i+j][1 + (band-i+j)/2] ) {
       case 1:
         al0[len_al] = s1[--i];
         al1[len_al] = s2[--j];
@@ -157,9 +278,9 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
   if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Failed memory allocation.");
   
   // Reverse the alignment strings (since traced backwards).
-  for (i=0;i<len_al;i++) {
-    al[0][i] = al0[len_al-i-1];
-    al[1][i] = al1[len_al-i-1];
+  for (index=0;index<len_al;index++) {
+    al[0][index] = al0[len_al-index-1];
+    al[1][index] = al1[len_al-index-1];
   }
   al[0][len_al] = '\0';
   al[1][len_al] = '\0';
