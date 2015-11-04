@@ -125,6 +125,7 @@ typedef struct {
   double omegaA;
   bool use_singletons;
   double omegaS;
+  bool vectorized_alignment;
   bool use_quals;
   double *lams;
   double *cdf;
@@ -138,7 +139,7 @@ typedef struct {
    ------------------------------------------- */
 
 // methods implemented in cluster.c
-B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals);
+B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals);
 Raw *raw_new(char *seq, int reads);
 Raw *raw_qual_new(char *seq, double *qual, int reads);
 void raw_free(Raw *raw);
@@ -171,11 +172,12 @@ void test_fun(int i);
 
 // method implemented in nwalign_endsfree.c
 char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band);
-char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer, double kdist_cutoff, int band);
+char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int16_t gap_p, size_t band);
+char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer, double kdist_cutoff, int band, bool vectorized_alignment);
 uint16_t *get_kmer(char *seq, int k);
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
 Sub *al2subs(char **al);
-Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band);
+Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment);
 Sub *sub_copy(Sub *sub);
 void sub_free(Sub *sub);
 

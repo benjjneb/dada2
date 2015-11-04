@@ -18,6 +18,7 @@ assign("QMAX", 40, envir=dada_opts) # NON-FUNCTIONAL
 assign("FINAL_CONSENSUS", FALSE, envir=dada_opts)
 assign("VERBOSE", FALSE, envir=dada_opts)
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
+assign("VECTORIZED_ALIGNMENT", FALSE, envir = dada_opts) # EXPERIMENTAL
 
 #' High resolution sample inference from amplicon data.
 #' 
@@ -214,6 +215,7 @@ dada <- function(derep,
                           opts[["USE_QUALS"]],
                           opts[["QMIN"]], opts[["QMAX"]],
                           opts[["FINAL_CONSENSUS"]],
+                          opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["VERBOSE"]])
       
       # Augment the returns

@@ -5,7 +5,7 @@ using namespace Rcpp;
 //' @useDynLib dada2
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose, bool inflate);
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose, bool inflate);
 
 //------------------------------------------------------------------
 // C interface to run DADA on the provided unique sequences/abundance pairs. 
@@ -24,6 +24,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
                         bool use_quals,
                         int qmin, int qmax,
                         bool final_consensus,
+                        bool vectorized_alignment,
                         bool verbose) {
 
   int i, j, pos, len1, len2, nrow, ncol;
@@ -94,7 +95,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
 
   // Run DADA
   bool inflate=false;
-  B *bb = run_dada(raws, nraw, c_score, err, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, verbose, inflate);
+  B *bb = run_dada(raws, nraw, c_score, err, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, vectorized_alignment, verbose, inflate);
 
   // Extract output from Bi objects
   char **oseqs = (char **) malloc(bb->nclust * sizeof(char *)); //E
@@ -268,14 +269,14 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = transMat, _["clusterquals"] = Rquals, _["map"] = Rmap, _["exp"] = df_expected);
 }
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool verbose, bool inflate) {
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose, bool inflate) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   double inflation = 1.0;
   size_t index;
   
   B *bb;
-  bb = b_new(raws, nraw, score, gap_pen, omegaA, use_singletons, omegaS, band_size, use_quals); // New cluster with all sequences in 1 bi and 1 fam
+  bb = b_new(raws, nraw, score, gap_pen, omegaA, use_singletons, omegaS, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi and 1 fam
   b_lambda_update(bb, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
   b_fam_update(bb, verbose);     // Organizes raws into fams, makes fam consensus/lambda
   b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)

@@ -63,7 +63,7 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
  * Banded Needleman Wunsch
  */
 
-char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band) {
+char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment) {
   char **al;
   double kdist;
   
@@ -73,6 +73,14 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer
   
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
+  } else if(vectorized_alignment) {
+    int16_t score16[4][4];
+    for(int i=0;i<4;i++) {
+      for(int j=0;j<4;j++) {
+        score16[i][j] = (int16_t) score[i][j];
+      }
+    }
+    al = nwalign_endsfree_vectorized(raw1->seq, raw2->seq, score16, (int16_t) gap_p, (size_t) band);
   } else {
     al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band);
   }
@@ -304,12 +312,12 @@ Sub *al2subs(char **al) {
 }
 
 // Wrapper for al2subs(raw_align(...)) that manages memory and qualities
-Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band) {
+Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment) {
   int s;
   char **al;
   Sub *sub;
 
-  al = raw_align(raw0, raw1, score, gap_p, use_kmers, kdist_cutoff, band);
+  al = raw_align(raw0, raw1, score, gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment);
   sub = al2subs(al);
 
   if(sub) {

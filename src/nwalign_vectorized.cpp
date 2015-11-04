@@ -199,24 +199,6 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
     
   }
 
-/*
-  for(row=len1+len2-10;row<=len1+len2;row++) {
-    for(col=0;col<=center+band/2+1;col++) {
-      Rprintf("%i,",p[row][col]);
-    }
-    Rprintf("\n");
-  }
-  Rprintf("\n");
-
-  for(row=len1+len2-10;row<=len1+len2;row++) {
-    for(col=0;col<=center+band/2+1;col++) {
-      Rprintf("%+04i,",d[row][col]);
-    }
-    Rprintf("\n");
-  }
-  Rprintf("\n");
-*/
-
   char al0[2*SEQLEN+1];
   char al1[2*SEQLEN+1];
   
@@ -285,6 +267,13 @@ Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatri
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
       c_score[i][j] = (int16_t) score(i,j);
+    }
+  }
+  
+  int c_score_int[4][4];
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      c_score[i][j] = (int) score(i,j);
     }
   }
   
