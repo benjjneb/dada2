@@ -2,22 +2,46 @@
 #include "dada.h"
 using namespace Rcpp;
 
+void dploop_vec(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, int16_t *__restrict__ ptr_up, int16_t *__restrict__ d, int16_t *__restrict__ p, int16_t gap_p, size_t n) {
+  int16_t left, diag, up, entry, pentry;
+  size_t i = 0;
+  
+  while(i<n) {
+    left = *ptr_left + gap_p;
+    diag = *ptr_diag;
+    up = *ptr_up + gap_p;
+    
+    entry = up >= left ? up : left;
+    pentry = up >= left ? 3 : 2;
+    pentry = entry >= diag ? pentry : 1;
+    entry = entry >= diag ? entry : diag;
+
+    *d = entry; // Vectorizes if this points to another array
+    *p = pentry;
+    
+    ptr_left++;
+    ptr_diag++;
+    ptr_up++;
+    d++;
+    p++;
+    i++;
+  }
+}
+
 char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int16_t gap_p, size_t band) {
   size_t row, col;
   size_t i,j;
-  size_t index;
   size_t len1 = strlen(s1);
   size_t len2 = strlen(s2);
   int16_t d[800][800]; // d: DP matrix
   int16_t p[800][800]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
   // Too big for the Effing stack at 2*SEQLEN+1 x 2*SEQLEN+1
-  int16_t dbuf[2*SEQLEN+1];
-  int16_t pbuf[2*SEQLEN+1];
   int16_t diag_buf[SEQLEN];
   int16_t diag, left, up, entry, pentry;
   size_t center;
   size_t col_min, col_max;
-  const int16_t *ptr_left, *ptr_diag, *ptr_up;
+  size_t i_max, j_min;
+  int16_t *ptr_left, *ptr_diag, *ptr_up;
   
   // Simplifying to match/mismatch alignment
   int16_t match = score[0][0];
@@ -25,15 +49,11 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
 
   // assuming len1=len2 for now
   // assuming band is even for now
-  if(band>=0 && band<len1) {
-    center=1 + band/2;
-  } else {
-    center=1 + len1/2;
-  }
+  center=1 + band/2;
   
   // Initialize top to -9999
   for(row=0;row<band;row++) {
-    for(col=0;col<=center+band+1;col++) {
+    for(col=0;col<center+band+2;col++) {
       d[row][col] = -9999;
       p[row][col] = 0; // Should never be queried
     }
@@ -60,17 +80,14 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   }
     
   // Fill out band boundaries
-  if(band>=0 && band<len1) {
-    for(row=0;row<=len1+len2;row++) {
-      d[row][0] = -9999;
-    }
+  for(row=0;row<len1+len2+1;row++) {
+    d[row][0] = -9999;
   }
-  if(band>=0 && band<len2) {
-    for(row=0;row<=len1+len2;row+=2) {
-      d[row][center+band/2+1] = -9999;
-      d[row+1][center+band/2] = -9999;
-      d[row+1][center+band/2+1] = -9999;
-    }
+
+  for(row=0;row<len1+len2+1;row+=2) {
+    d[row][center+band/2+1] = -9999;
+    d[row+1][center+band/2] = -9999;
+    d[row+1][center+band/2+1] = -9999;
   }
   
   // Fill out top wedge (Row 1 taken care of by ends-free)
@@ -111,59 +128,38 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   }
 
   // Fill out banded body
-  for(row=band;row<=len1+len2-band;row+=2) { // Using fact that len1+len2=even, overlapping by 1 row with next part
-    // Fill out even row
+  row = band+1;
+  while(row<=len1+len2-band) {// Using fact that len1+len2=even
+    // Fill out odd row
     col_min = 1;
-    col_max = center+band/2;
-    ptr_left = &d[row-1][col_min-1];
-    ptr_diag = &d[row-2][col_min];
-    ptr_up = &d[row-1][col_min];
-//    #pragma clang loop vectorize(enable)
-    for(col=col_min,i=row/2+band/2-1,j=row/2-band/2-1;col<1+col_max;col++,i--,j++) {
+    col_max = center+band/2 -1;
+    i_max = row/2 + band/2 - 1;
+    j_min = row/2 - band/2; // int division rounds down here, odd row
+
+    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
       diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
     }
-    for(col=col_min;col<1+col_max;col++) {
-      left = (*ptr_left++) + gap_p;
-      diag = diag_buf[col];
-      up = (*ptr_up++) + gap_p;
-      
-      entry = up >= left ? up : left;
-      pentry = up >= left ? 3 : 2;
-      pentry = entry >= diag ? pentry : 1;
-      entry = entry >= diag ? entry : diag;
+    ptr_left = &d[row-1][col_min];
+    ptr_diag = &diag_buf[col_min];
+    ptr_up = &d[row-1][col_min+1];
 
-      dbuf[col] = entry; // Vectorizes if this points to another array
-      pbuf[col] = pentry;
-    }
-    memcpy(&d[row][1], &dbuf[1], (band+1)*sizeof(int16_t));
-    memcpy(&p[row][1], &pbuf[1], (band+1)*sizeof(int16_t));
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][1], &p[row][1], gap_p, col_max-col_min+1);
+    row++;
+    col_max++;
+    i_max++;
     
-    // Fill out odd row
-    col_max--;
-    ptr_left = &d[row][col_min];
-    ptr_diag = &d[row-1][col_min];
-    ptr_up = &d[row][col_min+1];
-
-    for(col=col_min,i=row/2+band/2-1,j=row/2-band/2;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
+    // Fill out even row    
+    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
+      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
     }
-    for(col=col_min;col<1+col_max;col++) {
-      left = (*ptr_left++) + gap_p;
-      diag = diag_buf[col];
-      up = (*ptr_up++) + gap_p;
-      
-      entry = up >= left ? up : left;
-      pentry = up >= left ? 3 : 2;
-      pentry = entry >= diag ? pentry : 1;
-      entry = entry >= diag ? entry : diag;
+    ptr_left = &d[row-1][col_min-1];
+    ptr_diag = &diag_buf[col_min];
+    ptr_up = &d[row-1][col_min];
 
-      dbuf[col] = entry; // Vectorizes if this points to another array
-      pbuf[col] = pentry;
-    }
-    memcpy(&d[row+1][1], &dbuf[1], band*sizeof(int16_t));
-    memcpy(&p[row+1][1], &pbuf[1], band*sizeof(int16_t));
-  } // for(row=band;row<=len1+len2;row+=2) (Banded body)
-
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][1], &p[row][1], gap_p, col_max-col_min+1);
+    row++;
+  }
+  
   // Fill out bottom wedge
   for(row=len1+len2-band+1;row<=len1+len2;row+=2) { // Using fact that len1+len2=even, starting on odd row now
     // Fill out odd row
@@ -261,9 +257,9 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Failed memory allocation.");
   
   // Reverse the alignment strings (since traced backwards).
-  for (index=0;index<len_al;index++) {
-    al[0][index] = al0[len_al-index-1];
-    al[1][index] = al1[len_al-index-1];
+  for (i=0;i<len_al;i++) {
+    al[0][i] = al0[len_al-i-1];
+    al[1][i] = al1[len_al-i-1];
   }
   al[0][len_al] = '\0';
   al[1][len_al] = '\0';
