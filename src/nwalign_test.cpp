@@ -2,36 +2,26 @@
 #include "dada.h"
 using namespace Rcpp;
 
-// Below is a simple example of exporting a C++ function to R. You can
-// source this function into an R session using the Rcpp::sourceCpp 
-// function (or via the Source button on the editor toolbar)
-
-// For more on using Rcpp click the Help button on the editor toolbar
-
-char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_p, int band) {
-  int row, col;
-  int i,j;
+char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int16_t gap_p, size_t band) {
+  size_t row, col;
+  size_t i,j;
   size_t index;
-  int len1 = strlen(s1);
-  int len2 = strlen(s2);
-  int d[800][800]; // d: DP matrix
-  int p[800][800]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
+  size_t len1 = strlen(s1);
+  size_t len2 = strlen(s2);
+  int16_t d[800][800]; // d: DP matrix
+  int16_t p[800][800]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
   // Too big for the Effing stack at 2*SEQLEN+1 x 2*SEQLEN+1
-  // HAVE TO FIX THIS!!
-  int dbuf[2*SEQLEN+1];
-  int pbuf[2*SEQLEN+1];
-  int diag_buf[SEQLEN];
-  int diag, left, up, entry, pentry;
-//  int excess1, excess2;
+  int16_t dbuf[2*SEQLEN+1];
+  int16_t pbuf[2*SEQLEN+1];
+  int16_t diag_buf[SEQLEN];
+  int16_t diag, left, up, entry, pentry;
+  size_t center;
+  size_t col_min, col_max;
+  const int16_t *ptr_left, *ptr_diag, *ptr_up;
   
-  int center;
-  
-//  excess1 = len1>len2 ? len1-len2 : 0;
-//  excess2 = len2>len1 ? len2-len1 : 0;
-
   // Simplifying to match/mismatch alignment
-  int match = score[0][0];
-  int mismatch = score[0][2];
+  int16_t match = score[0][0];
+  int16_t mismatch = score[0][2];
 
   // assuming len1=len2 for now
   // assuming band is even for now
@@ -84,13 +74,11 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
   }
   
   // Fill out top wedge (Row 1 taken care of by ends-free)
-  int col_min, col_max;
-  const int *ptr_left, *ptr_diag, *ptr_up;
-  for(row=2;row<band;row+=2) { // If band odd, could broach band in last row?
+  for(row=2;row<=band;row+=2) { // If band odd, could broach band in last row?
     // Fill out even row
     col_min = center-row/2+1;  // avoid ends-free part
     col_max = center+row/2-1;  // avoid ends-free part
-    for(col=col_min,i=row-2,j=0;col<=col_max;col++,i--,j++) {
+    for(col=col_min,i=row-2,j=0;col<1+col_max;col++,i--,j++) {
       left = d[row-1][col-1] + gap_p;
       diag = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
       up = d[row-1][col] + gap_p;
@@ -107,7 +95,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
     // Fill out odd row (row+1)
     col_min--; // Because avoided ends-free previously
     
-    for(col=col_min,i=row-1,j=0;col<=col_max;col++,i--,j++) { // avoid ends-free part
+    for(col=col_min,i=row-1,j=0;col<1+col_max;col++,i--,j++) { // avoid ends-free part
       left = d[row][col] + gap_p;
       diag = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
       up = d[row][col+1] + gap_p;
@@ -131,14 +119,13 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
     ptr_diag = &d[row-2][col_min];
     ptr_up = &d[row-1][col_min];
 //    #pragma clang loop vectorize(enable)
-    for(col=col_min,i=row/2+band/2-1,j=row/2-band/2-1;col<=col_max;col++,i--,j++) {
+    for(col=col_min,i=row/2+band/2-1,j=row/2-band/2-1;col<1+col_max;col++,i--,j++) {
       diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
     }
-    for(col=1;col<=center+band/2;col++) {
+    for(col=col_min;col<1+col_max;col++) {
       left = (*ptr_left++) + gap_p;
       diag = diag_buf[col];
       up = (*ptr_up++) + gap_p;
-//      Rprintf("%i,%i: l=%i,d=%i,u=%i\n", row, col, left, diag, up);
       
       entry = up >= left ? up : left;
       pentry = up >= left ? 3 : 2;
@@ -148,8 +135,8 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
       dbuf[col] = entry; // Vectorizes if this points to another array
       pbuf[col] = pentry;
     }
-    memcpy(&d[row][1], &dbuf[1], (band+1)*sizeof(int));
-    memcpy(&p[row][1], &pbuf[1], (band+1)*sizeof(int));
+    memcpy(&d[row][1], &dbuf[1], (band+1)*sizeof(int16_t));
+    memcpy(&p[row][1], &pbuf[1], (band+1)*sizeof(int16_t));
     
     // Fill out odd row
     col_max--;
@@ -157,10 +144,10 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
     ptr_diag = &d[row-1][col_min];
     ptr_up = &d[row][col_min+1];
 
-    for(col=col_min,i=row/2+band/2-1,j=row/2-band/2;col<=col_max;col++,i--,j++) {
+    for(col=col_min,i=row/2+band/2-1,j=row/2-band/2;col<1+col_max;col++,i--,j++) {
       diag_buf[col] = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
     }
-    for(col=col_min;col<=col_max;col++) {
+    for(col=col_min;col<1+col_max;col++) {
       left = (*ptr_left++) + gap_p;
       diag = diag_buf[col];
       up = (*ptr_up++) + gap_p;
@@ -173,8 +160,8 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
       dbuf[col] = entry; // Vectorizes if this points to another array
       pbuf[col] = pentry;
     }
-    memcpy(&d[row+1][1], &dbuf[1], band*sizeof(int));
-    memcpy(&p[row+1][1], &pbuf[1], band*sizeof(int));
+    memcpy(&d[row+1][1], &dbuf[1], band*sizeof(int16_t));
+    memcpy(&p[row+1][1], &pbuf[1], band*sizeof(int16_t));
   } // for(row=band;row<=len1+len2;row+=2) (Banded body)
 
   // Fill out bottom wedge
@@ -183,12 +170,10 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
     col_min = center-(1+len1+len2-row)/2;  // includes ends-free part
     col_max = center+(1+len1+len2-row)/2-1;  // includes ends-free part
     
-    for(col=col_min,i=len1-1,j=row-len1-1;col<=col_max;col++,i--,j++) { // includes ends-free part, could make limit based on j<=len2
+    for(col=col_min,i=len1-1,j=row-len1-1;col<1+col_max;col++,i--,j++) { // includes ends-free part, could make limit based on j<=len2
       left = d[row-1][col] + (i==(len1-1) ? 0 : gap_p);
       diag = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
       up = d[row-1][col+1] + (j==(len2-1) ? 0 : gap_p);
-//      Rprintf("%i,%i (%i,%i): l=%i,d=%i,u=%i\n", row, col, i,j, left, diag, up);
-//      Rprintf("\td=%i=%i+%i (%i,%i)\n", diag, d[row-2][col], (s1[i] == s2[j] ? match : mismatch), (int) s1[i], (int) s2[j]);
       
       entry = up >= left ? up : left;
       pentry = up >= left ? 3 : 2;
@@ -201,12 +186,10 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
     
     col_min++; // Because avoided ends-free previously
     // Fill out even row (row+1)
-    for(col=col_min,i=len1-1,j=row-len1;col<=col_max;col++,i--,j++) {
+    for(col=col_min,i=len1-1,j=row-len1;col<1+col_max;col++,i--,j++) {
       left = d[row][col-1] + (i==(len1-1) ? 0 : gap_p);
       diag = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
       up = d[row][col] + (j==(len2-1) ? 0 : gap_p);
-//      Rprintf("%i,%i (%i,%i): l=%i,d=%i,u=%i\n", row+1, col, i, j, left, diag, up);
-//      Rprintf("\td=%i=%i+%i (%i,%i)\n", diag, d[row-1][col], (s1[i] == s2[j] ? match : mismatch), (int) s1[i], (int) s2[j]);
       
       entry = up >= left ? up : left;
       pentry = up >= left ? 3 : 2;
@@ -290,7 +273,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int score[4][4], int gap_
 
 // [[Rcpp::export]]
 Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
-  int i, j;
+  size_t i, j;
   char *seq1, *seq2;
   char **al;
 
@@ -302,14 +285,14 @@ Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatri
   nt2int(seq1, seq1);
   nt2int(seq2, seq2);
   
-  int c_score[4][4];
+  int16_t c_score[4][4];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      c_score[i][j] = (int) score(i,j);
+      c_score[i][j] = (int16_t) score(i,j);
     }
   }
   
-  al = nwalign_endsfree_vectorized(seq1, seq2, c_score, gap_p, band);
+  al = nwalign_endsfree_vectorized(seq1, seq2, c_score, (int16_t) gap_p, (size_t) band);
 
   int2nt(al[0], al[0]);
   int2nt(al[1], al[1]);
