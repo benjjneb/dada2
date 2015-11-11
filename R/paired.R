@@ -106,8 +106,7 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatc
     ups$prefer <- 1 + (dadaR$clustering$n0[ups$reverse] > dadaR$clustering$n0[ups$forward])
     ups$accept <- (ups$nmatch > minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
     # Make the sequence
-    #    ups$sequence <- sapply(alvecs, function(x) C_pair_consensus(x[[1]], x[[2]]));
-    ups$sequence <- mapply(C_pair_consensus2, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer);
+    ups$sequence <- mapply(C_pair_consensus, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer);
     # Additional param to indicate whether 1:forward or 2:reverse takes precedence
     # Must also strip out any indels in the return
     # This function is only used here.
