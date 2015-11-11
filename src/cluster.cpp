@@ -465,14 +465,11 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
         b->bi[i]->sub[index] = sub;
         
         // Calculate lambda for that sub
-        /// bi->self = get_self(bi->seq, err);
-        /// lambda = compute_lambda(sub, b->bi[i]->self, b->err, b->use_quals);  // SELF USED TO BE SET IN BI_CONSENSUS_UPDATE
-        lambda = compute_lambda3(b->raw[index], sub, errMat, b->use_quals);
+        lambda = compute_lambda(b->raw[index], sub, errMat, b->use_quals);
         
         // Store lambda and set self
         b->bi[i]->lambda[index] = lambda;
         if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
-        if(index == TARGET_RAW) { Rprintf("lam(TARG)=%.2e; ", b->bi[i]->lambda[index]); }
       }
       b->bi[i]->update_lambda = false;
       b->bi[i]->update_fam = true;

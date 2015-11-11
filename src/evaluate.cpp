@@ -16,31 +16,28 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
   int i, j;
-  char *seq1, *seq2;
-  char **al;
-
-  seq1 = (char *) malloc(s1.size()+1); //E
-  seq2 = (char *) malloc(s2.size()+1); //E
+  // Make integer-ized c-style sequence strings
+  char *seq1 = (char *) malloc(s1.size()+1); //E
+  char *seq2 = (char *) malloc(s2.size()+1); //E
   if (seq1 == NULL || seq2 == NULL)  Rcpp::stop("Memory allocation failed.");
-  strcpy(seq1, s1.c_str());
-  strcpy(seq2, s2.c_str());
-  nt2int(seq1, seq1);
-  nt2int(seq2, seq2);
-  
+  nt2int(seq1, s1.c_str());
+  nt2int(seq2, s2.c_str());
+  // Make  c-style 2d score array
   int c_score[4][4];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
       c_score[i][j] = (int) score(i,j);
     }
   }
-  al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
+  // Perform alignment and convert back to ACGT
+  char **al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
   int2nt(al[0], al[0]);
   int2nt(al[1], al[1]);
-
+  // Generate R-style return vector
   Rcpp::CharacterVector rval;
   rval.push_back(std::string(al[0]));
   rval.push_back(std::string(al[1]));
-  
+  // Clean up
   free(seq1);
   free(seq2);
   free(al[0]);
@@ -84,8 +81,7 @@ Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
     s2gap = s2gap && (s2[end] == '-');
   } while((s1gap || s2gap) && end>=start);
 
-  // Count the matches, mismatches, indels within the internal part of
-  // the alignment.
+  // Count the matches, mismatches, indels within the internal part of alignment.
   match = mismatch = indel = 0;
   for(int i=start;i<=end;i++) {
     if(s1[i]=='-' || s2[i]=='-') {
@@ -178,7 +174,7 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, in
 }
 
 //------------------------------------------------------------------
-// Calculates the consensus of two sequences (first sequence wins mismatches).
+// Calculates the consensus of two sequences (prefer sequence wins mismatches).
 // 
 // @param s1 A \code{character(1)} of DNA sequence 1.
 // @param s2 A \code{character(1)} of DNA sequence 2.
@@ -186,42 +182,7 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, in
 // @return A \code{character(1)} of the consensus DNA sequence.
 // 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2) {
-  if(s1.size() != s2.size()) {
-    Rprintf("Warning: Aligned strings are not the same length.\n");
-    return R_NilValue;
-  }
-  
-  char *oseq = (char *) malloc(s1.size()+1); //E
-  if (oseq == NULL)  Rcpp::stop("Memory allocation failed.");
-  for(int i=0;i<s1.size();i++) {
-    if(s1[i] == s2[i]) {
-      oseq[i] = s1[i];
-    } else if(s2[i] == '-') {
-      oseq[i] = s1[i];
-    } else if(s1[i] == '-') {
-      oseq[i] = s2[i];
-    } else {
-      oseq[i] = s1[i]; // s1 wins mismatches
-    }
-  }
-  oseq[s1.size()] = '\0';
-
-  std::string ostr(oseq);
-  free(oseq);
-  return(ostr);
-}
-
-//------------------------------------------------------------------
-// Calculates the consensus of two sequences (first sequence wins mismatches).
-// 
-// @param s1 A \code{character(1)} of DNA sequence 1.
-// @param s2 A \code{character(1)} of DNA sequence 2.
-// 
-// @return A \code{character(1)} of the consensus DNA sequence.
-// 
-// [[Rcpp::export]]
-Rcpp::CharacterVector C_pair_consensus2(std::string s1, std::string s2, int prefer) {
+Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefer) {
   int i;
   if(s1.size() != s2.size()) {
     Rprintf("Warning: Aligned strings are not the same length.\n");

@@ -11,7 +11,6 @@
 
 #define TRACKING 0
 #define MAXMAXD 18
-#define TARGET_RAW -1
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
@@ -185,8 +184,7 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
 double calc_pA(int reads, double E_reads);
 double get_pA(Fam *fam, Bi *bi);
 double get_pS(Fam *fam, Bi *bi, B *b);
-double compute_lambda(Sub *sub, double self, double t[4][4], bool use_quals);
-double compute_lambda3(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
+double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp
