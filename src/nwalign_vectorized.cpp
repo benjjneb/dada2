@@ -91,46 +91,50 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   }
   
   // Fill out top wedge (Row 1 taken care of by ends-free)
-  for(row=2;row<=band;row+=2) { // If band odd, could broach band in last row?
+  row = 2;
+  col_min = center; // Do not fill out the ends-free cells
+  col_max = center;
+  i_max = 0;
+  j_min = 0;
+  while(row <= band) {
     // Fill out even row
-    col_min = center-row/2+1;  // avoid ends-free part
-    col_max = center+row/2-1;  // avoid ends-free part
-    for(col=col_min,i=row-2,j=0;col<1+col_max;col++,i--,j++) {
-      left = d[row-1][col-1] + gap_p;
-      diag = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
-      up = d[row-1][col] + gap_p;
-      
-      entry = up >= left ? up : left;
-      pentry = up >= left ? 3 : 2;
-      pentry = entry >= diag ? pentry : 1;
-      entry = entry >= diag ? entry : diag;
-
-      d[row][col] = entry; // Vectorizes if this points to another array
-      p[row][col] = pentry;
+    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
+      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
     }
+    ptr_left = &d[row-1][col_min-1];
+    ptr_diag = &diag_buf[col_min];
+    ptr_up = &d[row-1][col_min];
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
     
-    // Fill out odd row (row+1)
-    col_min--; // Because avoided ends-free previously
+    col_min--;
+    i_max++;
+    if(++row > band) break;
     
-    for(col=col_min,i=row-1,j=0;col<1+col_max;col++,i--,j++) { // avoid ends-free part
-      left = d[row][col] + gap_p;
-      diag = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
-      up = d[row][col+1] + gap_p;
-      
-      entry = up >= left ? up : left;
-      pentry = up >= left ? 3 : 2;
-      pentry = entry >= diag ? pentry : 1;
-      entry = entry >= diag ? entry : diag;
-
-      d[row+1][col] = entry; // Vectorizes if this points to another array
-      p[row+1][col] = pentry;
+    // Fill out odd row
+    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
+      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
     }
+    ptr_left = &d[row-1][col_min];
+    ptr_diag = &diag_buf[col_min];
+    ptr_up = &d[row-1][col_min+1];
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    
+    col_max++;
+    i_max++;
+    row++;
   }
+/*
+  for(row=0;row<=band;row++) {
+    for(col=0;col<=2*band;col++) {
+      Rprintf("%04i ", d[row][col]);
+    }
+    Rprintf("\n");
+  } */
 
   // Fill out banded body
-  row = band+1;
+//  row = band+1; // This is already set
   while(row<=len1+len2-band) {// Using fact that len1+len2=even
-    // Fill out odd row
+    // Fill out short row (different parity than band, n_elements=2*band)
     col_min = 1;
     col_max = center+band/2 -1;
     i_max = row/2 + band/2 - 1;
