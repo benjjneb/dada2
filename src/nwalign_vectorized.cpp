@@ -63,20 +63,40 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   p[row][col] = 0; // Should never be queried
   
   // Fill out "left" "column" of d, p.
-  for(row=1, col=center-1; col>0; row+=2, col--) {
+  row=1;
+  col=center-1;
+  while(row<band+1) {
+    d[row][col] = 0; // ends-free gap
+    p[row][col] = 3;
+    if(row%2==0) {
+      col--;
+    }
+    row++;
+  }
+/*  for(row=1, col=center-1; col>0; row+=2, col--) {
     d[row][col] = 0; // ends-free gap
     p[row][col] = 3;
     d[row+1][col] = 0; // ends-free gap
     p[row+1][col] = 3;
-  }
+  } */
   
   // Fill out "top" "row" of d, p.
-  for (row=1,col=center+1; col<=center+band/2; row+=2, col++) {
+  row=1;
+  col=center;
+  while(row<band+1) {
+    d[row][col] = 0;
+    p[row][col] = 2;
+    if(row%2 == 1) {
+      col++;
+    }
+    row++;
+  }
+/*  for (row=1,col=center+1; col<=center+band/2; row+=2, col++) {
     d[row][col-1] = 0; // ends-free gap
     p[row][col-1] = 2;
     d[row+1][col] = 0; // ends-free gap
     p[row+1][col] = 2;
-  }
+  } */
     
   // Fill out band boundaries
   if(band%2 == 0) { // even band
@@ -258,7 +278,22 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
     row++;
   }
 
-/*  for(row=len1+len2-band;row<=len1+len2;row++) {
+/*  for(row=0;row<=band;row++) {
+    for(col=0;col<=2*band;col++) {
+      Rprintf("%04i ", d[row][col]);
+    }
+    Rprintf("\n");
+  }
+
+  for(row=0;row<=band;row++) {
+    for(col=0;col<=2*band;col++) {
+      Rprintf("%i ", p[row][col]);
+    }
+    Rprintf("\n");
+  }
+  
+  Rprintf("\n");
+  for(row=len1+len2-band;row<=len1+len2;row++) {
     for(col=0;col<=2*band;col++) {
       Rprintf("%04i ", d[row][col]);
     }
@@ -270,7 +305,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
       Rprintf("%i ", p[row][col]);
     }
     Rprintf("\n");
-  }*/
+  } */
 
   char al0[2*SEQLEN+1];
   char al1[2*SEQLEN+1];
