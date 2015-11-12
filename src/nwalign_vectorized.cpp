@@ -37,7 +37,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   int16_t p[800][800]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
   // Too big for the Effing stack at 2*SEQLEN+1 x 2*SEQLEN+1
   int16_t diag_buf[SEQLEN];
-  int16_t diag, left, up, entry, pentry;
+  int16_t diag, left, up, entry, pentry, d_free;
   size_t center;
   size_t col_min, col_max;
   size_t i_max, j_min;
@@ -48,8 +48,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   int16_t mismatch = score[0][2];
 
   // assuming len1=len2 for now
-  // assuming band is even for now
-  center=1 + band/2;
+  center=1 + (band+1)/2;
   
   // Initialize top to -9999
   for(row=0;row<band;row++) {
@@ -80,14 +79,25 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   }
     
   // Fill out band boundaries
-  for(row=0;row<len1+len2+1;row++) {
-    d[row][0] = -9999;
-  }
-
-  for(row=0;row<len1+len2+1;row+=2) {
-    d[row][center+band/2+1] = -9999;
-    d[row+1][center+band/2] = -9999;
-    d[row+1][center+band/2+1] = -9999;
+  if(band%2 == 0) { // even band
+    for(row=0;row<len1+len2+1;row++) {
+      d[row][0] = -9999;
+    }
+  
+    for(row=0;row<len1+len2+1;row+=2) {
+      d[row][band+2] = -9999;
+      d[row+1][band+1] = -9999;
+      d[row+1][band+2] = -9999;
+    }
+  } else { // odd band
+    for(row=0;row<len1+len2+1;row+=2) {
+      d[row][0] = -9999;
+      d[row][1] = -9999;
+      d[row+1][0] = -9999;
+    }    
+    for(row=0;row<len1+len2+1;row++) {
+      d[row][band+2] = -9999;
+    }
   }
   
   // Fill out top wedge (Row 1 taken care of by ends-free)
@@ -123,85 +133,144 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
     i_max++;
     row++;
   }
-/*
-  for(row=0;row<=band;row++) {
+
+  // ----- FILL OUT BANDED BODY ------
+  // Initialize indexing values
+  row=band+1;
+  if(band % 2 == 0) { // even
+    col_min=1;
+    col_max=band;
+  } else {
+    col_min=2;
+    col_max=band+1;
+  }
+  j_min = 0; // First row out of band, can still address first (0th) element of string 
+  i_max = band - 1; // Remember, i+j = row - 2 (because of zero-indexing of string)
+  
+  // Loop over banded region
+  while(row<=len1+len2-band) {// Using fact that len1+len2=even. This loop covers an even number of rows (band+1...len1+len2-band)
+    // Fill out short row (different parity than band, n_elements=band)
+    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
+      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+    }
+    ptr_diag = &diag_buf[col_min];
+    if(row%2 == 0) { // even row
+      ptr_left = &d[row-1][col_min-1];
+      ptr_up = &d[row-1][col_min];
+    } else { // odd row
+      ptr_left = &d[row-1][col_min];
+      ptr_up = &d[row-1][col_min+1];
+    }
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    
+    if(band%2 == 0) { // even band (and odd row)
+      col_max++;
+    } else { // odd band (and even row)
+      col_min--;
+    }
+    i_max++;
+    row++;
+    
+    // Fill out long row (same parity as band, n_elements=band+1)  
+    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
+      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+    }
+    ptr_diag = &diag_buf[col_min];
+    if(row%2 == 0) { // even row
+      ptr_left = &d[row-1][col_min-1];
+      ptr_up = &d[row-1][col_min];
+    } else { // odd row
+      ptr_left = &d[row-1][col_min];
+      ptr_up = &d[row-1][col_min+1];
+    }
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    
+    if(band%2 == 0) { // even band (and even row)
+      col_max--;
+    } else { // odd band (and odd row)
+      col_min++;
+    }
+    j_min++;
+    row++;
+  }
+  
+  // ----- FILL OUT BOTTOM WEDGE ------
+  // Initialize starting values
+  row = len1+len2-band+1; // Always opposite parity of band (len1=len2)
+  if(band%2 == 0) { // even band, odd row
+    col_min = 1;
+    col_max = band;
+  } else { // odd band, even row
+    col_min = 2;
+    col_max = band+1;
+  }
+  i_max = len1-1; // reached end of seq1
+  j_min = row - i_max - 2; // i+j=row-2
+
+  // Loop over lower wedge.......
+  while(row <= len1+len2) {
+    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
+      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+    }
+    ptr_diag = &diag_buf[col_min];
+    if(row%2 == 0) { // even row
+      ptr_left = &d[row-1][col_min-1];
+      ptr_up = &d[row-1][col_min];
+    } else { // odd row
+      ptr_left = &d[row-1][col_min];
+      ptr_up = &d[row-1][col_min+1];
+    }
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    
+    // Redo the ends-free cells
+    // Left column
+    if(row%2==0) {
+      d_free = d[row-1][col_min-1];
+    } else {
+      d_free = d[row-1][col_min];
+    }
+    if(d_free > d[row][col_min]) { // ends-free gap is better
+      d[row][col_min] = d_free;
+      p[row][col_min] = 2;
+    } else if(d_free == d[row][col_min] && p[row][col_min] == 1) { // left gap takes precedence over diagonal move (for consistency)
+      p[row][col_min] = 2;      
+    }
+    // Right column
+    if(row%2==0) {
+      d_free = d[row-1][col_max];
+    } else {
+      d_free = d[row-1][col_max+1];
+    }
+    if(d_free > d[row][col_max]) { // ends-free gap is better
+      d[row][col_max] = d_free;
+      p[row][col_max] = 3;
+    } else if(d_free == d[row][col_max] && p[row][col_max] != 3) { // up gap takes precedence over left or diagonal move (for consistency)
+      p[row][col_max] = 3;
+    }
+    
+    // Update indices
+    if(row%2 == 0) { // even row
+      col_max--;
+    } else { // odd row
+      col_min++;      
+    }
+    j_min++;
+    row++;
+  }
+
+/*  for(row=len1+len2-band;row<=len1+len2;row++) {
     for(col=0;col<=2*band;col++) {
       Rprintf("%04i ", d[row][col]);
     }
     Rprintf("\n");
-  } */
-
-  // Fill out banded body
-//  row = band+1; // This is already set
-  while(row<=len1+len2-band) {// Using fact that len1+len2=even
-    // Fill out short row (different parity than band, n_elements=2*band)
-    col_min = 1;
-    col_max = center+band/2 -1;
-    i_max = row/2 + band/2 - 1;
-    j_min = row/2 - band/2; // int division rounds down here, odd row
-
-    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
-    }
-    ptr_left = &d[row-1][col_min];
-    ptr_diag = &diag_buf[col_min];
-    ptr_up = &d[row-1][col_min+1];
-
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][1], &p[row][1], gap_p, col_max-col_min+1);
-    row++;
-    col_max++;
-    i_max++;
-    
-    // Fill out even row    
-    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
-    }
-    ptr_left = &d[row-1][col_min-1];
-    ptr_diag = &diag_buf[col_min];
-    ptr_up = &d[row-1][col_min];
-
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][1], &p[row][1], gap_p, col_max-col_min+1);
-    row++;
   }
-  
-  // Fill out bottom wedge
-  for(row=len1+len2-band+1;row<=len1+len2;row+=2) { // Using fact that len1+len2=even, starting on odd row now
-    // Fill out odd row
-    col_min = center-(1+len1+len2-row)/2;  // includes ends-free part
-    col_max = center+(1+len1+len2-row)/2-1;  // includes ends-free part
-    
-    for(col=col_min,i=len1-1,j=row-len1-1;col<1+col_max;col++,i--,j++) { // includes ends-free part, could make limit based on j<=len2
-      left = d[row-1][col] + (i==(len1-1) ? 0 : gap_p);
-      diag = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
-      up = d[row-1][col+1] + (j==(len2-1) ? 0 : gap_p);
-      
-      entry = up >= left ? up : left;
-      pentry = up >= left ? 3 : 2;
-      pentry = entry >= diag ? pentry : 1;
-      entry = entry >= diag ? entry : diag;
 
-      d[row][col] = entry; // Vectorizes if this points to another array
-      p[row][col] = pentry;
+  for(row=len1+len2-band;row<=len1+len2;row++) {
+    for(col=0;col<=2*band;col++) {
+      Rprintf("%i ", p[row][col]);
     }
-    
-    col_min++; // Because avoided ends-free previously
-    // Fill out even row (row+1)
-    for(col=col_min,i=len1-1,j=row-len1;col<1+col_max;col++,i--,j++) {
-      left = d[row][col-1] + (i==(len1-1) ? 0 : gap_p);
-      diag = d[row-1][col] + (s1[i] == s2[j] ? match : mismatch);
-      up = d[row][col] + (j==(len2-1) ? 0 : gap_p);
-      
-      entry = up >= left ? up : left;
-      pentry = up >= left ? 3 : 2;
-      pentry = entry >= diag ? pentry : 1;
-      entry = entry >= diag ? entry : diag;
-
-      d[row+1][col] = entry; // Vectorizes if this points to another array
-      p[row+1][col] = pentry;
-    }
-    
-    
-  }
+    Rprintf("\n");
+  }*/
 
   char al0[2*SEQLEN+1];
   char al1[2*SEQLEN+1];
@@ -213,7 +282,8 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   
   while ( i > 0 || j > 0 ) {
     ///v Rprintf("ij=(%i,%i), rc=(%i,%i), p[][]=%i\n", i,j,i+j,center-(i-j), p[i+j][center-(i-j)]);
-    switch ( p[i+j][1 + (band-i+j)/2] ) {
+///    switch ( p[i+j][1 + (band-i+j)/2] ) {
+    switch ( p[i+j][(2*center-i+j)/2] ) {
       case 1:
         al0[len_al] = s1[--i];
         al1[len_al] = s2[--j];
