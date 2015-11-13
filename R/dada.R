@@ -9,6 +9,7 @@ assign("SCORE_MATRIX", matrix(c(5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 
                               nrow=4, byrow=TRUE), envir = dada_opts)
 assign("GAP_PENALTY", -8L, envir = dada_opts)
 assign("BAND_SIZE", 16, envir = dada_opts)
+assign("VECTORIZED_ALIGNMENT", TRUE, envir = dada_opts)
 assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
@@ -18,7 +19,6 @@ assign("QMAX", 40, envir=dada_opts) # NON-FUNCTIONAL
 assign("FINAL_CONSENSUS", FALSE, envir=dada_opts)
 assign("VERBOSE", FALSE, envir=dada_opts)
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
-assign("VECTORIZED_ALIGNMENT", FALSE, envir = dada_opts) # EXPERIMENTAL
 
 #' High resolution sample inference from amplicon data.
 #' 
