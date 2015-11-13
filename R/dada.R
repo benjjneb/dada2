@@ -179,6 +179,20 @@ dada <- function(derep,
     }
   }
   
+  # Validate alignment parameters
+  if(opts$GAP_PENALTY>0) opts$GAP_PENALTY = -opts$GAP_PENALTY
+  if(opts$VECTORIZED_ALIGNMENT) {
+    if(length(unique(diag(opts$SCORE)))!=1 || 
+           length(unique(opts$SCORE[upper.tri(opts$SCORE) | lower.tri(opts$SCORE)]))!=1) {
+      message("The vectorized aligner requires that the score matrix reduces to match/mismatch. Turning off vectorization.")
+      opts$VECTORIZED_ALIGNMENT=FALSE
+    }
+    if(opts$BAND_SIZE > 0 && opts$BAND_SIZE<8) {
+      message("Warning: The vectorized aligner is slower for very small band sizes.")
+    }
+    if(opts$BAND_SIZE == 0) opts$VECTORIZED_ALIGNMENT=FALSE
+  }
+  
   # Initialize
   cur <- NULL
   nconsist <- 1

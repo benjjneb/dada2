@@ -109,34 +109,19 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// evaluate_band
-Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, unsigned int max_aligns);
-RcppExport SEXP dada2_evaluate_band(SEXP seqsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP band_sizeSEXP, SEXP max_alignsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< std::vector< std::string > >::type seqs(seqsSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
-    Rcpp::traits::input_parameter< int >::type gap(gapSEXP);
-    Rcpp::traits::input_parameter< int >::type band_size(band_sizeSEXP);
-    Rcpp::traits::input_parameter< unsigned int >::type max_aligns(max_alignsSEXP);
-    __result = Rcpp::wrap(evaluate_band(seqs, score, gap, band_size, max_aligns));
-    return __result;
-END_RCPP
-}
 // C_nwvec
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band, int times);
-RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP timesSEXP) {
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band);
+RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
     Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
-    Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
+    Rcpp::traits::input_parameter< int16_t >::type match(matchSEXP);
+    Rcpp::traits::input_parameter< int16_t >::type mismatch(mismatchSEXP);
+    Rcpp::traits::input_parameter< int16_t >::type gap_p(gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type band(bandSEXP);
-    Rcpp::traits::input_parameter< int >::type times(timesSEXP);
-    __result = Rcpp::wrap(C_nwvec(s1, s2, score, gap_p, band, times));
+    __result = Rcpp::wrap(C_nwvec(s1, s2, match, mismatch, gap_p, band));
     return __result;
 END_RCPP
 }

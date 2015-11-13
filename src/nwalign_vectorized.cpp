@@ -28,8 +28,8 @@ void dploop_vec(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, 
   }
 }
 
-char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int16_t gap_p, size_t band) {
-  size_t row, col, ncol, nrow, index;
+char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, size_t band) {
+  size_t row, col, ncol, nrow;
   size_t i,j;
   size_t len1 = strlen(s1);
   size_t len2 = strlen(s2);
@@ -38,16 +38,25 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   size_t center;
   size_t col_min, col_max;
   size_t i_max, j_min;
-  int16_t *ptr_left, *ptr_diag, *ptr_up;
+  int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_index;
   
-  // Simplifying to match/mismatch alignment
-  int16_t match = score[0][0];
-  int16_t mismatch = score[0][2];
+  // Require same length sequences
+  if(len1 != len2) {
+    Rcpp::stop("Vectorized alignment currently only implemented for same length sequences.");
+  }
 
-  // assuming len1=len2 for now
+  // Deal with band possibilities
+  if(band == 0) {
+    Rcpp::stop("Vectorized alignment not currently implemented for band = 0.");
+  }
+  if(band<0 || band>len1) {
+    band = len1;
+  }
+
+  // Allocate the DP matrices
   center=1 + (band+1)/2;
   ncol = 3 + band;
-  nrow = len1 + len2 + 3;
+  nrow = len1 + len2 + 2;
   int16_t *d = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   int16_t *p = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   if (d == NULL || p == NULL)  Rcpp::stop("Memory allocation failed.");
@@ -80,51 +89,29 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
     row++;
   }
     
-/*  // Fill out band boundaries
-  if(band%2 == 0) { // even band
-    for(row=0;row<len1+len2+1;row++) {
-      d[row*ncol] = -9999;
-    }
-  
-    for(row=0;row<len1+len2+1;row+=2) {
-      d[row*ncol + band+2] = -9999;
-      d[(row+1)*ncol + band+1] = -9999;
-      d[(row+1)*ncol + band+2] = -9999;
-    }
-  } else { // odd band
-    for(row=0;row<len1+len2+1;row+=2) {
-      d[row*ncol] = -9999;
-      d[row*ncol + 1] = -9999;
-      d[(row+1)*ncol] = -9999;
-    }
-    for(row=0;row<len1+len2+1;row++) {
-      d[row*ncol + band+2] = -9999;
-    }
-  } */
-  
   // Fill out band boundaries
   if(band%2 == 0) { // even band
-    for(row=0,index=0;row<len1+len2+1;row++,index+=ncol) {
-      d[index] = -9999;
+    for(row=0,ptr_index=&d[0];row<len1+len2+1;row++,ptr_index+=ncol) {
+      *ptr_index = -9999;
     }
     
-    index = band+2;
+    ptr_index = &d[band+2];
     for(row=0;row<len1+len2+1;row+=2) {
-      d[index] = -9999; // even row
-      index += ncol;
-      d[index-1] = -9999; // odd row
-      index += ncol;
+      *ptr_index = -9999; // even row
+      ptr_index += (ncol-1);
+      *ptr_index = -9999; // odd row
+      ptr_index += (ncol+1);
     }
   } else { // odd band
-    index = 0;
+    ptr_index = &d[1];
     for(row=0;row<len1+len2+1;row+=2) {
-      d[index+1] = -9999;
-      index+=ncol;
-      d[index] = -9999;
-      index+=ncol;
+      *ptr_index = -9999;
+      ptr_index += (ncol-1);
+      *ptr_index = -9999;
+      ptr_index += (ncol+1);
     }
-    for(row=0,index=band+2;row<len1+len2+1;row++,index+=ncol) {
-      d[index] = -9999;
+    for(row=0,ptr_index=&d[band+2];row<len1+len2+1;row++,ptr_index+=ncol) {
+      *ptr_index = -9999;
     }
   }
   
@@ -293,8 +280,6 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   j = len2;
   
   while ( i > 0 || j > 0 ) {
-    ///v Rprintf("ij=(%i,%i), rc=(%i,%i), p[][]=%i\n", i,j,i+j,center-(i-j), p[i+j][center-(i-j)]);
-///    switch ( p[i+j][1 + (band-i+j)/2] ) {
     switch ( p[(i+j)*ncol + (2*center-i+j)/2] ) {
       case 1:
         al0[len_al] = s1[--i];
@@ -340,7 +325,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
 }
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band, int times) {
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
   size_t i, j;
   char *seq1, *seq2;
   char **al;
@@ -352,28 +337,8 @@ Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatri
   strcpy(seq2, s2.c_str());
   nt2int(seq1, seq1);
   nt2int(seq2, seq2);
-  
-  int16_t c_score[4][4];
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      c_score[i][j] = (int16_t) score(i,j);
-    }
-  }
-  
-  int c_score_int[4][4];
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      c_score[i][j] = (int) score(i,j);
-    }
-  }
-  
-  for(int foo=0;foo<times;foo++) {
-    al = nwalign_endsfree_vectorized(seq1, seq2, c_score, (int16_t) gap_p, (size_t) band);
-    free(al[0]);
-    free(al[1]);
-    free(al);
-  }
-  al = nwalign_endsfree_vectorized(seq1, seq2, c_score, (int16_t) gap_p, (size_t) band);
+    
+  al = nwalign_endsfree_vectorized(seq1, seq2, match, mismatch, gap_p, (size_t) band);
 
   int2nt(al[0], al[0]);
   int2nt(al[1], al[1]);

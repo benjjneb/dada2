@@ -73,14 +73,8 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer
   
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
-  } else if(vectorized_alignment) {
-    int16_t score16[4][4];
-    for(int i=0;i<4;i++) {
-      for(int j=0;j<4;j++) {
-        score16[i][j] = (int16_t) score[i][j];
-      }
-    }
-    al = nwalign_endsfree_vectorized(raw1->seq, raw2->seq, score16, (int16_t) gap_p, (size_t) band);
+  } else if(vectorized_alignment) { // ASSUMES SCORE MATRIX REDUCES TO MATCH/MISMATCH
+    al = nwalign_endsfree_vectorized(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, (size_t) band);
   } else {
     al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band);
   }
