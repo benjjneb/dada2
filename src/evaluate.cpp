@@ -16,6 +16,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
   int i, j;
+  char **al;
   // Make integer-ized c-style sequence strings
   char *seq1 = (char *) malloc(s1.size()+1); //E
   char *seq2 = (char *) malloc(s2.size()+1); //E
@@ -30,7 +31,7 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
     }
   }
   // Perform alignment and convert back to ACGT
-  char **al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
+  al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
   int2nt(al[0], al[0]);
   int2nt(al[1], al[1]);
   // Generate R-style return vector
@@ -42,6 +43,7 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
   free(seq2);
   free(al[0]);
   free(al[1]);
+  free(al);
   return(rval);
 }
 
@@ -313,79 +315,4 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
   }
   return Rcpp::DataFrame::create(_["align"] = adist, _["kmer"] = kdist);
 }
-
-
-//------------------------------------------------------------------
-// ----------- NEED BETTER EVALUATION THAN THIS --------------------
-// Quantify the number of alignments altered by banding at the given BAND_SIZE.
-//
-// @param seqs (Required). Character.
-//  A vector containing all unique sequences in the data set.
-//  Only A/C/G/T allowed.
-// 
-// @param score (Required). Numeric matrix (4x4).
-// The score matrix used during the alignment. Coerced to integer.
-//
-// @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
-// 
-// @param band_size (Required). A \code{numeric(1)} giving the band size to consider.
-//
-// @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
-// pairwise alignments to do.
-//
-// @return DataFrame.
-//
-// @export
-// [[Rcpp::export]]
-Rcpp::DataFrame evaluate_band(std::vector< std::string > seqs, Rcpp::NumericMatrix score, int gap, int band_size, unsigned int max_aligns) {
-  int i, j, n_iters, stride, nseqs, len1 = 0, len2 = 0;
-  char *seq1, *seq2;
-
-  int c_score[4][4];
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      c_score[i][j] = (int) score(i,j);
-    }
-  }
-  nseqs = seqs.size();
-
-  // Find the kdist/align-dist for max_aligns sequence comparisons
-  if(max_aligns < (nseqs * (nseqs-1)/2)) { // More potential comparisons than max
-    double foo = 2 * sqrt((double) max_aligns);
-    n_iters = (int) foo + 2; // n_iters * (n_iters-1)/2 > max_aligns
-    stride = nseqs/n_iters;
-  } else {
-    max_aligns = (nseqs * (nseqs-1)/2);
-    n_iters = nseqs;
-    stride = 1;
-  }
-
-  unsigned int npairs = 0;
-  unsigned int differ = 0;
-  Sub *sub, *sub_band;
-
-  for(i=0;i<nseqs;i=i+stride) {
-    seq1 = intstr(seqs[i].c_str());
-    len1 = strlen(seq1);
-    for(j=i+1;j<nseqs;j=j+stride) {
-      seq2 = intstr(seqs[j].c_str());
-      len2 = strlen(seq2);
-
-      sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, -1));
-      sub_band = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, band_size));
-      
-      if(strcmp(sub->key, sub_band->key) != 0) { // different strings
-        differ++;
-      }
-      
-      npairs++;
-      free(seq2);
-      if(npairs >= max_aligns) { break; }
-    }
-    free(seq1);
-    if(npairs >= max_aligns) { break; }
-  }
-  return Rcpp::DataFrame::create(_["nalign"] = npairs, _["ndiff"] = differ);
-}
-
 

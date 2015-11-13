@@ -330,7 +330,7 @@ void bi_census(Bi *bi) {
  The constructor for the B object. Takes in a Uniques object.
  Places all sequences into the same family within one cluster.
 */
-B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool use_quals) {
+B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals) {
   int i, j, nti;
   size_t index;
 
@@ -350,6 +350,7 @@ B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool
   b->use_singletons = use_singletons;
   b->omegaS = omegaS;
   b->band_size = band_size;
+  b->vectorized_alignment = vectorized_alignment;
   b->use_quals = use_quals;
   
   // Copy the score matrix
@@ -456,7 +457,7 @@ void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMat
       if(verbose) { Rprintf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
         // get sub object
-        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size);
+        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
         b->nalign++;
         if(!sub) { b->nshroud++; }
   
@@ -514,7 +515,7 @@ void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use
   //    now exceeds kmerdist to another raw in the cluster
   for(r_c=0;r_c<bi->nraw;r_c++) {
     if(!(bi->sub[raws[r_c]->index])) { // Protect from and replace null subs
-      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, false, 1., band_size);
+      bi->sub[raws[r_c]->index] = sub_new(bi->center, raws[r_c], score, gap_pen, false, 1., band_size, false);
       if(verbose) Rprintf("F");
       // DOESN'T UPDATE LAMBDA HERE, THAT ONLY HAPPENS IN COMPUTE_LAMBDA
     }

@@ -18,6 +18,7 @@ assign("QMAX", 40, envir=dada_opts) # NON-FUNCTIONAL
 assign("FINAL_CONSENSUS", FALSE, envir=dada_opts)
 assign("VERBOSE", FALSE, envir=dada_opts)
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
+assign("VECTORIZED_ALIGNMENT", FALSE, envir = dada_opts) # EXPERIMENTAL
 
 #' High resolution sample inference from amplicon data.
 #' 
@@ -178,6 +179,20 @@ dada <- function(derep,
     }
   }
   
+  # Validate alignment parameters
+  if(opts$GAP_PENALTY>0) opts$GAP_PENALTY = -opts$GAP_PENALTY
+  if(opts$VECTORIZED_ALIGNMENT) {
+    if(length(unique(diag(opts$SCORE)))!=1 || 
+           length(unique(opts$SCORE[upper.tri(opts$SCORE) | lower.tri(opts$SCORE)]))!=1) {
+      message("The vectorized aligner requires that the score matrix reduces to match/mismatch. Turning off vectorization.")
+      opts$VECTORIZED_ALIGNMENT=FALSE
+    }
+    if(opts$BAND_SIZE > 0 && opts$BAND_SIZE<8) {
+      message("Warning: The vectorized aligner is slower for very small band sizes.")
+    }
+    if(opts$BAND_SIZE == 0) opts$VECTORIZED_ALIGNMENT=FALSE
+  }
+  
   # Initialize
   cur <- NULL
   nconsist <- 1
@@ -214,6 +229,7 @@ dada <- function(derep,
                           opts[["USE_QUALS"]],
                           opts[["QMIN"]], opts[["QMAX"]],
                           opts[["FINAL_CONSENSUS"]],
+                          opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["VERBOSE"]])
       
       # Augment the returns
