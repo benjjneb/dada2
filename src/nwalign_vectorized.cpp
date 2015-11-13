@@ -29,13 +29,10 @@ void dploop_vec(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, 
 }
 
 char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int16_t gap_p, size_t band) {
-  size_t row, col;
+  size_t row, col, ncol, nrow, index;
   size_t i,j;
   size_t len1 = strlen(s1);
   size_t len2 = strlen(s2);
-  int16_t d[800][800]; // d: DP matrix
-  int16_t p[800][800]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
-  // Too big for the Effing stack at 2*SEQLEN+1 x 2*SEQLEN+1
   int16_t diag_buf[SEQLEN];
   int16_t diag, left, up, entry, pentry, d_free;
   size_t center;
@@ -49,74 +46,85 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
 
   // assuming len1=len2 for now
   center=1 + (band+1)/2;
-  
-  // Initialize top to -9999
-  for(row=0;row<band;row++) {
-    for(col=0;col<center+band+2;col++) {
-      d[row][col] = -9999;
-      p[row][col] = 0; // Should never be queried
-    }
-  }
+  ncol = 3 + band;
+  nrow = len1 + len2 + 3;
+  int16_t *d = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
+  int16_t *p = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
+  if (d == NULL || p == NULL)  Rcpp::stop("Memory allocation failed.");
   
   // Fill out starting point
-  d[0][center] = 0;
-  p[row][col] = 0; // Should never be queried
+  d[center] = 0;
+  p[center] = 0; // Should never be queried
   
   // Fill out "left" "column" of d, p.
   row=1;
   col=center-1;
   while(row<band+1) {
-    d[row][col] = 0; // ends-free gap
-    p[row][col] = 3;
+    d[row*ncol + col] = 0; // ends-free gap
+    p[row*ncol + col] = 3;
     if(row%2==0) {
       col--;
     }
     row++;
   }
-/*  for(row=1, col=center-1; col>0; row+=2, col--) {
-    d[row][col] = 0; // ends-free gap
-    p[row][col] = 3;
-    d[row+1][col] = 0; // ends-free gap
-    p[row+1][col] = 3;
-  } */
   
   // Fill out "top" "row" of d, p.
   row=1;
   col=center;
   while(row<band+1) {
-    d[row][col] = 0;
-    p[row][col] = 2;
+    d[row*ncol + col] = 0;
+    p[row*ncol + col] = 2;
     if(row%2 == 1) {
       col++;
     }
     row++;
   }
-/*  for (row=1,col=center+1; col<=center+band/2; row+=2, col++) {
-    d[row][col-1] = 0; // ends-free gap
-    p[row][col-1] = 2;
-    d[row+1][col] = 0; // ends-free gap
-    p[row+1][col] = 2;
-  } */
     
-  // Fill out band boundaries
+/*  // Fill out band boundaries
   if(band%2 == 0) { // even band
     for(row=0;row<len1+len2+1;row++) {
-      d[row][0] = -9999;
+      d[row*ncol] = -9999;
     }
   
     for(row=0;row<len1+len2+1;row+=2) {
-      d[row][band+2] = -9999;
-      d[row+1][band+1] = -9999;
-      d[row+1][band+2] = -9999;
+      d[row*ncol + band+2] = -9999;
+      d[(row+1)*ncol + band+1] = -9999;
+      d[(row+1)*ncol + band+2] = -9999;
     }
   } else { // odd band
     for(row=0;row<len1+len2+1;row+=2) {
-      d[row][0] = -9999;
-      d[row][1] = -9999;
-      d[row+1][0] = -9999;
-    }    
+      d[row*ncol] = -9999;
+      d[row*ncol + 1] = -9999;
+      d[(row+1)*ncol] = -9999;
+    }
     for(row=0;row<len1+len2+1;row++) {
-      d[row][band+2] = -9999;
+      d[row*ncol + band+2] = -9999;
+    }
+  } */
+  
+  // Fill out band boundaries
+  if(band%2 == 0) { // even band
+    for(row=0,index=0;row<len1+len2+1;row++,index+=ncol) {
+      d[index] = -9999;
+    }
+    
+    index = band+2;
+    for(row=0;row<len1+len2+1;row+=2) {
+      d[index] = -9999; // even row
+      index += ncol;
+      d[index-1] = -9999; // odd row
+      index += ncol;
+    }
+  } else { // odd band
+    index = 0;
+    for(row=0;row<len1+len2+1;row+=2) {
+      d[index+1] = -9999;
+      index+=ncol;
+      d[index] = -9999;
+      index+=ncol;
+    }
+    for(row=0,index=band+2;row<len1+len2+1;row++,index+=ncol) {
+      d[index] = -9999;
     }
   }
   
@@ -129,12 +137,12 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   while(row <= band) {
     // Fill out even row
     for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+      diag_buf[col] = d[(row-2)*ncol + col] + (s1[i] == s2[j] ? match : mismatch);
     }
-    ptr_left = &d[row-1][col_min-1];
+    ptr_left = &d[(row-1)*ncol + col_min-1];
     ptr_diag = &diag_buf[col_min];
-    ptr_up = &d[row-1][col_min];
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    ptr_up = &d[(row-1)*ncol + col_min];
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
     
     col_min--;
     i_max++;
@@ -142,12 +150,12 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
     
     // Fill out odd row
     for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+      diag_buf[col] = d[(row-2)*ncol + col] + (s1[i] == s2[j] ? match : mismatch);
     }
-    ptr_left = &d[row-1][col_min];
+    ptr_left = &d[(row-1)*ncol + col_min];
     ptr_diag = &diag_buf[col_min];
-    ptr_up = &d[row-1][col_min+1];
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    ptr_up = &d[(row-1)*ncol + col_min+1];
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
     
     col_max++;
     i_max++;
@@ -168,20 +176,19 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   i_max = band - 1; // Remember, i+j = row - 2 (because of zero-indexing of string)
   
   // Loop over banded region
-  while(row<=len1+len2-band) {// Using fact that len1+len2=even. This loop covers an even number of rows (band+1...len1+len2-band)
+  while(row<len1+len2-band+1) {// Using fact that len1+len2=even. This loop covers an even number of rows (band+1...len1+len2-band)
     // Fill out short row (different parity than band, n_elements=band)
+    ptr_diag = &d[(row-2)*ncol];
     for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+      diag_buf[col] = ptr_diag[col] + (s1[i] == s2[j] ? match : mismatch);
     }
     ptr_diag = &diag_buf[col_min];
-    if(row%2 == 0) { // even row
-      ptr_left = &d[row-1][col_min-1];
-      ptr_up = &d[row-1][col_min];
-    } else { // odd row
-      ptr_left = &d[row-1][col_min];
-      ptr_up = &d[row-1][col_min+1];
+    ptr_left = &d[(row-1)*ncol + col_min-1]; // even row, "left" is up-left
+    if(row%2) { // odd row, "left" is straight up
+      ptr_left++;
     }
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    ptr_up = ptr_left + 1;
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
     
     if(band%2 == 0) { // even band (and odd row)
       col_max++;
@@ -192,18 +199,17 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
     row++;
     
     // Fill out long row (same parity as band, n_elements=band+1)  
+    ptr_diag = &d[(row-2)*ncol];
     for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+      diag_buf[col] = ptr_diag[col] + (s1[i] == s2[j] ? match : mismatch);
     }
     ptr_diag = &diag_buf[col_min];
-    if(row%2 == 0) { // even row
-      ptr_left = &d[row-1][col_min-1];
-      ptr_up = &d[row-1][col_min];
-    } else { // odd row
-      ptr_left = &d[row-1][col_min];
-      ptr_up = &d[row-1][col_min+1];
+    ptr_left = &d[(row-1)*ncol + col_min-1]; // even row, "left" is up-left
+    if(row%2) { // odd row, "left" is straight up
+      ptr_left++;
     }
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    ptr_up = ptr_left + 1;
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
     
     if(band%2 == 0) { // even band (and even row)
       col_max--;
@@ -230,42 +236,42 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   // Loop over lower wedge.......
   while(row <= len1+len2) {
     for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[row-2][col] + (s1[i] == s2[j] ? match : mismatch);
+      diag_buf[col] = d[(row-2)*ncol + col] + (s1[i] == s2[j] ? match : mismatch);
     }
     ptr_diag = &diag_buf[col_min];
     if(row%2 == 0) { // even row
-      ptr_left = &d[row-1][col_min-1];
-      ptr_up = &d[row-1][col_min];
+      ptr_left = &d[(row-1)*ncol + col_min-1];
+      ptr_up = &d[(row-1)*ncol + col_min];
     } else { // odd row
-      ptr_left = &d[row-1][col_min];
-      ptr_up = &d[row-1][col_min+1];
+      ptr_left = &d[(row-1)*ncol + col_min];
+      ptr_up = &d[(row-1)*ncol + col_min+1];
     }
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row][col_min], &p[row][col_min], gap_p, col_max-col_min+1);
+    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
     
     // Redo the ends-free cells
     // Left column
     if(row%2==0) {
-      d_free = d[row-1][col_min-1];
+      d_free = d[(row-1)*ncol + col_min-1];
     } else {
-      d_free = d[row-1][col_min];
+      d_free = d[(row-1)*ncol + col_min];
     }
-    if(d_free > d[row][col_min]) { // ends-free gap is better
-      d[row][col_min] = d_free;
-      p[row][col_min] = 2;
-    } else if(d_free == d[row][col_min] && p[row][col_min] == 1) { // left gap takes precedence over diagonal move (for consistency)
-      p[row][col_min] = 2;      
+    if(d_free > d[row*ncol + col_min]) { // ends-free gap is better
+      d[row*ncol + col_min] = d_free;
+      p[row*ncol + col_min] = 2;
+    } else if(d_free == d[row*ncol + col_min] && p[row*ncol + col_min] == 1) { // left gap takes precedence over diagonal move (for consistency)
+      p[row*ncol + col_min] = 2;
     }
     // Right column
     if(row%2==0) {
-      d_free = d[row-1][col_max];
+      d_free = d[(row-1)*ncol + col_max];
     } else {
-      d_free = d[row-1][col_max+1];
+      d_free = d[(row-1)*ncol + col_max+1];
     }
-    if(d_free > d[row][col_max]) { // ends-free gap is better
-      d[row][col_max] = d_free;
-      p[row][col_max] = 3;
-    } else if(d_free == d[row][col_max] && p[row][col_max] != 3) { // up gap takes precedence over left or diagonal move (for consistency)
-      p[row][col_max] = 3;
+    if(d_free > d[row*ncol + col_max]) { // ends-free gap is better
+      d[row*ncol + col_max] = d_free;
+      p[row*ncol + col_max] = 3;
+    } else if(d_free == d[row*ncol + col_max] && p[row*ncol + col_max] != 3) { // up gap takes precedence over left or diagonal move (for consistency)
+      p[row*ncol + col_max] = 3;
     }
     
     // Update indices
@@ -278,35 +284,6 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
     row++;
   }
 
-/*  for(row=0;row<=band;row++) {
-    for(col=0;col<=2*band;col++) {
-      Rprintf("%04i ", d[row][col]);
-    }
-    Rprintf("\n");
-  }
-
-  for(row=0;row<=band;row++) {
-    for(col=0;col<=2*band;col++) {
-      Rprintf("%i ", p[row][col]);
-    }
-    Rprintf("\n");
-  }
-  
-  Rprintf("\n");
-  for(row=len1+len2-band;row<=len1+len2;row++) {
-    for(col=0;col<=2*band;col++) {
-      Rprintf("%04i ", d[row][col]);
-    }
-    Rprintf("\n");
-  }
-
-  for(row=len1+len2-band;row<=len1+len2;row++) {
-    for(col=0;col<=2*band;col++) {
-      Rprintf("%i ", p[row][col]);
-    }
-    Rprintf("\n");
-  } */
-
   char al0[2*SEQLEN+1];
   char al1[2*SEQLEN+1];
   
@@ -318,7 +295,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   while ( i > 0 || j > 0 ) {
     ///v Rprintf("ij=(%i,%i), rc=(%i,%i), p[][]=%i\n", i,j,i+j,center-(i-j), p[i+j][center-(i-j)]);
 ///    switch ( p[i+j][1 + (band-i+j)/2] ) {
-    switch ( p[i+j][(2*center-i+j)/2] ) {
+    switch ( p[(i+j)*ncol + (2*center-i+j)/2] ) {
       case 1:
         al0[len_al] = s1[--i];
         al1[len_al] = s2[--j];
@@ -340,6 +317,10 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
   al0[len_al] = '\0';
   al1[len_al] = '\0';
   
+  // Free DP matrices
+  free(d);
+  free(p);
+  
   // Allocate memory to alignment strings.
   char **al = (char **) malloc( 2 * sizeof(char *) ); //E
   if (al == NULL)  Rcpp::stop("Failed memory allocation.");
@@ -359,7 +340,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t score[4][4], int1
 }
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band, int times) {
   size_t i, j;
   char *seq1, *seq2;
   char **al;
@@ -386,6 +367,12 @@ Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatri
     }
   }
   
+  for(int foo=0;foo<times;foo++) {
+    al = nwalign_endsfree_vectorized(seq1, seq2, c_score, (int16_t) gap_p, (size_t) band);
+    free(al[0]);
+    free(al[1]);
+    free(al);
+  }
   al = nwalign_endsfree_vectorized(seq1, seq2, c_score, (int16_t) gap_p, (size_t) band);
 
   int2nt(al[0], al[0]);
@@ -399,5 +386,6 @@ Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, Rcpp::NumericMatri
   free(seq2);
   free(al[0]);
   free(al[1]);
+  free(al);
   return(rval);
 }
