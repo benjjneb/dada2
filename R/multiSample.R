@@ -43,9 +43,9 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
   }
   # Order columns
   if(orderBy == "abundance") {
-    rval <- rval[,order(colSums(rval), decreasing=TRUE)]
+    rval <- rval[,order(colSums(rval), decreasing=TRUE),drop=FALSE]
   } else if(orderBy == "nsamples") {
-    rval <- rval[,order(colSums(rval>0), decreasing=TRUE)]
+    rval <- rval[,order(colSums(rval>0), decreasing=TRUE),drop=FALSE]
   }
   
   return(rval)
@@ -105,7 +105,7 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
   if(!identical(unname(colSums(collapsed)>0), colnames(seqtab) %in% seqs.out)) {
     stop("Mismatch between output sequences and the collapsed sequence table.")
   }
-  collapsed <- collapsed[,colnames(seqtab) %in% seqs.out] # Keep input ordering
+  collapsed <- collapsed[,colnames(seqtab) %in% seqs.out,drop=FALSE] # Keep input ordering
   
   if(verbose) message("Output ", ncol(collapsed), " collapsed sequences out of ", ncol(seqtab), " input sequences.")
   collapsed
