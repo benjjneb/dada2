@@ -14,7 +14,6 @@
 #define CLUSTBUF 50
 
 /* private function declarations */
-Raw *raw_new(char *seq, int reads);
 Fam *fam_new();
 Bi *bi_new(int totraw);
 void fam_free(Fam *fam);
@@ -35,7 +34,7 @@ Raw *bi_pop_raw(Bi *bi, int f, int r);
 Fam *bi_pop_fam(Bi *bi, int f);
 
 void bi_census(Bi *bi);
-void bi_center_update(Bi *bi);
+void bi_assign_center(Bi *bi);
 void fam_center_update(Fam *fam);
 void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals, bool verbose);
 void bi_make_consensus(Bi *bi, bool use_quals);
@@ -44,28 +43,23 @@ void bi_make_consensus(Bi *bi, bool use_quals);
  raw_new:
  The constructor for the Raw object.
  */
-Raw *raw_new(char *seq, int reads) {
+Raw *raw_new(char *seq, double *qual, unsigned int reads) {
+  // Allocate
   Raw *raw = (Raw *) malloc(sizeof(Raw)); //E
   if (raw == NULL)  Rcpp::stop("Memory allocation failed.");
   raw->seq = (char *) malloc(strlen(seq)+1); //E
   if (raw->seq == NULL)  Rcpp::stop("Memory allocation failed.");
+  // Assign sequence and associated properties
   strcpy(raw->seq, seq);
   raw->length = strlen(seq);
-  raw->qual = NULL;
   raw->kmer = get_kmer(seq, KMER_SIZE);
   raw->reads = reads;
-  return raw;
-}
-
-// raw_qual_new: A constructor for Raw objects with quals
-Raw *raw_qual_new(char *seq, double *qual, int reads) {
-  Raw *raw = raw_new(seq, reads);
-  if(qual) {
+  if(qual) { // quals downgraded to floats here for memory savings
     raw->qual = (float *) malloc(raw->length * sizeof(float)); //E
     if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed.");
-    for(int i=0;i<raw->length;i++) { raw->qual[i] = qual[i]; }
+    for(size_t i=0;i<raw->length;i++) { raw->qual[i] = (float) qual[i]; }
   } else {
-    Rcpp::stop("Error: NULL qual provided to raw_qual_new constructor.");
+    raw->qual = NULL;
   }
   return raw;
 }
@@ -253,7 +247,6 @@ void bi_add_raw(Bi *bi, Raw *raw) {
 Bi *bi_new(int totraw) {
   Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
   if (bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
-  strcpy(bi->seq, "");
   bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *)); //E
   if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed.");
   bi->maxfam = FAMBUF;
@@ -268,6 +261,7 @@ Bi *bi_new(int totraw) {
   bi->sm = sm_new(MIN_BUCKETS); //E
   if (bi->sm == NULL)  Rcpp::stop("Memory allocation failed.");
   bi->center = NULL;
+  strcpy(bi->seq, "");
   bi->update_lambda = true;
   bi->update_fam = true;
   bi->update_e = true;
@@ -326,13 +320,38 @@ void bi_census(Bi *bi) {
   bi->nraw = nraw;
 }
 
+/* Bi_assign_center:
+ Takes a Bi object, and calculates and assigns its center Raw.
+ Currently this is done trivially by choosing the most abundant raw.
+ Flags update_fam and update_lambda.
+ This function also currently assigns the cluster sequence (equal to center->seq).
+*/
+void bi_assign_center(Bi *bi) {
+  unsigned int f, r;
+  unsigned int max_reads = 0;
+  
+  // Assign the raw with the most reads as the center
+  bi->center = NULL;
+  for(f=0;f<bi->nfam;f++) {
+    for(r=0;r<bi->fam[f]->nraw;r++) {
+      if(bi->fam[f]->raw[r]->reads > max_reads) { // Most abundant
+         bi->center = bi->fam[f]->raw[r];
+         max_reads = bi->center->reads;
+      }
+    }
+  }
+  // Assign bi->seq and flag
+  if(bi->center) { strcpy(bi->seq, bi->center->seq); }
+  bi->update_lambda = true;
+  bi->update_fam = true;
+}
+
 /* B_new:
- The constructor for the B object. Takes in a Uniques object.
+ The constructor for the B object. Takes in array of Raws.
  Places all sequences into the same family within one cluster.
 */
-B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals) {
-  int i, j, nti;
-  size_t index;
+B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals) {
+  unsigned int i, j, index;
 
   // Allocate memory
   B *b = (B *) malloc(sizeof(B)); //E
@@ -360,25 +379,15 @@ B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool
     }
   }
 
-  double tot_nnt[] = {0.0,0.0,0.0,0.0};
+  // Initialize array of raws
+  // Remember that these were allocated outside the construction of B
   b->raw = raws;
   for (index = 0; index < b->nraw; index++) {
-    for(i=0;i<b->raw[index]->length;i++) {
-      nti = ((int) b->raw[index]->seq[i]) - 1;
-      if(nti == 0 || nti == 1 || nti ==2 || nti == 3) {
-        tot_nnt[nti]++;
-      }
-    }
     b->raw[index]->index = index;
     b->reads += b->raw[index]->reads;
   }
 
-  // Create the (for now) solitary lookup table from lambda -> pS
-  // Use the average sequence composition
-  // Pval lookup depends on sequence composition when the error matrix
-  //   is not uniform, but this dependence is not super-strong normally.
-  // However, we very much need the sequences to be all close to the same
-  //   length for this to be valid!!!!
+  // Create the lookup table for calculating the singleton p-value
   if(b->use_singletons) {
     b_make_pS_lookup(b);
   }
@@ -392,8 +401,10 @@ B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool
  Initialized b with all raws in one cluster, with center, flagged to update lambda and fam.
 */
 void b_init(B *b) {
+  unsigned int i, index;
+  
   // Destruct existing clusters/fams
-  for(int i=0; i<b->nclust; i++) {
+  for(i=0; i<b->nclust; i++) {
     bi_free(b->bi[i]);
   }
   b->nclust=0;
@@ -409,12 +420,12 @@ void b_init(B *b) {
   b->nshroud = 0;
 
   // Add all raws to that cluster
-  for (size_t index=0; index<b->nraw; index++) {
+  for (index=0; index<b->nraw; index++) {
     bi_shove_raw(b->bi[0], b->raw[index]);
   }
 
   bi_census(b->bi[0]);
-  bi_center_update(b->bi[0]); // Makes cluster center sequence
+  bi_assign_center(b->bi[0]); // Makes cluster center sequence
 }
 
 /* b_free:
@@ -823,7 +834,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
       Rprintf("%s\n", ntstr(birth_sub->key));
     }
     
-    bi_center_update(b->bi[i]);
+    bi_assign_center(b->bi[i]);
     fam_free(fam);
     return i;
   }
@@ -880,7 +891,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
       Rprintf("\nNew cluster from Raw %i in C%iF%i: p*=%.3e (SINGLETON: lam=%.3e)\n", fam->center->index, mini, minf, pS, fam->lambda);
     }
     
-    bi_center_update(b->bi[i]);
+    bi_assign_center(b->bi[i]);
     fam_free(fam);
     return i;
   }
@@ -912,47 +923,6 @@ void fam_center_update(Fam *fam) {
   } else {            // No raw, make empty string.
     fam->center = NULL;
     fam->seq[0] = '\0';
-  }
-}
-
-/* Bi_center_update:
- Takes a Bi object, and calculates and assigns its center sequence.
- Currently this is done trivially by choosing the most abundant sequence.
- If center changes flags update_fam and update_lambda
-*/
-void bi_center_update(Bi *bi) {
-  int max_reads = 0;
-  int f, r;
-  int maxf = 0, maxr= 0;
-  
-  for(f=0;f<bi->nfam;f++) {
-    for(r=0;r<bi->fam[f]->nraw;r++) {
-      if(bi->fam[f]->raw[r]->reads > max_reads) { // Most abundant
-         maxf=f; maxr=r;
-         max_reads = bi->fam[f]->raw[r]->reads;
-      }
-    }
-  }
-  
-  if(strcmp(bi->seq, bi->fam[maxf]->raw[maxr]->seq) != 0) {  // strings differ
-    bi->update_lambda = true;
-    bi->update_fam = true;
-    if(VERBOSE) {
-      Rprintf("bi_c_u: New center raw %i (%i)\n", bi->fam[maxf]->raw[maxr]->index, bi->fam[maxf]->raw[maxr]->reads);
-      Rprintf("\tNew(%i): %s\n", (int) bi->fam[maxf]->raw[maxr]->length, ntstr(bi->fam[maxf]->raw[maxr]->seq));
-      Rprintf("\tOld(%i): %s\n", (int) strlen(bi->seq), ntstr(bi->seq));
-    }
-    bi->center = bi->fam[maxf]->raw[maxr];
-    strcpy(bi->seq,bi->fam[maxf]->raw[maxr]->seq);
-  }
-}
-
-/* B_center_update:
- Updates all Bi consensi.
- */
-void b_center_update(B *b) {
-  for (int i=0; i<b->nclust; i++) {
-    bi_center_update(b->bi[i]);
   }
 }
 

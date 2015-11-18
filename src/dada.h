@@ -137,9 +137,8 @@ typedef struct {
    ------------------------------------------- */
 
 // methods implemented in cluster.c
-B *b_new(Raw **raws, int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals);
-Raw *raw_new(char *seq, int reads);
-Raw *raw_qual_new(char *seq, double *qual, int reads);
+B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals);
+Raw *raw_new(char *seq, double *qual, unsigned int reads);
 void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);

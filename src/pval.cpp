@@ -254,6 +254,8 @@ void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4],
 }
 
 // I AM BROKEN RIGHT NOW BECAUSE OF CHANGE IN ERR MATRIX STUFF!!!!!!!!!
+// Pval lookup depends on sequence composition when the error matrix is not uniform, but this dependence is not super-strong normally.
+// However, we very much need the sequences to be all close to the same length for this to be valid!!!!
 void b_make_pS_lookup(B *b) {
 ///!  static double err[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
   static int ave_nnt[4] = {0, 0, 0, 0};

@@ -5,7 +5,7 @@ using namespace Rcpp;
 //' @useDynLib dada2
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose);
+B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose);
 
 //------------------------------------------------------------------
 // C interface to run DADA on the provided unique sequences/abundance pairs. 
@@ -87,15 +87,15 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
       for(pos=0;pos<seqlen;pos++) {
         qual[pos] = quals(pos, index);
       }
-      raws[index] = raw_qual_new(seq, qual, abundances[index]);
+      raws[index] = raw_new(seq, qual, abundances[index]);
     } else {
-      raws[index] = raw_new(seq, abundances[index]);
+      raws[index] = raw_new(seq, NULL, abundances[index]);
     }
     raws[index]->index = index;
   }
 
   /********** RUN DADA *********/
-  B *bb = run_dada(raws, nraw, c_score, err, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose);
+  B *bb = run_dada(raws, nraw, err, c_score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose);
 
   /********** MAKE OUTPUT *********/
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, has_quals);
@@ -126,7 +126,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap, _["exp"] = df_expected);
 }
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose) {
+B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
   
