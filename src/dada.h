@@ -44,8 +44,8 @@ typedef std::pair<double, double> Prob;
  in an alignment to another sequence.
  Note: positions will be 0-indexed in the alignment */
 typedef struct {
-  int nsubs;   // number of substitions
-  int len0;    // The length of the ref seq
+  unsigned int nsubs;   // number of substitions
+  unsigned int len0;    // The length of the ref seq
   uint16_t *map;    // map of the sequence position in the ref seq to that in the aligned seq
   uint16_t *pos;    // sequence position of the substitition: index in the reference seq
   char *nt0;   // nt in reference seq
@@ -60,9 +60,9 @@ typedef struct {
   char *seq;   // the sequence, stored as C-string with A=1,C=2,G=3,T=4
   float *qual; // the average qualities at each position for this unique
   uint16_t *kmer;   // the kmer vector of this sequence
-  int length;  // the length of the sequence
-  int reads;   // number of reads of this unique sequence
-  int index;   // The index of this Raw in b->raw[index]
+  unsigned int length;  // the length of the sequence
+  unsigned int reads;   // number of reads of this unique sequence
+  unsigned int index;   // The index of this Raw in b->raw[index]
 } Raw;
 
 // Fam: Child of Bi, contains raws in Bi with same substitution structure
@@ -70,14 +70,14 @@ typedef struct {
 typedef struct {
   char *seq;   // representative sequence
   Raw *center; // representative raw (corresponds to seq)
-  int reads;   // number of reads in this fam
+  unsigned int reads;   // number of reads in this fam
   Sub *sub;    // struct of substitutions relative to the Bi
   double lambda; // probability of this sequence being produced from the Bi seq
   double p;    // abundance pval relative to the current Bi
   double pS;   // singleton pval relative to the current Bi
   Raw **raw;   // array of pointers to contained raws
-  int nraw;    // number of contained raws
-  int maxraw;  // number of raws currently allocated for in **raw
+  unsigned int nraw;    // number of contained raws
+  unsigned int maxraw;  // number of raws currently allocated for in **raw
 } Fam;
 
 // Bi: This is one cluster or partition. Contains raws grouped in fams.
@@ -86,12 +86,12 @@ typedef struct {
 typedef struct {
   char seq[SEQLEN]; // representative sequence for the cluster
   Raw *center; // representative raw for the cluster (corresponds to seq)
-  int nraw;    // number of raws in Bi
-  int reads;   // number of reads in this cluster
-  int i;       // the cluster number in the total clustering
+  unsigned int nraw;    // number of raws in Bi
+  unsigned int reads;   // number of reads in this cluster
+  unsigned int i;       // the cluster number in the total clustering
   Fam **fam;   // Array of pointers to child fams.
-  int nfam;    // number of fams in Bi
-  int maxfam;  // number of fams currently allocated for in **fam
+  unsigned int nfam;    // number of fams in Bi
+  unsigned int maxfam;  // number of fams currently allocated for in **fam
   bool update_lambda; // set to true when consensus changes
   bool update_fam; // set to true when consensus changes and when raws are shuffled
   bool update_e; // set to true when consensus changes and when raws are shuffled
@@ -101,7 +101,7 @@ typedef struct {
   Sub **sub;   // Array of pointers to subs with all raws.
   double *lambda; // Array of lambdas with all raws.
   double *e;   // Array of expected read numbers with all raws.
-  size_t totraw; // number of total raws in the clustering
+  unsigned int totraw; // number of total raws in the clustering
   char birth_type[2]; // encoding of how this Bi was created: "I": Initial cluster, "A": Abundance pval, "S": Singleton pval
   double birth_pval; // the Bonferonni-corrected pval that led to this cluster being initialized
   double birth_fold; // the multiple of expectations at birth
@@ -111,13 +111,13 @@ typedef struct {
 
 // B: holds all the clusters. The full clustering (or partition).
 typedef struct {
-  int nclust;
-  int nraw;
-  int reads;
-  int maxclust;
+  unsigned int nclust;
+  unsigned int nraw;
+  unsigned int reads;
+  unsigned int maxclust;
   int band_size;
-  int nalign;
-  int nshroud;
+  unsigned int nalign;
+  unsigned int nshroud;
   int score[4][4];
   int gap_pen;
   bool vectorized_alignment;
@@ -189,11 +189,10 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp
-void b_get_trans_matrix(B *b, int32_t obs[4][4]);
-Rcpp::DataFrame b_get_positional_subs(B *b);
-Rcpp::DataFrame b_get_quality_subs(B *b);
-Rcpp::IntegerMatrix b_get_quality_subs2(B *b, bool has_quals, int qmin, int qmax);
-Rcpp::DataFrame get_sublong(B *b, bool has_quals);
-Rcpp::DataFrame b_subs_vs_exp(B *b, Rcpp::NumericMatrix errMat);
+Rcpp::DataFrame b_make_clustering_df(B *b, bool has_quals);
+Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, bool has_quals, unsigned int qmax);
+Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, bool has_quals, unsigned int seqlen);
+Rcpp::DataFrame b_make_birth_subs_df(B *b, bool has_quals);
+Rcpp::DataFrame b_make_positional_substitution_df(B *b, unsigned int seqlen, Rcpp::NumericMatrix errMat);
 
 #endif

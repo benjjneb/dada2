@@ -14,7 +14,6 @@ assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
-assign("QMIN", 0, envir=dada_opts) # NON-FUNCTIONAL
 assign("QMAX", 40, envir=dada_opts) # NON-FUNCTIONAL
 assign("FINAL_CONSENSUS", FALSE, envir=dada_opts)
 assign("VERBOSE", FALSE, envir=dada_opts)
@@ -148,8 +147,8 @@ dada <- function(derep,
       if(any(is.na(derep[[i]]$quals))) {
         stop("NAs in derep$qual matrix. Check that all input sequences were the same length.")
       }
-      if(min(derep[[i]]$quals) < opts$QMIN || max(derep[[i]]$quals > opts$QMAX)) {
-        stop("Invalid derep$qual matrix. Quality values must be between QMIN and QMAX.")
+      if(min(derep[[i]]$quals) < 0 || max(derep[[i]]$quals > opts$QMAX)) {
+        stop("Invalid derep$qual matrix. Quality values must be between 0 and QMAX.")
       }
     }
   }
@@ -227,7 +226,7 @@ dada <- function(derep,
                           opts[["MAX_CLUST"]],
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]],
-                          opts[["QMIN"]], opts[["QMAX"]],
+                          opts[["QMAX"]],
                           opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["VERBOSE"]])
@@ -244,7 +243,7 @@ dada <- function(derep,
       map[[i]] <- res$map
       exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
-      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(opts$QMIN, opts$QMAX)  # Assumes C sides is returning one col for each integer from QMIN to QMAX
+      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, opts$QMAX)  # Assumes C sides is returning one col for each integer from 0 to QMAX
     }
     # Accumulate the sub matrix
     cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient

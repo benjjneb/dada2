@@ -34,7 +34,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   size_t len1 = strlen(s1);
   size_t len2 = strlen(s2);
   int16_t diag_buf[SEQLEN];
-  int16_t diag, left, up, entry, pentry, d_free;
+  int16_t d_free;
   size_t center;
   size_t col_min, col_max;
   size_t i_max, j_min;
@@ -326,7 +326,6 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
 
 // [[Rcpp::export]]
 Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
-  size_t i, j;
   char *seq1, *seq2;
   char **al;
 

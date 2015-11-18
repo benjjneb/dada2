@@ -5,13 +5,13 @@ using namespace Rcpp;
 //' @useDynLib dada2
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose, bool inflate);
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose);
 
 //------------------------------------------------------------------
 // C interface to run DADA on the provided unique sequences/abundance pairs. 
 // 
 // [[Rcpp::export]]
-Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abundances,
+Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances,
                         Rcpp::NumericMatrix err,
                         Rcpp::NumericMatrix quals,
                         Rcpp::NumericMatrix score, int gap,
@@ -22,62 +22,43 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
                         int max_clust,
                         double min_fold, int min_hamming,
                         bool use_quals,
-                        int qmin, int qmax,
+                        int qmax,
                         bool final_consensus,
                         bool vectorized_alignment,
                         bool verbose) {
 
-  int i, j, pos, len1, len2, nrow, ncol;
-  int f, r, s, nzeros, nones;
-  size_t index;
-  double tote;
+  unsigned int i, j, index, pos, seqlen, nraw;
   
-  len1 = seqs.size();
-  len2 = abundances.size();
-  if(len1 != len2) {
-    Rcpp::Rcout << "C: Different input lengths:" << len1 << ", " << len2 << "\n";
-    return R_NilValue;
+  /********** INPUT VALIDATION *********/
+  // Check lengths of seqs and abundances vectors
+  if(seqs.size() != abundances.size()) {
+    Rcpp::stop("Sequence and abundance vectors had different lengths.");
   }
-  int nraw = len1;
-    
-  int max_seq_len = 0;
-  for(i=0;i<nraw;i++) {
-    if(seqs[i].length() > max_seq_len) { max_seq_len = seqs[i].length(); }
+  nraw = seqs.size();
+  if(nraw == 0) {
+    Rcpp::stop("Zero input sequences.");
   }
-  if(max_seq_len >= SEQLEN) { Rcpp::stop("Input sequences exceed the maximum allowed string length."); }
-  // Need one extra byte for the string termination character
-  
-  // Each sequence is a COLUMN, each row is a POSITION
+  // Check sequence lengths
+  seqlen = seqs[0].length();
+  for(index=1;index<nraw;index++) {
+    if(seqs[index].length() != seqlen) {
+      Rcpp::stop("All input sequences must be the same length.");
+    }
+  }
+  if(seqlen >= SEQLEN) {   // Need one extra byte for the string termination character
+    Rcpp::stop("Input sequences exceed the maximum allowed string length.");
+  }
+  // Check for presence of quality scores and their lengths
   bool has_quals = false;
-  if(quals.nrow() > 0) { has_quals = true; }
-  int qlen = quals.nrow();
-
-  // Make the raws (uniques)
-  char seq[SEQLEN];
-  double qual[SEQLEN];
-  Raw **raws = (Raw **) malloc(nraw * sizeof(Raw *)); //E
-  if (raws == NULL)  Rcpp::stop("Memory allocation failed.");
-
-  for (index = 0; index < nraw; index++) {
-    strcpy(seq, seqs[index].c_str());
-    nt2int(seq, seq);
-    for(pos=0;pos<strlen(seq);pos++) {
-      qual[pos] = quals(pos, index);
+  if(quals.nrow() > 0) { // Each sequence is a COLUMN, each row is a POSITION
+    has_quals = true;
+    if(quals.nrow() != seqlen) {
+      Rcpp::stop("Sequence lengths and quality lengths must be the same.");
     }
-    if(has_quals) {
-      raws[index] = raw_qual_new(seq, qual, abundances[index]);
-    } else {
-      raws[index] = raw_new(seq, abundances[index]);
-    }
-    raws[index]->index = index;
   }
-  
-  // Copy score into a C style array
-  nrow = score.nrow();
-  ncol = score.ncol();
-  if(nrow != 4 || ncol != 4) {
-    Rcpp::Rcout << "C: Score matrix malformed:" << nrow << ", " << ncol << "\n";
-    return R_NilValue;
+  // Copy score matrix into a C style array
+  if(score.nrow() != 4 || score.ncol() != 4) {
+    Rcpp::stop("Score matrix must be 4x4.");
   }
   int c_score[4][4];
   for(i=0;i<4;i++) {
@@ -85,135 +66,47 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
       c_score[i][j] = (int) score(i,j);
     }
   }
-
-  nrow = err.nrow();
-  ncol = err.ncol();
-  if(nrow != 16) {
-    Rcpp::Rcout << "C: Error matrix malformed:" << nrow << ", " << ncol << "\n";
-    return R_NilValue;
+  // Check error matrix
+  if(err.nrow() != 16) {
+    Rcpp::stop("Error matrix must have 16 rows.");
+  }
+  if(err.ncol() == 0) {
+    Rcpp::stop("Error matrix must have >0 columns.");
   }
 
-  // Run DADA
-  bool inflate=false;
-  B *bb = run_dada(raws, nraw, c_score, err, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmin, qmax, final_consensus, vectorized_alignment, verbose, inflate);
-
-  // Extract output from Bi objects
-  char **oseqs = (char **) malloc(bb->nclust * sizeof(char *)); //E
-  if (oseqs == NULL)  Rcpp::stop("Memory allocation failed.");
-  
-  for(i=0;i<bb->nclust;i++) {
-    oseqs[i] = (char *) malloc((strlen(bb->bi[i]->seq)+1) * sizeof(char)); //E
-    if (oseqs[i] == NULL)  Rcpp::stop("Memory allocation failed.");
-    ntcpy(oseqs[i], bb->bi[i]->seq);
-  }
-
-  // Convert to R objects and return
-  Rcpp::CharacterVector Rseqs;
-  Rcpp::NumericVector Rabunds(bb->nclust);
-  Rcpp::NumericVector Rzeros(bb->nclust);
-  Rcpp::NumericVector Rones(bb->nclust); 
-  Rcpp::NumericVector Rraws(bb->nclust); 
-  Rcpp::NumericVector Rfams(bb->nclust); 
-  Rcpp::NumericVector Rbirth_pvals(bb->nclust);
-  Rcpp::NumericVector Rbirth_folds(bb->nclust);
-  Rcpp::NumericVector Rbirth_hams(bb->nclust);
-  Rcpp::NumericVector Rbirth_es(bb->nclust);
-  Rcpp::CharacterVector Rbirth_types;
-  Rcpp::NumericVector Rbirth_qaves(bb->nclust);
-  Rcpp::NumericVector Rpvals(bb->nclust);
-
-
-  for(i=0;i<bb->nclust;i++) {
-    // The basics
-    Rseqs.push_back(std::string(oseqs[i]));
-    Rabunds[i] = bb->bi[i]->reads;
-    
-    // Extra info on the clusters
-    nzeros = 0; nones = 0;
-    for(f=0;f<bb->bi[i]->nfam;f++) {
-      if(bb->bi[i]->fam[f]->sub) {
-        if(bb->bi[i]->fam[f]->sub->nsubs == 0) { nzeros += bb->bi[i]->fam[f]->reads; }
-        if(bb->bi[i]->fam[f]->sub->nsubs == 1) { nones += bb->bi[i]->fam[f]->reads; }
-      }
-    }
-    Rzeros[i] = nzeros;
-    Rones[i] = nones;
-    Rraws[i] = bb->bi[i]->nraw;
-    Rfams[i] = bb->bi[i]->nfam;
-    
-    // Record information from the cluster's birth
-    Rbirth_types.push_back(std::string(bb->bi[i]->birth_type));
-    Rbirth_pvals[i] = bb->bi[i]->birth_pval;
-    Rbirth_folds[i] = bb->bi[i]->birth_fold;
-    if(bb->bi[i]->birth_sub) { Rbirth_hams[i] = bb->bi[i]->birth_sub->nsubs; }
-    else { Rbirth_hams[i] = NA_REAL; }
-    Rbirth_es[i] = bb->bi[i]->birth_e;
-
-    // Make qave column
-    Sub *sub;
-    double qave;
+  /********** CONSTRUCT RAWS *********/
+  char seq[SEQLEN];
+  double qual[SEQLEN];
+  Raw **raws = (Raw **) malloc(nraw * sizeof(Raw *)); //E
+  if (raws == NULL)  Rcpp::stop("Memory allocation failed.");
+  // Construct a raw for each input sequence, store in raws[index]
+  for (index = 0; index < nraw; index++) {
+    strcpy(seq, seqs[index].c_str());
+    nt2int(seq, seq);
     if(has_quals) {
-      qave = 0.0;
-      sub = bb->bi[i]->birth_sub;
-      if(sub && sub->q1) {
-        for(int s=0;s<sub->nsubs;s++) {
-          qave += (sub->q1[s]);
-        }
-        qave = qave/((double)sub->nsubs);
+      for(pos=0;pos<seqlen;pos++) {
+        qual[pos] = quals(pos, index);
       }
-      Rbirth_qaves[i] = qave;
+      raws[index] = raw_qual_new(seq, qual, abundances[index]);
+    } else {
+      raws[index] = raw_new(seq, abundances[index]);
     }
-    
-    // Calculate post-hoc pval
-    tote = 0.0;
-    for(j=0;j<bb->nclust;j++) {
-      if(i != j) {
-        tote += bb->bi[j]->e[bb->bi[i]->center->index];
-      }
-    }
-    Rpvals[i] = calc_pA(1+bb->bi[i]->reads, tote); // better to have expected number of center sequence here?
+    raws[index]->index = index;
   }
-  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["nfam"] = Rfams, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves);
 
-  // Get error (or substitution) statistics
-  Rcpp::DataFrame df_subpos = b_get_positional_subs(bb);
-  Rcpp::IntegerMatrix transMat = b_get_quality_subs2(bb, has_quals, qmin, qmax);
+  /********** RUN DADA *********/
+  B *bb = run_dada(raws, nraw, c_score, err, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose);
+
+  /********** MAKE OUTPUT *********/
+  Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, has_quals);
+  Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, has_quals, qmax);
+  Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, has_quals, seqlen);
+  Rcpp::DataFrame df_birth_subs = b_make_birth_subs_df(bb, has_quals);
+  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, seqlen, err);
   
-  // Get output average qualities
-  Rcpp::NumericMatrix Rquals(qlen, bb->nclust);
-  double qq;
-  int nreads, pos0, pos1;
-  Sub *sub;
-  Raw *raw;
-  if(has_quals) {
-    for(i=0;i<bb->nclust;i++) {
-      len1 = strlen(bb->bi[i]->seq);
-      if(len1 > qlen) { len1 = qlen; }
-      
-      for(pos0=0;pos0<len1;pos0++) {
-        qq=0.0;
-        nreads=0;
-        for(f=0;f<bb->bi[i]->nfam;f++) {
-          for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
-            raw = bb->bi[i]->fam[f]->raw[r];
-            sub = bb->bi[i]->sub[raw->index];
-            if(sub) {
-              pos1 = sub->map[pos0];
-              if(pos1 == GAP_GLYPH) { // Gap
-                continue;
-              }
-              nreads += raw->reads;
-              qq += (raw->qual[pos1] * raw->reads);
-            }
-          }
-        }
-        Rquals(pos0,i) = qq/nreads;
-      } // for(pos0=0;pos0<len1;pos0++)
-    }
-  }
-
   // Make map from uniques to cluster
   Rcpp::IntegerVector Rmap(nraw);
+  unsigned int f, r;
   for(i=0;i<bb->nclust;i++) {
     for(f=0;f<bb->bi[i]->nfam;f++) {
       for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
@@ -222,43 +115,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
     }
   }
 
-  // Make output data.frame of birth_subs
-  char buf[2];
-  buf[0] = buf[1] = '\0';
-  Rcpp::IntegerMatrix bsubs(16,max_seq_len);
-  Rcpp::IntegerVector bs_pos;
-  Rcpp::CharacterVector bs_nt0;
-  Rcpp::CharacterVector bs_nt1;
-  Rcpp::NumericVector bs_qual;
-  Rcpp::IntegerVector bs_clust;
-  for(i=0;i<bb->nclust;i++) {
-    if(bb->bi[i]->birth_sub) {
-      for(s=0;s<bb->bi[i]->birth_sub->nsubs;s++) {
-        bs_pos.push_back(bb->bi[i]->birth_sub->pos[s]+1); // R 1 indexing
-        buf[0] = bb->bi[i]->birth_sub->nt0[s];
-        int2nt(buf, buf);
-        bs_nt0.push_back(std::string(buf));
-        buf[0] = bb->bi[i]->birth_sub->nt1[s];
-        int2nt(buf, buf);
-        bs_nt1.push_back(std::string(buf));
-        if(has_quals) {
-          bs_qual.push_back(bb->bi[i]->birth_sub->q1[s]);
-        } else {
-          bs_qual.push_back(Rcpp::NumericVector::get_na());
-        }
-        bs_clust.push_back(i+1); // R 1 indexing
-      }
-    }
-  }
-  Rcpp::DataFrame df_birth_subs = Rcpp::DataFrame::create(_["pos"] = bs_pos, _["ref"] = bs_nt0, _["sub"] = bs_nt1, _["qual"] = bs_qual, _["clust"] = bs_clust);
-
-  Rcpp::DataFrame df_expected = b_subs_vs_exp(bb, err);
-
   // Free memory
-  for(i=0;i<bb->nclust;i++) {
-    free(oseqs[i]);
-  }
-  free(oseqs);
   b_free(bb);
   for(index=0;index<nraw;index++) {
     raw_free(raws[index]);
@@ -266,14 +123,12 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs,  std::vector<int> abund
   free(raws);
   
   // Organize return List  
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = transMat, _["clusterquals"] = Rquals, _["map"] = Rmap, _["exp"] = df_expected);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap, _["exp"] = df_expected);
 }
 
-B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmin, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose, bool inflate) {
+B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
-  double inflation = 1.0;
-  size_t index;
   
   B *bb;
   bb = b_new(raws, nraw, score, gap_pen, omegaA, use_singletons, omegaS, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi and 1 fam
@@ -286,17 +141,6 @@ B *run_dada(Raw **raws, int nraw, int score[4][4], Rcpp::NumericMatrix errMat, i
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
     if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
     b_lambda_update(bb, use_kmers, kdist_cutoff, errMat, verbose);
-    
-    if(inflate) { // Temporarily inflate the E's for the new cluster based on the expected number of reads from its center
-      if((int) (bb->bi[newi]->center->reads/bb->bi[newi]->self) > bb->bi[newi]->reads) {
-        inflation = (bb->bi[newi]->center->reads/bb->bi[newi]->self)/bb->bi[newi]->reads;
-        for(index=0;index<bb->nraw;index++) {
-          bb->bi[newi]->e[index] = bb->bi[newi]->e[index] * inflation;
-        }
-        bb->bi[newi]->update_e = true;
-        bb->bi[newi]->shuffle = true;
-      }
-    }
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {
