@@ -15,23 +15,18 @@
 
 /* private function declarations */
 Fam *fam_new();
-Bi *bi_new(int totraw);
+Bi *bi_new(unsigned int totraw);
 void fam_free(Fam *fam);
 void bi_free(Bi *bi);
 
-int b_add_bi(B *b, Bi *bi);
-Bi *bi_new(int totraw);
-Raw *bi_pop_raw(Bi *bi, int f, int r);
-void bi_shove_raw(Bi *bi, Raw *raw);
-
-int fam_add_raw(Fam *fam, Raw *raw);
-int bi_add_fam(Bi *bi, Fam *fam);
-int b_add_bi(B *b, Bi *bi);
+unsigned int fam_add_raw(Fam *fam, Raw *raw);
+unsigned int bi_add_fam(Bi *bi, Fam *fam);
+unsigned int b_add_bi(B *b, Bi *bi);
+Raw *fam_pop_raw(Fam *fam, unsigned int r);
+Raw *bi_pop_raw(Bi *bi, unsigned int f, unsigned int r);
+Fam *bi_pop_fam(Bi *bi, unsigned int f);
 void bi_shove_raw(Bi *bi, Raw *raw);
 void bi_add_raw(Bi *bi, Raw *raw);   // NOT WORKING, MAY BE DELETED
-Raw *fam_pop_raw(Fam *fam, int r);
-Raw *bi_pop_raw(Bi *bi, int f, int r);
-Fam *bi_pop_fam(Bi *bi, int f);
 
 void bi_census(Bi *bi);
 void bi_assign_center(Bi *bi);
@@ -39,10 +34,10 @@ void fam_center_update(Fam *fam);
 void bi_fam_update(Bi *bi, int score[4][4], int gap_pen, int band_size, bool use_quals, bool verbose);
 void bi_make_consensus(Bi *bi, bool use_quals);
 
-/*
- raw_new:
- The constructor for the Raw object.
- */
+
+/********* CONSTRUCTORS AND DESTRUCTORS *********/
+
+// The constructor for the Raw object.
 Raw *raw_new(char *seq, double *qual, unsigned int reads) {
   // Allocate
   Raw *raw = (Raw *) malloc(sizeof(Raw)); //E
@@ -54,7 +49,8 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
   raw->length = strlen(seq);
   raw->kmer = get_kmer(seq, KMER_SIZE);
   raw->reads = reads;
-  if(qual) { // quals downgraded to floats here for memory savings
+  // Allocate and copy quals (quals downgraded to floats here for memory savings)
+  if(qual) { 
     raw->qual = (float *) malloc(raw->length * sizeof(float)); //E
     if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed.");
     for(size_t i=0;i<raw->length;i++) { raw->qual[i] = (float) qual[i]; }
@@ -64,21 +60,18 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
   return raw;
 }
 
+// The destructor for the Raw object.
 void raw_free(Raw *raw) {
   free(raw->seq);
   if(raw->qual) { free(raw->qual); }
   free(raw->kmer);
   free(raw);  
 }
-/*
- fam_new:
- The constructor for the Fam object.
- */
+
+// The constructor for the Fam object.
 Fam *fam_new() {
   Fam *fam = (Fam *) malloc(sizeof(Fam)); //E
   if (fam == NULL)  Rcpp::stop("Memory allocation failed.");
-  fam->seq = (char *) malloc(SEQLEN); //E
-  if (fam->seq == NULL)  Rcpp::stop("Memory allocation failed.");
   fam->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *)); //E
   if (fam->raw == NULL)  Rcpp::stop("Memory allocation failed.");
   fam->maxraw = RAWBUF;
@@ -87,164 +80,14 @@ Fam *fam_new() {
   return fam;
 }
 
-/*
- fam_free:
- The destructor for the Fam object.
- */
+// The destructor for the Fam object.
 void fam_free(Fam *fam) {
-  free(fam->seq);
   free(fam->raw);
   free(fam);
 }
 
-/*
- fam_add_raw:
- Add a raw to a fam object.
- Update reads/nraw.
- Return index to raw in fam.
- */
-int fam_add_raw(Fam *fam, Raw *raw) {
-  if(fam->nraw >= fam->maxraw) {    // Extend Raw* buffer
-    fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *)); //E
-    if (fam->raw == NULL)  Rcpp::stop("Memory allocation failed.");
-    fam->maxraw+=RAWBUF;
-  }
-
-  fam->raw[fam->nraw] = raw;
-  fam->reads += raw->reads;
-  return(fam->nraw++);
-}
-
-/*
- fam_pop_raw:
- Removes a raw from a fam object.
- Update fam reads/nraw.
- Returns pointer to that raw.
- THIS REORDERS THE FAMS LIST OF RAWS. CAN BREAK INDICES.
- THIS DOES NOT UPDATE READS OR NRAW IN THE PARENT BI.
- */
-Raw *fam_pop_raw(Fam *fam, int r) {
-  Raw *pop;
-  
-  if(r<fam->nraw) {
-    pop = fam->raw[r];
-    fam->raw[r] = fam->raw[fam->nraw-1];
-    fam->raw[fam->nraw-1] = NULL;
-    fam->nraw--;
-    fam->reads -= pop->reads;
-  } else {  // Trying to pop an out of range raw
-    Rprintf("fam_pop_raw: Not enough raws %i (%i)\n", r, fam->nraw);
-    pop = NULL;
-  }
-  return pop;
-}
-
-/*
- bi_pop_raw:
- Removes a raw from the child object.
- Update bi reads/nraw.
- Returns pointer to that raw.
- SEE NOTES ON FAM_POP_RAW
- */
-Raw *bi_pop_raw(Bi *bi, int f, int r) {
-  Raw *pop;
-  
-  if(f<bi->nfam) {
-    pop = fam_pop_raw(bi->fam[f], r);
-    if(pop != NULL) {
-      bi->nraw--;
-      bi->reads -= pop->reads;
-      bi->update_fam = true;
-      bi->update_e = true;
-      sub_free(bi->sub[pop->index]);  ///! Free the sub
-      bi->sub[pop->index] = NULL;     ///! Free the sub
-    }
-  } else {  // Trying to pop an out of range raw
-    Rprintf("bi_pop_raw: not enough fams %i (%i)\n", f, bi->nfam);
-    pop = NULL;
-  }
-  return pop;
-}
-
-/*
- bi_pop_fam:
- Removes a fam from cluster.
- Update bi reads/nraw.
- Returns pointer to the removed fam.
- */
-Fam *bi_pop_fam(Bi *bi, int f) {
-  Fam *pop;
-  
-  if(f<bi->nfam) {
-    pop = bi->fam[f];
-    bi->fam[f] = bi->fam[bi->nfam-1];
-    bi->fam[bi->nfam-1] = NULL;
-    bi->nfam--;
-    bi->nraw -= pop->nraw;
-    for(int r=0;r<pop->nraw;r++) {  // Doesn't rely on fam reads
-      bi->reads -= pop->raw[r]->reads;
-      sub_free(bi->sub[pop->raw[r]->index]);   ///! Free the sub
-      bi->sub[pop->raw[r]->index] = NULL;      ///! Free the sub
-      bi->update_e = true;
-    }
-  } else {  // Trying to pop an out of range fam
-    Rprintf("bi_pop_fam: not enough fams %i (%i)\n", f, bi->nfam);
-    pop = NULL;
-  }
-  return pop;
-}
-
-/*
- bi_shove_raw:
- Hackily just adds raw to fam[0].
- fam_update and e_update are needed on this cluster afterwards.
- */
-void bi_shove_raw(Bi *bi, Raw *raw) {
-  if(bi->nfam == 0) {
-    bi_add_fam(bi, fam_new());
-  }
-  fam_add_raw(bi->fam[0], raw);
-  bi->nraw++;
-  bi->reads += raw->reads;
-  bi->update_fam = true;
-  bi->update_e = true;
-}
-
-/*
- bi_add_raw:
- Adds raw to appropriate fam. Makes new fam if necessary.
- ISSUE WITH ALIGN, NEED ERR. UNUSED FOR NOW.
- UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED
- */
-void bi_add_raw(Bi *bi, Raw *raw) {
-//  Rprintf("bi_add_raw\n");
-  Sub *sub;
-  int foo, result;
-  char buf[10];  // holds sprintf("%i", fam_index)
-  
-  sub = bi->sub[raw->index];
-  result = sm_exists(bi->sm, sub->key);
-  
-  if (result == 0) {                  // Handle value not found
-    foo = bi_add_fam(bi, fam_new());
-    fam_add_raw(bi->fam[foo], raw);
-    bi->fam[foo]->sub = sub;                   // Sub set on new fam formation.
-    sprintf(buf, "%i", foo);
-    sm_put(bi->sm, sub->key, buf);
-  } else {                            // Joining existing family
-    sm_get(bi->sm, sub->key, buf, sizeof(buf));
-    foo = atoi(buf);
-    fam_add_raw(bi->fam[foo], raw);
-  }
-  
-  bi->nraw++;
-  bi->reads += raw->reads;
-}
-
-/* bi_new:
- The constructor for the Bi object.
- */
-Bi *bi_new(int totraw) {
+// The constructor for the Bi object.
+Bi *bi_new(unsigned int totraw) {
   Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
   if (bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->fam = (Fam **) malloc(FAMBUF * sizeof(Fam *)); //E
@@ -274,13 +117,11 @@ Bi *bi_new(int totraw) {
   return bi;
 }
 
-/* bi_free:
- Destructs bi objects.
-*/
+// The destructor for the Bi object
 void bi_free(Bi *bi) {
   for(int f=0;f<bi->nfam;f++) { fam_free(bi->fam[f]); }
   free(bi->fam);
-  for(int i=0;i<bi->totraw;i++) { sub_free(bi->sub[i]); }
+  for(size_t index=0;index<bi->totraw;index++) { sub_free(bi->sub[index]); }
   sub_free(bi->birth_sub);
   free(bi->sub);
   free(bi->lambda);
@@ -289,67 +130,7 @@ void bi_free(Bi *bi) {
   free(bi);
 }
 
-/* bi_add_fam:
- Adds a fam to an existing Bi. Returns its index.
- */
-int bi_add_fam(Bi *bi, Fam *fam) {
-  if(bi->nfam >= bi->maxfam) {    // Extend Fam* buffer
-    bi->fam = (Fam **) realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *)); //E
-    if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed.");
-    bi->maxfam+=FAMBUF;
-  }
-
-  bi->fam[bi->nfam] = fam;
-  bi->reads += fam->reads;
-  return(bi->nfam++);
-}
-
-void bi_census(Bi *bi) {
-  int f, r;
-  int reads=0, nraw=0;
-  for(f=0;f<bi->nfam;f++) {
-    for(r=0;r<bi->fam[f]->nraw;r++) {
-      reads += bi->fam[f]->raw[r]->reads;
-      nraw++;
-    }
-  }
-  if(reads != bi->reads) {
-    bi->reads = reads;
-    bi->update_e = true;
-  }
-  bi->nraw = nraw;
-}
-
-/* Bi_assign_center:
- Takes a Bi object, and calculates and assigns its center Raw.
- Currently this is done trivially by choosing the most abundant raw.
- Flags update_fam and update_lambda.
- This function also currently assigns the cluster sequence (equal to center->seq).
-*/
-void bi_assign_center(Bi *bi) {
-  unsigned int f, r;
-  unsigned int max_reads = 0;
-  
-  // Assign the raw with the most reads as the center
-  bi->center = NULL;
-  for(f=0;f<bi->nfam;f++) {
-    for(r=0;r<bi->fam[f]->nraw;r++) {
-      if(bi->fam[f]->raw[r]->reads > max_reads) { // Most abundant
-         bi->center = bi->fam[f]->raw[r];
-         max_reads = bi->center->reads;
-      }
-    }
-  }
-  // Assign bi->seq and flag
-  if(bi->center) { strcpy(bi->seq, bi->center->seq); }
-  bi->update_lambda = true;
-  bi->update_fam = true;
-}
-
-/* B_new:
- The constructor for the B object. Takes in array of Raws.
- Places all sequences into the same family within one cluster.
-*/
+// The constructor for the B object. Takes in array of Raws.
 B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals) {
   unsigned int i, j, index;
 
@@ -397,9 +178,8 @@ B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double ome
   return b;
 }
 
-/* b_init:
- Initialized b with all raws in one cluster, with center, flagged to update lambda and fam.
-*/
+// Initializion B object by placing all Raws into one Fam
+// Called on B construction
 void b_init(B *b) {
   unsigned int i, index;
   
@@ -428,28 +208,211 @@ void b_init(B *b) {
   bi_assign_center(b->bi[0]); // Makes cluster center sequence
 }
 
-/* b_free:
-  Destruct the B object.
-*/
+// The destructor for the B object.
 void b_free(B *b) {
   for(int i=0;i<b->nclust;i++) { bi_free(b->bi[i]); }
   free(b->bi);
   free(b);
 }
 
-/* b_add_bi:
- Adds a new cluster Bi to the clustering B. Returns its index.
- */
-int b_add_bi(B *b, Bi *bi) {
+
+/********* CONTAINER OPERATIONS *********/
+
+// Add a Raw to a Fam object. Update reads/nraw. Return index to raw in fam.
+unsigned int fam_add_raw(Fam *fam, Raw *raw) {
+  // Allocate more space if needed
+  if(fam->nraw >= fam->maxraw) {    // Extend Raw* buffer
+    fam->raw = (Raw **) realloc(fam->raw, (fam->maxraw+RAWBUF) * sizeof(Raw *)); //E
+    if (fam->raw == NULL)  Rcpp::stop("Memory allocation failed.");
+    fam->maxraw+=RAWBUF;
+  }
+  // Add raw and update reads/nraw
+  fam->raw[fam->nraw] = raw;
+  fam->reads += raw->reads;
+  return(fam->nraw++);
+}
+
+// Adds a Fam to a Bi object. Update reads/nfam. Returns index to fam in bi.
+unsigned int bi_add_fam(Bi *bi, Fam *fam) {
+  // Allocate more space if needed
+  if(bi->nfam >= bi->maxfam) {    // Extend Fam* buffer
+    bi->fam = (Fam **) realloc(bi->fam, (bi->maxfam+FAMBUF) * sizeof(Fam *)); //E
+    if (bi->fam == NULL)  Rcpp::stop("Memory allocation failed.");
+    bi->maxfam+=FAMBUF;
+  }
+  // Add fam and update reads/nfam
+  bi->fam[bi->nfam] = fam;
+  bi->reads += fam->reads;
+  return(bi->nfam++);
+}
+
+// Adds a new Bi to a B object. Update nclust. Returns index to bi in b.
+// This should only ever used to add new, empty Bi objects.
+unsigned int b_add_bi(B *b, Bi *bi) {
+  // Allocate more space if needed
   if(b->nclust >= b->maxclust) {    // Extend Bi* buffer
     b->bi = (Bi **) realloc(b->bi, (b->maxclust+CLUSTBUF) * sizeof(Bi *)); //E
     if (b->bi == NULL)  Rcpp::stop("Memory allocation failed.");
     b->maxclust+=CLUSTBUF;
   }
+  // Add bi and update nclust
   b->bi[b->nclust] = bi;
   bi->i = b->nclust;
   return(b->nclust++);
 }
+
+// Removes a raw from a fam object. Updates reads/nraw. Returns pointer to that raw.
+// THIS REORDERS THE FAMS LIST OF RAWS. CAN BREAK INDICES.
+// THIS DOES NOT UPDATE READS OR NRAW IN THE PARENT BI.
+Raw *fam_pop_raw(Fam *fam, unsigned int r) {
+  Raw *pop;
+  if(r<fam->nraw) {
+    pop = fam->raw[r];
+    fam->raw[r] = fam->raw[fam->nraw-1]; // POPPED RAW REPLACED BY LAST RAW
+    fam->raw[fam->nraw-1] = NULL;
+    fam->nraw--;
+    fam->reads -= pop->reads;
+  } else {
+    Rcpp::stop("Container Error (Fam): Tried to pop out-of-range raw.");
+    pop = NULL;
+  }
+  return pop;
+}
+
+// Removes a raw from specified fam in a Bi object. Update Bi's reads/nraw. Returns pointer to that raw.
+// Sets update_fam and update_e flags. Frees the bi/raw sub object.
+// THIS CALLS FAM_POP_RAW WHICH CAN BREAK INDICES. SEE NOTES ON THAT FUNCTION.
+// Called by b_shuffle
+Raw *bi_pop_raw(Bi *bi, unsigned int f, unsigned int r) {
+  Raw *pop;
+  if(f<bi->nfam) {
+    pop = fam_pop_raw(bi->fam[f], r);
+    if(pop != NULL) {
+      // Update, flag, free corresponding sub object
+      bi->nraw--;
+      bi->reads -= pop->reads;
+      bi->update_fam = true;
+      bi->update_e = true;
+      sub_free(bi->sub[pop->index]);
+      bi->sub[pop->index] = NULL;
+    }
+  } else {  // Trying to pop an out of range raw
+    Rcpp::stop("Container Error (Bi): Tried to pop raw from out-of-range fam.");
+    pop = NULL;
+  }
+  return pop;
+}
+
+// Removes a fam from cluster. Update bi reads/nraw. Returns pointer to the removed fam.
+// THIS REORDERS THE BIS LIST OF FAMS. CAN BREAK INDICES.
+// Called by b_bud. Frees the bi-raw sub object(s).
+Fam *bi_pop_fam(Bi *bi, unsigned int f) {
+  Fam *pop;
+  if(f<bi->nfam) {
+    pop = bi->fam[f];
+    bi->fam[f] = bi->fam[bi->nfam-1]; // POPPED FAM REPLACED BY LAST FAM
+    bi->fam[bi->nfam-1] = NULL;
+    // Update, flag, free corresponding sub objects
+    bi->nfam--;
+    bi->nraw -= pop->nraw;
+    for(int r=0;r<pop->nraw;r++) {  // Doesn't rely on fam reads
+      bi->reads -= pop->raw[r]->reads;
+      sub_free(bi->sub[pop->raw[r]->index]);
+      bi->sub[pop->raw[r]->index] = NULL;
+    }
+    bi->update_e = true;
+  } else {  // Trying to pop an out of range fam
+    Rcpp::stop("Container Error (Bi): Tried to pop out-of-range fam.");
+    pop = NULL;
+  }
+  return pop;
+}
+
+// Hackily just adds raw to fam[0]. Updates reads/nraw.
+// Flags update_fam and update_e, which are needed before any further use.
+void bi_shove_raw(Bi *bi, Raw *raw) {
+  if(bi->nfam == 0) {
+    bi_add_fam(bi, fam_new());
+  }
+  fam_add_raw(bi->fam[0], raw);
+  bi->nraw++;
+  bi->reads += raw->reads;
+  bi->update_fam = true;
+  bi->update_e = true;
+}
+
+// Adds raw to appropriate fam. Makes new fam if necessary.
+// ISSUE WITH ALIGN, NEED ERR. UNUSED FOR NOW.
+// UNUSED UNUSED UNUSED UNUSED UNUSED UNUSED
+void bi_add_raw(Bi *bi, Raw *raw) {
+  Sub *sub;
+  int foo, result;
+  char buf[10];  // holds sprintf("%i", fam_index)
+  
+  sub = bi->sub[raw->index];
+  result = sm_exists(bi->sm, sub->key);
+  
+  if (result == 0) {                  // Handle value not found
+    foo = bi_add_fam(bi, fam_new());
+    fam_add_raw(bi->fam[foo], raw);
+    bi->fam[foo]->sub = sub;                   // Sub set on new fam formation.
+    sprintf(buf, "%i", foo);
+    sm_put(bi->sm, sub->key, buf);
+  } else {                            // Joining existing family
+    sm_get(bi->sm, sub->key, buf, sizeof(buf));
+    foo = atoi(buf);
+    fam_add_raw(bi->fam[foo], raw);
+  }
+  
+  bi->nraw++;
+  bi->reads += raw->reads;
+}
+
+
+/********* CONTAINER HOUSEKEEPING *********/
+
+// Iterate over the raws in a bi and update reads/nraw
+void bi_census(Bi *bi) {
+  unsigned int f, r;
+  unsigned int reads=0, nraw=0;
+  for(f=0;f<bi->nfam;f++) {
+    for(r=0;r<bi->fam[f]->nraw;r++) {
+      reads += bi->fam[f]->raw[r]->reads;
+      nraw++;
+    }
+  }
+  if(reads != bi->reads) {
+    bi->update_e = true;
+  }
+  bi->reads = reads;
+  bi->nraw = nraw;
+}
+
+// Takes a Bi object, and calculates and assigns its center Raw.
+// Currently this is done trivially by choosing the most abundant raw.
+// Flags update_fam and update_lambda.
+// This function also currently assigns the cluster sequence (equal to center->seq).
+void bi_assign_center(Bi *bi) {
+  unsigned int f, r;
+  unsigned int max_reads = 0;
+  
+  // Assign the raw with the most reads as the center
+  bi->center = NULL;
+  for(f=0;f<bi->nfam;f++) {
+    for(r=0;r<bi->fam[f]->nraw;r++) {
+      if(bi->fam[f]->raw[r]->reads > max_reads) { // Most abundant
+         bi->center = bi->fam[f]->raw[r];
+         max_reads = bi->center->reads;
+      }
+    }
+  }
+  // Assign bi->seq and flag
+  if(bi->center) { strcpy(bi->seq, bi->center->seq); }
+  bi->update_lambda = true;
+  bi->update_fam = true;
+}
+
+/********* ALGORITHM LOGIC *********/
 
 /*
  lambda_update:
@@ -457,14 +420,13 @@ int b_add_bi(B *b, Bi *bi) {
  changed center sequences.
 */
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
-  int i;
-  size_t index;
+  unsigned int i, index;
   double lambda;
   Sub *sub;
   
   for (i = 0; i < b->nclust; i++) {
-    if(b->bi[i]->update_lambda) {   // center sequence for Bi[i] has changed
-      // update alignments and lambda of all raws to this sequence
+    if(b->bi[i]->update_lambda) {   // center of Bi[i] has changed (eg. a new Bi)
+      // align all raws to this sequence and compute corresponding lambda
       if(verbose) { Rprintf("C%iLU:", i); }
       for(index=0; index<b->nraw; index++) {
         // get sub object

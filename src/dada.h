@@ -68,7 +68,7 @@ typedef struct {
 // Fam: Child of Bi, contains raws in Bi with same substitution structure
 // An "indel family": sequences are the "same" up to indels
 typedef struct {
-  char *seq;   // representative sequence
+  char seq[SEQLEN];   // representative sequence
   Raw *center; // representative raw (corresponds to seq)
   unsigned int reads;   // number of reads in this fam
   Sub *sub;    // struct of substitutions relative to the Bi
