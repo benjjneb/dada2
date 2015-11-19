@@ -108,10 +108,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   Rcpp::IntegerVector Rmap(nraw);
   unsigned int f, r;
   for(i=0;i<bb->nclust;i++) {
-    for(f=0;f<bb->bi[i]->nfam;f++) {
-      for(r=0;r<bb->bi[i]->fam[f]->nraw;r++) {
-        Rmap(bb->bi[i]->fam[f]->raw[r]->index) = i+1; // +1 for R 1-indexing
-      }
+    for(r=0;r<bb->bi[i]->nraw;r++) {
+      Rmap(bb->bi[i]->raw[r]->index) = i+1; // +1 for R 1-indexing
     }
   }
 
@@ -131,10 +129,9 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
   bool shuffled = false;
   
   B *bb;
-  bb = b_new(raws, nraw, score, gap_pen, omegaA, use_singletons, omegaS, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi and 1 fam
+  bb = b_new(raws, nraw, score, gap_pen, omegaA, use_singletons, omegaS, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi
   b_lambda_update(bb, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
-  b_fam_update(bb, verbose);     // Organizes raws into fams, makes fam consensus/lambda
-  b_p_update(bb);       // Calculates abundance p-value for each fam in its cluster (consensuses)
+  b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
@@ -150,7 +147,6 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
     if(verbose && nshuffle >= MAX_SHUFFLE) { Rprintf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
     
-    b_fam_update(bb, verbose); // If centers can move, must have lambda_update before fam_update
     b_p_update(bb);
     bi_free_absent_subs(bb->bi[newi], bb->nraw); // Free subs in this cluster if they didn't join
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) )

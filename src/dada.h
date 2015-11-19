@@ -63,6 +63,7 @@ typedef struct {
   unsigned int length;  // the length of the sequence
   unsigned int reads;   // number of reads of this unique sequence
   unsigned int index;   // The index of this Raw in b->raw[index]
+  double p;    // abundance pval relative to the current Bi
 } Raw;
 
 // Fam: Child of Bi, contains raws in Bi with same substitution structure
@@ -89,15 +90,12 @@ typedef struct {
   unsigned int nraw;    // number of raws in Bi
   unsigned int reads;   // number of reads in this cluster
   unsigned int i;       // the cluster number in the total clustering
-  Fam **fam;   // Array of pointers to child fams.
-  unsigned int nfam;    // number of fams in Bi
-  unsigned int maxfam;  // number of fams currently allocated for in **fam
+  Raw **raw;   // Array of pointers to child fams.
+  unsigned int maxraw;  // number of fams currently allocated for in **fam
   bool update_lambda; // set to true when consensus changes
-  bool update_fam; // set to true when consensus changes and when raws are shuffled
   bool update_e; // set to true when consensus changes and when raws are shuffled
   bool shuffle; // set to true when e-values are updated
   double self; // self-production genotype error probability
-  StrMap *sm;  // Hash table from sub->key to string 'fam index+1' '\0'
   Sub **sub;   // Array of pointers to subs with all raws.
   double *lambda; // Array of lambdas with all raws.
   double *e;   // Array of expected read numbers with all raws.
@@ -143,9 +141,7 @@ void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle(B *b);
-bool b_shuffle_oneway(B *b);
 void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
-void b_fam_update(B *b, bool verbose);
 void b_consensus_update(B *b);
 void b_e_update(B *b);
 void b_p_update(B *b);
@@ -153,7 +149,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
 void b_make_consensus(B *b);
-void bi_free_absent_subs(Bi *bi, int nraw);
+void bi_free_absent_subs(Bi *bi, unsigned int nraw);
 
 // methods implemented in misc.c
 void nt2int(char *oseq, const char *iseq);
@@ -161,9 +157,7 @@ void int2nt(char *oseq, const char *iseq);
 void ntcpy(char *oseq, const char *iseq);
 char *ntstr(const char *iseq);
 char *intstr(const char *iseq);
-void b_print(B *b);
 void align_print(char **al);
-void b_dump(B *b, char *fn);
 void err_print(double err[4][4]);
 void test_fun(int i);
 
@@ -179,11 +173,8 @@ Sub *sub_copy(Sub *sub);
 void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
-void b_make_pS_lookup(B *b);
-void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD);
 double calc_pA(int reads, double E_reads);
-double get_pA(Fam *fam, Bi *bi);
-double get_pS(Fam *fam, Bi *bi, B *b);
+double get_pA(Raw *raw, Sub *sub, double lambda, Bi *bi);
 double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
 double get_self(char *seq, double err[4][4]);
 
