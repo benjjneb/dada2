@@ -47,6 +47,7 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
   } else {
     raw->qual = NULL;
   }
+  raw->E_minmax = -999.0;
   return raw;
 }
 
@@ -60,7 +61,8 @@ void raw_free(Raw *raw) {
 
 // The constructor for the Bi object.
 Bi *bi_new(unsigned int totraw) {
-  Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
+//  Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
+  Bi *bi = new Bi;
   if (bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *)); //E
   if (bi->raw == NULL)  Rcpp::stop("Memory allocation failed.");
@@ -93,11 +95,11 @@ void bi_free(Bi *bi) {
   free(bi->sub);
   free(bi->lambda);
   free(bi->e);
-  free(bi);
+  delete bi;
 }
 
 // The constructor for the B object. Takes in array of Raws.
-B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals) {
+B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, int band_size, bool vectorized_alignment, bool use_quals) {
   unsigned int i, j, index;
 
   // Allocate memory
@@ -113,8 +115,6 @@ B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double ome
   b->nraw = nraw;
   b->gap_pen = gap_pen;
   b->omegaA = omegaA;
-  b->use_singletons = use_singletons;
-  b->omegaS = omegaS;
   b->band_size = band_size;
   b->vectorized_alignment = vectorized_alignment;
   b->use_quals = use_quals;
@@ -271,62 +271,50 @@ void bi_assign_center(Bi *bi) {
 /********* ALGORITHM LOGIC *********/
 
 /*
- lambda_update:
- updates the alignments and lambda of all raws to Bi with
- changed center sequences.
+ compare:
+ Performs alignments and lambda of all raws to the specified Bi
 */
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
-  unsigned int i, index;
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
+  unsigned int index;
   double lambda;
+  Raw *raw;
   Sub *sub;
+  Comparison comp;
   
-  for (i = 0; i < b->nclust; i++) {
-    if(b->bi[i]->update_lambda) {   // center of Bi[i] has changed (eg. a new Bi)
-      // align all raws to this sequence and compute corresponding lambda
-      if(verbose) { Rprintf("C%iLU:", i); }
-      for(index=0; index<b->nraw; index++) {
-        // get sub object
-        sub = sub_new(b->bi[i]->center, b->raw[index], b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
-        b->nalign++;
-        if(!sub) { b->nshroud++; }
-  
-        // Store sub in the cluster object Bi
-        sub_free(b->bi[i]->sub[index]);
-        b->bi[i]->sub[index] = sub;
-        
-        // Calculate lambda for that sub
-        lambda = compute_lambda(b->raw[index], sub, errMat, b->use_quals);
-        
-        // Store lambda and set self
-        b->bi[i]->lambda[index] = lambda;
-        if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
-      }
-      b->bi[i]->update_lambda = false;
-      b->bi[i]->update_e = true;
-    } // if(b->bi[i]->update_lambda)
-  }
-  b_e_update(b);
-}
+  // align all raws to this sequence and compute corresponding lambda
+  if(verbose) { Rprintf("C%iLU:", i); }
+  for(index=0; index<b->nraw; index++) {
+    raw = b->raw[index];
+    // get sub object
+    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
+    b->nalign++;
+    if(!sub) { b->nshroud++; }
 
-/* bi_free_absent_subs(Bi *bi, int nraw):
-   Frees subs of raws that are not currently in this cluster.
-   */
-void bi_free_absent_subs(Bi *bi, unsigned int nraw) {
-  unsigned int r, index;
-  bool *keep = (bool *) malloc(nraw * sizeof(bool)); //E
-  if (keep == NULL)  Rcpp::stop("Memory allocation failed.");
-  for(index=0;index<nraw;index++) { keep[index] = false; }
-  
-  for(r=0;r<bi->nraw;r++) {
-    keep[bi->raw[r]->index] = true;
-  }
-  for(index=0;index<nraw;index++) {
-    if(!keep[index]) {
-      sub_free(bi->sub[index]);
-      bi->sub[index] = NULL;
+    // Store sub in the cluster object Bi
+    sub_free(b->bi[i]->sub[index]);
+    b->bi[i]->sub[index] = sub;
+    
+    // Calculate lambda for that sub
+    lambda = compute_lambda(raw, sub, errMat, b->use_quals);
+    
+    // Store lambda and set self
+    b->bi[i]->lambda[index] = lambda;
+    if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
+    
+    // Store comparison if potentially useful
+    if(lambda * b->reads > raw->E_minmax) { // This cluster could attract this raw
+      if(lambda * b->bi[i]->center->reads > raw->E_minmax) { // Better E_minmax, set
+        raw->E_minmax = lambda * b->bi[i]->center->reads;
+      }
+      comp.i = i;
+      comp.index = index;
+      comp.lambda = lambda;
+      comp.hamming = sub->nsubs;
+      b->bi[i]->comp.push_back(comp);
     }
   }
-  free(keep);
+  b->bi[i]->update_e = true;
+  b_e_update(b);
 }
 
 void b_e_update(B *b) {
@@ -415,6 +403,79 @@ bool b_shuffle(B *b) {
   
   for(i=0; i<b->nclust; i++) { b->bi[i]->shuffle = false; }
   return shuffled;
+}
+
+/* b_shuffle2:
+ move each sequence to the bi that produces the highest expected
+ number of that sequence. The center of a Bi cannot leave.
+*/
+bool b_shuffle2(B *b) {
+  unsigned int i, j, index;
+  bool shuffled = false;
+  Raw *raw, *pop;
+  
+  double *emax = (double *) malloc(b->nraw * sizeof(double));
+  unsigned int *imax = (unsigned int *) malloc(b->nraw * sizeof(unsigned int));
+  if(emax==NULL || imax==NULL) Rcpp::stop("Memory allocation failed.");
+
+  // Initialize emax/imax off of cluster 0
+  // Comparisons to all raws exist in cluster 0, in index order
+  for(index=0;index<b->nraw;index++) {
+    emax[index] = b->bi[0]->comp[index].lambda * b->bi[0]->reads;
+    imax[index] = 0;
+  }
+  
+  // Iterate over remaining comparisons, find best E/i for each raw
+  for(i=1;i<b->nclust;i++) {
+    for(j=0;j<b->bi[i]->comp.size();j++) {
+      if(b->bi[i]->comp[j].lambda * b->bi[i]->reads > emax[b->bi[i]->comp[j].index]) { // better E
+        emax[b->bi[i]->comp[j].index] = b->bi[i]->comp[j].lambda * b->bi[i]->reads;
+        imax[b->bi[i]->comp[j].index] = b->bi[i]->comp[j].i;
+      }
+    }
+  }
+  
+  // Iterate over raws, if best i different than current, move
+  for(i=0;i<b->nclust;i++) {
+    // IMPORTANT TO ITERATE BACKWARDS DUE TO BI_POP_RAW!!!!!!
+    for(int r=b->bi[i]->nraw-1; r>=0; r--) {
+      raw = b->bi[i]->raw[r];
+      // If a better cluster was found, move the raw to the new bi
+      if(imax[raw->index] != i) {
+        if(raw->index == b->bi[i]->center->index) {  // Check if center
+          if(VERBOSE) { Rprintf("Warning: Shuffle blocked the center of a Bi from leaving."); }
+          continue;
+        }
+        // Moving raw
+        bi_pop_raw(b->bi[i], r);
+        bi_add_raw(b->bi[imax[raw->index]], raw);
+        shuffled = true;  
+      }  
+    } // for(r=0;r<b->bi[i]->nraw;r++)
+  }
+
+  return shuffled;
+}
+
+/* bi_free_absent_subs:
+   Frees subs of raws that are not currently in this cluster.
+   */
+void bi_free_absent_subs(Bi *bi, unsigned int nraw) {
+  unsigned int r, index;
+  bool *keep = (bool *) malloc(nraw * sizeof(bool)); //E
+  if (keep == NULL)  Rcpp::stop("Memory allocation failed.");
+  for(index=0;index<nraw;index++) { keep[index] = false; }
+  
+  for(r=0;r<bi->nraw;r++) {
+    keep[bi->raw[r]->index] = true;
+  }
+  for(index=0;index<nraw;index++) {
+    if(!keep[index]) {
+      sub_free(bi->sub[index]);
+      bi->sub[index] = NULL;
+    }
+  }
+  free(keep);
 }
 
 /* b_p_update:

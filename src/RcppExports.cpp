@@ -92,6 +92,17 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// C_check_ACGT
+Rcpp::LogicalVector C_check_ACGT(std::vector<std::string> seqs);
+RcppExport SEXP dada2_C_check_ACGT(SEXP seqsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
+    __result = Rcpp::wrap(C_check_ACGT(seqs));
+    return __result;
+END_RCPP
+}
 // evaluate_kmers
 Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, unsigned int max_aligns);
 RcppExport SEXP dada2_evaluate_kmers(SEXP seqsSEXP, SEXP kmer_sizeSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {

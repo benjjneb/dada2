@@ -27,7 +27,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
                         bool vectorized_alignment,
                         bool verbose) {
 
-  unsigned int i, j, index, pos, seqlen, nraw;
+  unsigned int i, j, r, index, pos, seqlen, nraw;
   
   /********** INPUT VALIDATION *********/
   // Check lengths of seqs and abundances vectors
@@ -106,7 +106,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   
   // Make map from uniques to cluster
   Rcpp::IntegerVector Rmap(nraw);
-  unsigned int f, r;
   for(i=0;i<bb->nclust;i++) {
     for(r=0;r<bb->bi[i]->nraw;r++) {
       Rmap(bb->bi[i]->raw[r]->index) = i+1; // +1 for R 1-indexing
@@ -129,19 +128,19 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
   bool shuffled = false;
   
   B *bb;
-  bb = b_new(raws, nraw, score, gap_pen, omegaA, use_singletons, omegaS, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi
-  b_lambda_update(bb, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
+  bb = b_new(raws, nraw, score, gap_pen, omegaA, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi
+  b_compare(bb, 0, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
   b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
     if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
-    b_lambda_update(bb, use_kmers, kdist_cutoff, errMat, verbose);
+    b_compare(bb, newi, use_kmers, kdist_cutoff, errMat, verbose);
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {
-      shuffled = b_shuffle(bb);
+      shuffled = b_shuffle2(bb);
       b_e_update(bb);
       if(verbose) { Rprintf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);

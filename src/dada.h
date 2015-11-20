@@ -36,8 +36,14 @@
    -------- STRUCTS OBJECTS STRUCTS ----------
    ------------------------------------------- */
 
-typedef std::pair<double, double> Prob;
-// typedef int bool;  // [C++]: has builtin bool type
+/* Comparison:
+ A brief summary of the comparison between a cluster and a raw */
+typedef struct {
+  unsigned int i;
+  unsigned int index;
+  double lambda;
+  unsigned int hamming;
+} Comparison;
 
 /* Sub:
  A set of substitutions (position and identity) of one sequence
@@ -64,22 +70,9 @@ typedef struct {
   unsigned int reads;   // number of reads of this unique sequence
   unsigned int index;   // The index of this Raw in b->raw[index]
   double p;    // abundance pval relative to the current Bi
+  double E_minmax;
+  Comparison comp;
 } Raw;
-
-// Fam: Child of Bi, contains raws in Bi with same substitution structure
-// An "indel family": sequences are the "same" up to indels
-typedef struct {
-  char seq[SEQLEN];   // representative sequence
-  Raw *center; // representative raw (corresponds to seq)
-  unsigned int reads;   // number of reads in this fam
-  Sub *sub;    // struct of substitutions relative to the Bi
-  double lambda; // probability of this sequence being produced from the Bi seq
-  double p;    // abundance pval relative to the current Bi
-  double pS;   // singleton pval relative to the current Bi
-  Raw **raw;   // array of pointers to contained raws
-  unsigned int nraw;    // number of contained raws
-  unsigned int maxraw;  // number of raws currently allocated for in **raw
-} Fam;
 
 // Bi: This is one cluster or partition. Contains raws grouped in fams.
 // Bi stores the sub/lambda/e to from the cluster seq/reads to every raw in B.
@@ -105,6 +98,7 @@ typedef struct {
   double birth_fold; // the multiple of expectations at birth
   double birth_e; // the expected number of reads at birth
   Sub *birth_sub; // the Sub object at birth
+  std::vector<Comparison> comp;
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).
@@ -120,8 +114,6 @@ typedef struct {
   int gap_pen;
   bool vectorized_alignment;
   double omegaA;
-  bool use_singletons;
-  double omegaS;
   bool use_quals;
   double *lams;
   double *cdf;
@@ -135,13 +127,14 @@ typedef struct {
    ------------------------------------------- */
 
 // methods implemented in cluster.c
-B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals);
+B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, int band_size, bool vectorized_alignment, bool use_quals);
 Raw *raw_new(char *seq, double *qual, unsigned int reads);
 void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle(B *b);
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
+bool b_shuffle2(B *b);
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
 void b_consensus_update(B *b);
 void b_e_update(B *b);
 void b_p_update(B *b);

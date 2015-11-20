@@ -25,6 +25,10 @@ C_pair_consensus <- function(s1, s2, prefer) {
     .Call('dada2_C_pair_consensus', PACKAGE = 'dada2', s1, s2, prefer)
 }
 
+C_check_ACGT <- function(seqs) {
+    .Call('dada2_C_check_ACGT', PACKAGE = 'dada2', seqs)
+}
+
 #' Generate the kmer-distance and the alignment distance from the
 #'   given set of sequences. 
 #'
