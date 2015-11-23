@@ -6,8 +6,8 @@ using namespace Rcpp;
 
 // This function constructs the output "clustering" data.frame for the dada(...) function.
 // This contains core and diagnostic information on each partition (or cluster, or Bi).
-Rcpp::DataFrame b_make_clustering_df(B *b, bool has_quals) {
-  unsigned int i, j, r, s;
+Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool has_quals) {
+  unsigned int i, j, r, s, cind;
   Sub *sub;
   double q_ave, tot_e;
   
@@ -42,7 +42,7 @@ Rcpp::DataFrame b_make_clustering_df(B *b, bool has_quals) {
     // n0 and n1
     Rzeros[i] = 0; Rones[i] = 0;
     for(r=0;r<b->bi[i]->nraw;r++) {
-      sub = b->bi[i]->sub[b->bi[i]->raw[r]->index];
+      sub = subs[b->bi[i]->raw[r]->index];
       if(sub) {
         if(sub->nsubs == 0) { Rzeros[i] += b->bi[i]->raw[r]->reads; }
         if(sub->nsubs == 1) { Rones[i] += b->bi[i]->raw[r]->reads; }
@@ -50,32 +50,41 @@ Rcpp::DataFrame b_make_clustering_df(B *b, bool has_quals) {
     }
     // Record information from the cluster's birth
     Rbirth_types.push_back(std::string(b->bi[i]->birth_type));
-    Rbirth_pvals[i] = b->bi[i]->birth_pval;
-    Rbirth_folds[i] = b->bi[i]->birth_fold;
-    if(b->bi[i]->birth_sub) { Rbirth_hams[i] = b->bi[i]->birth_sub->nsubs; }
-    else { Rbirth_hams[i] = Rcpp::IntegerVector::get_na(); }
-    Rbirth_es[i] = b->bi[i]->birth_e;
-    
-    // Calculate average quality of birth substitutions
-    if(has_quals) {
-      q_ave = 0.0;
-      sub = b->bi[i]->birth_sub;
-      if(sub && sub->q1) {
-        for(s=0;s<sub->nsubs;s++) {
-          q_ave += (sub->q1[s]);
-        }
-        q_ave = q_ave/((double)sub->nsubs);
-      }
-      Rbirth_qaves[i] = q_ave;
-    } else {
+    if(i==0) {  // 0-clust wasn't born normally
+      Rbirth_pvals[i] = Rcpp::NumericVector::get_na(); 
+      Rbirth_folds[i] = Rcpp::NumericVector::get_na(); 
+      Rbirth_hams[i] = Rcpp::IntegerVector::get_na(); 
+      Rbirth_es[i] = Rcpp::NumericVector::get_na();
       Rbirth_qaves[i] = Rcpp::NumericVector::get_na();
+    } else { 
+      Rbirth_pvals[i] = b->bi[i]->birth_pval;
+      Rbirth_folds[i] = b->bi[i]->birth_fold;
+      Rbirth_hams[i] = b->bi[i]->birth_comp.hamming;
+      Rbirth_es[i] = b->bi[i]->birth_e;
+      // Calculate average quality of birth substitutions
+      if(has_quals) {
+        q_ave = 0.0;
+        sub = birth_subs[i];
+        if(sub && sub->q1) {
+          for(s=0;s<sub->nsubs;s++) {
+            q_ave += (sub->q1[s]);
+          }
+          q_ave = q_ave/((double)sub->nsubs);
+        }
+        Rbirth_qaves[i] = q_ave;
+      } else {
+        Rbirth_qaves[i] = Rcpp::NumericVector::get_na();
+      }
     }
     
     // Calculate post-hoc pval
+    // This is not as exhaustive anymore
     tot_e = 0.0;
     for(j=0;j<b->nclust;j++) {
-      if(i != j) {
-        tot_e += b->bi[j]->e[b->bi[i]->center->index];
+      if(i != j && b->bi[j]->comp_index.count(b->bi[i]->center->index) > 0) {
+        cind = b->bi[j]->comp_index[b->bi[i]->center->index];
+        tot_e += b->bi[j]->comp[cind].lambda * b->bi[j]->reads;
+//        b->bi[j]->e[b->bi[i]->center->index];
       }
     }
     Rpvals[i] = calc_pA(1+b->bi[i]->reads, tot_e); // Add 1 because calc_pA subtracts 1 (conditional p-val)
@@ -86,7 +95,7 @@ Rcpp::DataFrame b_make_clustering_df(B *b, bool has_quals) {
 
 // Returns a 16xN matrix with the observed counts of each transition categorized by
 // type (row) and quality (column). Assumes qualities start at 0!!
-Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, bool has_quals, unsigned int qmax) {
+Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int qmax) {
   unsigned int i, r, pos0, pos1, nti0, nti1, qual, t_ij;
   int ncol;
   Sub *sub;
@@ -106,7 +115,7 @@ Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, bool has_quals, un
     center = b->bi[i]->center;
     for(r=0;r<b->bi[i]->nraw;r++) {
       raw = b->bi[i]->raw[r];
-      sub = b->bi[i]->sub[raw->index]; // The sub object includes the map between the center and the raw positions
+      sub = subs[raw->index]; // The sub object includes the map between the center and the raw positions
       if(!sub) {
         if(VERBOSE) { Rprintf("Warning: No sub for R%i in C%i.\n", r, i); }
         continue;
@@ -137,7 +146,7 @@ Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, bool has_quals, un
 // Makes data.frame of number of substitutions by position on the sequence
 // Also finds the expected number of substitutions at each position, based on quality scores
 //    and the input error matrix
-Rcpp::DataFrame b_make_positional_substitution_df(B *b, unsigned int seqlen, Rcpp::NumericMatrix errMat) {
+Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat) {
   unsigned int i, pos, pos1, qind, j, r, s, nti0, ncol;
   Raw *raw;
   Sub *sub;
@@ -153,7 +162,7 @@ Rcpp::DataFrame b_make_positional_substitution_df(B *b, unsigned int seqlen, Rcp
     // Iterate through raws
     for(r=0;r<b->bi[i]->nraw;r++) {
       raw = b->bi[i]->raw[r];
-      sub = b->bi[i]->sub[raw->index];
+      sub = subs[raw->index];
       if(sub) { // not a NULL sub
         // Add to the subs count
         for(s=0;s<sub->nsubs;s++) {
@@ -189,7 +198,7 @@ Rcpp::DataFrame b_make_positional_substitution_df(B *b, unsigned int seqlen, Rcp
 
 // Calculate the average positional qualities for each cluster/partition/Bi
 // Return position (rows) by Bi (columns) matrix.
-Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, bool has_quals, unsigned int seqlen) {
+Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int seqlen) {
   double q_sum;
   unsigned int i, r, nreads, pos0, pos1;
   Sub *sub;
@@ -203,7 +212,7 @@ Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, bool has_quals, unsigned
         nreads=0;
         for(r=0;r<b->bi[i]->nraw;r++) {
           raw = b->bi[i]->raw[r];
-          sub = b->bi[i]->sub[raw->index];
+          sub = subs[raw->index];
           if(sub) {
             pos1 = sub->map[pos0];
             if(pos1 == GAP_GLYPH) { // Gap
@@ -221,7 +230,8 @@ Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, bool has_quals, unsigned
 }
 
 // Make output data.frame of birth_subs
-Rcpp::DataFrame b_make_birth_subs_df(B *b, bool has_quals) {
+Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals) {
+  Sub *sub;
   unsigned int i, s;
   char buf[2] = {'\0','\0'};
   // Initialize the columns
@@ -232,17 +242,18 @@ Rcpp::DataFrame b_make_birth_subs_df(B *b, bool has_quals) {
   Rcpp::IntegerVector bs_clust;
   // Record data for each birth substitution
   for(i=0;i<b->nclust;i++) {
-    if(b->bi[i]->birth_sub) {
-      for(s=0;s<b->bi[i]->birth_sub->nsubs;s++) {
-        bs_pos.push_back(b->bi[i]->birth_sub->pos[s]+1); // R 1 indexing
-        buf[0] = b->bi[i]->birth_sub->nt0[s];
+    sub = birth_subs[i];
+    if(sub) {
+      for(s=0;s<sub->nsubs;s++) {
+        bs_pos.push_back(sub->pos[s]+1); // R 1 indexing
+        buf[0] = sub->nt0[s];
         int2nt(buf, buf);
         bs_nt0.push_back(std::string(buf));
-        buf[0] = b->bi[i]->birth_sub->nt1[s];
+        buf[0] = sub->nt1[s];
         int2nt(buf, buf);
         bs_nt1.push_back(std::string(buf));
         if(has_quals) {
-          bs_qual.push_back(b->bi[i]->birth_sub->q1[s]);
+          bs_qual.push_back(sub->q1[s]);
         } else {
           bs_qual.push_back(Rcpp::NumericVector::get_na());
         }

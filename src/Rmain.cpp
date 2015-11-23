@@ -98,11 +98,37 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   B *bb = run_dada(raws, nraw, err, c_score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose);
 
   /********** MAKE OUTPUT *********/
-  Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, has_quals);
-  Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, has_quals, qmax);
-  Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, has_quals, seqlen);
-  Rcpp::DataFrame df_birth_subs = b_make_birth_subs_df(bb, has_quals);
-  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, seqlen, err);
+  Raw *raw;
+  
+  // Create subs for all the relevant alignments
+  Sub **subs = (Sub **) malloc(bb->nraw * sizeof(Sub *)); //E
+  Sub **birth_subs = (Sub **) malloc(bb->nclust * sizeof(Sub *)); //E
+  if(!subs || !birth_subs) Rcpp::stop("Memory allocation failed.");
+  for(i=0;i<bb->nclust;i++) {
+    // Make subs for members of that cluster
+    for(r=0;r<bb->bi[i]->nraw;r++) {
+      raw = bb->bi[i]->raw[r];
+      subs[raw->index] = sub_new(bb->bi[i]->center, raw, c_score, gap, false, 1.0, band_size, vectorized_alignment);
+    }
+    // Make birth sub for that cluster
+    if(i==0) { birth_subs[i] == NULL; }
+    else {
+      birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, c_score, gap, false, 1.0, band_size, vectorized_alignment);
+    }
+  }
+  Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
+  Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, qmax);
+  Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, seqlen);
+  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err);
+  Rcpp::DataFrame df_birth_subs = b_make_birth_subs_df(bb, birth_subs, has_quals);
+  
+  // Free the created subs
+  for(index=0;index<bb->nraw;index++) {
+    sub_free(subs[index]);
+  }
+  for(i=0;i<bb->nclust;i++) {
+    sub_free(birth_subs[i]);
+  }
   
   // Make map from uniques to cluster
   Rcpp::IntegerVector Rmap(nraw);
@@ -141,16 +167,15 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
     nshuffle = 0;
     do {
       shuffled = b_shuffle2(bb);
-      b_e_update(bb);
+//      b_e_update(bb);
       if(verbose) { Rprintf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
     if(verbose && nshuffle >= MAX_SHUFFLE) { Rprintf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
-    
+
     b_p_update(bb);
-    bi_free_absent_subs(bb->bi[newi], bb->nraw); // Free subs in this cluster if they didn't join
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) )
   
-  if(final_consensus) { b_make_consensus(bb); }
+//  if(final_consensus) { b_make_consensus(bb); }
   if(verbose) Rprintf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
   
   return bb;

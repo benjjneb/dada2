@@ -29,16 +29,18 @@ double calc_pA(int reads, double E_reads) {
 }
 
 // Find abundance pval from a Raw in a Bi
-double get_pA(Raw *raw, Sub *sub, double lambda, Bi *bi) {
-  double E_reads, pval = 1.;
+double get_pA(Raw *raw, Bi *bi) {
+  unsigned int hamming;
+  double lambda, E_reads, pval = 1.;
+  
+  unsigned int ci = bi->comp_index[raw->index];
+  lambda = bi->comp[ci].lambda;
+  hamming = bi->comp[ci].hamming;
   
   if(raw->reads == 1) {   // Singleton. No abundance pval.
     pval=1.;
   } 
-  else if(!sub) { // Outside kmer threshhold
-    pval=0.;
-  } 
-  else if(sub->nsubs == 0) { // Cluster center (or no mismatch to center)
+  else if(hamming == 0) { // Cluster center (or no mismatch to center)
     pval=1.;
   }
   else if(lambda == 0) { // Zero expected reads of this raw

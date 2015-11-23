@@ -67,13 +67,6 @@ Bi *bi_new(unsigned int totraw) {
   bi->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *)); //E
   if (bi->raw == NULL)  Rcpp::stop("Memory allocation failed.");
   bi->maxraw = RAWBUF;
-  bi->sub = (Sub **) malloc(totraw * sizeof(Sub *)); //E
-  if (bi->sub == NULL)  Rcpp::stop("Memory allocation failed.");
-  for(int i=0;i<totraw;i++) { bi->sub[i] = NULL; }   // Init to null pointers
-  bi->lambda = (double *) malloc(totraw * sizeof(double)); //E
-  if (bi->lambda == NULL)  Rcpp::stop("Memory allocation failed.");
-  bi->e = (double *) malloc(totraw * sizeof(double)); //E
-  if (bi->e == NULL)  Rcpp::stop("Memory allocation failed.");
   bi->totraw = totraw;
   bi->center = NULL;
   strcpy(bi->seq, "");
@@ -83,18 +76,12 @@ Bi *bi_new(unsigned int totraw) {
   
   bi->reads = 0;
   bi->nraw = 0;
-  bi->birth_sub=NULL;
   return bi;
 }
 
 // The destructor for the Bi object
 void bi_free(Bi *bi) {
   free(bi->raw);
-  for(size_t index=0;index<bi->totraw;index++) { sub_free(bi->sub[index]); }
-  sub_free(bi->birth_sub);
-  free(bi->sub);
-  free(bi->lambda);
-  free(bi->e);
   delete bi;
 }
 
@@ -156,7 +143,6 @@ void b_init(B *b) {
   b->bi[0]->birth_pval = 0.0;
   b->bi[0]->birth_fold = 1.0;
   b->bi[0]->birth_e = b->reads;
-  b->bi[0]->birth_sub = NULL;
   b->nalign = 0;
   b->nshroud = 0;
 
@@ -190,7 +176,6 @@ unsigned int bi_add_raw(Bi *bi, Raw *raw) {
   // Add raw and update reads/nraw
   bi->raw[bi->nraw] = raw;
   bi->reads += raw->reads;
-  bi->update_e = true;
   return(bi->nraw++);
 }
 
@@ -222,8 +207,6 @@ Raw *bi_pop_raw(Bi *bi, unsigned int r) {
     bi->nraw--;
     bi->reads -= pop->reads;
     bi->update_e = true;
-    sub_free(bi->sub[pop->index]);
-    bi->sub[pop->index] = NULL;
   } else {
     Rcpp::stop("Container Error (Bi): Tried to pop out-of-range raw.");
     pop = NULL;
@@ -253,11 +236,11 @@ void bi_census(Bi *bi) {
 // Flags update_lambda.
 // This function also currently assigns the cluster sequence (equal to center->seq).
 void bi_assign_center(Bi *bi) {
-  unsigned int r, max_reads = 0;
+  unsigned int r, max_reads;
   
   // Assign the raw with the most reads as the center
   bi->center = NULL;
-  for(r=0;r<bi->nraw;r++) {
+  for(r=0,max_reads=0;r<bi->nraw;r++) {
     if(bi->raw[r]->reads > max_reads) { // Most abundant
        bi->center = bi->raw[r];
        max_reads = bi->center->reads;
@@ -272,10 +255,11 @@ void bi_assign_center(Bi *bi) {
 
 /*
  compare:
- Performs alignments and lambda of all raws to the specified Bi
+ Performs alignments and computes lambda for all raws to the specified Bi
+ Stores only those that can possibly be recruited to this Bi
 */
 void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
-  unsigned int index;
+  unsigned int index, cind;
   double lambda;
   Raw *raw;
   Sub *sub;
@@ -283,22 +267,17 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
   
   // align all raws to this sequence and compute corresponding lambda
   if(verbose) { Rprintf("C%iLU:", i); }
-  for(index=0; index<b->nraw; index++) {
+  for(index=0, cind=0; index<b->nraw; index++) {
     raw = b->raw[index];
     // get sub object
     sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
     b->nalign++;
     if(!sub) { b->nshroud++; }
 
-    // Store sub in the cluster object Bi
-    sub_free(b->bi[i]->sub[index]);
-    b->bi[i]->sub[index] = sub;
-    
     // Calculate lambda for that sub
     lambda = compute_lambda(raw, sub, errMat, b->use_quals);
     
     // Store lambda and set self
-    b->bi[i]->lambda[index] = lambda;
     if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
     
     // Store comparison if potentially useful
@@ -311,12 +290,15 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
       comp.lambda = lambda;
       comp.hamming = sub->nsubs;
       b->bi[i]->comp.push_back(comp);
+      b->bi[i]->comp_index.insert(std::make_pair(index, cind++));
     }
+    sub_free(sub);
   }
-  b->bi[i]->update_e = true;
-  b_e_update(b);
+//  b->bi[i]->update_e = true;
+//  b_e_update(b);
 }
 
+/*
 void b_e_update(B *b) {
   unsigned int i, index;
 
@@ -329,81 +311,7 @@ void b_e_update(B *b) {
     }
     b->bi[i]->update_e = false;
   }
-}
-
-/* b_shuffle:
- move each sequence to the bi that produces the highest expected
- number of that sequence. The center of a Bi cannot leave.
-*/
-bool b_shuffle(B *b) {
-  int i, r, j, foo;
-  int ibest, index;
-  bool shuffled = false;
-  Raw *raw;
-  double e, maxe;
-  
-  // Make list of clusters that have shuffle flags
-  std::vector<int> shuffled_bis;
-  for(i=0;i<b->nclust;i++) {
-    if(b->bi[i]->shuffle) {
-      shuffled_bis.push_back(i);
-    }
-  }
-  
-  // Iterate over raws via clusters
-  for(i=0; i<b->nclust; i++) {
-    // IMPORTANT TO ITERATE BACKWARDS DUE TO BI_POP_RAW!!!!!!
-    for(r=b->bi[i]->nraw-1; r>=0; r--) {
-      // Find cluster with best e for this raw
-      maxe = 0.0; ibest=-99;
-      index = b->bi[i]->raw[r]->index;
-      
-      if(b->bi[i]->shuffle) { // E's for this cluster have changed, compare to all others
-        for(j=0;j<b->nclust; j++) {
-          e = b->bi[j]->e[index];
-          if(e > maxe) {
-            maxe = e;
-            ibest = j;
-          }
-        }
-      } else { // Compare just to other clusters that have changed E's
-        for(foo=0;foo<shuffled_bis.size();foo++) {
-          j = shuffled_bis[foo];
-          e = b->bi[j]->e[index];
-          if(e > maxe) {
-            maxe = e;
-            ibest = j;
-          }
-        }
-      }
-      
-      // Check if no cluster assigned
-      if(ibest == -99) {
-        ibest=i;
-      }
-        
-      // If a better cluster was found, move the raw to the new bi
-      if(maxe > b->bi[i]->e[index]) {
-        if(index == b->bi[i]->center->index) {  // Check if center
-          if(VERBOSE) {
-            Rprintf("Warning: Shuffle blocked the center of a Bi from leaving.\n");
-            Rprintf("Attempted: Raw %i from C%i to C%i (%.4e (lam=%.2e,n=%i) -> %.4e (%s: lam=%.2e,n=%i))\n", \
-                index, i, ibest, \
-                b->bi[i]->e[index], b->bi[i]->lambda[index], b->bi[i]->reads, \
-                b->bi[ibest]->e[index], b->bi[ibest]->sub[index]->key, b->bi[ibest]->lambda[index], b->bi[ibest]->reads);
-          }
-        } else { // Moving raw
-          raw = bi_pop_raw(b->bi[i], r);
-          bi_add_raw(b->bi[ibest], raw);
-          shuffled = true;
-        }  
-      }
-    } //End loop(s) over raws (r).
-  } // End loop over clusters (i).
-  
-  for(i=0; i<b->nclust; i++) { b->bi[i]->shuffle = false; }
-  return shuffled;
-}
+} */
 
 /* b_shuffle2:
  move each sequence to the bi that produces the highest expected
@@ -457,27 +365,6 @@ bool b_shuffle2(B *b) {
   return shuffled;
 }
 
-/* bi_free_absent_subs:
-   Frees subs of raws that are not currently in this cluster.
-   */
-void bi_free_absent_subs(Bi *bi, unsigned int nraw) {
-  unsigned int r, index;
-  bool *keep = (bool *) malloc(nraw * sizeof(bool)); //E
-  if (keep == NULL)  Rcpp::stop("Memory allocation failed.");
-  for(index=0;index<nraw;index++) { keep[index] = false; }
-  
-  for(r=0;r<bi->nraw;r++) {
-    keep[bi->raw[r]->index] = true;
-  }
-  for(index=0;index<nraw;index++) {
-    if(!keep[index]) {
-      sub_free(bi->sub[index]);
-      bi->sub[index] = NULL;
-    }
-  }
-  free(keep);
-}
-
 /* b_p_update:
  Calculates the abundance p-value for each raw in the clustering.
  Depends on the lambda between the raw and its cluster, and the reads of each.
@@ -488,7 +375,7 @@ void b_p_update(B *b) {
   for(i=0;i<b->nclust;i++) {
     for(r=0;r<b->bi[i]->nraw;r++) {
       raw = b->bi[i]->raw[r];
-      raw->p = get_pA(raw, b->bi[i]->sub[raw->index], b->bi[i]->lambda[raw->index], b->bi[i]);      
+      raw->p = get_pA(raw, b->bi[i]);
     } // for(r=0;r<b->bi[i]->nraw;r++)
   } // for(i=0;i<b->nclust;i++)
 }
@@ -500,70 +387,60 @@ void b_p_update(B *b) {
 */
 
 int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
-  int i, r;
-  int mini, minr, minreads;
+  int i, r, ci;
+  int mini, minr, minreads, hamming;
   double minp = 1.0;
   double pA=1.0;
-  double fold;
+  double lambda, fold, mine;
+  Comparison mincomp;
   Raw *raw;
-  Sub *sub, *birth_sub;
 
   // Find i, r indices and value of minimum pval.
   mini=-999; minr=-999; minreads=0; minp=1.0;
   for(i=0;i<b->nclust;i++) {
     for(r=0; r<b->bi[i]->nraw; r++) {
       raw = b->bi[i]->raw[r];
-      sub = b->bi[i]->sub[raw->index];
-      
-      if(!sub) {  // This shouldn't happen
-        Rprintf("Warning: Raw has null sub in b_bud.\n");
-        continue; 
-      }
+      ci = b->bi[i]->comp_index[raw->index];
+      hamming = b->bi[i]->comp[ci].hamming;
+      lambda = b->bi[i]->comp[ci].lambda;
 
-      // Calculate the fold over-abundnace and the hamming distance to this raw
-      if(sub->nsubs >= min_hamming) { // Only those passing the hamming/fold screens can be budded
-        if(min_fold <= 1 || ((double) raw->reads) >= min_fold * b->bi[i]->e[raw->index]) {  
+      // Calculate the fold over-abundance and the hamming distance to this raw
+      if(hamming >= min_hamming) { // Only those passing the hamming/fold screens can be budded
+        if(min_fold <= 1 || ((double) raw->reads) >= min_fold * lambda * b->bi[i]->reads) {  
           if((raw->p < minp) ||
             ((raw->p == minp && raw->reads > minreads))) { // Most significant
             mini = i; minr = r;
             minp = raw->p;
+            mine = lambda * b->bi[i]->reads;
+            mincomp = b->bi[i]->comp[ci];
             minreads = raw->reads;
           }
         }
       }
     }
   }
-  
+
   // Bonferoni correct the abundance pval by the number of raws and compare to OmegaA
   // (quite conservative, although probably unimportant given the abundance model issues)
   pA = minp*b->nraw;
   if(pA < b->omegaA && mini >= 0 && minr >= 0) {  // A significant abundance pval
-    birth_sub = sub_copy(b->bi[mini]->sub[b->bi[mini]->raw[minr]->index]); // do this before bi_pop_raw destructs the sub
     raw = bi_pop_raw(b->bi[mini], minr);
     i = b_add_bi(b, bi_new(b->nraw));
     strcpy(b->bi[i]->birth_type, "A");
     b->bi[i]->birth_pval = pA;
-    b->bi[i]->birth_fold = raw->reads/b->bi[mini]->e[raw->index];
-    b->bi[i]->birth_e = b->bi[mini]->e[raw->index];
-    b->bi[i]->birth_sub = birth_sub;
+    b->bi[i]->birth_fold = raw->reads/mine;
+    b->bi[i]->birth_e = mine;
+    b->bi[i]->birth_comp = mincomp;
     
     // Add raw to new cluster.
     bi_add_raw(b->bi[i], raw);
 
+/*
     if(verbose) { 
-      double qave = 0.0;
-      if(raw->qual) {
-        for(int s=0;s<birth_sub->nsubs;s++) {
-          qave += raw->qual[birth_sub->pos[s]];
-        }
-        qave = qave/((double)birth_sub->nsubs);
-      }
       Rprintf("\nNew cluster from Raw %i in C%iR%i: ", raw->index, mini, minr);
       fold = b->bi[i]->birth_fold;
-      Rprintf(" p*=%.3e, n/E(n)=%.1e (%.1e fold per sub)\n", pA, fold, fold/birth_sub->nsubs);
-      Rprintf("Reads: %i, E: %.2e, Nsubs: %i, Ave Qsub:%.1f\n", raw->reads, b->bi[mini]->e[raw->index], birth_sub->nsubs, qave);
-      Rprintf("%s\n", ntstr(birth_sub->key));
-    }
+      Rprintf(" p*=%.3e, n/E(n)=%.1e\n", pA, fold);
+    } */
     
     bi_assign_center(b->bi[i]);
     return i;
@@ -577,7 +454,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
 /* Bi_make_consensus:
   Uses the alignments to the cluster center to construct a consensus sequence, which
   is then assigned to bi->seq
-*/
+
 void bi_make_consensus(Bi *bi, bool use_quals) {
   int i,r,s,nti0,nti1,pos;
   double counts[4][SEQLEN] = {{0.0}};
@@ -636,13 +513,14 @@ void bi_make_consensus(Bi *bi, bool use_quals) {
     }
   }
   bi->seq[len] = '\0';
-}
+} */
 
 /* B_make_consensus:
   Makes consensus sequences for all Bi.
-*/
+
 void b_make_consensus(B *b) {
   for (int i=0; i<b->nclust; i++) {
     bi_make_consensus(b->bi[i], b->use_quals);
   }
 }
+*/

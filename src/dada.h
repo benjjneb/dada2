@@ -89,16 +89,14 @@ typedef struct {
   bool update_e; // set to true when consensus changes and when raws are shuffled
   bool shuffle; // set to true when e-values are updated
   double self; // self-production genotype error probability
-  Sub **sub;   // Array of pointers to subs with all raws.
-  double *lambda; // Array of lambdas with all raws.
-  double *e;   // Array of expected read numbers with all raws.
   unsigned int totraw; // number of total raws in the clustering
   char birth_type[2]; // encoding of how this Bi was created: "I": Initial cluster, "A": Abundance pval, "S": Singleton pval
   double birth_pval; // the Bonferonni-corrected pval that led to this cluster being initialized
   double birth_fold; // the multiple of expectations at birth
   double birth_e; // the expected number of reads at birth
-  Sub *birth_sub; // the Sub object at birth
+  Comparison birth_comp; // the Comparison object at birth
   std::vector<Comparison> comp;
+  std::map<unsigned int, unsigned int> comp_index;
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).
@@ -132,17 +130,15 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads);
 void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
-bool b_shuffle(B *b);
 bool b_shuffle2(B *b);
 void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
 void b_consensus_update(B *b);
-void b_e_update(B *b);
+//void b_e_update(B *b);
 void b_p_update(B *b);
 int b_bud(B *b, double min_fold, int min_hamming, bool verbose);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
-void b_make_consensus(B *b);
-void bi_free_absent_subs(Bi *bi, unsigned int nraw);
+//void b_make_consensus(B *b);
 
 // methods implemented in misc.c
 void nt2int(char *oseq, const char *iseq);
@@ -167,15 +163,15 @@ void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
 double calc_pA(int reads, double E_reads);
-double get_pA(Raw *raw, Sub *sub, double lambda, Bi *bi);
+double get_pA(Raw *raw, Bi *bi);
 double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp
-Rcpp::DataFrame b_make_clustering_df(B *b, bool has_quals);
-Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, bool has_quals, unsigned int qmax);
-Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, bool has_quals, unsigned int seqlen);
-Rcpp::DataFrame b_make_birth_subs_df(B *b, bool has_quals);
-Rcpp::DataFrame b_make_positional_substitution_df(B *b, unsigned int seqlen, Rcpp::NumericMatrix errMat);
+Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool has_quals);
+Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int qmax);
+Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int seqlen);
+Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat);
+Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals);
 
 #endif
