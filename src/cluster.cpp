@@ -61,7 +61,6 @@ void raw_free(Raw *raw) {
 
 // The constructor for the Bi object.
 Bi *bi_new(unsigned int totraw) {
-//  Bi *bi = (Bi *) malloc(sizeof(Bi)); //E
   Bi *bi = new Bi;
   if (bi == NULL)  Rcpp::stop("Memory allocation failed!\n");
   bi->raw = (Raw **) malloc(RAWBUF * sizeof(Raw *)); //E
@@ -362,6 +361,9 @@ bool b_shuffle2(B *b) {
     } // for(r=0;r<b->bi[i]->nraw;r++)
   }
 
+  free(emax);
+  free(imax);
+  
   return shuffled;
 }
 
