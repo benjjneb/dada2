@@ -111,7 +111,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
       subs[raw->index] = sub_new(bb->bi[i]->center, raw, c_score, gap, false, 1.0, band_size, vectorized_alignment);
     }
     // Make birth sub for that cluster
-    if(i==0) { birth_subs[i] == NULL; }
+    if(i==0) { birth_subs[i] = NULL; }
     else {
       birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, c_score, gap, false, 1.0, band_size, vectorized_alignment);
     }

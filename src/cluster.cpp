@@ -319,7 +319,7 @@ void b_e_update(B *b) {
 bool b_shuffle2(B *b) {
   unsigned int i, j, index;
   bool shuffled = false;
-  Raw *raw, *pop;
+  Raw *raw;
   
   double *emax = (double *) malloc(b->nraw * sizeof(double));
   unsigned int *imax = (unsigned int *) malloc(b->nraw * sizeof(unsigned int));
@@ -393,7 +393,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
   int mini, minr, minreads, hamming;
   double minp = 1.0;
   double pA=1.0;
-  double lambda, fold, mine;
+  double lambda, mine;
   Comparison mincomp;
   Raw *raw;
 
