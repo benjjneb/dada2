@@ -111,4 +111,31 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
   collapsed
 }
 
+# Combines a list of derep-class objects into one single derep object
+combineDereps <- function(dereps) {
+  if(class(dereps) == "derep") dereps <- list(dereps)
+  if(!all(sapply(dereps, function(x) class(x)=="derep"))) Rcpp::stop("Requires derep-class objects.")
+  
+  combined <- dereps[[1]]
+  combined$quals <- sweep(combined$quals, 1, combined$uniques, "*")
+  for(derep in dereps[2:length(dereps)]) {
+    seen <- names(derep$uniques) %in% names(combined$uniques)
+    sqs.seen <- names(derep$uniques)[seen]
+    uniques.seen <- derep$uniques[seen]
+    quals.seen <- derep$quals[seen,,drop=FALSE]
+    quals.seen <- sweep(quals.seen, 1, uniques.seen, "*")
+    uniques.new <- derep$uniques[!seen]
+    quals.new <- derep$quals[!seen,,drop=FALSE]
+    quals.new <- sweep(quals.new, 1, uniques.new, "*")
+    
+    combined$uniques[sqs.seen] <- combined$uniques[sqs.seen] + uniques.seen
+    combined$uniques <- c(combined$uniques, uniques.new)
+    combined$quals[sqs.seen,] <- combined$quals[sqs.seen,,drop=FALSE] + quals.seen
+    combined$quals <- rbind(combined$quals, quals.new)
+    map <- match(names(derep$uniques), names(combined$uniques))
+    combined$map <- c(combined$map, map[derep$map])
+  }
+  combined$quals <- sweep(combined$quals, 1, combined$uniques, "/")
+  combined
+}
 

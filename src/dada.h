@@ -152,7 +152,7 @@ void test_fun(int i);
 
 // method implemented in nwalign_endsfree.c
 char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band);
-char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, size_t band);
+char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band);
 char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer, double kdist_cutoff, int band, bool vectorized_alignment);
 uint16_t *get_kmer(char *seq, int k);
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);

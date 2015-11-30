@@ -72,6 +72,18 @@ getSequences <- function(object) {
   return(names(getUniques(object)))
 }
 
+#' @export
+#' 
+getAbund <- function(object) {
+  return(sum(getUniques(object)))
+}
+
+#' @export
+#' 
+getNseq <- function(object) {
+  return(length(getUniques(object)))
+}
+
 ################################################################################
 #' Needlman-Wunsch alignment with ends-free gapping.
 #' 

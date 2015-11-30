@@ -28,12 +28,11 @@ void dploop_vec(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, 
   }
 }
 
-char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, size_t band) {
+char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
   size_t row, col, ncol, nrow;
   size_t i,j;
   size_t len1 = strlen(s1);
   size_t len2 = strlen(s2);
-  int16_t diag_buf[SEQLEN];
   int16_t d_free;
   size_t center;
   size_t col_min, col_max;
@@ -59,7 +58,8 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   nrow = len1 + len2 + 2;
   int16_t *d = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   int16_t *p = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
-  if (d == NULL || p == NULL)  Rcpp::stop("Memory allocation failed.");
+  int16_t *diag_buf = (int16_t *) malloc(ncol * sizeof(int16_t));
+  if (d == NULL || p == NULL || diag_buf == NULL)  Rcpp::stop("Memory allocation failed.");
   
   // Fill out starting point
   d[center] = 0;
@@ -271,8 +271,9 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
     row++;
   }
 
-  char al0[2*SEQLEN+1];
-  char al1[2*SEQLEN+1];
+  char *al0 = (char *) malloc((nrow+1) * sizeof(char));
+  char *al1 = (char *) malloc((nrow+1) * sizeof(char));
+  if(al0 == NULL || al1 == NULL) Rcpp::stop("Memory allocation failed.");
   
   // Trace back over p to form the alignment.
   size_t len_al = 0;
@@ -302,9 +303,10 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   al0[len_al] = '\0';
   al1[len_al] = '\0';
   
-  // Free DP matrices
+  // Free DP objects
   free(d);
   free(p);
+  free(diag_buf);
   
   // Allocate memory to alignment strings.
   char **al = (char **) malloc( 2 * sizeof(char *) ); //E
@@ -320,6 +322,9 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   }
   al[0][len_al] = '\0';
   al[1][len_al] = '\0';
+  
+  free(al0);
+  free(al1);
   
   return al;
 }
