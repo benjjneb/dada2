@@ -101,7 +101,7 @@ getNseq <- function(object) {
 #'  
 #' @param band (Optional). A \code{numeric(1)}. The band size.
 #'  This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
-#'  Default is getDadaOpt("BAND_SIZE").
+#'  Default is getDadaOpt("BAND_SIZE"). Set band = -1 for unbanded alignment.
 #'  
 #' @return \code{character(2)}. The aligned sequences.
 #' 
@@ -115,7 +115,9 @@ getNseq <- function(object) {
 #' 
 nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
-  if(nchar(s1) >= 1000 || nchar(s2) >= 1000) stop("Can only align strings up to 999 nts in length.")
+  if(!C_check_ACGT(s1) || !C_check_ACGT(s2)) {
+    stop("Sequences must contain only A/C/G/T characters.")
+  }
   if(nchar(s1) != nchar(s2) && band >= 0) {
     band <- band + abs(nchar(s1)-nchar(s2))
     # Band must be expanded to allow the shorter sequence to be shifted appropriately
