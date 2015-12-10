@@ -272,7 +272,7 @@ dada <- function(derep,
     }
     
     # Termination condition for selfConsist loop
-    if((!selfConsist) || identical(cur, prev) || (nconsist >= opts$MAX_CONSIST)) {
+    if((!selfConsist) || any(sapply(errs, identical, err)) || (nconsist >= opts$MAX_CONSIST)) {
       break
     } 
     nconsist <- nconsist+1

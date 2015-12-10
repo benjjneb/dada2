@@ -5,7 +5,8 @@
 \title{Needlman-Wunsch alignment with ends-free gapping.}
 \usage{
 nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
-  gap = getDadaOpt("GAP_PENALTY"), band = getDadaOpt("BAND_SIZE"))
+  gap = getDadaOpt("GAP_PENALTY"), band = getDadaOpt("BAND_SIZE"),
+  endsfree = TRUE)
 }
 \arguments{
 \item{s1}{(Required). \code{character(1)}. The first sequence to align. A/C/G/T only.}

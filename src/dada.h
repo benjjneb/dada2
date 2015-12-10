@@ -151,6 +151,7 @@ void err_print(double err[4][4]);
 void test_fun(int i);
 
 // method implemented in nwalign_endsfree.c
+char **nwalign(char *s1, char *s2, int score[4][4], int gap_p, int band);
 char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band);
 char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band);
 char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer, double kdist_cutoff, int band, bool vectorized_alignment);

@@ -27,7 +27,7 @@
 #' makeSequenceTable(list(sample1=dada1, sample2=dada2))
 #' 
 makeSequenceTable <- function(samples, orderBy = "abundance") {
-  if(class(samples) %in% c("dada", "derep")) { samples <- list(samples) }
+  if(class(samples) %in% c("dada", "derep", "data.frame")) { samples <- list(samples) }
   if(!is.list(samples)) { stop("Requires a list of samples.") }
   unqs <- lapply(samples, getUniques)
   unqsqs <- unique(do.call(c, lapply(unqs, names)))
@@ -81,7 +81,7 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
   seqs.out <- character(0) # The output sequences (after collapsing)
   # collapsed will be the output sequence table  
   collapsed <- matrix(0, nrow=nrow(seqtab), ncol=ncol(seqtab))
-  colnames(collapsed) <- seqs
+  colnames(collapsed) <- colnames(seqtab) # Keep input ordering for output table
   rownames(collapsed) <- rownames(seqtab)
   for(query in seqs) {
     added=FALSE
@@ -90,7 +90,7 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
     for(ref in seqs.out) { # Loop over the reference sequences already added to output
       # Prescreen to see if costly alignment worthwhile, this all should possibly be C-side
       if(grepl(prefix, ref) || grepl(suffix, ref)) { 
-        if(nwhamming(query,ref) == 0) { # No mismatches/indels, join more abundant sequence
+        if(nwhamming(query,ref,band=-1) == 0) { # No mismatches/indels, join more abundant sequence
           collapsed[,ref] <- collapsed[,ref] + seqtab[,query] 
           added=TRUE
           break
@@ -102,10 +102,10 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
       seqs.out <- c(seqs.out, query)
     }
   } # for(query in seqs)
-  if(!identical(unname(colSums(collapsed)>0), colnames(seqtab) %in% seqs.out)) {
+  if(!identical(unname(colSums(collapsed)>0), colnames(collapsed) %in% seqs.out)) {
     stop("Mismatch between output sequences and the collapsed sequence table.")
   }
-  collapsed <- collapsed[,colnames(seqtab) %in% seqs.out,drop=FALSE] # Keep input ordering
+  collapsed <- collapsed[,colnames(collapsed) %in% seqs.out,drop=FALSE]
   
   if(verbose) message("Output ", ncol(collapsed), " collapsed sequences out of ", ncol(seqtab), " input sequences.")
   collapsed

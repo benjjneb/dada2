@@ -39,8 +39,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_nwalign
-Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band);
-RcppExport SEXP dada2_C_nwalign(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP bandSEXP) {
+Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band, bool endsfree);
+RcppExport SEXP dada2_C_nwalign(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -49,7 +49,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
     Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type band(bandSEXP);
-    __result = Rcpp::wrap(C_nwalign(s1, s2, score, gap_p, band));
+    Rcpp::traits::input_parameter< bool >::type endsfree(endsfreeSEXP);
+    __result = Rcpp::wrap(C_nwalign(s1, s2, score, gap_p, band, endsfree));
     return __result;
 END_RCPP
 }

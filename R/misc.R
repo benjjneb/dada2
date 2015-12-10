@@ -113,7 +113,7 @@ getNseq <- function(object) {
 #'  nwalign(sq1, sq2)
 #'  nwalign(sq1, sq2, band=-1)
 #' 
-nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE")) {
+nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE"), endsfree=TRUE) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
   if(!C_check_ACGT(s1) || !C_check_ACGT(s2)) {
     stop("Sequences must contain only A/C/G/T characters.")
@@ -122,7 +122,7 @@ nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GA
     band <- band + abs(nchar(s1)-nchar(s2))
     # Band must be expanded to allow the shorter sequence to be shifted appropriately
   }
-  C_nwalign(s1, s2, score, gap, band)
+  C_nwalign(s1, s2, score, gap, band, endsfree)
 }
 
 ################################################################################
