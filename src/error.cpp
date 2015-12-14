@@ -7,7 +7,8 @@ using namespace Rcpp;
 // This function constructs the output "clustering" data.frame for the dada(...) function.
 // This contains core and diagnostic information on each partition (or cluster, or Bi).
 Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool has_quals) {
-  unsigned int i, j, r, s, cind;
+  unsigned int i, j, r, s, cind, max_reads;
+  Raw *max_raw;
   Sub *sub;
   double q_ave, tot_e;
   
@@ -15,7 +16,16 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
   Rcpp::CharacterVector Rseqs;
   char oseq[SEQLEN];
   for(i=0;i<b->nclust;i++) {
-    ntcpy(oseq, b->bi[i]->seq);
+    max_reads=0;
+    max_raw = NULL;
+    for(r=0;r<b->bi[i]->nraw;r++) {
+      if(b->bi[i]->raw[r]->reads > max_reads) {
+        max_raw = b->bi[i]->raw[r];
+        max_reads = max_raw->reads;
+      }
+    }
+//    ntcpy(oseq, b->bi[i]->seq);
+    ntcpy(oseq, max_raw->seq);
     Rseqs.push_back(std::string(oseq));
   }
   
@@ -25,7 +35,6 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
   Rcpp::IntegerVector Rzeros(b->nclust);       // n0
   Rcpp::IntegerVector Rones(b->nclust);        // n1
   Rcpp::IntegerVector Rraws(b->nclust);        // nraw
-  Rcpp::IntegerVector Rfams(b->nclust);        // nfam
   Rcpp::NumericVector Rbirth_pvals(b->nclust); // pvalue at birth
   Rcpp::NumericVector Rbirth_folds(b->nclust); // fold over-abundance at birth
   Rcpp::IntegerVector Rbirth_hams(b->nclust);  // hamming distance at birth
@@ -38,7 +47,6 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
   for(i=0;i<b->nclust;i++) {
     Rabunds[i] = b->bi[i]->reads;
     Rraws[i] = b->bi[i]->nraw;
-    Rfams[i] = 0;
     // n0 and n1
     Rzeros[i] = 0; Rones[i] = 0;
     for(r=0;r<b->bi[i]->nraw;r++) {
@@ -90,7 +98,7 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
     Rpvals[i] = calc_pA(1+b->bi[i]->reads, tot_e); // Add 1 because calc_pA subtracts 1 (conditional p-val)
   }
   
-  return(Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["nfam"] = Rfams, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves));
+  return(Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves));
 }
 
 // Returns a 16xN matrix with the observed counts of each transition categorized by

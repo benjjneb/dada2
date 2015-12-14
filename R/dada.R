@@ -119,11 +119,11 @@ dada <- function(derep,
   
   # If a single derep object, make into a length 1 list
   if(class(derep) == "derep") { derep <- list(derep) }
+  if(!(all(sapply(derep, is, "derep")))) { stop("The derep argument must be a derep-class object or list of derep-class objects.") }
   if(opts$USE_QUALS && any(is.null(lapply(derep, function(x) x$quals)))) { stop("The input derep object(s) must include quals if USE_QUALS is TRUE.") }
   
   # Validate derep object(s)
   for(i in seq_along(derep)) {
-    if(!class(derep[[i]]) == "derep") stop("The derep argument must be a derep-class object or list of derep-class objects.")
     if(!(is.integer(derep[[i]]$uniques))) {
       stop("Invalid derep$uniques vector. Must be integer valued.")
     }
@@ -201,7 +201,7 @@ dada <- function(derep,
   repeat{
     clustering <- list()
     clusterquals <- list()
-    subpos <- list()
+    birth_subs <- list()
     trans <- list()
     map <- list()
     exp <- list()
@@ -238,7 +238,7 @@ dada <- function(derep,
       # List the returns
       clustering[[i]] <- res$clustering
       clusterquals[[i]] <- t(res$clusterquals) # make sequences rows and positions columns
-      subpos[[i]] <- res$subpos
+      birth_subs[[i]] <- res$birth_subs
       trans[[i]] <- res$subqual
       map[[i]] <- res$map
       exp[[i]] <- res$exp
@@ -290,13 +290,13 @@ dada <- function(derep,
   # Construct return object
   # A single dada-class object if one derep object provided.
   # A list of dada-class objects if multiple derep objects provided.
-  rval2 = replicate(length(derep), list(denoised=NULL, clustering=NULL, quality=NULL, subpos=NULL, trans=NULL, map=NULL, uniques_in=NULL,
+  rval2 = replicate(length(derep), list(denoised=NULL, clustering=NULL, quality=NULL, birth_subs=NULL, trans=NULL, map=NULL, uniques_in=NULL,
                                           err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
   for(i in seq_along(derep)) {
     rval2[[i]]$denoised <- getUniques(clustering[[i]])
     rval2[[i]]$clustering <- clustering[[i]]
     rval2[[i]]$quality <- clusterquals[[i]]
-    rval2[[i]]$subpos <- subpos[[i]]
+    rval2[[i]]$birth_subs <- birth_subs[[i]]
     rval2[[i]]$trans <- trans[[i]]
     rval2[[i]]$map <- map[[i]]
     rval2[[i]]$uniques_in <- derep[[i]]$uniques

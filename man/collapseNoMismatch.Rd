@@ -26,8 +26,16 @@ sequences is chosen as the representative of the collapsed sequences.
 }
 \details{
 This function can be thought of as implementing greedy 100-percent OTU clustering, where end-gapping
-is ignored. The current implementation relies on full alignemnts and is therefore much slower
-than necessary, other solutions may be required for large sequence tables.
+is ignored. The current implementation relies on full alignments and is therefore much slower
+than necessary. A better implementation would be good.
+}
+\examples{
+derep1 <- derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+derep2 <- derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
+dada1 <- dada(derep1, tperr1)
+dada2 <- dada(derep2, tperr1)
+seqtab <- makeSequenceTable(list(sample1=dada1, sample2=dada2))
+collapseNoMismatch(seqtab)
 }
 \seealso{
 \code{\link{makeSequenceTable}}

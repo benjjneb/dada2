@@ -60,8 +60,8 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' sequences is chosen as the representative of the collapsed sequences.
 #' 
 #' This function can be thought of as implementing greedy 100-percent OTU clustering, where end-gapping
-#' is ignored. The current implementation relies on full alignemnts and is therefore much slower
-#' than necessary, other solutions may be required for large sequence tables.
+#' is ignored. The current implementation relies on full alignments and is therefore much slower
+#' than necessary. A better implementation would be good.
 #' 
 #' @param seqtab (Required). A samples by sequence matrix, the return of \code{\link{makeSequenceTable}}.
 #' 
@@ -74,6 +74,15 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' Columns are in the same order (modulo the removed columns) as in the input matrix.
 #' 
 #' @seealso \code{\link{makeSequenceTable}}
+#' @export
+#' 
+#' @examples
+#' derep1 <- derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' derep2 <- derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
+#' dada1 <- dada(derep1, tperr1)
+#' dada2 <- dada(derep2, tperr1)
+#' seqtab <- makeSequenceTable(list(sample1=dada1, sample2=dada2))
+#' collapseNoMismatch(seqtab)
 #' 
 collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
   unqs.srt <- sort(getUniques(seqtab), decreasing=TRUE)

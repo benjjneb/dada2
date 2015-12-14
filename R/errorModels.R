@@ -104,7 +104,7 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 # @param clust (Required). The $clustering data frame from the dada() output.
 #   May be subsetted from the original prior to using this function.
 # 
-# @param subpos (Required). The $subpos data frame from the dada() output.
+# @param birth_subs (Required). The $birth_subs data frame from the dada() output.
 # 
 # @param minFraction (Optional). A \code{numeric(1)}. Default is 0.51.
 #  The minimum fraction of bad bases among the base positions used to infer the
@@ -131,9 +131,9 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 #
 # @seealso \code{\link{getBadBases}}
 #
-isBadBaseFP <- function(clust, subpos, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
-  bb <- getBadBases(clust, subpos, omegaB, minOccurence, verbose=verbose)
-  fps <- tapply(subpos$pos, subpos$clust, function(x) mean(x %in% bb) >= minFraction)
+isBadBaseFP <- function(clust, birth_subs, minFraction = 0.51, omegaB = 1e-10, minOccurence = 4, verbose=FALSE) {
+  bb <- getBadBases(clust, birth_subs, omegaB, minOccurence, verbose=verbose)
+  fps <- tapply(birth_subs$pos, birth_subs$clust, function(x) mean(x %in% bb) >= minFraction)
   fps <- names(fps)[fps]
   rval <- rownames(clust) %in% fps
   if(verbose) {
@@ -153,7 +153,7 @@ isBadBaseFP <- function(clust, subpos, minFraction = 0.51, omegaB = 1e-10, minOc
 # @param clust (Required). The $clustering data frame from the dada() output.
 #   May be subsetted from the original prior to using this function.
 #   
-# @param subpos (Required). The $subpos data frame from the dada() output.
+# @param birth_subs (Required). The $birth_subs data frame from the dada() output.
 # 
 # @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
 #  The p-value threshhold below which a base is assigned as "bad".
@@ -174,9 +174,9 @@ isBadBaseFP <- function(clust, subpos, minFraction = 0.51, omegaB = 1e-10, minOc
 #
 # @seealso \code{\link{isBadBaseFP}}
 #
-getBadBases <- function(clust, subpos, omegaB = 1e-20, minOccurence = 4, verbose=FALSE) {
+getBadBases <- function(clust, birth_subs, omegaB = 1e-20, minOccurence = 4, verbose=FALSE) {
   oos <- which(clust$birth_ham == 1)
-  oopos <- subpos[subpos$clust %in% oos,]
+  oopos <- birth_subs[birth_subs$clust %in% oos,]
   tab <- table(oopos$pos)
   if(length(unique(nchar(clust$sequence)))>1) stop("Requires same length sequences.")
   seqlen <- nchar(clust$sequence[[1]])

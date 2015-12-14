@@ -146,7 +146,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   free(raws);
   
   // Organize return List  
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["subpos"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap, _["exp"] = df_expected);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap, _["exp"] = df_expected);
 }
 
 B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], int gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, bool use_singletons, double omegaS, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose) {
