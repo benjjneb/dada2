@@ -5,8 +5,8 @@
 #' @importFrom Rcpp evalCpp
 NULL
 
-dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose) {
-    .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, use_singletons, omegaS, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose)
+dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose) {
+    .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose)
 }
 
 C_nwalign <- function(s1, s2, score, gap_p, band, endsfree) {
@@ -59,6 +59,10 @@ C_check_ACGT <- function(seqs) {
 #' 
 evaluate_kmers <- function(seqs, kmer_size, score, gap, band, max_aligns) {
     .Call('dada2_evaluate_kmers', PACKAGE = 'dada2', seqs, kmer_size, score, gap, band, max_aligns)
+}
+
+C_subpos <- function(s1, s2) {
+    .Call('dada2_C_subpos', PACKAGE = 'dada2', s1, s2)
 }
 
 C_nwvec <- function(s1, s2, match, mismatch, gap_p, band) {

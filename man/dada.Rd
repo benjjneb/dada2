@@ -4,7 +4,8 @@
 \alias{dada}
 \title{High resolution sample inference from amplicon data.}
 \usage{
-dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
+dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE,
+  aggregate = FALSE, ...)
 }
 \arguments{
 \item{derep}{(Required). A derep-class object, the output of \code{\link{derepFastq}}.

@@ -148,3 +148,39 @@ combineDereps <- function(dereps) {
   combined
 }
 
+# Combines a list of derep-class objects into one single derep object
+combineDereps2 <- function(dereps) {
+  if(class(dereps) == "derep") dereps <- list(dereps)
+  if(!all(sapply(dereps, function(x) class(x)=="derep"))) Rcpp::stop("Requires derep-class objects.")
+  if(length(unique(sapply(dereps, function(x) ncol(x$quals))))>1) {
+    Rcpp:stop("Only derep-class objects with same-length sequences can be combined.")
+  }
+  seqlen <- ncol(dereps[[1]]$quals)
+  
+  # Generate the unique sequences and make the output $uniques vector
+  sqs.all <- unique(do.call(c, lapply(dereps, getSequences)))
+  derepCounts <- integer(length=length(sqs.all))
+  names(derepCounts) <- sqs.all
+  
+  # Make the output $qual matrix with the appropriate size and rownames
+  derepQuals <- matrix(0.0, nrow=length(derepCounts), ncol=seqlen)
+  rownames(derepQuals) <- sqs.all
+  
+  # Initialize the $map with appropriate length
+  derepMap <- integer(length=sum(sapply(dereps, function(x) length(x$map))))
+  
+  start.map <- 1
+  for(derep in dereps) {
+    derepCounts[names(derep$uniques)] <- derepCounts[names(derep$uniques)] + derep$uniques
+    derepQuals[rownames(derep$quals),] <- derepQuals[rownames(derep$quals),] + sweep(derep$quals, 1, derep$uniques, "*")
+    map <- match(names(derep$uniques), names(derepCounts))
+    derepMap[start.map:(start.map+length(derep$map)-1)] <- map[derep$map]
+    start.map <- start.map + length(derep$map)
+  }
+  
+  derepQuals <- sweep(derepQuals, 1, derepCounts, "/")
+  
+  rval <- list(uniques=derepCounts, quals=derepQuals, map=derepMap)
+  rval <- as(rval, "derep")
+  rval
+}

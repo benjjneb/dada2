@@ -349,3 +349,24 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
   return Rcpp::DataFrame::create(_["align"] = adist, _["kmer"] = kdist);
 }
 
+// [[Rcpp::export]]
+Rcpp::DataFrame C_subpos(std::string s1, std::string s2) {
+  unsigned int i=0;
+  unsigned int pos0=1; // R-style 1-indexing
+  Rcpp::IntegerVector position;
+  Rcpp::LogicalVector error;
+  
+  for(i=0;i<s1.size();i++) {
+    if(s1[i] != '-') {
+      if(s1[i] != s2[i] && s2[i] != '-') {
+        error.push_back(true);
+      } else {
+        error.push_back(false);
+      }
+      position.push_back(pos0);
+      pos0++;
+    }
+  }
+  
+  return(Rcpp::DataFrame::create(_["pos"]=position, _["err"]=error));
+}

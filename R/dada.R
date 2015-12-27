@@ -1,7 +1,5 @@
 dada_opts <- new.env()
 assign("OMEGA_A", 1e-40, envir = dada_opts)
-assign("USE_SINGLETONS", FALSE, envir=dada_opts)
-assign("OMEGA_S", 1e-3, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
@@ -16,7 +14,9 @@ assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("QMAX", 40, envir=dada_opts) # NON-FUNCTIONAL
 assign("VERBOSE", FALSE, envir=dada_opts)
-assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
+# assign("USE_SINGLETONS", FALSE, envir=dada_opts)
+# assign("OMEGA_S", 1e-3, envir = dada_opts)
+# assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 # assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
 
 #' High resolution sample inference from amplicon data.
@@ -103,7 +103,8 @@ assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 dada <- function(derep,
                  err,
                  errorEstimationFunction = NULL,
-                 selfConsist = FALSE, ...) {
+                 selfConsist = FALSE, 
+                 aggregate = FALSE, ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
@@ -120,7 +121,7 @@ dada <- function(derep,
   # If a single derep object, make into a length 1 list
   if(class(derep) == "derep") { derep <- list(derep) }
   if(!(all(sapply(derep, is, "derep")))) { stop("The derep argument must be a derep-class object or list of derep-class objects.") }
-  if(opts$USE_QUALS && any(is.null(lapply(derep, function(x) x$quals)))) { stop("The input derep object(s) must include quals if USE_QUALS is TRUE.") }
+  if(opts$USE_QUALS && any(is.null(lapply(derep, function(x) x$quals)))) { stop("The input derep-class object(s) must include quals if USE_QUALS is TRUE.") }
   
   # Validate derep object(s)
   for(i in seq_along(derep)) {
@@ -151,6 +152,13 @@ dada <- function(derep,
         stop("Invalid derep$qual matrix. Quality values must be between 0 and QMAX.")
       }
     }
+  }
+  
+  # Aggregate the derep objects if so indicated
+  if(length(derep) <= 1) { aggregate <- FALSE }
+  if(aggregate) { # Make derep a length 1 list of aggregated derep object
+    derep.in <- derep
+    derep <- list(combineDereps2(derep))
   }
   
   # Validate err matrix
@@ -204,7 +212,7 @@ dada <- function(derep,
     birth_subs <- list()
     trans <- list()
     map <- list()
-    exp <- list()
+#    exp <- list()
     prev <- cur
     errs[[nconsist]] <- err
 
@@ -222,12 +230,12 @@ dada <- function(derep,
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
                           opts[["OMEGA_A"]], 
-                          opts[["USE_SINGLETONS"]], opts[["OMEGA_S"]],
                           opts[["MAX_CLUST"]],
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]],
                           opts[["QMAX"]],
-                          opts[["FINAL_CONSENSUS"]],
+                          FALSE,
+#                          opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["VERBOSE"]])
       
@@ -241,7 +249,7 @@ dada <- function(derep,
       birth_subs[[i]] <- res$birth_subs
       trans[[i]] <- res$subqual
       map[[i]] <- res$map
-      exp[[i]] <- res$exp
+#      exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
       if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, opts$QMAX)  # Assumes C sides is returning one col for each integer from 0 to QMAX
     }
@@ -290,17 +298,17 @@ dada <- function(derep,
   # Construct return object
   # A single dada-class object if one derep object provided.
   # A list of dada-class objects if multiple derep objects provided.
-  rval2 = replicate(length(derep), list(denoised=NULL, clustering=NULL, quality=NULL, birth_subs=NULL, trans=NULL, map=NULL, uniques_in=NULL,
-                                          err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
+  rval2 = replicate(length(derep), list(denoised=NULL, clustering=NULL, sequence=NULL, quality=NULL, birth_subs=NULL, trans=NULL, map=NULL,
+                                        err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
   for(i in seq_along(derep)) {
     rval2[[i]]$denoised <- getUniques(clustering[[i]])
     rval2[[i]]$clustering <- clustering[[i]]
+    rval2[[i]]$sequence <- names(rval2[[i]]$denoised)
     rval2[[i]]$quality <- clusterquals[[i]]
     rval2[[i]]$birth_subs <- birth_subs[[i]]
     rval2[[i]]$trans <- trans[[i]]
     rval2[[i]]$map <- map[[i]]
-    rval2[[i]]$uniques_in <- derep[[i]]$uniques
-    rval2[[i]]$exp <- exp[[i]]
+#    rval2[[i]]$exp <- exp[[i]]
     # Return the error rate(s) used as well as the final estimated error matrix
     if(selfConsist) { # Did a self-consist loop
       rval2[[i]]$err_in <- errs
@@ -313,6 +321,44 @@ dada <- function(derep,
     rval2[[i]]$opts <- opts
     rval2[[i]]$call <- call
   }
+
+  # If aggregate=TRUE, expand the rval and prune the individual return objects
+  if(aggregate) {
+    # Expand rval into a list of the proper length
+    rval2 <- rep(rval2, length(derep.in))
+    # Make map named by the aggregated unique sequence
+    map <- map[[1]]
+    names(map) <- names(derep[[1]]$uniques)
+    for(i in seq_along(derep.in)) {
+      # Identify which output clusters to keep
+      print(sum(rval2[[i]]$denoised))
+      keep <- unique(map[names(derep[[1]]$uniques) %in% names(derep.in[[i]]$uniques)])
+      print(length(keep))
+      keep <- seq(length(rval2[[i]]$denoised)) %in% keep # -> logical
+      print(sum(keep))
+      newBi <- cumsum(keep) # maps aggregated cluster index to individual index
+      # Prune $denoised, $clustering, $sequence, $quality
+      rval2[[i]]$denoised.orig <- rval2[[i]]$denoised # TESTING! REMOVE ME
+      rval2[[i]]$denoised <- rval2[[i]]$denoised[keep]
+      print(sum(rval2[[i]]$denoised))
+      rval2[[i]]$clustering <- rval2[[i]]$clustering[keep,] # Leaves old (char of integer) rownames!
+      rval2[[i]]$sequence <- rval2[[i]]$sequence[keep]
+      rval2[[i]]$quality <- rval2[[i]]$quality[keep,,drop=FALSE] # Not the qualities for this sample alone!
+      # Prune birth_subs and remap its $clust column
+      rval2[[i]]$birth_subs <- rval2[[i]]$birth_subs[keep[rval2[[i]]$birth_subs$clust],,drop=FALSE]
+      rval2[[i]]$birth_subs <- newBi[rval2[[i]]$birth_subs$clust]      
+      # Remap $map
+      rval2[[i]]$map.orig <- map # TESTING! REMOVE ME
+      rval2[[i]]$map <- newBi[map[names(derep.in[[i]]$uniques)]]
+      # Recalculate abundances (both $denoised and $clustering$abundance)
+      rval2[[i]]$denoised[] <- tapply(derep.in[[i]]$uniques, rval2[[i]]$map, sum)
+      rval2[[i]]$clustering$abundance <- rval2[[i]]$denoised
+      print(sum(rval2[[i]]$denoised))
+    }
+    derep <- derep.in
+    rm(derep.in)
+  }
+
   names(rval2) <- names(derep)
   if(length(rval2) == 1) {  # Unlist if just a single derep object provided
     rval2 <- rval2[[1]]
@@ -375,10 +421,6 @@ dada <- function(derep,
 #'  
 #' VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
 #' 
-#' USE_SINGLETONS: CURRENTLY BROKEN. Default is FALSE.
-#' 
-#' OMEGA_S: CURRENTLY BROKEN. Default is 1e-3.
-#'
 #' @seealso 
 #'  \code{\link{getDadaOpt}}
 #'
