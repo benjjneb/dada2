@@ -325,22 +325,20 @@ dada <- function(derep,
   # If aggregate=TRUE, expand the rval and prune the individual return objects
   if(aggregate) {
     # Expand rval into a list of the proper length
-    rval2 <- rep(rval2, length(derep.in))
+    rval1 <- rval2[[1]]
+    rval2 = replicate(length(derep.in), list(denoised=NULL, clustering=NULL, sequence=NULL, quality=NULL, birth_subs=NULL, trans=NULL, map=NULL,
+                                          err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
     # Make map named by the aggregated unique sequence
     map <- map[[1]]
     names(map) <- names(derep[[1]]$uniques)
     for(i in seq_along(derep.in)) {
+      rval2[[i]] <- rval1
       # Identify which output clusters to keep
-      print(sum(rval2[[i]]$denoised))
       keep <- unique(map[names(derep[[1]]$uniques) %in% names(derep.in[[i]]$uniques)])
-      print(length(keep))
       keep <- seq(length(rval2[[i]]$denoised)) %in% keep # -> logical
-      print(sum(keep))
       newBi <- cumsum(keep) # maps aggregated cluster index to individual index
       # Prune $denoised, $clustering, $sequence, $quality
-      rval2[[i]]$denoised.orig <- rval2[[i]]$denoised # TESTING! REMOVE ME
       rval2[[i]]$denoised <- rval2[[i]]$denoised[keep]
-      print(sum(rval2[[i]]$denoised))
       rval2[[i]]$clustering <- rval2[[i]]$clustering[keep,] # Leaves old (char of integer) rownames!
       rval2[[i]]$sequence <- rval2[[i]]$sequence[keep]
       rval2[[i]]$quality <- rval2[[i]]$quality[keep,,drop=FALSE] # Not the qualities for this sample alone!
@@ -348,12 +346,10 @@ dada <- function(derep,
       rval2[[i]]$birth_subs <- rval2[[i]]$birth_subs[keep[rval2[[i]]$birth_subs$clust],,drop=FALSE]
       rval2[[i]]$birth_subs <- newBi[rval2[[i]]$birth_subs$clust]      
       # Remap $map
-      rval2[[i]]$map.orig <- map # TESTING! REMOVE ME
       rval2[[i]]$map <- newBi[map[names(derep.in[[i]]$uniques)]]
       # Recalculate abundances (both $denoised and $clustering$abundance)
       rval2[[i]]$denoised[] <- tapply(derep.in[[i]]$uniques, rval2[[i]]$map, sum)
       rval2[[i]]$clustering$abundance <- rval2[[i]]$denoised
-      print(sum(rval2[[i]]$denoised))
     }
     derep <- derep.in
     rm(derep.in)
