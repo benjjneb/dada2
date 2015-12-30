@@ -14,7 +14,7 @@ using namespace Rcpp;
 // @return A \code{character(2)}. The aligned strings.
 // 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band) {
+Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band, bool endsfree) {
   int i, j;
   char **al;
   // Make integer-ized c-style sequence strings
@@ -31,7 +31,11 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
     }
   }
   // Perform alignment and convert back to ACGT
-  al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
+  if(endsfree) {
+    al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
+  } else {
+    al = nwalign(seq1, seq2, c_score, gap_p, band);
+  }
   int2nt(al[0], al[0]);
   int2nt(al[1], al[1]);
   // Generate R-style return vector
@@ -226,6 +230,35 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefe
 }
 
 //------------------------------------------------------------------
+// Checks a vector of character sequences for whether they are entirely ACGT.
+//
+// @param seqs A \code{character} of candidate DNA sequences.
+// 
+// @return A \code{logical}. Whether or not each input character was ACGT only.
+// 
+// [[Rcpp::export]]
+Rcpp::LogicalVector C_check_ACGT(std::vector<std::string> seqs) {
+  unsigned int i, pos, strlen;
+  bool justACGT;
+  const char *cstr;
+  Rcpp::LogicalVector isACGT(seqs.size());
+  
+  for(i=0; i<seqs.size(); i++) {
+    justACGT = true;
+    strlen = seqs[i].length();
+    cstr = seqs[i].c_str();
+    for(pos=0; pos<strlen; pos++) {
+      if(!(cstr[pos] == 'A' || cstr[pos] == 'C' || cstr[pos] == 'G' || cstr[pos] == 'T')) {
+        justACGT = false;
+        break;
+      }
+    }
+    isACGT(i) = justACGT;
+  }
+  return(isACGT);
+}
+
+//------------------------------------------------------------------
 //' Generate the kmer-distance and the alignment distance from the
 //'   given set of sequences. 
 //'
@@ -316,3 +349,24 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
   return Rcpp::DataFrame::create(_["align"] = adist, _["kmer"] = kdist);
 }
 
+// [[Rcpp::export]]
+Rcpp::DataFrame C_subpos(std::string s1, std::string s2) {
+  unsigned int i=0;
+  unsigned int pos0=1; // R-style 1-indexing
+  Rcpp::IntegerVector position;
+  Rcpp::LogicalVector error;
+  
+  for(i=0;i<s1.size();i++) {
+    if(s1[i] != '-') {
+      if(s1[i] != s2[i] && s2[i] != '-') {
+        error.push_back(true);
+      } else {
+        error.push_back(false);
+      }
+      position.push_back(pos0);
+      pos0++;
+    }
+  }
+  
+  return(Rcpp::DataFrame::create(_["pos"]=position, _["err"]=error));
+}

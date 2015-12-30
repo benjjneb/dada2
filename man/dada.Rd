@@ -4,7 +4,8 @@
 \alias{dada}
 \title{High resolution sample inference from amplicon data.}
 \usage{
-dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
+dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE,
+  aggregate = FALSE, ...)
 }
 \arguments{
 \item{derep}{(Required). A derep-class object, the output of \code{\link{derepFastq}}.
@@ -37,6 +38,14 @@ dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
    run in selfConsist mode without specifying this function, the default loessErrfun will be used.
 
  If selfConsist=FALSE the algorithm performs one round of sample inference based on the provided err matrix.}
+
+\item{aggregate}{(Optional). \code{logical(1)}. Default is FALSE.
+
+ If aggregate = TRUE, the algorithm will pool together all samples prior to sample inference.
+ If aggregate = FALSE (default), sample inference is performed on each sample individually.
+
+ aggregate has no effect if only 1 sample is provided, and aggregate does not affect error rate estimation in selfConsist
+   mode, which always pools the observed transitions across samples.}
 
 \item{...}{(Optional). All dada_opts can be passed in as arguments to the dada() function.
 
