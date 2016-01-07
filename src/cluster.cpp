@@ -257,7 +257,7 @@ void bi_assign_center(Bi *bi) {
  Performs alignments and computes lambda for all raws to the specified Bi
  Stores only those that can possibly be recruited to this Bi
 */
-void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, unsigned int qmax) {
   unsigned int index, cind;
   double lambda;
   Raw *raw;
@@ -274,7 +274,7 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
     if(!sub) { b->nshroud++; }
 
     // Calculate lambda for that sub
-    lambda = compute_lambda(raw, sub, errMat, b->use_quals);
+    lambda = compute_lambda(raw, sub, errMat, b->use_quals, qmax);
     
     // Store lambda and set self
     if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }

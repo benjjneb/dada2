@@ -12,7 +12,7 @@ assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
-assign("QMAX", 40, envir=dada_opts) # NON-FUNCTIONAL
+#assign("QMAX", 40, envir=dada_opts) # NON-FUNCTIONAL Deprecated by chris
 assign("VERBOSE", FALSE, envir=dada_opts)
 # assign("USE_SINGLETONS", FALSE, envir=dada_opts)
 # assign("OMEGA_S", 1e-3, envir = dada_opts)
@@ -156,8 +156,18 @@ dada <- function(derep,
       if(any(is.na(derep[[i]]$quals))) {
         stop("NAs in derep$qual matrix. Check that all input sequences were the same length.")
       }
-      if(min(derep[[i]]$quals) < 0 || max(derep[[i]]$quals > opts$QMAX)) {
-        stop("Invalid derep$qual matrix. Quality values must be between 0 and QMAX.")
+#      if(min(derep[[i]]$quals) < 0 || max(derep[[i]]$quals > opts$QMAX)) {
+#        stop("Invalid derep$qual matrix. Quality values must be between 0 and QMAX.")
+#      }
+      if(min(derep[[i]]$quals) < 0) {
+        stop("Invalid derep$qual matrix. Quality values must be positive integers.")
+      }
+      qmax <- max(derep[[i]]$quals)
+      if(qmax > 45) {
+        if(qmax > 62) {
+         stop("drep$qual matrix has an invalid maximum Phred Quality Scores of ", qmax) 
+        }
+        warning("derep$qual matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.")
       }
     }
   }
@@ -175,6 +185,16 @@ dada <- function(derep,
   if(!all(err>=0)) stop("All error matrix entries must be >= 0.")
   if(!all(err<=1)) stop("All error matrix entries must be <=1.")
   if(any(err==0)) warning("Zero in error matrix.")
+  if(ncol(err) < qmax+1) {
+    message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
+Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err)-1, ").
+In selfConsist mode this should converge to the proper error rates, otherwise this is probably not what you want.")
+    for (q in seq(ncol(err), qmax)) { 
+      err <- cbind(err, err[1:16, q])
+      colnames(err)[q+1] <- q
+    }
+  }
+
   # Might want to check for summed transitions from NT < 1 also.
   
   # Validate err_model
@@ -241,7 +261,8 @@ dada <- function(derep,
                           opts[["MAX_CLUST"]],
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]],
-                          opts[["QMAX"]],
+                          qmax,
+#                          opts[["QMAX"]],
                           FALSE,
 #                          opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
@@ -259,7 +280,8 @@ dada <- function(derep,
       map[[i]] <- res$map
 #      exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
-      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, opts$QMAX)  # Assumes C sides is returning one col for each integer from 0 to QMAX
+#      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, opts$QMAX)  # Assumes C sides is returning one col for each integer from 0 to QMAX
+      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, qmax)  # Assumes C sides is returning one col for each integer from 0 to QMAX
     }
     # Accumulate the sub matrix
     cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient

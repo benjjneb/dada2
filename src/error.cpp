@@ -154,7 +154,7 @@ Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool h
 // Makes data.frame of number of substitutions by position on the sequence
 // Also finds the expected number of substitutions at each position, based on quality scores
 //    and the input error matrix
-Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat) {
+Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat, unsigned int qmax) {
   unsigned int i, pos, pos1, qind, j, r, s, nti0, ncol;
   Raw *raw;
   Sub *sub;
@@ -163,7 +163,7 @@ Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int
   Rcpp::NumericVector exp_by_pos(seqlen);
 
   ncol = errMat.ncol();
-  float prefactor = ((float) (ncol-1))/((float) QMAX-QMIN);
+  float prefactor = ((float) (ncol-1))/((float) qmax-QMIN);
   float fqmin = (float) QMIN;
   
   for(i=0;i<b->nclust;i++) {
