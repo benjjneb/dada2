@@ -59,7 +59,6 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
   // use_quals does nothing in this function, just here for backwards compatability for now
   int s, pos0, pos1, nti0, nti1, len1, ncol;
   double lambda;
-  float prefactor, fqmin;
   int tvec[SEQLEN];
   int qind[SEQLEN];
   
