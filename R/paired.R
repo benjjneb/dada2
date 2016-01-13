@@ -207,7 +207,6 @@ isMatch <- function(al, minOverlap, verbose=FALSE) {
 #' a unique read ID and the denoised sequence
 #' to which it corresponds, as inferred by \code{\link{dada}}.
 #' 
-#' @export
 #' @importFrom ShortRead id
 #' 
 #' @example 
@@ -366,8 +365,6 @@ dada_to_seq_table = function(dadaRes, derep, sr,
 #' }
 #' 
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}
-#' 
-#' @export
 #' 
 #' @importFrom ShortRead id
 #' @importFrom ShortRead readFastq
