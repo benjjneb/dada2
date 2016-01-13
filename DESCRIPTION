@@ -44,3 +44,4 @@ Collate:
     'plot-methods.R'
     'sequenceIO.R'
     'show-methods.R'
+RoxygenNote: 5.0.1

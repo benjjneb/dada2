@@ -86,9 +86,8 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatc
   Runqseq <- rc(unname(as.character(dadaR$clustering$sequence[ups$reverse])))
   
   if (justConcatenate == TRUE) {
-    # Simply concatenate the sequences together and 
-    # check if this needs RC or not
-    ups$sequence <- mapply(function(x,y) paste0(x,"NNNNNNNNNN", rc(y)), Funqseq, Runqseq, SIMPLIFY=FALSE);  
+    # Simply concatenate the sequences together
+    ups$sequence <- mapply(function(x,y) paste0(x,"NNNNNNNNNN", y), Funqseq, Runqseq, SIMPLIFY=FALSE);  
     ups$nmatch <- 0
     ups$nmismatch <- 0
     ups$nindel <- 0
@@ -165,4 +164,407 @@ isMatch <- function(al, minOverlap, verbose=FALSE) {
   }
 }
 
-
+################################################################################
+#' Map denoised sequence to each read.
+#' 
+#' Takes the
+#' \code{\link{dada}} result,
+#' \code{\link{derepFastq}} result, and
+#' \code{\link{ShortReadQ-class}} object
+#' (an R representation of the original input sequence data),
+#' and creates a \code{\link{data.table}}
+#' in which each entry (row) contains
+#' a unique read ID and the denoised sequence
+#' to which it corresponds, as inferred by \code{\link{dada}}.
+#' 
+#' @param dada (Required). A \code{\link{dada-class}} object.
+#'  The output of \code{\link{dada}} function.
+#' 
+#' @param derep (Required).
+#'  A \code{\link{derep-class}} object.
+#'  An object returned by \code{\link{derepFastq}()}.
+#'  Should be the same object that served as input
+#'  to the \code{\link{dada}()} function.
+#'  
+#' @param sr (Required). The trimmed and filtered reads 
+#'  that you used as input for \code{\link{derepFastq}},
+#'  prior to running \code{\link{dada}()} on \code{derep}.
+#'  More generally, this is an object that inherits from the 
+#'  \code{\link{ShortRead-class}}. 
+#'  In most cases this will be \code{\link{ShortReadQ-class}}.
+#'  Objects from this class are the result of \code{\link{readFastq}}.
+#'  Alternatively, this can be a character string
+#'  that provides the path to your forward reads fastq file.
+#'  
+#' @param idRegExpr (Optional). 
+#'  Exact same as for \code{\link{mergePairsByID}}.
+#'
+#' @param includeCol (Optional). 
+#'  Exact same as for \code{\link{mergePairsByID}}.
+#'  
+#' @return A \code{\link{data.table}}
+#' in which each entry (row) contains
+#' a unique read ID and the denoised sequence
+#' to which it corresponds, as inferred by \code{\link{dada}}.
+#' 
+#' @importFrom ShortRead id
+#' @importFrom ShortRead readFastq
+#' 
+#' @examples
+#' exFileF = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' show(exFileF)
+#' srF = readFastq(exFileF)
+#' derepF = derepFastq(exFileF)
+#' dadaF <- dada(derepF, err=tperr1,
+#'               errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' dada_to_seq_table(dadaF, derepF, srF)
+#' 
+dada_to_seq_table = function(dadaRes, derep, sr, 
+                             idRegExpr = c("\\s.+$", ""), 
+                             includeCol = character(0)){
+  # derep <-> sr sanity check
+  if( !inherits(derep, "derep") ){
+    stop("`derep` argument must be of the derep class.
+         See ?'derep-class' for more details.")
+  }
+  if( length(derep$map) != length(sr) ){
+    stop("`derep` and `sr` arguments do not indicate the same number of reads.
+         Check origin and resolve before trying again.")
+  }
+  
+  map = derep$map
+  if(!is.integer(map)){
+    stop("Something wrong with `map`.")
+  }
+  # Define the read IDs
+  readIDs = gsub(idRegExpr[1], idRegExpr[2], as.character(id(sr)))
+  # Genotype index
+  genotypeID <- dadaRes$map[map]
+  if(any(is.na(genotypeID))){
+    stop("Non-corresponding maps and dada-outputs.")
+  }
+  # A data.table containing these organized results, and more.
+  dt = data.table(uniqueIndex = map, 
+                  genotypeIndex = genotypeID,
+                  # dereplicated aka unique sequence
+                  derepSeq = names(derep$uniques)[map],
+                  # genotype sequence
+                  seq = names(dadaRes$denoised)[genotypeID],
+                  # read id
+                  id = readIDs)
+  # Join with some information from `clustering`
+  clusteringdt = data.table(dadaRes$clustering)
+  setnames(clusteringdt, "sequence", "seq")
+  # Keep only requested columns in `propogateCol`,
+  # and the requisite `seq` and `n0` cols.
+  clusteringdt <- clusteringdt[, c("seq", "n0", includeCol), with = FALSE]
+  setkey(clusteringdt, seq)
+  setkey(dt, seq)
+  if(uniqueN(clusteringdt) != uniqueN(dt)){
+    stop("Problem matching denoised genotypes to $clustering metadata")
+  }
+  dt2 = clusteringdt[dt]
+  # Re-key back to `id` before handoff
+  setkey(dt2, id)
+  return(dt2)
+}
+################################################################################
+#' Merge forward and reverse reads after DADA denoising,
+#' even if reads were not originally ordered together.
+#' 
+#' This function attempts to merge each pair of denoised forward and reverse reads,
+#' rejecting any which do not sufficiently overlap 
+#' or which contain too many (>0 by default) mismatches in the overlap region. 
+#' Note: This function does not assume that the fastq files 
+#' for the forward and reverse reads were in the same order. 
+#' If they are already in the same order, use \code{\link{mergePairs}}.
+#' 
+#' Not yet implemented: 
+#' Use of the concatenate option 
+#' will result in concatenating forward and reverse reads 
+#' without attempting a merge/alignment step.
+#' 
+#' 
+#' @param dadaF (Required). A \code{\link{dada-class}} object.
+#'  The output of dada() function on the forward reads.
+#' 
+#' @param derepF (Required). A \code{\link{derep-class}} object.
+#'  The derep-class object returned by derepFastq() that was used as the input to the
+#'  dada-class object passed to the dadaF argument.
+#'  
+#'  @param srF (Required). The trimmed and filtered forward reads 
+#'   that you used as input for \code{\link{derepFastq}}.
+#'   More generally, this is an object that inherits from the 
+#'   \code{\link{ShortRead-class}}. 
+#'   In most cases this will be \code{\link{ShortReadQ-class}}.
+#'   Objects from this class are the result of \code{\link{readFastq}}.
+#'   Alternatively, this can be a character string
+#'   that provides the path to your forward reads fastq file.
+#'   
+#' @param dadaR (Required). A \code{\link{dada-class}} object.
+#'  The output of dada() function on the reverse reads.
+#' 
+#' @param derepR (Required). A \code{\link{derep-class}} object.
+#'  See derepF description, but for the reverse reads.
+#'  
+#'  @param srR (Required). 
+#'   See srF description, but in this case provide for the reverse reads.
+#'
+#' @param minOverlap (Optional). A \code{numeric(1)} of the minimum length of the overlap (in nucleotides)
+#'  required for merging the forward and reverse reads. Default is 20.
+#'
+#' @param maxMismatch (Optional). A \code{numeric(1)} of the maximum mismatches allowed in the overlap region.
+#'  Default is 0 (i.e. only exact matches in the overlap region are accepted).
+#'  
+#' @param returnRejects (Optional).
+#'  A \code{\link{logical}(1)}. Default is \code{FALSE}.
+#'  If \code{TRUE}, the pairs that that were rejected
+#'  based on mismatches in the overlap
+#'  region are retained in the return \code{\link{data.frame}}.
+#'  
+#' @param idRegExpr (Optional).
+#'  A length 2 \code{\link{character}()} vector.
+#'  This is passed along in order as the first two arguments
+#'  to a \code{\link{gsub}} call that defines
+#'  how each read \code{\link[ShortRead]{id}} is parsed.
+#'  The default is \code{c("\\s.+$", "")},
+#'  which is a \code{\link{gsub}} directive to keep 
+#'  the \code{id} string from the beginning 
+#'  up to but not including the first space.
+#'  For some sequencing platforms and/or read ID schemes,
+#'  an alternative parsing of the IDs may be appropriate.
+#'
+#' @param includeCol (Optional). \code{character}. 
+#'  Default is \code{character(0)}.
+#'  The returned \code{\link{data.table}} 
+#'  will include columns with names specified
+#'  by the \code{\link{dada-class}$clustering} data.frame.
+#'
+#' @param justConcatenate (Optional). 
+#'  NOT CURRENTLY SUPPORTED.
+#'  \code{logical(1)}, Default FALSE.
+#'  If TRUE, the forward and reverse-complemented reverse read 
+#'  are concatenated rather than merged,
+#'  with a NNNNNNNNNN (10 Ns) spacer inserted between them.
+#' 
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
+#'
+#' @return A \code{\link{data.table}}. 
+#'  One row for each unique pairing of forward/reverse denoised sequences.
+#' \itemize{
+#'  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
+#'  \item{$sequence: The merged sequence.}
+#'  \item{$forward: The index of the forward denoised sequence.}
+#'  \item{$reverse: The index of the reverse denoised sequence.}
+#'  \item{$nmatch: Number of matching nts in the overlap region.}
+#'  \item{$nmismatch: Number of mismatching nts in the overlap region.}
+#'  \item{$nindel: Number of indels in the overlap region.}
+#'  \item{$prefer: The sequence used for the overlap region. 1=forward; 2=reverse.}
+#'  \item{$accept: TRUE if overlap between forward and reverse denoised sequences was at least minOverlap and had at most maxMismatch differences.
+#'          FALSE otherwise.}
+#'  \item{$...: Additional columns specified in the includeCol argument.}
+#' }
+#' 
+#' @seealso \code{\link{derepFastq}}, \code{\link{dada}}
+#' 
+#' @importFrom ShortRead id
+#' @importFrom ShortRead readFastq
+#' 
+#' @examples
+#' # For the following example files, there are two ways to merge denoised directions.
+#' # Because the read sequences are in order, `mergePairs()` works.
+#' # `mergePairsByID` always works,
+#' # because it uses the read IDs to match denoised pairs.
+#' exFileF = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' exFileR = system.file("extdata", "sam1R.fastq.gz", package="dada2")
+#' srF = readFastq(exFileF)
+#' srR = readFastq(exFileR)
+#' derepF = derepFastq(exFileF)
+#' derepR = derepFastq(exFileR)
+#' dadaF <- dada(derepF, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' dadaR <- dada(derepR, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' # Run and comapre
+#' ex1time = system.time({
+#' ex1 <- mergePairs(dadaF, derepF, dadaR, derepR, verbose = TRUE)
+#'     ex1 <- data.table(ex1)
+#'  })
+#' ex1time
+#' # The new function, based on read IDs.
+#' ex2time = system.time({
+#'   ex2 = mergePairsByID(dadaF = dadaF, derepF = derepF, srF = srF,
+#'                        dadaR = dadaR, derepR = derepR, srR = srR, verbose = TRUE)
+#' })
+#' ex2time
+#' # Compare results (should be identical)
+#' ex2[(accept)]
+#' setkey(ex2, sequence)
+#' ex2[(accept), list(abundance = sum(abundance)), by = sequence]
+#' # Same sequence set (exactly)
+#' setequal(x = ex1$sequence,
+#'          y = ex2[(accept)]$sequence)
+#' # Test concatenation functionality
+#' ex1cattime = system.time({
+#' ex1cat <- mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate = TRUE, verbose = TRUE)
+#' sapply(ex1cat, class)
+#'   # need to convert to a character
+#'   ex1cat$sequence <- unlist(ex1cat$sequence)
+#'   ex1cat <- data.table(ex1cat)
+#' })
+#' ex1cattime
+#' ex2cattime = system.time({
+#'   ex2cat <- mergePairsByID(dadaF = dadaF, derepF = derepF, srF = srF,
+#'                            dadaR = dadaR, derepR = derepR, srR = srR,
+#'                            justConcatenate = TRUE, verbose = TRUE)
+#' })
+#' ex2cattime
+#' ex2cat[(accept)]
+#' # Compare results (should be identical)
+#' setkey(ex1cat, sequence)
+#' ex1cat[(accept), list(abundance = sum(abundance)), by = sequence]
+#' setkey(ex2cat, sequence)
+#' ex2cat[(accept), list(abundance = sum(abundance)), by = sequence]
+#' # Same sequence set (exactly)
+#' setequal(x = ex1cat$sequence,
+#'          y = ex2cat$sequence)
+#' intersect(x = ex1cat$sequence,
+#'           y = ex2cat$sequence)
+#' ex1cat[, nchar(sequence)]
+#' ex2cat[, nchar(sequence)]
+mergePairsByID = function(dadaF, derepF, srF,
+                          dadaR, derepR, srR, 
+                          minOverlap = 20, 
+                          maxMismatch = 0, 
+                          returnRejects = FALSE,
+                          idRegExpr = c("\\s.+$", ""),
+                          includeCol = character(0), 
+                          justConcatenate = FALSE,
+                          verbose = FALSE) {
+  # Interpret reads object | path
+  # Forward Reads
+  if(inherits(srF, "character")){
+    if(verbose){
+      message("`srF` interpreted as path to forward reads fastq file.
+              Attempting to read...")
+    }
+    srF <- readFastq(srF)
+    }
+  if(!inherits(srF, "ShortRead")){
+    stop("`srF` was not properly read, or is wrong object type.
+         Please check documentation and try again.")
+  }
+  # Reverse Reads
+  if(inherits(srR, "character")){
+    if(verbose){
+      message("`srR` interpreted as path to forward reads fastq file.
+              Attempting to read...")
+    }
+    srR <- readFastq(srR)
+    }
+  if(!inherits(srR, "ShortRead")){
+    stop("`srR` was not properly read, or is wrong object type.
+         Please check documentation and try again.")
+  }
+  # Map read IDs to denoised sequence, `n0`, and optional columns
+  dtF = dada_to_seq_table(dadaF, derepF, srF, 
+                          idRegExpr = idRegExpr,
+                          includeCol = includeCol)
+  dtR = dada_to_seq_table(dadaR, derepR, srR,
+                          idRegExpr = idRegExpr,
+                          includeCol = includeCol)
+  if(verbose){message(uniqueN(dtF), " unique forward read IDs.")}
+  if(verbose){message(uniqueN(dtR), " unique reverse read IDs.")}
+  # Rename the optional propagated columns before join
+  if(length(includeCol) > 0){
+    includeColF = paste0(includeCol, "_F")
+    includeColR = paste0(includeCol, "_R")
+    setnames(dtF, includeCol, includeColF)
+    setnames(dtR, includeCol, includeColR)
+    includeCol <- c(includeColF, includeColR)
+  } else {
+    includeColF = includeColR = includeCol
+  }
+  # Omit unneeded columns before join
+  dtF <- dtF[, c("seq", "id", "n0", includeColF), with = FALSE]
+  dtR <- dtR[, c("seq", "id", "n0", includeColR), with = FALSE]
+  # Reverse complement the reverse reads
+  dtR[, seq := dada2:::rc(seq)]
+  # Sanity check
+  if(nrow(dtF[, .N, by = seq]) != length(dadaF$denoised)){
+    stop("Forward read mapping to denoised sequence index failed.")
+  }
+  if(nrow(dtR[, .N, by = seq]) != length(dadaR$denoised)){
+    stop("Reverse read mapping to denoised sequence index failed.")
+  } 
+  # Rename columns to indicate read direction
+  setnames(dtF, "seq", "seqF")
+  setnames(dtR, "seq", "seqR")
+  setnames(dtF, "n0", "n0F")
+  setnames(dtR, "n0", "n0R")  
+  # Join each dada results mapping table to create ID data.table, `iddt`
+  # `nomatch = 0` means ids that are not present in both will be dropped.
+  setkey(dtF, id)
+  setkey(dtR, id)
+  iddt = dtF[dtR, nomatch = 0]
+  # Define the unique version of `iddt` table.
+  # Unique is defined by seqF and seqR, the pair of denoised sequences.
+  # Each unique pair of denoised sequences must be evaluated independently
+  # for overlap acceptance. However, we don't want to do this more than once per pair.
+  # Will map back to iddt later to fill out the original table
+  setkey(iddt, seqF, seqR)
+  # Tally abundance of each pair
+  # (still long form, nrow == nreads)
+  iddt[, abundance := .N, by = list(seqF, seqR)]
+  # Unique Pair iddt
+  upiddt = unique(iddt)
+  setkey(upiddt, seqF, seqR)
+  if(verbose){
+    message(nrow(iddt), " paired reads, corresponding to ",
+            nrow(upiddt), " unique pairs that must be assessed for overlap merge")
+  }
+  # If `justConcatenate` is TRUE, don't need to align or evaluate.
+  # Can have an early return
+  if(justConcatenate){
+    upiddt[, sequence := paste0(seqF, rep("N", times = 10), seqR), by = list(seqF, seqR)]
+    upiddt[, accept := TRUE]
+  } else {
+    # Otherwise, alignment needed. More information considered and returned.
+    # for functions that return multiple values...
+    # DT[, c("new1","new2") := myfun(y,v)]
+    # http://stackoverflow.com/questions/11308754/add-multiple-columns-to-r-data-table-in-one-function-call
+    # (1) run nw unbanded alignment
+    # `als` - alignment sequence, 1 forward, 2 reverse
+    upiddt[, c("als1", "als2") := as.list(nwalign(seqF, seqR, band=-1)),
+           by = list(seqF, seqR)]
+    # (2) Evaluate alignment
+    upiddt[, c("match", "mismatch", "indel") := as.list(dada2:::C_eval_pair(als1, als2)),
+           by = list(seqF, seqR)]
+    upiddt[, prefer := 1 + (n0R > n0F)]
+    upiddt[, allMismatch := mismatch + indel,
+           by = list(seqF, seqR)]
+    # (3) Define Acceptance
+    upiddt[, accept := (match > minOverlap) & (allMismatch <= maxMismatch),
+           by = list(seqF, seqR)]
+    # (4) Make the consensus sequence, 
+    #     but only for the pairs that passed (accepted merges)
+    upiddt[(accept), sequence := dada2:::C_pair_consensus(als1, als2, prefer),
+           by = list(seqF, seqR)]
+  }
+  # Optionally add column details from iddt table (includeCol)
+  if( !is.null(includeCol) ){
+    iddtProp = iddt[, c("seqF", "seqR", includeCol), with = FALSE]
+    setkey(iddtProp, seqF, seqR)
+    iddtProp <- unique(iddtProp)
+    setkey(upiddt, seqF, seqR)
+    upiddt <- iddtProp[upiddt]
+  }
+  if(verbose) {
+    # Report summary
+    message(sum(upiddt[(accept)]$abundance),
+            " paired-reads (in ", 
+            nrow(upiddt[(accept)]), " unique pairings) successfully merged\n",
+            "from ", nrow(iddt), " read pairs.")
+  }
+  # ID column doesn't make sense to include
+  if("id" %in% colnames(upiddt)){upiddt[, id := NULL]}
+  return(upiddt)
+}
