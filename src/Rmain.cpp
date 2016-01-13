@@ -70,8 +70,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   if(err.nrow() != 16) {
     Rcpp::stop("Error matrix must have 16 rows.");
   }
-  if(err.ncol() != (qmax+1)) {
-    Rcpp::stop("Error matrix must qmax+1 columns.");
+  if(err.ncol() < (qmax+1)) {
+    Rcpp::stop("Error matrix must have at least qmax+1 columns.");
   }
 
   /********** CONSTRUCT RAWS *********/
