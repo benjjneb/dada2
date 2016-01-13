@@ -68,27 +68,25 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
   }
   
   // Make vector that indexes as integers the transitions at each position in seq1
-  // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
+  // Index is 0: A->A, 1: A->C, ..., 4: C->A, ...
   len1 = raw->length;
   ncol = errMat.ncol();
-  prefactor = ((float) (ncol-1))/((float) qmax-QMIN);
-  fqmin = (float) QMIN;
   for(pos1=0;pos1<len1;pos1++) {
     nti1 = ((int) raw->seq[pos1]) - 1;
     if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
       tvec[pos1] = nti1*4 + nti1;
     } else {
-      Rcpp::stop("Error: Can't handle non ACGT sequences in CL3.");
+      Rcpp::stop("Error: Non-ACGT sequences in compute_lambda.");
     }
-    if(raw->qual) {
+    if(use_quals) {
       // Turn quality into the index in the array
-      qind[pos1] = round(prefactor * (raw->qual[pos1] - fqmin));
+      qind[pos1] = round(raw->qual[pos1]);
     } else {
       qind[pos1] = 0;
     }
     
     if( qind[pos1] > (ncol-1) ) {
-      Rcpp::stop("Error: rounded quality exceeded err lookup table.");
+      Rcpp::stop("Error: Rounded quality exceeded range of err lookup table.");
     }
   }
 

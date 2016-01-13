@@ -12,7 +12,6 @@ assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
-#assign("QMAX", 40, envir=dada_opts) # NON-FUNCTIONAL Deprecated by chris
 assign("VERBOSE", FALSE, envir=dada_opts)
 # assign("USE_SINGLETONS", FALSE, envir=dada_opts)
 # assign("OMEGA_S", 1e-3, envir = dada_opts)
@@ -43,6 +42,9 @@ assign("VERBOSE", FALSE, envir=dada_opts)
 #'    
 #'  Columns correspond to consensus quality scores. Typically there are 41 columns for the quality scores 0-40.
 #'  However, if USE_QUALS=FALSE, the matrix must have only one column.
+#'  
+#'  If selfConsist = TRUE, this argument can be passed in as NULL and an initial error matrix will be estimated from the data
+#'  by assuming that all reads are errors away from one true sequence.
 #'    
 #' @param errorEstimationFunction (Optional). Function. Default Null.
 #' 
@@ -145,31 +147,29 @@ dada <- function(derep,
   }
 
   # Validate quals matrix(es)
+  qmax <- 0
   if(opts$USE_QUALS) {
     for(i in seq_along(derep)) {
       if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) {
-        stop("derep$qual matrices must have one row for each derep$unique sequence.")
+        stop("derep$quals matrices must have one row for each derep$unique sequence.")
       }
       if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) {
-        stop("derep$qual matrices must have as many columns as the length of the derep$unique sequences.")
+        stop("derep$quals matrices must have as many columns as the length of the derep$unique sequences.")
       }
       if(any(is.na(derep[[i]]$quals))) {
-        stop("NAs in derep$qual matrix. Check that all input sequences were the same length.")
+        stop("NAs in derep$quals matrix. Check that all input sequences were the same length.")
       }
-#      if(min(derep[[i]]$quals) < 0 || max(derep[[i]]$quals > opts$QMAX)) {
-#        stop("Invalid derep$qual matrix. Quality values must be between 0 and QMAX.")
-#      }
       if(min(derep[[i]]$quals) < 0) {
-        stop("Invalid derep$qual matrix. Quality values must be positive integers.")
+        stop("Invalid derep$quals matrix. Quality values must be positive integers.")
       }
-      qmax <- max(derep[[i]]$quals)
-      if(qmax > 45) {
-        if(qmax > 62) {
-         stop("drep$qual matrix has an invalid maximum Phred Quality Scores of ", qmax) 
-        }
-        warning("derep$qual matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.")
-      }
+      qmax <- max(qmax, max(derep[[i]]$quals))
     }
+  }
+  if(qmax > 45) {
+    if(qmax > 62) {
+      stop("drep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) 
+    }
+    warning("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.")
   }
   
   # Aggregate the derep objects if so indicated
@@ -180,24 +180,30 @@ dada <- function(derep,
   }
   
   # Validate err matrix
-  if(!is.numeric(err)) stop("Error matrix must be numeric.")
-  if(!(nrow(err)==16)) stop("Error matrix must have 16 rows (A2A, A2C, ...).")
-  if(!all(err>=0)) stop("All error matrix entries must be >= 0.")
-  if(!all(err<=1)) stop("All error matrix entries must be <=1.")
-  if(any(err==0)) warning("Zero in error matrix.")
-  if(ncol(err) < qmax+1) {
-    message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
-Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err)-1, ").
-In selfConsist mode this should converge to the proper error rates, otherwise this is probably not what you want.")
-    for (q in seq(ncol(err), qmax)) { 
-      err <- cbind(err, err[1:16, q])
-      colnames(err)[q+1] <- q
+  initializeErr <- FALSE
+  if(is.null(err) && selfConsist) {
+    message("Initial error matrix unspecified. Error rates will be initialized to the maximum possible estimate from this data.")
+    initializeErr <- TRUE
+  } else {
+    if(!is.numeric(err)) stop("Error matrix must be numeric.")
+    if(!(nrow(err)==16)) stop("Error matrix must have 16 rows (A2A, A2C, ...).")
+    if(!all(err>=0)) stop("All error matrix entries must be >= 0.")
+    if(!all(err<=1)) stop("All error matrix entries must be <=1.")
+    if(any(err==0)) warning("Zero in error matrix.")
+    if(ncol(err) < qmax+1) { # qmax = 0 if USE_QUALS = FALSE
+      message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
+  Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err), ").
+  In selfConsist mode this should converge to the proper error rates, otherwise this is probably not what you want.")
+      for (q in seq(ncol(err), qmax)) { 
+        err <- cbind(err, err[1:16, q])
+        colnames(err)[q+1] <- q
+      }
     }
   }
 
   # Might want to check for summed transitions from NT < 1 also.
   
-  # Validate err_model
+  # Validate errorEstimationFunction
   if(!opts$USE_QUALS) {
     if(!is.null(errorEstimationFunction)) warning("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
     errorEstimationFunction = NULL  # NULL error function has different meaning depending on USE_QUALS
@@ -230,7 +236,7 @@ In selfConsist mode this should converge to the proper error rates, otherwise th
   
   # Initialize
   cur <- NULL
-  nconsist <- 1
+  if(initializeErr) { nconsist <- 0 } else { nconsist <- 1 }
   errs <- list()
   # The main loop, run once, or repeat until err repeats if selfConsist=T
 
@@ -242,27 +248,36 @@ In selfConsist mode this should converge to the proper error rates, otherwise th
     map <- list()
 #    exp <- list()
     prev <- cur
-    errs[[nconsist]] <- err
+    if(nconsist > 0) errs[[nconsist]] <- err
 
     for(i in seq_along(derep)) {
       if(!opts$USE_QUALS) { qi <- matrix(0, nrow=0, ncol=0) }
       else { qi <- unname(t(derep[[i]]$quals)) } # Need transpose so that sequences are columns
 
       if(nconsist == 1) {
-        cat("Sample", i, "-", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
+        if(aggregate) {
+          cat("Samples 1 -", length(derep.in), "Pooled:", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
+        } else {
+          cat("Sample", i, "-", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
+        }
       } else if(i==1) {
-        cat("   Consist step", nconsist, "\n")
+        if(nconsist == 0) {
+          cat("Initializing error rates to maximum possible estimate.\n")
+        } else {
+          cat("   selfConsist step", nconsist, "\n")
+        }
       }
-      res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), err, qi, 
+      res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), 
+                          if(initializeErr) { matrix(1, nrow=16, ncol=max(41,qmax+1)) } else { err },
+                          qi, 
                           opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
                           opts[["OMEGA_A"]], 
-                          opts[["MAX_CLUST"]],
+                          if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] },
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]],
                           qmax,
-#                          opts[["QMAX"]],
                           FALSE,
 #                          opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
@@ -280,8 +295,7 @@ In selfConsist mode this should converge to the proper error rates, otherwise th
       map[[i]] <- res$map
 #      exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
-#      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, opts$QMAX)  # Assumes C sides is returning one col for each integer from 0 to QMAX
-      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, qmax)  # Assumes C sides is returning one col for each integer from 0 to QMAX
+      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, qmax)  # Assumes C sides is returning one col for each integer from 0 to qmax
     }
     # Accumulate the sub matrix
     cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient
@@ -300,13 +314,17 @@ In selfConsist mode this should converge to the proper error rates, otherwise th
       err[9:12,1] <- err[9:12,1]/sum(err[9:12,1])
       err[13:16,1] <- err[13:16,1]/sum(err[13:16,1])
     }
+    if(initializeErr) {
+      initializeErr <- FALSE
+      err[c(1,6,11,16),] <- 1.0 # Set self-transitions (A2A, C2C, G2G, T2T) to max of 1
+    }
 
     if(selfConsist) { # Validate err matrix
       if(!is.numeric(err)) stop("Error matrix returned by errorEstimationFunction not numeric.")
       if(!(nrow(err)==16)) stop("Error matrix returned by errorEstimationFunction does not have 16 rows.")
       if(!all(err>=0)) stop("Error matrix returned by errorEstimationFunction has entries <0.")
       if(!all(err<=1)) stop("Error matrix returned by errorEstimationFunction has entries >1.")
-      if(any(err==0)) warning("Error matrix returned by errorEstimationFunction has 0 entries.")      
+      if(any(err==0)) warning("Error matrix returned by errorEstimationFunction has 0s in some entries.")      
     }
     
     # Termination condition for selfConsist loop
