@@ -26,7 +26,7 @@
 #define FALSE 0
 #define MAX_SHUFFLE 10
 #define QMIN 0
-#define QMAX 40
+//#define QMAX 40       // Now a dynamic variable
 #define QSTEP 1
 #define GAP_GLYPH 9999
 #define ALL_SHUFFLE_STEP 50
@@ -131,7 +131,7 @@ void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle2(B *b);
-void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, unsigned int qmax);
 void b_consensus_update(B *b);
 //void b_e_update(B *b);
 void b_p_update(B *b);
@@ -165,14 +165,14 @@ void sub_free(Sub *sub);
 // methods implemented in pval.cpp
 double calc_pA(int reads, double E_reads);
 double get_pA(Raw *raw, Bi *bi);
-double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
+double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int qmax);
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp
 Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool has_quals);
 Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int qmax);
 Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int seqlen);
-Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat);
+Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat, unsigned int qmax);
 Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals);
 
 #endif

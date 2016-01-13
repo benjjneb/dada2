@@ -71,7 +71,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     Rcpp::stop("Error matrix must have 16 rows.");
   }
   if(err.ncol() == 0) {
-    Rcpp::stop("Error matrix must have >0 columns.");
+    Rcpp::stop("Error matrix must have >0 columns.");           
   }
 
   /********** CONSTRUCT RAWS *********/
@@ -119,7 +119,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
   Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, qmax);
   Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, seqlen);
-  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err);
+  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err, qmax);
   Rcpp::DataFrame df_birth_subs = b_make_birth_subs_df(bb, birth_subs, has_quals);
   
   // Free the created subs
@@ -155,14 +155,14 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
   
   B *bb;
   bb = b_new(raws, nraw, score, gap_pen, omegaA, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi
-  b_compare(bb, 0, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
+  b_compare(bb, 0, FALSE, 1.0, errMat, verbose, qmax); // Everyone gets aligned within the initial cluster, no KMER screen
   b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
     if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
-    b_compare(bb, newi, use_kmers, kdist_cutoff, errMat, verbose);
+    b_compare(bb, newi, use_kmers, kdist_cutoff, errMat, verbose, qmax);
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {

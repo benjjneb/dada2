@@ -55,7 +55,7 @@ double get_pA(Raw *raw, Bi *bi) {
 }
 
 // This calculates lambda from a lookup table index by transition (row) and rounded quality (col)
-double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals) {
+double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int qmax) {
   // use_quals does nothing in this function, just here for backwards compatability for now
   int s, pos0, pos1, nti0, nti1, len1, ncol;
   double lambda;
@@ -71,7 +71,7 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
   // Index is 0: exclude, 1: A->A, 2: A->C, ..., 5: C->A, ...
   len1 = raw->length;
   ncol = errMat.ncol();
-  prefactor = ((float) (ncol-1))/((float) QMAX-QMIN);
+  prefactor = ((float) (ncol-1))/((float) qmax-QMIN);
   fqmin = (float) QMIN;
   for(pos1=0;pos1<len1;pos1++) {
     nti1 = ((int) raw->seq[pos1]) - 1;
