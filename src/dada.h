@@ -26,7 +26,7 @@
 #define FALSE 0
 #define MAX_SHUFFLE 10
 #define QMIN 0
-#define QMAX 40
+//#define QMAX 40       // Now a dynamic variable
 #define QSTEP 1
 #define GAP_GLYPH 9999
 #define ALL_SHUFFLE_STEP 50
@@ -36,8 +36,14 @@
    -------- STRUCTS OBJECTS STRUCTS ----------
    ------------------------------------------- */
 
-typedef std::pair<double, double> Prob;
-// typedef int bool;  // [C++]: has builtin bool type
+/* Comparison:
+ A brief summary of the comparison between a cluster and a raw */
+typedef struct {
+  unsigned int i;
+  unsigned int index;
+  double lambda;
+  unsigned int hamming;
+} Comparison;
 
 /* Sub:
  A set of substitutions (position and identity) of one sequence
@@ -63,22 +69,10 @@ typedef struct {
   unsigned int length;  // the length of the sequence
   unsigned int reads;   // number of reads of this unique sequence
   unsigned int index;   // The index of this Raw in b->raw[index]
-} Raw;
-
-// Fam: Child of Bi, contains raws in Bi with same substitution structure
-// An "indel family": sequences are the "same" up to indels
-typedef struct {
-  char seq[SEQLEN];   // representative sequence
-  Raw *center; // representative raw (corresponds to seq)
-  unsigned int reads;   // number of reads in this fam
-  Sub *sub;    // struct of substitutions relative to the Bi
-  double lambda; // probability of this sequence being produced from the Bi seq
   double p;    // abundance pval relative to the current Bi
-  double pS;   // singleton pval relative to the current Bi
-  Raw **raw;   // array of pointers to contained raws
-  unsigned int nraw;    // number of contained raws
-  unsigned int maxraw;  // number of raws currently allocated for in **raw
-} Fam;
+  double E_minmax;
+  Comparison comp;
+} Raw;
 
 // Bi: This is one cluster or partition. Contains raws grouped in fams.
 // Bi stores the sub/lambda/e to from the cluster seq/reads to every raw in B.
@@ -89,24 +83,20 @@ typedef struct {
   unsigned int nraw;    // number of raws in Bi
   unsigned int reads;   // number of reads in this cluster
   unsigned int i;       // the cluster number in the total clustering
-  Fam **fam;   // Array of pointers to child fams.
-  unsigned int nfam;    // number of fams in Bi
-  unsigned int maxfam;  // number of fams currently allocated for in **fam
+  Raw **raw;   // Array of pointers to child fams.
+  unsigned int maxraw;  // number of fams currently allocated for in **fam
   bool update_lambda; // set to true when consensus changes
-  bool update_fam; // set to true when consensus changes and when raws are shuffled
   bool update_e; // set to true when consensus changes and when raws are shuffled
   bool shuffle; // set to true when e-values are updated
   double self; // self-production genotype error probability
-  StrMap *sm;  // Hash table from sub->key to string 'fam index+1' '\0'
-  Sub **sub;   // Array of pointers to subs with all raws.
-  double *lambda; // Array of lambdas with all raws.
-  double *e;   // Array of expected read numbers with all raws.
   unsigned int totraw; // number of total raws in the clustering
   char birth_type[2]; // encoding of how this Bi was created: "I": Initial cluster, "A": Abundance pval, "S": Singleton pval
   double birth_pval; // the Bonferonni-corrected pval that led to this cluster being initialized
   double birth_fold; // the multiple of expectations at birth
   double birth_e; // the expected number of reads at birth
-  Sub *birth_sub; // the Sub object at birth
+  Comparison birth_comp; // the Comparison object at birth
+  std::vector<Comparison> comp;
+  std::map<unsigned int, unsigned int> comp_index;
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).
@@ -122,8 +112,6 @@ typedef struct {
   int gap_pen;
   bool vectorized_alignment;
   double omegaA;
-  bool use_singletons;
-  double omegaS;
   bool use_quals;
   double *lams;
   double *cdf;
@@ -137,23 +125,20 @@ typedef struct {
    ------------------------------------------- */
 
 // methods implemented in cluster.c
-B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, bool use_singletons, double omegaS, int band_size, bool vectorized_alignment, bool use_quals);
+B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, int band_size, bool vectorized_alignment, bool use_quals);
 Raw *raw_new(char *seq, double *qual, unsigned int reads);
 void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
-bool b_shuffle(B *b);
-bool b_shuffle_oneway(B *b);
-void b_lambda_update(B *b, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
-void b_fam_update(B *b, bool verbose);
+bool b_shuffle2(B *b);
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, unsigned int qmax);
 void b_consensus_update(B *b);
-void b_e_update(B *b);
+//void b_e_update(B *b);
 void b_p_update(B *b);
 int b_bud(B *b, double min_fold, int min_hamming, bool verbose);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
-void b_make_consensus(B *b);
-void bi_free_absent_subs(Bi *bi, int nraw);
+//void b_make_consensus(B *b);
 
 // methods implemented in misc.c
 void nt2int(char *oseq, const char *iseq);
@@ -161,15 +146,14 @@ void int2nt(char *oseq, const char *iseq);
 void ntcpy(char *oseq, const char *iseq);
 char *ntstr(const char *iseq);
 char *intstr(const char *iseq);
-void b_print(B *b);
 void align_print(char **al);
-void b_dump(B *b, char *fn);
 void err_print(double err[4][4]);
 void test_fun(int i);
 
 // method implemented in nwalign_endsfree.c
+char **nwalign(char *s1, char *s2, int score[4][4], int gap_p, int band);
 char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band);
-char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, size_t band);
+char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band);
 char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer, double kdist_cutoff, int band, bool vectorized_alignment);
 uint16_t *get_kmer(char *seq, int k);
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
@@ -179,19 +163,16 @@ Sub *sub_copy(Sub *sub);
 void sub_free(Sub *sub);
 
 // methods implemented in pval.cpp
-void b_make_pS_lookup(B *b);
-void getCDF(std::vector<double>& ps, std::vector<double>& cdf, double err[4][4], int nnt[4], int maxD);
 double calc_pA(int reads, double E_reads);
-double get_pA(Fam *fam, Bi *bi);
-double get_pS(Fam *fam, Bi *bi, B *b);
-double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
+double get_pA(Raw *raw, Bi *bi);
+double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int qmax);
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp
-Rcpp::DataFrame b_make_clustering_df(B *b, bool has_quals);
-Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, bool has_quals, unsigned int qmax);
-Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, bool has_quals, unsigned int seqlen);
-Rcpp::DataFrame b_make_birth_subs_df(B *b, bool has_quals);
-Rcpp::DataFrame b_make_positional_substitution_df(B *b, unsigned int seqlen, Rcpp::NumericMatrix errMat);
+Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool has_quals);
+Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int qmax);
+Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int seqlen);
+Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat, bool use_quals);
+Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals);
 
 #endif

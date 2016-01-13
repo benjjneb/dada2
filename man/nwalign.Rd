@@ -5,7 +5,8 @@
 \title{Needlman-Wunsch alignment with ends-free gapping.}
 \usage{
 nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
-  gap = getDadaOpt("GAP_PENALTY"), band = getDadaOpt("BAND_SIZE"))
+  gap = getDadaOpt("GAP_PENALTY"), band = getDadaOpt("BAND_SIZE"),
+  endsfree = TRUE)
 }
 \arguments{
 \item{s1}{(Required). \code{character(1)}. The first sequence to align. A/C/G/T only.}
@@ -20,7 +21,7 @@ nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
 
 \item{band}{(Optional). A \code{numeric(1)}. The band size.
  This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
- Default is getDadaOpt("BAND_SIZE").}
+ Default is getDadaOpt("BAND_SIZE"). Set band = -1 for unbanded alignment.}
 }
 \value{
 \code{character(2)}. The aligned sequences.

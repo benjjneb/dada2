@@ -74,7 +74,7 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
   } else if(vectorized_alignment) { // ASSUMES SCORE MATRIX REDUCES TO MATCH/MISMATCH
-    al = nwalign_endsfree_vectorized(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, (size_t) band);
+    al = nwalign_endsfree_vectorized(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, band);
   } else {
     al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band);
   }
@@ -87,34 +87,33 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   static size_t nnw = 0;
   int i, j;
   int l, r;
-  int len1 = strlen(s1);
-  int len2 = strlen(s2);
-  int d[SEQLEN + 1][SEQLEN + 1]; // d: DP matrix
-  int p[SEQLEN + 1][SEQLEN + 1]; // backpointer matrix with 1 for diagonal, 2 for left, 3 for up.
+  unsigned int len1 = strlen(s1);
+  unsigned int len2 = strlen(s2);
   int diag, left, up;
   
-  if(len1 > SEQLEN || len2 > SEQLEN) {
-    Rprintf("Sequence too long to align.\n");
-    return(NULL);
-  }
+  unsigned int nrow = len1+1;
+  unsigned int ncol = len2+1;
+  int *d = (int *) malloc(nrow * ncol * sizeof(int)); //E
+  int *p = (int *) malloc(nrow * ncol * sizeof(int)); //E
+  if(d == NULL || p == NULL) Rcpp::stop("Memory allocation failed.");
   
   // Fill out left columns of d, p.
   for (i = 0; i <= len1; i++) {
-    d[i][0] = 0; // ends-free gap
-    p[i][0] = 3;
+    d[i*ncol] = 0; // ends-free gap
+    p[i*ncol] = 3;
   }
   
   // Fill out top rows of d, p.
   for (j = 0; j <= len2; j++) {
-    d[0][j] = 0; // ends-free gap
-    p[0][j] = 2;
+    d[j] = 0; // ends-free gap
+    p[j] = 2;
   }
   
   // Fill out band boundaries of d.
-  if(band>=0 && band<len1) {
+  if(band>=0 && (band<len1 || band<len2)) {
     for(i=0;i<=len1;i++) {
-      if(i-band-1 >= 0) { d[i][i-band-1] = -9999; }
-      if(i+band+1 <= len2) { d[i][i+band+1] = -9999; }
+      if(i-band-1 >= 0) { d[i*ncol + i-band-1] = -9999; }
+      if(i+band+1 <= len2) { d[i*ncol + i+band+1] = -9999; }
     }
   }
   
@@ -128,35 +127,36 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
     for (j = l; j <= r; j++) {
       // Score for the left move.
       if (i == len1)
-        left = d[i][j-1]; // Ends-free gap.
+        left = d[i*ncol + j-1]; // Ends-free gap.
       else
-        left = d[i][j-1] + gap_p;
+        left = d[i*ncol + j-1] + gap_p;
       
       // Score for the up move.
       if (j == len2) 
-        up = d[i-1][j]; // Ends-free gap.
+        up = d[(i-1)*ncol + j]; // Ends-free gap.
       else
-        up = d[i-1][j] + gap_p;
+        up = d[(i-1)*ncol + j] + gap_p;
 
       // Score for the diagonal move.
-      diag = d[i-1][j-1] + score[s1[i-1]-1][s2[j-1]-1];
+      diag = d[(i-1)*ncol + j-1] + score[s1[i-1]-1][s2[j-1]-1];
       
       // Break ties and fill in d,p.
       if (up >= diag && up >= left) {
-        d[i][j] = up;
-        p[i][j] = 3;
+        d[i*ncol + j] = up;
+        p[i*ncol + j] = 3;
       } else if (left >= diag) {
-        d[i][j] = left;
-        p[i][j] = 2;
+        d[i*ncol + j] = left;
+        p[i*ncol + j] = 2;
       } else {
-        d[i][j] = diag;
-        p[i][j] = 1;
+        d[i*ncol + j] = diag;
+        p[i*ncol + j] = 1;
       }
     }
   }
     
-  char al0[2*SEQLEN+1];
-  char al1[2*SEQLEN+1];
+  char *al0 = (char *) malloc((len1+len2+1) * sizeof(char));
+  char *al1 = (char *) malloc((len1+len2+1) * sizeof(char));
+  if(al0 == NULL || al1 == NULL) Rcpp::stop("Memory allocation failed.");
 
   // Trace back over p to form the alignment.
   size_t len_al = 0;
@@ -164,7 +164,8 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   j = len2;  
 
   while ( i > 0 || j > 0 ) {
-    switch ( p[i][j] ) {
+///    Rprintf("(%i, %i): p=%i, d=%i\n", i, j, p[i*ncol + j], d[i*ncol + j]);
+    switch ( p[i*ncol + j] ) {
     case 1:
       al0[len_al] = s1[--i];
       al1[len_al] = s2[--j];
@@ -200,6 +201,138 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   }
   al[0][len_al] = '\0';
   al[1][len_al] = '\0';
+  
+  // Free allocated memory
+  free(d);
+  free(p);
+  free(al0);
+  free(al1);
+  
+  nnw++;
+  return al;
+}
+
+/* note: input sequence must end with string termination character, '\0' */
+char **nwalign(char *s1, char *s2, int score[4][4], int gap_p, int band) {
+  static size_t nnw = 0;
+  int i, j;
+  int l, r;
+  unsigned int len1 = strlen(s1);
+  unsigned int len2 = strlen(s2);
+  int diag, left, up;
+  
+  unsigned int nrow = len1+1;
+  unsigned int ncol = len2+1;
+  int *d = (int *) malloc(nrow * ncol * sizeof(int)); //E
+  int *p = (int *) malloc(nrow * ncol * sizeof(int)); //E
+  if(d == NULL || p == NULL) Rcpp::stop("Memory allocation failed.");
+  
+  d[0] = 0;
+  p[0] = 0; // Should never be queried
+  
+  // Fill out left columns of d, p.
+  for (i = 1; i <= len1; i++) {
+    d[i*ncol] = d[(i-1)*ncol] + gap_p;
+    p[i*ncol] = 3;
+  }
+  
+  // Fill out top rows of d, p.
+  for (j = 1; j <= len2; j++) {
+    d[j] = d[j-1] + gap_p;
+    p[j] = 2;
+  }
+  
+  // Fill out band boundaries of d.
+  if(band>=0 && (band<len1 || band<len2)) {
+    for(i=0;i<=len1;i++) {
+      if(i-band-1 >= 0) { d[i*ncol + i-band-1] = -9999; }
+      if(i+band+1 <= len2) { d[i*ncol + i+band+1] = -9999; }
+    }
+  }
+  
+  // Fill out the body of the DP matrix.
+  for (i = 1; i <= len1; i++) {
+    if(band>=0) {
+      l = i-band; if(l < 1) { l = 1; }
+      r = i+band; if(r>len2) { r = len2; }
+    } else { l=1; r=len2; }
+
+    for (j = l; j <= r; j++) {
+      // Score for the left move.
+      left = d[i*ncol + j-1] + gap_p;
+      
+      // Score for the up move.
+      up = d[(i-1)*ncol + j] + gap_p;
+
+      // Score for the diagonal move.
+      diag = d[(i-1)*ncol + j-1] + score[s1[i-1]-1][s2[j-1]-1];
+      
+      // Break ties and fill in d,p.
+      if (up >= diag && up >= left) {
+        d[i*ncol + j] = up;
+        p[i*ncol + j] = 3;
+      } else if (left >= diag) {
+        d[i*ncol + j] = left;
+        p[i*ncol + j] = 2;
+      } else {
+        d[i*ncol + j] = diag;
+        p[i*ncol + j] = 1;
+      }
+    }
+  }
+    
+  char *al0 = (char *) malloc((len1+len2+1) * sizeof(char));
+  char *al1 = (char *) malloc((len1+len2+1) * sizeof(char));
+  if(al0 == NULL || al1 == NULL) Rcpp::stop("Memory allocation failed.");
+
+  // Trace back over p to form the alignment.
+  size_t len_al = 0;
+  i = len1;
+  j = len2;  
+
+  while ( i > 0 || j > 0 ) {
+    switch ( p[i*ncol + j] ) {
+    case 1:
+      al0[len_al] = s1[--i];
+      al1[len_al] = s2[--j];
+      break;
+    case 2:
+      al0[len_al] = 6;
+      al1[len_al] = s2[--j];
+      break;
+    case 3:
+      al0[len_al] = s1[--i];
+      al1[len_al] = 6;
+      break;
+    default:
+      Rcpp::stop("N-W Align out of range.");
+    }
+    len_al++;
+  }
+  al0[len_al] = '\0';
+  al1[len_al] = '\0';
+  
+  
+  // Allocate memory to alignment strings.
+  char **al = (char **) malloc( 2 * sizeof(char *) ); //E
+  if (al == NULL)  Rcpp::stop("Memory allocation failed.");
+  al[0] = (char *) malloc(len_al+1); //E
+  al[1] = (char *) malloc(len_al+1); //E
+  if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed.");
+
+  // Reverse the alignment strings (since traced backwards).
+  for (i=0;i<len_al;i++) {
+    al[0][i] = al0[len_al-i-1];
+    al[1][i] = al1[len_al-i-1];
+  }
+  al[0][len_al] = '\0';
+  al[1][len_al] = '\0';
+  
+  // Free allocated memory
+  free(d);
+  free(p);
+  free(al0);
+  free(al1);
   
   nnw++;
   return al;

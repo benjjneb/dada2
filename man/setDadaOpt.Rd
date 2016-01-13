@@ -54,10 +54,6 @@ MAX_CLUST: The maximum number of clusters. Once this many clusters have been cre
  value is 0.
 
 VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
-
-USE_SINGLETONS: CURRENTLY BROKEN. Default is FALSE.
-
-OMEGA_S: CURRENTLY BROKEN. Default is 1e-3.
 }
 \examples{
 setDadaOpt(OMEGA_A = 1e-20)

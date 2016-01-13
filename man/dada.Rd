@@ -4,7 +4,8 @@
 \alias{dada}
 \title{High resolution sample inference from amplicon data.}
 \usage{
-dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
+dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE,
+  aggregate = FALSE, ...)
 }
 \arguments{
 \item{derep}{(Required). A derep-class object, the output of \code{\link{derepFastq}}.
@@ -21,7 +22,10 @@ dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
    9:G->A, 10:G->C, 11:G->G, 12:G->T, 13:T->A, 14:T->C, 15:T->G, 16:T->T
 
  Columns correspond to consensus quality scores. Typically there are 41 columns for the quality scores 0-40.
- However, if USE_QUALS=FALSE, the matrix must have only one column.}
+ However, if USE_QUALS=FALSE, the matrix must have only one column.
+
+ If selfConsist = TRUE, this argument can be passed in as NULL and an initial error matrix will be estimated from the data
+ by assuming that all reads are errors away from one true sequence.}
 
 \item{errorEstimationFunction}{(Optional). Function. Default Null.
 
@@ -37,6 +41,14 @@ dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE, ...)
    run in selfConsist mode without specifying this function, the default loessErrfun will be used.
 
  If selfConsist=FALSE the algorithm performs one round of sample inference based on the provided err matrix.}
+
+\item{aggregate}{(Optional). \code{logical(1)}. Default is FALSE.
+
+ If aggregate = TRUE, the algorithm will pool together all samples prior to sample inference.
+ If aggregate = FALSE (default), sample inference is performed on each sample individually.
+
+ aggregate has no effect if only 1 sample is provided, and aggregate does not affect error rate estimation in selfConsist
+   mode, which always pools the observed transitions across samples.}
 
 \item{...}{(Optional). All dada_opts can be passed in as arguments to the dada() function.
 

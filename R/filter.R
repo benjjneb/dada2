@@ -123,7 +123,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
   }
   
   if(verbose) {
-    message("Input: ", inseqs, " sequences.\n", "Output: ", outseqs, " filtered sequences.")
+    message("Read in ", inseqs, " , outputted ", outseqs, " filtered sequences.")
   }
 }
 

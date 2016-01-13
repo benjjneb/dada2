@@ -22,6 +22,7 @@ setClass("derep", contains = "list")
 #' \itemize{
 #'  \item{$denoised: }{Integer vector, named by sequence valued by abundance, of the denoised sequences.}
 #'  \item{$clustering: }{An informative data.frame containing information on each cluster.}
+#'  \item{$sequence: }{A character vector of each denoised sequence. Identical to names($denoised).}
 #'  \item{$quality: }{The average quality scores for each cluster (row) by position (col).}
 #'  \item{$map: }{Integer vector that maps the unique (index of derep$unique) to the denoised sequence (index of dada$denoised).}
 #'  \item{$birth_subs: }{A data.frame containing the substitutions at the birth of each new cluster.}
@@ -30,7 +31,6 @@ setClass("derep", contains = "list")
 #'  \item{$err_in: }{The err matrix used for this invocation of dada.}
 #'  \item{$err_out: }{The err matrix estimated from the output of dada. NULL if err_function not provided.}
 #'  \item{$opts: }{A list of the dada_opts used for this invocation of dada.}
-#'  \item{$uniques_in: }{The uniques vector used for this invocation of dada.}
 #'  \item{$call: }{The function call used for this invocation of dada.}
 #' }
 #' 

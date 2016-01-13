@@ -29,55 +29,6 @@ void align_print(char **al) {
   
 }
 
-void b_dump(B *b, char *fn) {
-  int i, f, r, index;
-  FILE *fp;
-  fp = fopen(fn, "w");
-  if(fp == NULL) { Rprintf("Null file pointer!\n"); }
-  
-  for(index=0;index<b->nraw;index++) {
-    for(i=0;i<b->nclust;i++) {
-      for(f=0;f<b->bi[i]->nfam;f++) {
-        for(r=0;r<b->bi[i]->fam[f]->nraw;r++) {
-          if(index == b->bi[i]->fam[f]->raw[r]->index) { // The right raw
-            fprintf(fp, "%i,%i,%i,%i\n", index, b->raw[index]->reads, i, f);
-          }
-        }
-      }
-    }
-  }
-  fclose(fp);
-}
-
-/* [OBJ]_print(OBJ *):
- These functions implement an eye-friendly printout of the cluster structure:
-*/
-void raw_print(Raw *raw) {
-  Rprintf("\t\t\tRaw %i with %i reads\n", raw->index, raw->reads);
-}
-
-void fam_print(Fam *fam, int f) {
-  Rprintf("\t\tFam %i with %i reads in %i raws.\n", f, fam->reads, fam->nraw);
-  for(int r=0; r<fam->nraw; r++) {
-    raw_print(fam->raw[r]);
-  }
-}
-
-void bi_print(Bi *bi, int i) {
-  Rprintf("\tCluster %i with %i reads in %i fams...\n", i, bi->reads, bi->nfam);
-  for(int f=0; f<bi->nfam; f++) {
-    fam_print(bi->fam[f], f);
-  }
-}
-
-void b_print(B *b) {
-  Rprintf("\nClustering of %i raws in %i clusters.........\n", b->nraw, b->nclust);
-  for(int i=0; i<b->nclust; i++) {
-    bi_print(b->bi[i], i);
-  }
-  Rprintf("\n");
-}
-
 /* nt2int takes an input string (iseq) and converts it to numeric indices,
   which are stored in the char output array (oseq).
  Need memory at oseq equal to strlen of iseq, which is not checked currently.
