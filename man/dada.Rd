@@ -22,7 +22,10 @@ dada(derep, err, errorEstimationFunction = NULL, selfConsist = FALSE,
    9:G->A, 10:G->C, 11:G->G, 12:G->T, 13:T->A, 14:T->C, 15:T->G, 16:T->T
 
  Columns correspond to consensus quality scores. Typically there are 41 columns for the quality scores 0-40.
- However, if USE_QUALS=FALSE, the matrix must have only one column.}
+ However, if USE_QUALS=FALSE, the matrix must have only one column.
+
+ If selfConsist = TRUE, this argument can be passed in as NULL and an initial error matrix will be estimated from the data
+ by assuming that all reads are errors away from one true sequence.}
 
 \item{errorEstimationFunction}{(Optional). Function. Default Null.
 
