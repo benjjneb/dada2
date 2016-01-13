@@ -208,8 +208,9 @@ isMatch <- function(al, minOverlap, verbose=FALSE) {
 #' to which it corresponds, as inferred by \code{\link{dada}}.
 #' 
 #' @importFrom ShortRead id
+#' @importFrom ShortRead readFastq
 #' 
-#' @example 
+#' @examples
 #' exFileF = system.file("extdata", "sam1F.fastq.gz", package="dada2")
 #' show(exFileF)
 #' srF = readFastq(exFileF)
