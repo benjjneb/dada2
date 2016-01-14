@@ -146,6 +146,19 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// C_taxify
+Rcpp::CharacterVector C_taxify(std::string seq, std::vector<std::string> refs, std::vector<std::string> taxs);
+RcppExport SEXP dada2_C_taxify(SEXP seqSEXP, SEXP refsSEXP, SEXP taxsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type seq(seqSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type refs(refsSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type taxs(taxsSEXP);
+    __result = Rcpp::wrap(C_taxify(seq, refs, taxs));
+    return __result;
+END_RCPP
+}
 
 // validate (ensure exported C++ functions exist before calling them)
 static int dada2_RcppExport_validate(const char* sig) { 
