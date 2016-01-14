@@ -199,3 +199,76 @@ getBadBases <- function(clust, birth_subs, omegaB = 1e-20, minOccurence = 4, ver
 #'  
 #' @name tperr1
 NULL
+
+#' An empirical error matrix.
+#'
+#' A dataset containing the error matrix estimated by DADA2 from the forward reads of the
+#' Illumina Miseq 2x250 sequenced Balanced mock community (see manuscript).
+#'
+#' @format A numerical matrix with 16 rows and 41 columns.
+#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
+#'  Columns correspond to consensus quality scores 0 to 40.
+#'  
+#' @name errBalancedF
+NULL
+
+#' An empirical error matrix.
+#'
+#' A dataset containing the error matrix estimated by DADA2 from the reverse reads of the
+#' Illumina Miseq 2x250 sequenced Balanced mock community (see manuscript).
+#'
+#' @format A numerical matrix with 16 rows and 41 columns.
+#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
+#'  Columns correspond to consensus quality scores 0 to 40.
+#'  
+#' @name errBalancedR
+NULL
+
+#' An empirical error matrix.
+#'
+#' A dataset containing the error matrix estimated by DADA2 from the forward reads of the
+#' Illumina Miseq 2x250 sequenced HMP mock community (see manuscript).
+#'
+#' @format A numerical matrix with 16 rows and 41 columns.
+#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
+#'  Columns correspond to consensus quality scores 0 to 40.
+#'  
+#' @name errHmpF
+NULL
+
+#' An empirical error matrix.
+#'
+#' A dataset containing the error matrix estimated by DADA2 from the reverse reads of the
+#' Illumina Miseq 2x250 sequenced HMP mock community (see manuscript).
+#'
+#' @format A numerical matrix with 16 rows and 41 columns.
+#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
+#'  Columns correspond to consensus quality scores 0 to 40.
+#'  
+#' @name errHmpR
+NULL
+
+#' An empirical error matrix.
+#'
+#' A dataset containing the error matrix estimated by DADA2 from the forward reads of the
+#' Illumina Miseq 2x250 sequenced Extreme mock community (see manuscript).
+#'
+#' @format A numerical matrix with 16 rows and 41 columns.
+#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
+#'  Columns correspond to consensus quality scores 0 to 40.
+#'  
+#' @name errExtremeF
+NULL
+
+#' An empirical error matrix.
+#'
+#' A dataset containing the error matrix estimated by DADA2 from the reverse reads of the
+#' Illumina Miseq 2x250 sequenced Extreme mock community (see manuscript).
+#'
+#' @format A numerical matrix with 16 rows and 41 columns.
+#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
+#'  Columns correspond to consensus quality scores 0 to 40.
+#'  
+#' @name errExtremeR
+NULL
+
