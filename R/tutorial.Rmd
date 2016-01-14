@@ -5,7 +5,7 @@ output: html_document
 
 # Overview
 
-Here we will go through the DADA2 pipeline on a small multi-sample dataset. The starting point is a set of Illumina-sequenced paired-end fastq files that have been split (or demultiplexed) by sample and which have barcodes/adapters already removed. The end product will be a sequence table, analogous to the ubiquitous "OTU table", which records the number of times sample sequences were observed in each sample. The key difference between the output of DADA2 and standard OTU analyses is that DADA2 infers sample sequences exactly rather than clustering reads into fuzzy OTUs which hide and complicate biological variation.
+Here we will go through the DADA2 pipeline on a small multi-sample dataset. The starting point is a set of Illumina-sequenced paired-end fastq files that have been split (or demultiplexed) by sample and which have barcodes/adapters already removed. The end product will be a sequence table, analogous to the ubiquitous "OTU table", which records the number of times sample sequences were observed in each sample. The key difference between the output of DADA2 and standard OTU analyses is that DADA2 infers sample sequences exactly rather than clustering reads into OTUs, which can obscure biological variation.
 
 # Getting ready
 
