@@ -118,7 +118,7 @@ Inspecting the dada-class object returned by dada:
 dadaFs[[1]]
 ```
 
-The dada algorithm inferred 130 real sequences out of 1860 input unique sequences in the first sample. There is much more to the dada-class return object than this (see help("dada-class") for some info), including multiple diagnostics about the quality of the inference, but that is a subject for another tutorial. Let's do one check on the quality of the error-rate estimation though before continuing.
+The dada algorithm inferred 129 real sequences out of 1860 input unique sequences in the first sample. There is much more to the dada-class return object than this (see help("dada-class") for some info), including multiple diagnostics about the quality of the inference, but that is a subject for another tutorial. Let's do one check on the quality of the error-rate estimation though before continuing.
 
 **Visualize estimated error rates**:
 ```{r}
