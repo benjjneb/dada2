@@ -69,8 +69,8 @@ C_nwvec <- function(s1, s2, match, mismatch, gap_p, band) {
     .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band)
 }
 
-C_taxify <- function(seq, refs, taxs) {
-    .Call('dada2_C_taxify', PACKAGE = 'dada2', seq, refs, taxs)
+C_taxify <- function(seqs, refs, ref_to_genus, taxs) {
+    .Call('dada2_C_taxify', PACKAGE = 'dada2', seqs, refs, ref_to_genus, taxs)
 }
 
 # Register entry points for exported C++ functions

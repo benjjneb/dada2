@@ -147,15 +147,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_taxify
-Rcpp::CharacterVector C_taxify(std::string seq, std::vector<std::string> refs, std::vector<std::string> taxs);
-RcppExport SEXP dada2_C_taxify(SEXP seqSEXP, SEXP refsSEXP, SEXP taxsSEXP) {
+Rcpp::CharacterVector C_taxify(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int32_t> ref_to_genus, std::vector<std::string> taxs);
+RcppExport SEXP dada2_C_taxify(SEXP seqsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP taxsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< std::string >::type seq(seqSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string> >::type refs(refsSEXP);
+    Rcpp::traits::input_parameter< std::vector<int32_t> >::type ref_to_genus(ref_to_genusSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string> >::type taxs(taxsSEXP);
-    __result = Rcpp::wrap(C_taxify(seq, refs, taxs));
+    __result = Rcpp::wrap(C_taxify(seqs, refs, ref_to_genus, taxs));
     return __result;
 END_RCPP
 }
