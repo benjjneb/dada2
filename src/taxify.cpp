@@ -126,28 +126,28 @@ Rcpp::CharacterVector C_taxify(std::vector<std::string> seqs, std::vector<std::s
 
   Rcpp::CharacterVector rval;
   int max_g;
-  double max_p;
-  double p;
+  double max_logp;
+  double logp;
   for(j=0;j<nseq;j++) {
     seqlen = seqs[j].size();
     tax_karray(seqs[j].c_str(), k, karray);
     // Find best hit
     max_g = -1;
-    max_p = 0.0;
+    max_logp = 1.0; // Init value to be replaced on first iteration
     for(g=0;g<ngenus;g++) {
-      p = 1.0;
+      logp = 0.0;
       for(pos=0;pos<(seqlen-k);pos++) {
         kmer = karray[pos];
-        p = p * ((genus_kmers[g*n_kmers + kmer] + kmer_prior[kmer])/(1.0 + genus_num[g]));
+        logp += log((genus_kmers[g*n_kmers + kmer] + kmer_prior[kmer])/(1.0 + genus_num[g]));
       }
-      if(p>max_p) {
-        max_p = p;
+      if(max_logp > 0 || logp>max_logp) {
+        max_logp = logp;
         max_g = g;
       }
     }
     if(max_g < 0) Rcpp::stop("Assignment failed.");
     rval.push_back(taxs[max_g]);
-//    Rprintf("max_p = %.2e, max_g = %i.\n", max_p, max_g); // -> 1-index
+    Rprintf("max_logp = %.2e, max_g = %i.\n", max_logp, max_g); // -> 1-index
   }
   
   free(ref_kmers);
