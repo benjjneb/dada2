@@ -69,6 +69,10 @@ C_nwvec <- function(s1, s2, match, mismatch, gap_p, band) {
     .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band)
 }
 
+C_assign_taxonomy <- function(seqs, refs, refmat, ngenus) {
+    .Call('dada2_C_assign_taxonomy', PACKAGE = 'dada2', seqs, refs, refmat, ngenus)
+}
+
 # Register entry points for exported C++ functions
 methods::setLoadAction(function(ns) {
     .Call('dada2_RcppExport_registerCCallable', PACKAGE = 'dada2')

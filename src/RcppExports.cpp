@@ -146,6 +146,20 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// C_assign_taxonomy
+Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, Rcpp::IntegerMatrix refmat, unsigned int ngenus);
+RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP refsSEXP, SEXP refmatSEXP, SEXP ngenusSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type refs(refsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type refmat(refmatSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type ngenus(ngenusSEXP);
+    __result = Rcpp::wrap(C_assign_taxonomy(seqs, refs, refmat, ngenus));
+    return __result;
+END_RCPP
+}
 
 // validate (ensure exported C++ functions exist before calling them)
 static int dada2_RcppExport_validate(const char* sig) { 
