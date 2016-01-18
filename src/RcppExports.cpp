@@ -146,17 +146,17 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// C_taxify
-Rcpp::CharacterVector C_taxify(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int32_t> ref_to_genus, std::vector<std::string> taxs);
-RcppExport SEXP dada2_C_taxify(SEXP seqsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP taxsSEXP) {
+// C_assign_taxonomy
+Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, Rcpp::IntegerMatrix refmat, unsigned int ngenus);
+RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP refsSEXP, SEXP refmatSEXP, SEXP ngenusSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string> >::type refs(refsSEXP);
-    Rcpp::traits::input_parameter< std::vector<int32_t> >::type ref_to_genus(ref_to_genusSEXP);
-    Rcpp::traits::input_parameter< std::vector<std::string> >::type taxs(taxsSEXP);
-    __result = Rcpp::wrap(C_taxify(seqs, refs, ref_to_genus, taxs));
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type refmat(refmatSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type ngenus(ngenusSEXP);
+    __result = Rcpp::wrap(C_assign_taxonomy(seqs, refs, refmat, ngenus));
     return __result;
 END_RCPP
 }

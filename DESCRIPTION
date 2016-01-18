@@ -44,4 +44,5 @@ Collate:
     'plot-methods.R'
     'sequenceIO.R'
     'show-methods.R'
+    'taxonomy.R'
 RoxygenNote: 5.0.1

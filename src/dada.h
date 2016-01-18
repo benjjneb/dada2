@@ -176,6 +176,6 @@ Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int
 Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals);
 
 // methods implemented in taxify.cpp
-Rcpp::CharacterVector C_taxify(std::string seq, std::vector<std::string> refs, std::vector<std::string> taxs);
+Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, Rcpp::IntegerMatrix refmat, unsigned int ngenus);
 
 #endif
