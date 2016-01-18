@@ -95,7 +95,7 @@ int get_best_genus(int *karray, unsigned int arraylen, unsigned int n_kmers, uns
 // Assigns taxonomy to sequence based on provided ref seqs and corresponding taxonomies.
 //
 // [[Rcpp::export]]
-Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, Rcpp::IntegerMatrix refmat, unsigned int ngenus) {
+Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat) {
   unsigned int i, j, pos, g;
   int kmer;
   unsigned int k=8;
@@ -103,14 +103,18 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   unsigned int nseq = seqs.size();
   if(nseq == 0) Rcpp::stop("No seqs provided to classify.");
   unsigned int nref = refs.size();
-  if(nref != refmat.nrow()) Rcpp::stop("Length mismatch between number of references and map to genus.");
+  if(nref != ref_to_genus.size()) Rcpp::stop("Length mismatch between number of references and map to genus.");
+  unsigned int ngenus = genusmat.nrow();
 
   // Make ref_to_genus array (from last ("type") column of refmat).
-  unsigned int typecol = refmat.ncol()-1;
-  int *ref_to_genus = (int *) calloc(refmat.nrow(), sizeof(int));
-  if(ref_to_genus == NULL) Rcpp::stop("Memory allocation failed.");
-  for(i=0;i<refmat.nrow();i++) {
-    ref_to_genus[i] = refmat(i,typecol)-1; //  0-indexed.
+//  unsigned int typecol = refmat.ncol()-1;
+//  int *ref_to_genus = (int *) calloc(refmat.nrow(), sizeof(int));
+//  if(ref_to_genus == NULL) Rcpp::stop("Memory allocation failed.");
+  for(i=0;i<ref_to_genus.size();i++) {
+    ref_to_genus[i] = ref_to_genus[i]-1; // -> 0-index
+    if(ref_to_genus[i]<0 || ref_to_genus[i] >= ngenus) {
+      Rcpp::stop("Invalid map from references to genus.");
+    }
   }
 
   // Make reference kvec array by sequence
@@ -172,7 +176,8 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
 
   Rcpp::IntegerVector rval(nseq);
   Rcpp::NumericVector unifs;
-  Rcpp::IntegerMatrix rboot(nseq, refmat.ncol()-1);
+  Rcpp::IntegerMatrix rboot(nseq, genusmat.ncol());
+  Rcpp::IntegerMatrix rboot_tax(nseq, 100);
   
   int max_g, boot_g;
   unsigned int boot, booti, boot_match, arraylen;
@@ -199,10 +204,12 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
         bootarray[i] = karray[(int) (arraylen*unifs[booti])];
       }
       boot_g = get_best_genus(bootarray, (arraylen/8), n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-      for(i=0;i<(refmat.ncol()-1);i++) {
-        if(refmat(boot_g,i) == refmat(max_g,i)) {
+      rboot_tax(j,boot) = boot_g+1; // 1-index for return
+      for(i=0;i<(genusmat.ncol());i++) {
+        if(genusmat(boot_g,i) == genusmat(max_g,i)) {
           rboot(j,i)++;
         } else {
+//          Rprintf("%i vs. %i at rank %i mismatch (%i ... %i).\n", max_g+1, boot_g+1, i+1, genusmat(max_g,i), genusmat(boot_g,i));
           break;
         }
       }
@@ -212,12 +219,11 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
 //    Rprintf("max_g = %i, support=%i.\n", max_g+1, boot_match); // -> 1-index
   }
   
-  free(ref_to_genus);
   free(ref_kmers);
   free(genus_num_plus1);
   free(genus_kmers);
   free(kmer_prior);
   free(karray);
   
-  return(Rcpp::List::create(_["tax"]=rval, _["boot"]=rboot));
+  return(Rcpp::List::create(_["tax"]=rval, _["boot"]=rboot, _["boot_tax"]=rboot_tax));
 }

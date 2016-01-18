@@ -1,4 +1,5 @@
-#' assignTaxonomy returns the taxonomic assignment of a set of sequences according to the provided reference file.
+#'
+#' assignTaxonomy assigns taxonomy to provided sequences.
 #' 
 #' assignTaxonomy implements the RDP classifier algorithm in Wang 2007 with kmer size 8.
 #' 
@@ -33,25 +34,26 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=80) {
     stop("References must all be assigned to the same taxonomic depth.")
   }
 
-  tax.mat <- matrix(unlist(strsplit(tax, ";")), ncol=td, byrow=TRUE)
+  genus.unq <- unique(tax)
+  ref.to.genus <- match(tax, genus.unq)
+  tax.mat <- matrix(unlist(strsplit(genus.unq, ";")), ncol=td, byrow=TRUE)
   tax.df <- as.data.frame(tax.mat)
   for(i in seq(ncol(tax.df))) {
     tax.df[,i] <- factor(tax.df[,i])
     tax.df[,i] <- as.integer(tax.df[,i])
   }
   tax.mat.int <- as.matrix(tax.df)
-  tax.mat.int.aug <- cbind(tax.mat.int, as.integer(factor(tax)))
-  ind_to_tax <- levels(factor(tax))
-  ntype <- length(unique(tax))
   
-  assignment <- C_assign_taxonomy(seqs, refs, tax.mat.int.aug, ntype)
+  assignment <- C_assign_taxonomy(seqs, refs, ref.to.genus, tax.mat.int)
   
-  bestHit <- ind_to_tax[assignment$tax]
+  bestHit <- genus.unq[assignment$tax]
   boots <- assignment$boot
   taxes <- strsplit(bestHit, ";")
   taxes <- lapply(seq_along(taxes), function(i) taxes[[i]][boots[i,]>minBoot])
   taxes <- unlist(lapply(taxes, paste, collapse=";"))
   taxes <- paste0(taxes, ";") # Add suffix ;
   
+#  assignment$taxes <- taxes #####
+#  return(assignment) #####  
   taxes
 }

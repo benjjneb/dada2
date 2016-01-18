@@ -147,16 +147,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_assign_taxonomy
-Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, Rcpp::IntegerMatrix refmat, unsigned int ngenus);
-RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP refsSEXP, SEXP refmatSEXP, SEXP ngenusSEXP) {
+Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat);
+RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string> >::type refs(refsSEXP);
-    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type refmat(refmatSEXP);
-    Rcpp::traits::input_parameter< unsigned int >::type ngenus(ngenusSEXP);
-    __result = Rcpp::wrap(C_assign_taxonomy(seqs, refs, refmat, ngenus));
+    Rcpp::traits::input_parameter< std::vector<int> >::type ref_to_genus(ref_to_genusSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type genusmat(genusmatSEXP);
+    __result = Rcpp::wrap(C_assign_taxonomy(seqs, refs, ref_to_genus, genusmat));
     return __result;
 END_RCPP
 }

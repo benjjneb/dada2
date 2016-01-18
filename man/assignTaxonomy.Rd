@@ -2,7 +2,7 @@
 % Please edit documentation in R/taxonomy.R
 \name{assignTaxonomy}
 \alias{assignTaxonomy}
-\title{assignTaxonomy returns the taxonomic assignment of a set of sequences according to the provided reference file.}
+\title{assignTaxonomy assigns taxonomy to provided sequences.}
 \usage{
 assignTaxonomy(seqs, refFasta, minBoot = 80)
 }
