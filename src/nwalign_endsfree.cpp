@@ -9,7 +9,7 @@
 
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   int i;
-  int n_kmer = 2 << (2*k); // 4^k kmers
+  int n_kmer = 1 << (2*k); // 4^k kmers
   uint16_t dotsum = 0;
   double dot = 0.0;
   
@@ -25,7 +25,7 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
   int i, j, nti;
   int len = strlen(seq);
   size_t kmer = 0;
-  size_t n_kmers = (2 << (2*k));  // 4^k kmers
+  size_t n_kmers = (1 << (2*k));  // 4^k kmers
   uint16_t *kvec = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
   if (kvec == NULL)  Rcpp::stop("Memory allocation failed.");
   for(kmer=0;kmer<n_kmers;kmer++) { kvec[kmer] = 0; }
