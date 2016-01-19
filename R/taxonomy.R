@@ -24,16 +24,18 @@
 #' @importFrom ShortRead id
 #' 
 assignTaxonomy <- function(seqs, refFasta, minBoot=80) {
+  # Read in the reference fasta
   refsr <- readFasta(refFasta)
   refs <- as.character(sread(refsr))
   tax <- as.character(id(refsr))
-  
+  tax <- sapply(tax, function(x) gsub("^\\s+|\\s+$", "", x)) # Remove leading/trailing whitespace
+  # Parse the taxonomies from the id string
   tax.depth <- sapply(strsplit(tax, ";"), length)
   td <- tax.depth[[1]]
   if(!all(sapply(strsplit(tax, ";"), length) == td)) {
     stop("References must all be assigned to the same taxonomic depth.")
   }
-
+  # Create the integer maps from reference to type ("genus") and for each tax level
   genus.unq <- unique(tax)
   ref.to.genus <- match(tax, genus.unq)
   tax.mat <- matrix(unlist(strsplit(genus.unq, ";")), ncol=td, byrow=TRUE)
@@ -43,9 +45,9 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=80) {
     tax.df[,i] <- as.integer(tax.df[,i])
   }
   tax.mat.int <- as.matrix(tax.df)
-  
+  # Assign  
   assignment <- C_assign_taxonomy(seqs, refs, ref.to.genus, tax.mat.int)
-  
+  # Parse results and return tax consistent with minBoot
   bestHit <- genus.unq[assignment$tax]
   boots <- assignment$boot
   taxes <- strsplit(bestHit, ";")

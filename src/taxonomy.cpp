@@ -106,10 +106,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   if(nref != ref_to_genus.size()) Rcpp::stop("Length mismatch between number of references and map to genus.");
   unsigned int ngenus = genusmat.nrow();
 
-  // Make ref_to_genus array (from last ("type") column of refmat).
-//  unsigned int typecol = refmat.ncol()-1;
-//  int *ref_to_genus = (int *) calloc(refmat.nrow(), sizeof(int));
-//  if(ref_to_genus == NULL) Rcpp::stop("Memory allocation failed.");
+  // Validated and 0-index ref_to_genus map
   for(i=0;i<ref_to_genus.size();i++) {
     ref_to_genus[i] = ref_to_genus[i]-1; // -> 0-index
     if(ref_to_genus[i]<0 || ref_to_genus[i] >= ngenus) {
@@ -162,6 +159,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     kmer_prior[kmer] = (kmer_prior[kmer] + 0.5)/(1.0 + nref);
   }
   
+  // Get size of the kmer arrays for the sequences to be classified
   unsigned int max_arraylen = 0;
   unsigned int seqlen;
   for(i=0;i<nseq;i++) {
@@ -186,6 +184,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   int *bootarray = (int *) malloc((max_arraylen/8) * sizeof(int));
   if(bootarray == NULL) Rcpp::stop("Memory allocation failed.");
   
+  // Classify the sequences
   for(j=0;j<nseq;j++) {
     seqlen = seqs[j].size();
     arraylen = seqlen-k;
@@ -209,14 +208,11 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
         if(genusmat(boot_g,i) == genusmat(max_g,i)) {
           rboot(j,i)++;
         } else {
-//          Rprintf("%i vs. %i at rank %i mismatch (%i ... %i).\n", max_g+1, boot_g+1, i+1, genusmat(max_g,i), genusmat(boot_g,i));
           break;
         }
       }
       if(boot_g == max_g) { boot_match++; }
     }
-
-//    Rprintf("max_g = %i, support=%i.\n", max_g+1, boot_match); // -> 1-index
   }
   
   free(ref_kmers);
