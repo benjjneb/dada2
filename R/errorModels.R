@@ -3,7 +3,7 @@
 #' This function accepts a matrix of observed transitions (eg. row 2 = A->C) by
 #' the quality score (eg. col 31 = Q30). It returns a matrix of estimated error
 #' rates of the same shape. Error rates are estimates by loess fitting each
-#' transition (i.e. A->C, A->G, A->T) as a fucnction of the quality score, and
+#' transition (i.e. A->C, A->G, A->T) as a function of the quality score, and
 #' taking the self-transitions (i.e. A->A) as the left-over probability.
 #' 
 #' @param trans (Required). A matrix of the observed transition counts. Must be 16 rows,
