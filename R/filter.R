@@ -143,7 +143,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #'   
 #' @param fout (Required). A \code{character(2)} naming the path to the output file.
 #' 
-#' FURTHER ARGUMENTS can be provided as a length 1 or length 2 vector. If provided as a length 1
+#' FILTERING AND TRIMMING ARGUMENTS can be provided as a length 1 or length 2 vector. If provided as a length 1
 #' vector the same criteria is used for forward and reverse. If provided as a length 2 vector, the
 #' first value is used for the forward reads, the second value for the reverse reads.
 #' 
@@ -165,11 +165,28 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #'
 #' @param maxEE (Optional). After truncation, reads with higher than maxEE "expected errors" will be discarded.
 #'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
-#'  
+#' 
+#' ID MATCHING ARGUMENTS implement matching between the sequence identification strings in the forward and reverse
+#'  reads. The function can automatically detect and match ID fields in Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393
+#' 
+#' @param matchIDs (Optional). A \code{logical(1)} indicating whether to enforce matching between the sequence
+#'    identifiers in the id lines of the forward and reverse fastq files.
+#'    If TRUE, only paired reads that share id fields (see below) are output.
+#'    If FALSE, no read ID checking is done. Default is FALSE
+#'    NOTE: Further dada(...) processing assumes matching order between forward and reverse reads. If that
+#'      matched order is not present
+#'
+#' @param id.sep (Optional). A \code{character(1)} indicating the separator between fields in the id string
+#'    of the input fastq files. Passed to the strsplit(...) function. Default is "\\s" (white-space).
+#' 
+#' @param id.field (Optional). A code{numeric(1)} indicating which field contains the sequence identifier.
+#'    If NULL (the default) and matchIDs is TRUE, then the function attempts to automatically detect
+#'    the sequence identifier, assuming Illumina formatted output.
+#'
 #' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
-#'
+#'  
 #' @param compress (Optional). A \code{logical(1)} indicating whether the output should be gz compressed.
 #' 
 #' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
@@ -191,6 +208,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' @importFrom ShortRead trimTails
 #' @importFrom ShortRead nFilter
 #' @importFrom ShortRead encoding
+#' @importFrom ShortRead append
+#' @importFrom ShortRead ShortReadQ
 #' @importFrom Biostrings quality
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
@@ -205,7 +224,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), n = 1e6, compress = TRUE, verbose = FALSE){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE){
   # Warning: This assumes that forward/reverse reads are in the same order
   # IT DOES NOT CHECK THE ID LINES
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
@@ -250,11 +269,68 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   }
   
   first=TRUE
-  inseqs = 0
-  outseqs = 0
-  while( length(suppressWarnings(fqF <- yield(fF))) && length(suppressWarnings(fqR <- yield(fR))) ){
-    if(length(fqF) != length(fqR)) stop("Mismatched forward and reverse sequence files: ", length(fqF), ", ", length(fqR), ".")
+  remainderF <- ShortReadQ(); remainderR <- ShortReadQ()
+  casava <- "Undetermined"
+  inseqs = 0; outseqs = 0
+  while( TRUE ) {
+    suppressWarnings(fqF <- yield(fF))
+    suppressWarnings(fqR <- yield(fR))
+    if(length(fqF) == 0 && length(fqR) == 0) { break } # Loop Logic
+    
     inseqs <- inseqs + length(fqF)
+    
+    if(matchIDs) {
+      if(first) { 
+        if(is.null(id.field)) {
+          # Determine the sequence identifier field. Looks for a single 6-colon field (CASAVA 1.8+ id format)
+          # or a single 4-colon field (earlier format). Fails if it doesn't find such a field.
+          id1 <- as.character(id(fqF)[[1]])
+          id.fields <- strsplit(id1, id.sep)[[1]]
+          ncolon <- sapply(gregexpr(":", id.fields), length)
+          ncoltab <- table(ncolon)
+          if(max(ncolon) == 6 && ncoltab["6"] == 1) { # CASAVA 1.8+ format
+            casava <- "Current"
+            id.field <- which(ncolon == 6)
+          } else if (max(ncolon) == 4 && ncoltab["4"] == 1) { # CASAVA <=1.7 format
+            casava <- "Old"
+            id.field <- which(ncolon == 4)
+          } else { # Couldn't unambiguously find the seq id field
+            stop("Couldn't automatically detect the sequence identifier field in the fastq id string.")
+          }
+        }
+      } else { # !first
+        # Prepend the unmatched sequences from the end of previous chunks
+        # Need ShortRead::append or the method is not dispatched properly
+        fqF <- append(remainderF, fqF)
+        fqR <- append(remainderR, fqR)
+      }
+    } else { # !matchIDs
+      if(length(fqF) != length(fqR)) stop("Mismatched forward and reverse sequence files: ", length(fqF), ", ", length(fqR), ".")
+    }
+    
+    # Enforce id matching (ASSUMES SAME ORDERING IN F/R, BUT ALLOWS DIFFERENTIAL MEMBERSHIP)
+    # Keep the tail of unmatched sequences (could match next chunk)
+    if(matchIDs) {
+      idsF <- sapply(strsplit(as.character(id(fqF)), id.sep), `[`, id.field)
+      idsR <- sapply(strsplit(as.character(id(fqR)), id.sep), `[`, id.field)
+      if(casava == "Old") { # Drop the index number/pair identifier (i.e. 1=F, 2=R)
+        idsF <- sapply(strsplit(idsF, "#"), `[`, 1)
+      }
+      lastF <- max(which(idsF %in% idsR))
+      lastR <- max(which(idsR %in% idsF))
+      if(lastF < length(fqF)) {
+        remainderF <- fqF[(lastF+1):length(fqF)]
+      } else {
+        remainderF <- ShortReadQ() 
+      }
+      if(lastR < length(fqR)) {
+        remainderR <- fqR[(lastR+1):length(fqR)]
+      } else {
+        remainderR <- ShortReadQ() 
+      }
+      fqF <- fqF[idsF %in% idsR]
+      fqR <- fqR[idsR %in% idsF]
+    }
     
     # Trim on truncQ
     # Convert numeric quality score to the corresponding ascii character

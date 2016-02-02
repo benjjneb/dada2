@@ -6,14 +6,15 @@
 \usage{
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf,
-  Inf), n = 1e+06, compress = TRUE, verbose = FALSE)
+  Inf), matchIDs = FALSE, id.sep = "\\\\s", id.field = NULL, n = 1e+06,
+  compress = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{fn}{(Required). A \code{character(2)} naming the paths to the forward/reverse fastq files.}
 
 \item{fout}{(Required). A \code{character(2)} naming the path to the output file.
 
-FURTHER ARGUMENTS can be provided as a length 1 or length 2 vector. If provided as a length 1
+FILTERING AND TRIMMING ARGUMENTS can be provided as a length 1 or length 2 vector. If provided as a length 1
 vector the same criteria is used for forward and reverse. If provided as a length 2 vector, the
 first value is used for the forward reads, the second value for the reverse reads.}
 
@@ -34,7 +35,24 @@ first value is used for the forward reads, the second value for the reverse read
 \item{minQ}{(Optional). After truncation, reads contain a quality score below minQ will be discarded.}
 
 \item{maxEE}{(Optional). After truncation, reads with higher than maxEE "expected errors" will be discarded.
- Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
+ Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
+
+ID MATCHING ARGUMENTS implement matching between the sequence identification strings in the forward and reverse
+ reads. The function can automatically detect and match ID fields in Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393}
+
+\item{matchIDs}{(Optional). A \code{logical(1)} indicating whether to enforce matching between the sequence
+   identifiers in the id lines of the forward and reverse fastq files.
+   If TRUE, only paired reads that share id fields (see below) are output.
+   If FALSE, no read ID checking is done. Default is FALSE
+   NOTE: Further dada(...) processing assumes matching order between forward and reverse reads. If that
+     matched order is not present}
+
+\item{id.sep}{(Optional). A \code{character(1)} indicating the separator between fields in the id string
+   of the input fastq files. Passed to the strsplit(...) function. Default is "\\s" (white-space).}
+
+\item{id.field}{(Optional). A code{numeric(1)} indicating which field contains the sequence identifier.
+   If NULL (the default) and matchIDs is TRUE, then the function attempts to automatically detect
+   the sequence identifier, assuming Illumina formatted output.}
 
 \item{n}{(Optional). The number of records (reads) to read in and filter at any one time.
  This controls the peak memory requirement so that very large fastq files are supported.
