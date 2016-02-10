@@ -78,7 +78,7 @@ derepFastq <- function(fl, n = 1e6, verbose = FALSE){
   # Sort by decreasing abundance
   ord <- order(derepCounts, decreasing=TRUE)
   derepCounts <- derepCounts[ord]
-  derepQuals <- derepQuals[ord,]
+  derepQuals <- derepQuals[ord,,drop=FALSE]
   derepMap <- match(derepMap, ord)
   if(verbose){
     message("Encountered ",
