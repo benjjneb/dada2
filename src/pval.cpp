@@ -75,7 +75,7 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
     if(nti1 == 0 || nti1 == 1 || nti1 == 2 || nti1 == 3) {
       tvec[pos1] = nti1*4 + nti1;
     } else {
-      Rcpp::stop("Error: Non-ACGT sequences in compute_lambda.");
+      Rcpp::stop("Non-ACGT sequences in compute_lambda.");
     }
     if(use_quals) {
       // Turn quality into the index in the array
@@ -85,7 +85,7 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
     }
     
     if( qind[pos1] > (ncol-1) ) {
-      Rcpp::stop("Error: Rounded quality exceeded range of err lookup table.");
+      Rcpp::stop("Rounded quality exceeded range of err lookup table.");
     }
   }
 

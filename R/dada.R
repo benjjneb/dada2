@@ -165,6 +165,7 @@ dada <- function(derep,
       qmax <- max(qmax, max(derep[[i]]$quals))
     }
   }
+  qmax <- ceiling(qmax) # Only getting averages from derep$quals
   if(qmax > 45) {
     if(qmax > 62) {
       stop("drep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) 
