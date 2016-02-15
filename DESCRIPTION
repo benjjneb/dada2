@@ -1,7 +1,7 @@
 Package: dada2
 Type: Package
 Title: DADA2: Exact Sample Inference from Amplicon Sequencing Data
-Version: 0.10.2
+Version: 0.10.3
 Date: 2016-01-12
 Author: Ben Callahan, Paul McMurdie, Susan Holmes
 Maintainer: Bioconductor Package Maintainer

@@ -96,17 +96,17 @@ int get_best_genus(int *karray, unsigned int arraylen, unsigned int n_kmers, uns
 //
 // [[Rcpp::export]]
 Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat) {
-  unsigned int i, j, pos, g;
+  size_t i, j, pos, g;
   int kmer;
   unsigned int k=8;
-  unsigned int n_kmers = (1 << (2*k));
-  unsigned int nseq = seqs.size();
+  size_t n_kmers = (1 << (2*k));
+  size_t nseq = seqs.size();
   if(nseq == 0) Rcpp::stop("No seqs provided to classify.");
-  unsigned int nref = refs.size();
+  size_t nref = refs.size();
   if(nref != ref_to_genus.size()) Rcpp::stop("Length mismatch between number of references and map to genus.");
-  unsigned int ngenus = genusmat.nrow();
+  size_t ngenus = genusmat.nrow();
 
-  // Validated and 0-index ref_to_genus map
+  // Rprintf("Validated and 0-index ref_to_genus map.\n");
   for(i=0;i<ref_to_genus.size();i++) {
     ref_to_genus[i] = ref_to_genus[i]-1; // -> 0-index
     if(ref_to_genus[i]<0 || ref_to_genus[i] >= ngenus) {
@@ -114,14 +114,14 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     }
   }
 
-  // Make reference kvec array by sequence
+  // Rprintf("Make reference kvec array by sequence.\n");
   unsigned char *ref_kmers = (unsigned char *) malloc((nref * n_kmers) * sizeof(unsigned char));
   if(ref_kmers == NULL) Rcpp::stop("Memory allocation failed.");
   for(i=0;i<nref;i++) {
     tax_kvec(refs[i].c_str(), k, &ref_kmers[i*n_kmers]);
   }
   
-  // Count seqs in each genus (M_g)
+  // Rprintf("Count seqs in each genus (M_g).\n");
   double *genus_num_plus1 = (double *) calloc(ngenus, sizeof(double));
   if(genus_num_plus1 == NULL) Rcpp::stop("Memory allocation failed.");  
   for(i=0;i<nref;i++) {
@@ -131,12 +131,13 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     genus_num_plus1[g]++;
   }
   
-  // Make reference kvec array by genus
+  // Rprintf("Make reference kvec array by genus.\n");
   unsigned int *genus_kmers = (unsigned int *) calloc((ngenus * n_kmers), sizeof(unsigned int));
   if(genus_kmers == NULL) Rcpp::stop("Memory allocation failed.");
   
   unsigned int *genus_kv;
   unsigned char *ref_kv;
+  unsigned int tot=0;
   for(i=0;i<nref;i++) {
     g = ref_to_genus[i];
     ref_kv = &ref_kmers[i*n_kmers];
@@ -146,7 +147,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     }
   }
   
-  // Calculate word priors (Pi)
+  // Rprintf("Calculate word priors (Pi).\n");
   double *kmer_prior = (double *) calloc(n_kmers, sizeof(double));
   if(kmer_prior == NULL) Rcpp::stop("Memory allocation failed.");
   for(i=0;i<nref;i++) {
@@ -159,7 +160,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     kmer_prior[kmer] = (kmer_prior[kmer] + 0.5)/(1.0 + nref);
   }
   
-  // Get size of the kmer arrays for the sequences to be classified
+  // Rprintf("Get size of the kmer arrays for the sequences to be classified.\n");
   unsigned int max_arraylen = 0;
   unsigned int seqlen;
   for(i=0;i<nseq;i++) {
@@ -168,7 +169,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     if((seqlen-k) > max_arraylen) { max_arraylen = seqlen-k; }
   }
 
-  // Allocate kmer array to be used by the seqs
+  // Rprintf("Allocate kmer array to be used by the seqs.");
   int *karray = (int *) malloc(max_arraylen * sizeof(int));
   if(karray == NULL) Rcpp::stop("Memory allocation failed.");
 
@@ -180,11 +181,11 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   int max_g, boot_g;
   unsigned int boot, booti, boot_match, arraylen;
   
-  // Allocate bootstrap array to be used by the seqs
+  // Rprintf("Allocate bootstrap array to be used by the seqs.\n");
   int *bootarray = (int *) malloc((max_arraylen/8) * sizeof(int));
   if(bootarray == NULL) Rcpp::stop("Memory allocation failed.");
   
-  // Classify the sequences
+  // Rprintf("Classify the sequences.\n");
   for(j=0;j<nseq;j++) {
     seqlen = seqs[j].size();
     arraylen = seqlen-k;
