@@ -25,7 +25,7 @@
 #' 
 #' @examples 
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"), verbose = TRUE)
-#' dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun, selfConsist = TRUE) 
+#' dada1 <- dada(derep1, err = inflateErr(tperr1, 2), selfConsist = TRUE) 
 #' plotComplementarySubstitutions(dada1)
 #' 
 plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
@@ -94,17 +94,25 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
 #'  A \code{logical(1)} determining whether to plot the expected error rate (red) if the
 #'  quality score exactly matched its nominal definition: Q = -10 log10(p_err).
 #'  
-#' @return A \code{\link{ggplot2}} object that will be rendered
+#' @return A \code{\link{ggplot}} object that will be rendered
 #'  to default device if \code{\link{print}ed},
 #'  or can be stored and further modified.
 #'  
-#' @export
-#' @import ggplot2
 #' @importFrom reshape2 melt
+#' @import ggplot2
+# @importFrom ggplot2 ggplot
+# @importFrom ggplot2 aes
+# @importFrom ggplot2 geom_point
+# @importFrom ggplot2 geom_line
+# @importFrom ggplot2 facet_wrap
+# @importFrom ggplot2 xlab
+# @importFrom ggplot2 ylab
+#' 
+#' @export
 #' 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"), verbose = TRUE)
-#' dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun, selfConsist = TRUE) 
+#' dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun) 
 #' plotErrors(dada1)
 #' plotErrors(dada1, "A", "C")
 #' plotErrors(dada1, nti="A", ntj=c("A","C","G","T"), err_in=TRUE, nominalQ=TRUE)

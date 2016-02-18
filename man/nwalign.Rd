@@ -22,6 +22,9 @@ nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
 \item{band}{(Optional). A \code{numeric(1)}. The band size.
  This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
  Default is getDadaOpt("BAND_SIZE"). Set band = -1 for unbanded alignment.}
+
+\item{endsfree}{(Optional). \code{logical(1)}. Default TRUE.
+ Ends-free gapping (or not).}
 }
 \value{
 \code{character(2)}. The aligned sequences.

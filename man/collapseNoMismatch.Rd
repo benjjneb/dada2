@@ -11,6 +11,9 @@ collapseNoMismatch(seqtab, minOverlap = 20, verbose = FALSE)
 
 \item{minOverlap}{(Optional). \code{numeric(1)}. Default is 20.
 The minimum amount of overlap between sequences required to collapse them together.}
+
+\item{verbose}{(Optional). \code{logical(1)}. Default FALSE.
+If TRUE, a summary of this function is printed to standard output.}
 }
 \value{
 Integer \code{matrix}.

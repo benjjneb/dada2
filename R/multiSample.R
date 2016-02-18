@@ -68,6 +68,9 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' @param minOverlap (Optional). \code{numeric(1)}. Default is 20.
 #' The minimum amount of overlap between sequences required to collapse them together.
 #' 
+#' @param verbose (Optional). \code{logical(1)}. Default FALSE.
+#' If TRUE, a summary of this function is printed to standard output.
+#' 
 #' @return Integer \code{matrix}.
 #' A row for each sample, and a column for each collapsed sequence across all the samples.
 #' Note that the columns are named by the sequence which can make display a little unwieldy.
@@ -121,39 +124,11 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
 }
 
 # Combines a list of derep-class objects into one single derep object
-combineDereps <- function(dereps) {
-  if(class(dereps) == "derep") dereps <- list(dereps)
-  if(!all(sapply(dereps, function(x) class(x)=="derep"))) Rcpp::stop("Requires derep-class objects.")
-  
-  combined <- dereps[[1]]
-  combined$quals <- sweep(combined$quals, 1, combined$uniques, "*")
-  for(derep in dereps[2:length(dereps)]) {
-    seen <- names(derep$uniques) %in% names(combined$uniques)
-    sqs.seen <- names(derep$uniques)[seen]
-    uniques.seen <- derep$uniques[seen]
-    quals.seen <- derep$quals[seen,,drop=FALSE]
-    quals.seen <- sweep(quals.seen, 1, uniques.seen, "*")
-    uniques.new <- derep$uniques[!seen]
-    quals.new <- derep$quals[!seen,,drop=FALSE]
-    quals.new <- sweep(quals.new, 1, uniques.new, "*")
-    
-    combined$uniques[sqs.seen] <- combined$uniques[sqs.seen] + uniques.seen
-    combined$uniques <- c(combined$uniques, uniques.new)
-    combined$quals[sqs.seen,] <- combined$quals[sqs.seen,,drop=FALSE] + quals.seen
-    combined$quals <- rbind(combined$quals, quals.new)
-    map <- match(names(derep$uniques), names(combined$uniques))
-    combined$map <- c(combined$map, map[derep$map])
-  }
-  combined$quals <- sweep(combined$quals, 1, combined$uniques, "/")
-  combined
-}
-
-# Combines a list of derep-class objects into one single derep object
 combineDereps2 <- function(dereps) {
   if(class(dereps) == "derep") dereps <- list(dereps)
-  if(!all(sapply(dereps, function(x) class(x)=="derep"))) Rcpp::stop("Requires derep-class objects.")
+  if(!all(sapply(dereps, function(x) class(x)=="derep"))) stop("Requires derep-class objects.")
   if(length(unique(sapply(dereps, function(x) ncol(x$quals))))>1) {
-    Rcpp:stop("Only derep-class objects with same-length sequences can be combined.")
+    stop("Only derep-class objects with same-length sequences can be combined.")
   }
   seqlen <- ncol(dereps[[1]]$quals)
   

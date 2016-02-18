@@ -69,17 +69,14 @@ getUniques <- function(object) {
 #' getSequences(dada1$clustering)
 #' 
 getSequences <- function(object) {
+  if(is(object, "character")) return(object)
   return(names(getUniques(object)))
 }
 
-#' @export
-#' 
 getAbund <- function(object) {
   return(sum(getUniques(object)))
 }
 
-#' @export
-#' 
 getNseq <- function(object) {
   return(length(getUniques(object)))
 }
@@ -102,6 +99,9 @@ getNseq <- function(object) {
 #' @param band (Optional). A \code{numeric(1)}. The band size.
 #'  This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
 #'  Default is getDadaOpt("BAND_SIZE"). Set band = -1 for unbanded alignment.
+#'  
+#' @param endsfree (Optional). \code{logical(1)}. Default TRUE.
+#'  Ends-free gapping (or not).
 #'  
 #' @return \code{character(2)}. The aligned sequences.
 #' 
@@ -192,3 +192,6 @@ checkConvergence <- function(dadaO) {
   sapply(dadaO$err_in, function(x) sum(abs(dadaO$err_out-x)))
 }
 
+pfasta <- function(seqs) {
+  cat(paste(">", seq(length(seqs)), "\n", seqs, sep="", collapse="\n"))
+}

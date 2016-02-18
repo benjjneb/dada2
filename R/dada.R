@@ -107,7 +107,7 @@ assign("VERBOSE", FALSE, envir=dada_opts)
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 #' dada(derep1, err=tperr1)
-#' dada(list(sam1=derep1, sam2=derep2), err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' dada(list(sam1=derep1, sam2=derep2), err=tperr1, selfConsist=TRUE)
 #' dada(derep1, err=inflateErr(tperr1,2), BAND_SIZE=32, OMEGA_A=1e-20)
 #'
 dada <- function(derep,

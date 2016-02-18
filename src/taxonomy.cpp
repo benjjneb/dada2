@@ -96,7 +96,7 @@ int get_best_genus(int *karray, unsigned int arraylen, unsigned int n_kmers, uns
 //
 // [[Rcpp::export]]
 Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat) {
-  size_t i, j, pos, g;
+  size_t i, j, g;
   int kmer;
   unsigned int k=8;
   size_t n_kmers = (1 << (2*k));
@@ -137,7 +137,6 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   
   unsigned int *genus_kv;
   unsigned char *ref_kv;
-  unsigned int tot=0;
   for(i=0;i<nref;i++) {
     g = ref_to_genus[i];
     ref_kv = &ref_kmers[i*n_kmers];

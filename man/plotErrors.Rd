@@ -27,7 +27,7 @@ plotErrors(dq, nti = c("A", "C", "G", "T"), ntj = c("A", "C", "G", "T"),
  quality score exactly matched its nominal definition: Q = -10 log10(p_err).}
 }
 \value{
-A \code{\link{ggplot2}} object that will be rendered
+A \code{\link{ggplot}} object that will be rendered
  to default device if \code{\link{print}ed},
  or can be stored and further modified.
 }
@@ -39,7 +39,7 @@ rates under the nominal definition of quality scores can also be included.
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"), verbose = TRUE)
-dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun, selfConsist = TRUE)
+dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun)
 plotErrors(dada1)
 plotErrors(dada1, "A", "C")
 plotErrors(dada1, nti="A", ntj=c("A","C","G","T"), err_in=TRUE, nominalQ=TRUE)

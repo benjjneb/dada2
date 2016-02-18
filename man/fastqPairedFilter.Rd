@@ -80,7 +80,8 @@ testFastqR = system.file("extdata", "sam1R.fastq.gz", package="dada2")
 filtFastqF <- tempfile(fileext=".fastq.gz")
 filtFastqR <- tempfile(fileext=".fastq.gz")
 fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
-fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
+fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
+                    truncLen=c(240, 200), maxEE=2, verbose=TRUE)
 }
 \seealso{
 \code{\link{fastqFilter}}

@@ -24,7 +24,7 @@ This is similar to original DADA article, Figure 6.
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"), verbose = TRUE)
-dada1 <- dada(derep1, err = inflateErr(tperr1, 2), errorEstimationFunction = loessErrfun, selfConsist = TRUE)
+dada1 <- dada(derep1, err = inflateErr(tperr1, 2), selfConsist = TRUE)
 plotComplementarySubstitutions(dada1)
 }
 

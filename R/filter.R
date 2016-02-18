@@ -123,7 +123,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
   }
   
   if(verbose) {
-    message("Read in ", inseqs, " , outputted ", outseqs, " filtered sequences.")
+    message("Read in ", inseqs, ", outputted ", outseqs, " filtered sequences.")
   }
 }
 
@@ -222,11 +222,11 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' filtFastqF <- tempfile(fileext=".fastq.gz")
 #' filtFastqR <- tempfile(fileext=".fastq.gz")
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
-#' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20), truncLen=c(240, 200), maxEE=2, verbose=TRUE)
+#' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
+#'                     truncLen=c(240, 200), maxEE=2, verbose=TRUE)
 #' 
 fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE){
-  # Warning: This assumes that forward/reverse reads are in the same order
-  # IT DOES NOT CHECK THE ID LINES
+  # Warning: This assumes that forward/reverse reads are in the same order unless matchIDs=TRUE
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
   
@@ -389,36 +389,30 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   }
 }
 
-# # @importFrom ShortRead :::.check_type_and_length
 #' @importFrom ShortRead srFilter
 #' @importFrom ShortRead SRFilterResult
 #' @importFrom Biostrings quality
 minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
 {
-  ShortRead:::.check_type_and_length(minQ, "numeric", 1)
   srFilter(function(x) {
     apply(as(quality(x), "matrix"), 1, function(qs) min(qs, na.rm=TRUE) >= minQ)
   }, name = .name)
 }
 
-# # @importFrom ShortRead :::.check_type_and_length
 #' @importFrom Biostrings quality
 #' @importFrom ShortRead SRFilterResult
 #' @importFrom ShortRead srFilter
 maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter") 
 {
-  ShortRead:::.check_type_and_length(maxEE, "numeric", 1)
   srFilter(function(x) {
     apply(as(quality(x), "matrix"), 1, function(qs) sum(10^(-qs[!is.na(qs)]/10.0)) <= maxEE)
   }, name = .name)
 }
 
-# # @importFrom ShortRead :::.check_type_and_length
 #' @importFrom Biostrings width
 #' @importFrom ShortRead SRFilterResult
 #' @importFrom ShortRead srFilter
 minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
-  ShortRead:::.check_type_and_length(minLen, "numeric", 1)
   srFilter(function(x) {
     width(x) >= minLen
   }, name = .name)

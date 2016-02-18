@@ -18,7 +18,6 @@ Imports:
     BiocGenerics (>= 0.10.0),
     Biostrings (>= 2.32.1),
     ggplot2 (>= 1.0),
-    gridExtra (>= 0.9),
     data.table (>= 1.9.4),
     reshape2 (>= 1.4.1),
     ShortRead (>= 1.24.0)
