@@ -1,0 +1,4 @@
+
+Feb. 15, 2015: A benchmarking comparison of DADA2 and several OTU methods profiled in a recent paper is now available: http://benjjneb.github.io/dada2/R/SotA.html
+
+Feb. 11, 2015: The dada2 R package now implements the RDP classifier method as the assignTaxonomy function.

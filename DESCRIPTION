@@ -1,16 +1,21 @@
 Package: dada2
 Type: Package
-Title: DADA2: Exact Sample Inference from Amplicon Sequencing Data
-Version: 0.10.3
-Date: 2016-01-12
-Author: Ben Callahan, Paul McMurdie, Susan Holmes
-Maintainer: Bioconductor Package Maintainer
-    <maintainer@bioconductor.org>
-Description: This is a package.
+Title: Accurate, high-resolution sample inference from amplicon sequencing data
+Description: The dada2 package provides "OTU picking" functionality, but instead
+    of picking OTUs the DADA2 algorithm exactly infers samples sequences. The dada2
+    pipeline starts from demultiplexed fastq files, and outputs inferred sample
+    sequences and associated abundances after removing substitution and chimeric
+    errors. Taxonomic classification is also available via a native implementation
+    of the RDP classifier method.
+Version: 0.10.4
+Date: 2016-02-18
+Maintainer: Benjamin Callahan <benjamin.j.callahan@gmail.com>
+Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan
+    Holmes
 License: LGPL-3 | file LICENSE
 LazyLoad: yes
 Depends:
-    R (>= 3.1.0),
+    R (>= 3.2.0),
     Rcpp (>= 0.11.2)
 Imports:
     Biobase,
@@ -26,7 +31,9 @@ Suggests:
     microbenchmark (>= 1.4.2),
     knitr (>= 1.9)
 VignetteBuilder: knitr
-biocViews: Microbiome, Sequencing
+biocViews: Microbiome, Sequencing, Classification, Metagenomics
+URL: http://benjjneb.github.io/dada2/
+BugReports: https://github.com/benjjneb/dada2/issues
 LinkingTo: Rcpp
 LazyData: true
 Collate:

@@ -280,11 +280,10 @@ Rcpp::LogicalVector C_check_ACGT(std::vector<std::string> seqs) {
 //'
 //' @return DataFrame.
 //'
-//' @export
-//' 
 //' @examples
 //' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-//' kmerdf <- evaluate_kmers(getSequences(derep1), 5, getDadaOpt("SCORE_MATRIX"), getDadaOpt("GAP_PENALTY"), 16, 1000)
+//' kmerdf <- dada2:::evaluate_kmers(getSequences(derep1), 5, getDadaOpt("SCORE_MATRIX"),
+//'                                  getDadaOpt("GAP_PENALTY"), 16, 1000)
 //' plot(kmerdf$kmer, kmerdf$align)
 //' 
 // [[Rcpp::export]]
