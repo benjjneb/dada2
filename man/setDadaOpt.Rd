@@ -9,6 +9,9 @@ setDadaOpt(...)
 \arguments{
 \item{...}{(Required). The DADA options to set, along with their new value.}
 }
+\value{
+NULL.
+}
 \description{
 setDadaOpt sets the default options used by the dada(...) function for your current session, much
  like \code{par} sets the session default plotting parameters. However, all dada options can be set as

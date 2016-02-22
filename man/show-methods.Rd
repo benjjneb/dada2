@@ -13,6 +13,11 @@
 \arguments{
 \item{object}{Any R object}
 }
+\value{
+NULL.
+
+NULL.
+}
 \description{
 See the general documentation of \code{\link[methods]{show}} method for
 expected behavior.

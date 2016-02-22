@@ -6,6 +6,17 @@
 \usage{
 qtables2(x, qeff = FALSE)
 }
+\arguments{
+\item{x}{ShortReadQ.
+The ShortReadQ-class object to table (or dereplicate).}
+
+\item{qeff}{\code{logical(1)}.
+Calculate average quality by first transforming to expected error rate.}
+}
+\value{
+List.
+ Matches format of derep-class object.
+}
 \description{
 Internal function to replicate ShortRead::tables functionality while also returning average quals and a map
 from reads to uniques

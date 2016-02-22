@@ -22,6 +22,9 @@ Passed on to \code{\link[ShortRead]{writeFasta}}.}
 
 \item{...}{Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.}
 }
+\value{
+NULL.
+}
 \description{
 A wrapper for writeFastq in the ShortRead package.
 Default output format is compatible with uchime.
