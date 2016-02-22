@@ -30,8 +30,8 @@ Suggests:
     testthat (>= 0.9.1),
     microbenchmark (>= 1.4.2),
     BiocStyle,
-    knitr (>= 1.9),
-    rmkarkdown
+    knitr,
+    rmarkdown
 VignetteBuilder: knitr
 biocViews: Microbiome, Sequencing, Classification, Metagenomics
 URL: http://benjjneb.github.io/dada2/

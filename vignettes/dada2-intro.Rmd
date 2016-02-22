@@ -5,7 +5,7 @@ date: "`r date()`"
 output: 
   BiocStyle::html_document
 vignette: >
-  %\VignetteIndexEntry{dada2-Inroduction}
+  %\VignetteIndexEntry{Introduction to dada2}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}  
 ---
