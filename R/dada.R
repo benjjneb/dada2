@@ -46,7 +46,7 @@ assign("VERBOSE", FALSE, envir=dada_opts)
 #'  If selfConsist = TRUE, this argument can be passed in as NULL and an initial error matrix will be estimated from the data
 #'  by assuming that all reads are errors away from one true sequence.
 #'    
-#' @param errorEstimationFunction (Optional). Function. Default Null.
+#' @param errorEstimationFunction (Optional). Function. Default loessErrfun.
 #' 
 #'  If USE_QUALS = TRUE, \code{errorEstimationFunction(dada()$trans_out)} is computed after sample inference finishes 
 #'    and the return value is used as the new estimate of the err matrix.
@@ -112,7 +112,7 @@ assign("VERBOSE", FALSE, envir=dada_opts)
 #'
 dada <- function(derep,
                  err,
-                 errorEstimationFunction = NULL,
+                 errorEstimationFunction = loessErrfun,
                  selfConsist = FALSE, 
                  aggregate = FALSE, ...) {
   
@@ -206,7 +206,7 @@ dada <- function(derep,
   
   # Validate errorEstimationFunction
   if(!opts$USE_QUALS) {
-    if(!is.null(errorEstimationFunction)) warning("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
+    if(!is.null(errorEstimationFunction)) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
     errorEstimationFunction = NULL  # NULL error function has different meaning depending on USE_QUALS
   } else {
     if(is.null(errorEstimationFunction)) { 

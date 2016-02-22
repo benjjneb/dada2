@@ -2,18 +2,18 @@
 #' Read and Dereplicate a Fastq file.
 #' 
 #' This is a custom interface to \code{\link[ShortRead]{FastqStreamer}} 
-#' for dereplicating amplicon sequences from a fastq or compressed fastq file,
+#' for dereplicating amplicon sequences from fastq or compressed fastq files,
 #' while also controlling peak memory requirement to support large files.
 #'
-#' @param fl (Required). \code{character(1)}.
-#'  The file path to the fastq or fastq.gz file.
+#' @param fls (Required). \code{character}.
+#'  The file path(s) to the fastq or fastq.gz file(s).
 #'  Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
 #' 
 #' @param n (Optional). \code{numeric(1)}.
 #'  the maximum number of records (reads) to parse and dereplicate
 #'  at any one time. This controls the peak memory requirement
 #'  so that large fastq files are supported.
-#'  Defaults is \code{1e6}, one-million reads.
+#'  Default is \code{1e6}, one-million reads.
 #'  See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
 #'  which is passed on.
 #' 
@@ -22,7 +22,7 @@
 #'  on the intermittent and final status of the dereplication.
 #'  Default is \code{FALSE}, no messages.
 #'
-#' @return A \code{\link{derep-class}} object. 
+#' @return A \code{\link{derep-class}} object or list of such objects. 
 #'
 #' @export
 #' @importFrom ShortRead FastqStreamer
@@ -35,64 +35,73 @@
 #' derep1.35 = derepFastq(testFastq, 35, TRUE)
 #' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
-derepFastq <- function(fl, n = 1e6, verbose = FALSE){
-  if(verbose){
-    message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
+derepFastq <- function(fls, n = 1e6, verbose = FALSE){
+  if(!is.character(fls)) {
+    stop("Filenames must be provided as in character format.")
   }
-  
-  f <- FastqStreamer(fl, n = n)
-  suppressWarnings(fq <- yield(f))
-  
-  out <- qtables2(fq, FALSE)
-  
-  derepCounts <- out$uniques
-  derepQuals <- out$cum_quals
-  derepMap <- out$map
-  while( length(suppressWarnings(fq <- yield(f))) ){
-    # A little loop protection
-    newniques = alreadySeen = NULL
-    # Dot represents one turn inside the chunking loop.
+  rval <- list()
+  for(i in seq_along(fls)) {
+    fl <- fls[[i]]
     if(verbose){
-      message(".", appendLF = FALSE)
+      message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
     }
+    
+    f <- FastqStreamer(fl, n = n)
+    suppressWarnings(fq <- yield(f))
+    
     out <- qtables2(fq, FALSE)
-    # identify sequences already present in `derepCounts`
-    alreadySeen <- names(out$uniques) %in% names(derepCounts)
-    # Sum these values, if any
-    if(any(alreadySeen)){
-      sqnms = names(out$uniques)[alreadySeen]
-      derepCounts[sqnms] <- derepCounts[sqnms] + out$uniques[sqnms]
-      derepQuals[sqnms,] <- derepQuals[sqnms,] + out$cum_quals[sqnms,]
+    
+    derepCounts <- out$uniques
+    derepQuals <- out$cum_quals
+    derepMap <- out$map
+    while( length(suppressWarnings(fq <- yield(f))) ){
+      # A little loop protection
+      newniques = alreadySeen = NULL
+      # Dot represents one turn inside the chunking loop.
+      if(verbose){
+        message(".", appendLF = FALSE)
+      }
+      out <- qtables2(fq, FALSE)
+      # identify sequences already present in `derepCounts`
+      alreadySeen <- names(out$uniques) %in% names(derepCounts)
+      # Sum these values, if any
+      if(any(alreadySeen)){
+        sqnms = names(out$uniques)[alreadySeen]
+        derepCounts[sqnms] <- derepCounts[sqnms] + out$uniques[sqnms]
+        derepQuals[sqnms,] <- derepQuals[sqnms,] + out$cum_quals[sqnms,]
+      }
+      # Concatenate the remainder to `derepCounts`, if any
+      if(!all(alreadySeen)){
+        derepCounts <- c(derepCounts, out$uniques[!alreadySeen])
+        derepQuals <- rbind(derepQuals, out$cum_quals[!alreadySeen,,drop=FALSE])
+      }
+      new2old <- match(names(out$uniques), names(derepCounts)) # map from out$uniques index to derepCounts index
+      if(any(is.na(new2old))) warning("Failed to properly extend uniques.")
+      derepMap <- c(derepMap, new2old[out$map])
     }
-    # Concatenate the remainder to `derepCounts`, if any
-    if(!all(alreadySeen)){
-      derepCounts <- c(derepCounts, out$uniques[!alreadySeen])
-      derepQuals <- rbind(derepQuals, out$cum_quals[!alreadySeen,,drop=FALSE])
+    derepQuals <- derepQuals/derepCounts # Average
+  ###  if(qeff) derepQuals <- -10*log10(derepQuals)  # Convert back to effective Q value
+    # Sort by decreasing abundance
+    ord <- order(derepCounts, decreasing=TRUE)
+    derepCounts <- derepCounts[ord]
+    derepQuals <- derepQuals[ord,,drop=FALSE]
+    derepMap <- match(derepMap, ord)
+    if(verbose){
+      message("Encountered ",
+              length(derepCounts),
+              " unique sequences from ",
+              sum(derepCounts),
+              " total sequences read.")
     }
-    new2old <- match(names(out$uniques), names(derepCounts)) # map from out$uniques index to derepCounts index
-    if(any(is.na(new2old))) warning("Failed to properly extend uniques.")
-    derepMap <- c(derepMap, new2old[out$map])
+    close(f)
+    if(sum(tabulate(nchar(names(derepCounts)))>0) > 1) {
+      warning("Not all sequences were the same length. dada(...) requires same length input sequences. See truncLen parameter in ?fastqFilter or ?fastqPairedFilter.")
+    }
+    derepO <- list(uniques=derepCounts, quals=derepQuals, map=derepMap)
+    derepO <- as(derepO, "derep")
+    rval[[i]] <- derepO
   }
-  derepQuals <- derepQuals/derepCounts # Average
-###  if(qeff) derepQuals <- -10*log10(derepQuals)  # Convert back to effective Q value
-  # Sort by decreasing abundance
-  ord <- order(derepCounts, decreasing=TRUE)
-  derepCounts <- derepCounts[ord]
-  derepQuals <- derepQuals[ord,,drop=FALSE]
-  derepMap <- match(derepMap, ord)
-  if(verbose){
-    message("Encountered ",
-            length(derepCounts),
-            " unique sequences from ",
-            sum(derepCounts),
-            " total sequences read.")
-  }
-  close(f)
-  if(sum(tabulate(nchar(names(derepCounts)))>0) > 1) {
-    warning("Not all sequences were the same length. dada(...) requires same length input sequences. See truncLen parameter in ?fastqFilter or ?fastqPairedFilter.")
-  }
-  rval <- list(uniques=derepCounts, quals=derepQuals, map=derepMap)
-  rval <- as(rval, "derep")
+  if(length(rval) == 1) rval <- rval[[1]]
   return(rval)
 }
 ###
