@@ -7,7 +7,7 @@ Description: The dada2 package provides "OTU picking" functionality, but instead
     sequences and associated abundances after removing substitution and chimeric
     errors. Taxonomic classification is also available via a native implementation
     of the RDP classifier method.
-Version: 0.99.3
+Version: 0.99.4
 Date: 2016-02-18
 Maintainer: Benjamin Callahan <benjamin.j.callahan@gmail.com>
 Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan
@@ -15,7 +15,7 @@ Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan
 License: LGPL-3
 LazyLoad: yes
 Depends:
-    R (>= 3.2.0),
+    R (>= 3.3.0),
     Rcpp (>= 0.11.2)
 Imports:
     Biostrings (>= 2.32.1),
