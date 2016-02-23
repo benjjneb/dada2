@@ -296,7 +296,7 @@ dada_to_seq_table = function(dadaRes, derep, sr,
 #'  The derep-class object returned by derepFastq() that was used as the input to the
 #'  dada-class object passed to the dadaF argument.
 #'  
-#'  @param srF (Required). The trimmed and filtered forward reads 
+#' @param srF (Required). The trimmed and filtered forward reads 
 #'   that you used as input for \code{\link{derepFastq}}.
 #'   More generally, this is an object that inherits from the 
 #'   \code{\link{ShortRead-class}}. 
@@ -311,7 +311,7 @@ dada_to_seq_table = function(dadaRes, derep, sr,
 #' @param derepR (Required). A \code{\link{derep-class}} object.
 #'  See derepF description, but for the reverse reads.
 #'  
-#'  @param srR (Required). 
+#' @param srR (Required). 
 #'   See srF description, but in this case provide for the reverse reads.
 #'
 #' @param minOverlap (Optional). A \code{numeric(1)} of the minimum length of the overlap (in nucleotides)

@@ -426,6 +426,8 @@ dada <- function(derep,
 #'
 #' @param ... (Required). The DADA options to set, along with their new value.
 #'  
+#' @return NULL.  
+#'  
 #' @details The various dada options...
 #' 
 #' OMEGA_A: This parameter sets the threshold for when DADA2 calls unique sequences significantly overabundant, and therefore creates a

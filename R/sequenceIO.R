@@ -110,6 +110,15 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
 #' Internal function to replicate ShortRead::tables functionality while also returning average quals and a map
 #' from reads to uniques
 #' 
+#' @param x ShortReadQ.
+#'  The ShortReadQ-class object to table (or dereplicate).
+#' 
+#' @param qeff \code{logical(1)}.
+#'  Calculate average quality by first transforming to expected error rate.
+#' 
+#' @return List.
+#'  Matches format of derep-class object.
+#' 
 #' @importFrom ShortRead srsort
 #' @importFrom ShortRead srrank
 #' @importFrom ShortRead sread
@@ -158,6 +167,8 @@ qtables2 <- function(x, qeff = FALSE) {
 #'  Passed on to \code{\link[ShortRead]{writeFasta}}.
 #'  
 #' @param ... Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.
+#' 
+#' @return NULL.
 #' 
 #' @importFrom ShortRead writeFasta
 #' @importFrom ShortRead ShortRead

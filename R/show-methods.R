@@ -7,6 +7,7 @@
 #' @seealso \code{\link[methods]{show}}
 #' 
 #' @inheritParams methods::show
+#' @return NULL.
 #' @export
 #' @rdname show-methods
 #' @include allClasses.R
@@ -33,6 +34,7 @@ setMethod("show", "derep", function(object){
 })
 ############################################################################
 #' @rdname show-methods
+#' @return NULL.
 setMethod("show", "dada", function(object){
   cat("dada-class: object describing DADA2 denoising results", fill=TRUE)
   if( length(object$denoised) > 0 && length(object$map) > 0 ) {

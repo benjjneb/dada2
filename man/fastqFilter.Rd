@@ -38,6 +38,9 @@ Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for de
 
 \item{verbose}{(Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.}
 }
+\value{
+NULL.
+}
 \description{
 fastqFilter takes an input fastq file (can be compressed), filters it based on several
 user-definable criteria, and outputs those reads which pass the filter and their associated

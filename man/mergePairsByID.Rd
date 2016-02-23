@@ -15,25 +15,25 @@ The output of dada() function on the forward reads.}
 
 \item{derepF}{(Required). A \code{\link{derep-class}} object.
 The derep-class object returned by derepFastq() that was used as the input to the
-dada-class object passed to the dadaF argument.
+dada-class object passed to the dadaF argument.}
 
-@param srF (Required). The trimmed and filtered forward reads 
- that you used as input for \code{\link{derepFastq}}.
- More generally, this is an object that inherits from the 
- \code{\link{ShortRead-class}}. 
- In most cases this will be \code{\link{ShortReadQ-class}}.
- Objects from this class are the result of \code{\link{readFastq}}.
- Alternatively, this can be a character string
- that provides the path to your forward reads fastq file.}
+\item{srF}{(Required). The trimmed and filtered forward reads 
+that you used as input for \code{\link{derepFastq}}.
+More generally, this is an object that inherits from the 
+\code{\link{ShortRead-class}}. 
+In most cases this will be \code{\link{ShortReadQ-class}}.
+Objects from this class are the result of \code{\link{readFastq}}.
+Alternatively, this can be a character string
+that provides the path to your forward reads fastq file.}
 
 \item{dadaR}{(Required). A \code{\link{dada-class}} object.
 The output of dada() function on the reverse reads.}
 
 \item{derepR}{(Required). A \code{\link{derep-class}} object.
-See derepF description, but for the reverse reads.
+See derepF description, but for the reverse reads.}
 
-@param srR (Required). 
- See srF description, but in this case provide for the reverse reads.}
+\item{srR}{(Required). 
+See srF description, but in this case provide for the reverse reads.}
 
 \item{minOverlap}{(Optional). A \code{numeric(1)} of the minimum length of the overlap (in nucleotides)
 required for merging the forward and reverse reads. Default is 20.}

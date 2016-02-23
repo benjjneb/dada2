@@ -38,6 +38,8 @@
 #' 
 #' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.  
 #'     
+#' @return NULL.
+#' 
 #' @seealso 
 #'  \code{\link{fastqPairedFilter}}
 #' 
@@ -190,6 +192,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' @param compress (Optional). A \code{logical(1)} indicating whether the output should be gz compressed.
 #' 
 #' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
+#' 
+#' @return NULL.
 #' 
 #' @seealso 
 #' \code{\link{fastqFilter}}
