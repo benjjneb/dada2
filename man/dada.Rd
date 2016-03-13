@@ -73,8 +73,8 @@ Briefly, DADA implements a statiscal test for the notion that a specific sequenc
  is found in two publications:
 
 \itemize{ 
- \item{Callahan, B. J., McMurdie, P. J., Rosen, M. J., Han, A. W., Johnson, A. J., & Holmes, S. P. (2015). DADA2: High resolution sample inference from amplicon data. bioRxiv, 024034.}
- \item{Rosen, M. J., Callahan, B. J., Fisher, D. S., & Holmes, S. P. (2012). Denoising PCR-amplified metagenome data. BMC bioinformatics, 13(1), 283.}
+ \item{Callahan BJ, McMurdie PJ, Rosen MJ, Han AW, Johnson AJ, Holmes SP (2015). DADA2: High resolution sample inference from amplicon data. bioRxiv, 024034.}
+ \item{Rosen MJ, Callahan BJ, Fisher DS, Holmes SP (2012). Denoising PCR-amplified metagenome data. BMC bioinformatics, 13(1), 283.}
 }
  
 DADA depends on a parametric error model of substitutions. Thus the quality of its sample inference is affected

@@ -4,10 +4,11 @@
 \alias{assignTaxonomy}
 \title{assignTaxonomy assigns taxonomy to provided sequences.}
 \usage{
-assignTaxonomy(seqs, refFasta, minBoot = 80)
+assignTaxonomy(seqs, refFasta, minBoot = 50)
 }
 \arguments{
-\item{seqs}{(Required). A character vector of the sequences to be assigned.}
+\item{seqs}{(Required). A character vector of the sequences to be assigned, or an object coercible by
+\code{\link{getUniques}}.}
 
 \item{refFasta}{(Required). A character string naming the path to the reference fasta file, or an 
 R connection. This reference fasta file should be formatted with the id line corresponding to the

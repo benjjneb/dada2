@@ -35,8 +35,8 @@
 #' 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-#' unqs1 <- getUniques(derep1)
-#' isBimera(names(unqs1)[[20]], names(unqs1)[1:10])
+#' sqs1 <- getSequences(derep1)
+#' isBimera(sqs1[[20]], sqs1[1:10])
 #' 
 isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
   # (l0,r0) or (l0,r0,l1,r1,match,mismatch,indel) if allowOneOff
@@ -107,7 +107,7 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' isBimeraDenovo(dada1)
-#' isBimeraDenovo(getUniques(dada1), minFoldParentOverAbundance = 2, allowOneOff=FALSE)
+#' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 #' 
 isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
   unqs <- getUniques(unqs)
@@ -156,6 +156,9 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 #' @param minOverlap (Optional). A \code{numeric(1)}. Default is 20.
 #'   Minimum overlap required to call something a shift.
 #'   
+#' @param flagSubseqs (Optional). A \code{logical(1)}. Default is FALSE.
+#'   Whether or not to flag strict subsequences as shifts.
+#'   
 #' @return \code{logical} of length the number of input unique sequences.
 #'  TRUE if sequence is an exact shift of a more abundant sequence. Otherwise FALSE.
 #'
@@ -169,9 +172,9 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' isShiftDenovo(dada1)
-#' isShiftDenovo(getUniques(dada1), minOverlap=50, verbose=TRUE)
+#' isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
 #' 
-isShiftDenovo <- function(unqs, minOverlap = 20, verbose=FALSE) {
+isShiftDenovo <- function(unqs, minOverlap = 20, flagSubseqs=FALSE, verbose=FALSE) {
   unqs <- getUniques(unqs)
   abunds <- unname(unqs)
   seqs <- names(unqs)
@@ -200,12 +203,13 @@ isShiftDenovo <- function(unqs, minOverlap = 20, verbose=FALSE) {
 # @param minOverlap (Optional). A \code{numeric(1)}. Default is 20.
 #   Minimum overlap required to call something a shift.
 #   
-isShiftedPair <- function(sq1, sq2, minOverlap=20) {
+isShiftedPair <- function(sq1, sq2, minOverlap=20, flagSubseqs=FALSE) {
   al <- nwalign(sq1, sq2, band=-1)
   foo <- C_eval_pair(al[1], al[2])
-  return(foo["match"] < nchar(sq1) && foo["match"] < nchar(sq2) && foo["match"] >= minOverlap && foo["mismatch"]==0 && foo["indel"]==0)
+  return((foo["match"] < nchar(sq1) || flagSubseqs) && (foo["match"] < nchar(sq2) || flagSubseqs) &&
+           foo["match"] >= minOverlap && foo["mismatch"]==0 && foo["indel"]==0)
 }
 
-isShift <- function(sq, pars, minOverlap=20) {
-  return(any(sapply(pars, function(par) isShiftedPair(sq, par))))
+isShift <- function(sq, pars, minOverlap=20, flagSubseqs=FALSE) {
+  return(any(sapply(pars, function(par) isShiftedPair(sq, par, minOverlap=minOverlap, flagSubseqs=flagSubseqs))))
 }

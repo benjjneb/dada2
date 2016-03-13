@@ -170,9 +170,10 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
 //      b_e_update(bb);
       if(verbose) { Rprintf("S"); }
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
-    if(verbose && nshuffle >= MAX_SHUFFLE) { Rprintf("\nWarning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
+    if(verbose && nshuffle >= MAX_SHUFFLE) { Rprintf("Warning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
 
     b_p_update(bb);
+    Rcpp::checkUserInterrupt();
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) )
   
 //  if(final_consensus) { b_make_consensus(bb); }

@@ -195,3 +195,8 @@ checkConvergence <- function(dadaO) {
 pfasta <- function(seqs) {
   cat(paste(">", seq(length(seqs)), "\n", seqs, sep="", collapse="\n"))
 }
+
+is.list.of <- function(x, ctype) {
+  if(!is.list(x)) return(FALSE)
+  else return(all(sapply(x, is, ctype)))
+}

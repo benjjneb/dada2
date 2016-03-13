@@ -9,20 +9,17 @@ mergePairs(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch = 0,
   justConcatenate = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{dadaF}{(Required). A \code{\link{dada-class}} object.
+\item{dadaF}{(Required). A \code{\link{dada-class}} object, or a list of such objects.
 The output of dada() function on the forward reads.}
 
-\item{derepF}{(Required). A \code{\link{derep-class}} object.
+\item{derepF}{(Required). A \code{\link{derep-class}} object, or a list of such objects.
 The derep-class object returned by derepFastq() that was used as the input to the
-dada-class object passed to the dadaF argument.
+dada-class object passed to the dadaF argument.}
 
-Alternatively the map itself (derepFastq()$map) can be provided in place of the
-derep-class object.}
-
-\item{dadaR}{(Required). A \code{\link{dada-class}} object.
+\item{dadaR}{(Required). A \code{\link{dada-class}} object, or a list of such objects.
 The output of dada() function on the reverse reads.}
 
-\item{derepR}{(Required). A \code{\link{derep-class}} object.
+\item{derepR}{(Required). A \code{\link{derep-class}} object, or a list of such objects.
 See derepF description, but for the reverse reads.}
 
 \item{minOverlap}{(Optional). A \code{numeric(1)} of the minimum length of the overlap (in nucleotides)
@@ -46,7 +43,9 @@ If TRUE, the forward and reverse-complemented reverse read are concatenated rath
 \item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
 \value{
-Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
+A data.frame, or a list of data.frames. 
+The data.frame(s) have a row for each unique pairing of forward/reverse denoised sequences.
+The following columns are reported...
 \itemize{
  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
  \item{$sequence: The merged sequence.}
@@ -60,6 +59,7 @@ Dataframe. One row for each unique pairing of forward/reverse denoised sequences
          FALSE otherwise.}
  \item{$...: Additional columns specified in the propagateCol argument.}
 }
+A list of data.frames is returned if a list of input objects was provided.
 }
 \description{
 This function attempts each denoised pair of forward and reverse reads, rejecting any 

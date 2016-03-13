@@ -84,8 +84,8 @@ assign("VERBOSE", FALSE, envir=dada_opts)
 #'  is found in two publications:
 #' 
 #' \itemize{ 
-#'  \item{Callahan, B. J., McMurdie, P. J., Rosen, M. J., Han, A. W., Johnson, A. J., & Holmes, S. P. (2015). DADA2: High resolution sample inference from amplicon data. bioRxiv, 024034.}
-#'  \item{Rosen, M. J., Callahan, B. J., Fisher, D. S., & Holmes, S. P. (2012). Denoising PCR-amplified metagenome data. BMC bioinformatics, 13(1), 283.}
+#'  \item{Callahan BJ, McMurdie PJ, Rosen MJ, Han AW, Johnson AJ, Holmes SP (2015). DADA2: High resolution sample inference from amplicon data. bioRxiv, 024034.}
+#'  \item{Rosen MJ, Callahan BJ, Fisher DS, Holmes SP (2012). Denoising PCR-amplified metagenome data. BMC bioinformatics, 13(1), 283.}
 #' }
 #'  
 #' DADA depends on a parametric error model of substitutions. Thus the quality of its sample inference is affected
@@ -130,7 +130,7 @@ dada <- function(derep,
   
   # If a single derep object, make into a length 1 list
   if(class(derep) == "derep") { derep <- list(derep) }
-  if(!(all(sapply(derep, is, "derep")))) { stop("The derep argument must be a derep-class object or list of derep-class objects.") }
+  if(!is.list.of(derep, "derep")) { stop("The derep argument must be a derep-class object or list of derep-class objects.") }
   if(opts$USE_QUALS && any(is.null(lapply(derep, function(x) x$quals)))) { stop("The input derep-class object(s) must include quals if USE_QUALS is TRUE.") }
   
   # Validate derep object(s)
@@ -182,6 +182,7 @@ dada <- function(derep,
   
   # Validate err matrix
   initializeErr <- FALSE
+  if(class(err) == "dada") { err <- err$err_out }
   if(is.null(err) && selfConsist) {
     message("Initial error matrix unspecified. Error rates will be initialized to the maximum possible estimate from this data.")
     initializeErr <- TRUE
