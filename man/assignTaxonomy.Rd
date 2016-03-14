@@ -4,7 +4,7 @@
 \alias{assignTaxonomy}
 \title{assignTaxonomy assigns taxonomy to provided sequences.}
 \usage{
-assignTaxonomy(seqs, refFasta, minBoot = 50)
+assignTaxonomy(seqs, refFasta, minBoot = 50, verbose = FALSE)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object coercible by
@@ -17,7 +17,9 @@ taxonomy (or classification) of the reference sequence, with each level separate
  >Kingom;Phylum;Class;Order;Family;Genus;
  ACGAATGTGAAGTAA......}
 
-\item{minBoot}{(Optional). Default 80. The minimum bootstrap confidence for assigning a taxonomic level.}
+\item{minBoot}{(Optional). Default 50. The minimum bootstrap confidence for assigning a taxonomic level.}
+
+\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
 \value{
 \code{character}. An character vector of assigned taxonomies exceeding the minBoot level of
