@@ -16,7 +16,7 @@ assign("VERBOSE", FALSE, envir=dada_opts)
 # assign("USE_SINGLETONS", FALSE, envir=dada_opts)
 # assign("OMEGA_S", 1e-3, envir = dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
-# assign("HOMOPOLYMER_GAPPING", FALSE, envir = dada_opts) # NOT YET IMPLEMENTED
+assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts) # NOT YET IMPLEMENTED
 
 #' High resolution sample inference from amplicon data.
 #' 
@@ -224,6 +224,12 @@ dada <- function(derep,
   
   # Validate alignment parameters
   if(opts$GAP_PENALTY>0) opts$GAP_PENALTY = -opts$GAP_PENALTY
+  if(is.null(opts$HOMOPOLYMER_GAP_PENALTY)) { # Don't use homopolymer gapping
+    opts$HOMOPOLYMER_GAP_PENALTY <- 99
+  } else { # Use homopolymer gapping
+    opts$VECTORIZED_ALIGNMENT <- FALSE # No homopolymer gapping in vectorized aligner
+    if(opts$HOMOPOLYMER_GAP_PENALTY > 0) opts$HOMOPOLYMER_GAP_PENALTY = -opts$HOMOPOLYMER_GAP_PENALTY
+  }
   if(opts$VECTORIZED_ALIGNMENT) {
     if(length(unique(diag(opts$SCORE)))!=1 || 
            length(unique(opts$SCORE[upper.tri(opts$SCORE) | lower.tri(opts$SCORE)]))!=1) {
@@ -283,6 +289,7 @@ dada <- function(derep,
                           FALSE,
 #                          opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
+                          opts[["HOMOPOLYMER_GAP_PENALTY"]],
                           opts[["VERBOSE"]])
       
       # Augment the returns
@@ -456,6 +463,9 @@ dada <- function(derep,
 #'  are allowed. Default is nuc44: -4 for mismatches, +5 for matchces.
 #'  
 #' GAP_PENALTY: The cost of gaps in the Needlman-Wunsch alignment. Default is -8.
+#'  
+#' HOMOPOLYMER_GAP_PENALTY: The cost of gaps in homopolymer regions (>=3 repeated bases). Default is NULL, which causes homopolymer
+#'  gaps to be treated as normal gaps.  
 #'  
 #' MIN_FOLD: The minimum fold-overabundance for sequences to form new clusters. Default value is 1, which means this
 #'  criteria is ignored.

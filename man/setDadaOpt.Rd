@@ -46,6 +46,9 @@ SCORE_MATRIX: The score matrix for the Needleman-Wunsch alignment. This is a 4x4
  
 GAP_PENALTY: The cost of gaps in the Needlman-Wunsch alignment. Default is -8.
  
+HOMOPOLYMER_GAP_PENALTY: The cost of gaps in homopolymer regions (>=3 repeated bases). Default is NULL, which causes homopolymer
+ gaps to be treated as normal gaps.  
+ 
 MIN_FOLD: The minimum fold-overabundance for sequences to form new clusters. Default value is 1, which means this
  criteria is ignored.
  
