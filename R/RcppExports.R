@@ -9,8 +9,8 @@ dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kd
     .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, homo_gap, verbose)
 }
 
-C_nwalign <- function(s1, s2, score, gap_p, band, endsfree) {
-    .Call('dada2_C_nwalign', PACKAGE = 'dada2', s1, s2, score, gap_p, band, endsfree)
+C_nwalign <- function(s1, s2, score, gap_p, homo_gap_p, band, endsfree) {
+    .Call('dada2_C_nwalign', PACKAGE = 'dada2', s1, s2, score, gap_p, homo_gap_p, band, endsfree)
 }
 
 C_eval_pair <- function(s1, s2) {
