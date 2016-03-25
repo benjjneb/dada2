@@ -122,6 +122,9 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
   if(!(all(nti %in% ACGT) && all(ntj %in% ACGT)) || any(duplicated(nti)) || any(duplicated(ntj))) {
     stop("nti and ntj must be nucleotide(s): A/C/G/T.")
   }
+  if(ncol(dq$trans) <= 1) {
+    stop("plotErrors functionality only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
+  }
   transdf = melt(dq$trans, factorsAsStrings=TRUE)
   colnames(transdf) <- c("Transition", "Qual", "count")
   transdf$from <- substr(transdf$Transition, 1, 1)
