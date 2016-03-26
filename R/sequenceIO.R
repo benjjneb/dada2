@@ -1,7 +1,7 @@
 ################################################################################
 #' Read and Dereplicate a Fastq file.
 #' 
-#' This is a custom interface to \code{\link[ShortRead]{FastqStreamer}} 
+#' A custom interface to \code{\link[ShortRead]{FastqStreamer}} 
 #' for dereplicating amplicon sequences from fastq or compressed fastq files,
 #' while also controlling peak memory requirement to support large files.
 #'

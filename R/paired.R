@@ -237,6 +237,8 @@ isMatch <- function(al, minOverlap, verbose=FALSE) {
 #'               errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' dada2:::dada_to_seq_table(dadaF, derepF, srF)
 #' 
+#' @keywords internal
+#' 
 dada_to_seq_table = function(dadaRes, derep, sr, 
                              idRegExpr = c("\\s.+$", ""), 
                              includeCol = character(0)){
