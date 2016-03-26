@@ -39,7 +39,7 @@ Maximum shift allowed when aligning sequences to potential "parents".}
  TRUE if sequence is a bimera of more abundant "parent" sequences. Otherwise FALSE.
 }
 \description{
-This function is a wrapper around isBimera for collections of DADA denoised
+This function is a wrapper around \code{\link{isBimera}} for collections of DADA denoised
 sequences. Each sequence is evaluated against a set of "parents" drawn from the
 sequence collection that are sufficiently more abundant than the sequence
 being evaluated.

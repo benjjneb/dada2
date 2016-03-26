@@ -66,7 +66,7 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 ################################################################################
 #' Identify bimeras de-novo from collections of unique sequences.
 #' 
-#' This function is a wrapper around isBimera for collections of DADA denoised
+#' This function is a wrapper around \code{\link{isBimera}} for collections of DADA denoised
 #' sequences. Each sequence is evaluated against a set of "parents" drawn from the
 #' sequence collection that are sufficiently more abundant than the sequence
 #' being evaluated.
@@ -127,6 +127,62 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
   bims <- mapply(loopFun, seqs, abunds)
   if(verbose) message("Identified ", sum(bims), " bimeras out of ", length(bims), " input sequences.")
   return(bims)
+}
+
+################################################################################
+#' Remove bimeras de-novo from collections of unique sequences.
+#' 
+#' This function is a wrapper around \code{\link{isBimeraDenovo}}. Bimeras identified by
+#' \link{isBimeraDenovo} are removed, and the bimera-free object is returned.
+#' 
+#' @param unqs (Required). A "uniques vector" or an object or list of objects that can be coerced 
+#'   into one with \code{\link{getUniques}}.
+#'   
+#' @param ... (Optional). Arguments to be passed to \code{\link{isBimeraDenovo}}.
+#'   
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
+#'
+#' @return A uniques vector, or an object of matching class if a data.frame or sequence table is provided.
+#'  A list of such objects is returned if a list of input unqs was provided.
+#'
+#' @seealso \code{\link{isBimeraDenovo}}
+#' 
+#' @export
+#' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' out.nobim <- removeBimeraDenovo(dada1)
+#' out.nobim <- removeBimeraDenovo(dada1$clustering, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
+#' 
+removeBimeraDenovo <- function(unqs, ..., verbose=FALSE) {
+  if(class(unqs)!="list") {
+    unqs <- list(unqs)
+  }
+  outs <- list()
+  for(i in seq_along(unqs)) {
+    bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
+    # The following code is adapted from getUniques
+    object <- unqs[[i]]
+    if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
+      outs[[i]] <- object[!bim]
+    } else if(class(object) == "dada") {  # dada return 
+      outs[[i]] <- object$denoised[!bim]
+    } else if(class(object) == "derep") {
+      outs[[i]] <- object$uniques[!bim]
+    } else if(is.data.frame(object) && all(c("sequence", "abundance") %in% colnames(object))) {
+      outs[[i]] <- object[!bim,]
+    } else if(class(object) == "matrix" && !any(is.na(colnames(object)))) { # Tabled sequences
+      outs[[i]] <- object[,!bim,drop=FALSE]
+    } else {
+      stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
+    }
+  }
+  names(outs) <- names(unqs)
+  if(length(outs) == 1) {
+    outs <- outs[[1]]
+  }
+  outs
 }
 
 # Internal function that finds the best overlap between two sequences.
