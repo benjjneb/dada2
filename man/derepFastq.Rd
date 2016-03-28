@@ -28,7 +28,7 @@ Default is \code{FALSE}, no messages.}
 A \code{\link{derep-class}} object or list of such objects.
 }
 \description{
-This is a custom interface to \code{\link[ShortRead]{FastqStreamer}} 
+A custom interface to \code{\link[ShortRead]{FastqStreamer}} 
 for dereplicating amplicon sequences from fastq or compressed fastq files,
 while also controlling peak memory requirement to support large files.
 }

@@ -63,7 +63,7 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
  * Banded Needleman Wunsch
  */
 
-char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment) {
+char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment) {
   char **al;
   double kdist;
   
@@ -75,6 +75,8 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, bool use_kmer
     al = NULL;
   } else if(vectorized_alignment) { // ASSUMES SCORE MATRIX REDUCES TO MATCH/MISMATCH
     al = nwalign_endsfree_vectorized(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, band);
+  } else if(homo_gap_p <= 0) {
+    al = nwalign_endsfree_homo(raw1->seq, raw2->seq, score, gap_p, homo_gap_p, band);
   } else {
     al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band);
   }
@@ -126,16 +128,18 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
 
     for (j = l; j <= r; j++) {
       // Score for the left move.
-      if (i == len1)
+      if (i == len1) {
         left = d[i*ncol + j-1]; // Ends-free gap.
-      else
+      } else {
         left = d[i*ncol + j-1] + gap_p;
+      }
       
       // Score for the up move.
-      if (j == len2) 
+      if (j == len2) {
         up = d[(i-1)*ncol + j]; // Ends-free gap.
-      else
+      } else {
         up = d[(i-1)*ncol + j] + gap_p;
+      }
 
       // Score for the diagonal move.
       diag = d[(i-1)*ncol + j-1] + score[s1[i-1]-1][s2[j-1]-1];
@@ -212,6 +216,177 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   return al;
 }
 
+/* note: input sequence must end with string termination character, '\0' */
+/* 08-17-15: MJR homopolymer free gapping version of ends-free alignment */
+char **nwalign_endsfree_homo(char *s1, char *s2, int score[4][4], int gap_p, int homo_gap_p, int band) {
+  static size_t nnw = 0;
+  int i, j, k;
+  int l, r;
+  unsigned int len1 = strlen(s1);
+  unsigned int len2 = strlen(s2);
+  int diag, left, up;
+  
+  //find locations where s1 has homopolymer and put 1s in homo1
+  unsigned char *homo1 = (unsigned char *) malloc(len1*sizeof(unsigned char));
+  unsigned char *homo2 = (unsigned char *) malloc(len2*sizeof(unsigned char));
+  if(homo1 == NULL || homo2 == NULL) Rcpp::stop("Memory allocation failed.");
+  for (i=0,j=0;j<len1;j++) {
+    if (j==len1-1 || s1[j]!=s1[j+1]) {
+      for(k=i;k<=j;k++) {
+        if (j-i>=2) {//min homopolymer length = 3
+          homo1[k] = 1;
+        } else {
+          homo1[k] = 0;
+        }
+      }
+      i = j+1;
+    }
+  }
+  
+  //find locations where s2 has homopolymer and put 1s in homo2
+  for (i=0,j=0;j<len2;j++) {
+    if (j==len2-1 || s2[j]!=s2[j+1]) {
+      for(k=i;k<=j;k++) {
+        if (j-i>=2) { //min homopolymer length = 3
+          homo2[k] = 1;
+        } else {
+          homo2[k] = 0;
+        }
+      }
+      i = j+1;
+    }
+  }
+
+  unsigned int nrow = len1+1;
+  unsigned int ncol = len2+1;
+  int *d = (int *) malloc(nrow * ncol * sizeof(int)); //E
+  int *p = (int *) malloc(nrow * ncol * sizeof(int)); //E
+  if(d == NULL || p == NULL) Rcpp::stop("Memory allocation failed.");
+  
+  // Fill out left columns of d, p.
+  for (i = 0; i <= len1; i++) {
+    d[i*ncol] = 0; // ends-free gap
+    p[i*ncol] = 3;
+  }
+  
+  // Fill out top rows of d, p.
+  for (j = 0; j <= len2; j++) {
+    d[j] = 0; // ends-free gap
+    p[j] = 2;
+  }
+  
+  // Fill out band boundaries of d.
+  if(band>=0 && (band<len1 || band<len2)) {
+    for(i=0;i<=len1;i++) {
+      if(i-band-1 >= 0) { d[i*ncol + i-band-1] = -9999; }
+      if(i+band+1 <= len2) { d[i*ncol + i+band+1] = -9999; }
+    }
+  }
+  
+  // Fill out the body of the DP matrix.
+  for (i = 1; i <= len1; i++) {
+    if(band>=0) {
+      l = i-band; if(l < 1) { l = 1; }
+      r = i+band; if(r>len2) { r = len2; }
+    } else { l=1; r=len2; }
+    
+    for (j = l; j <= r; j++) {
+      // Score for the left move.
+      if (i == len1) {
+        left = d[i*ncol + j-1]; // Ends-free gap.
+      } else if (homo2[j-1]) {
+        left = d[i*ncol + j-1] + homo_gap_p; //Homopolymer gap
+      } else {
+        left = d[i*ncol + j-1] + gap_p;
+      }
+      
+      // Score for the up move.
+      if (j == len2) {
+        up = d[(i-1)*ncol + j]; // Ends-free gap.
+      } else if (homo1[i-1]) {
+          up = d[(i-1)*ncol + j] + homo_gap_p; //Homopolymer gap
+      } else {
+        up = d[(i-1)*ncol + j] + gap_p;
+      }
+      
+      // Score for the diagonal move.
+      diag = d[(i-1)*ncol + j-1] + score[s1[i-1]-1][s2[j-1]-1];
+      
+      // Break ties and fill in d,p.
+      if (up >= diag && up >= left) {
+        d[i*ncol + j] = up;
+        p[i*ncol + j] = 3;
+      } else if (left >= diag) {
+        d[i*ncol + j] = left;
+        p[i*ncol + j] = 2;
+      } else {
+        d[i*ncol + j] = diag;
+        p[i*ncol + j] = 1;
+      }
+    }
+  }
+  
+  char *al0 = (char *) malloc((len1+len2+1) * sizeof(char));
+  char *al1 = (char *) malloc((len1+len2+1) * sizeof(char));
+  if(al0 == NULL || al1 == NULL) Rcpp::stop("Memory allocation failed.");
+  
+  // Trace back over p to form the alignment.
+  size_t len_al = 0;
+  i = len1;
+  j = len2;  
+  
+  while ( i > 0 || j > 0 ) {
+    switch ( p[i*ncol + j] ) {
+    case 1:
+      al0[len_al] = s1[--i];
+      al1[len_al] = s2[--j];
+      break;
+    case 2:
+      al0[len_al] = 6;
+      al1[len_al] = s2[--j];
+      break;
+    case 3:
+      al0[len_al] = s1[--i];
+      al1[len_al] = 6;
+      break;
+    default:
+      Rcpp::stop("N-W Align out of range.");
+    }
+    len_al++;
+  }
+  al0[len_al] = '\0';
+  al1[len_al] = '\0';
+  
+  
+  // Allocate memory to alignment strings.
+  char **al = (char **) malloc( 2 * sizeof(char *) ); //E
+  if (al == NULL)  Rcpp::stop("Memory allocation failed.");
+  al[0] = (char *) malloc(len_al+1); //E
+  al[1] = (char *) malloc(len_al+1); //E
+  if (al[0] == NULL || al[1] == NULL)  Rcpp::stop("Memory allocation failed.");
+  
+  // Reverse the alignment strings (since traced backwards).
+  for (i=0;i<len_al;i++) {
+    al[0][i] = al0[len_al-i-1];
+    al[1][i] = al1[len_al-i-1];
+  }
+  al[0][len_al] = '\0';
+  al[1][len_al] = '\0';
+  
+  // Free allocated memory
+  free(d);
+  free(p);
+  free(al0);
+  free(al1);
+  
+  nnw++;
+  return al;
+}
+
+
+// Provided for the R nwalign function if endsfree=FALSE
+// Not used within the dada method
+// Separate function to avoid if statement within performance critical nwalign_endsfree
 /* note: input sequence must end with string termination character, '\0' */
 char **nwalign(char *s1, char *s2, int score[4][4], int gap_p, int band) {
   static size_t nnw = 0;
@@ -439,12 +614,12 @@ Sub *al2subs(char **al) {
 }
 
 // Wrapper for al2subs(raw_align(...)) that manages memory and qualities
-Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment) {
+Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment) {
   int s;
   char **al;
   Sub *sub;
 
-  al = raw_align(raw0, raw1, score, gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment);
+  al = raw_align(raw0, raw1, score, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment);
   sub = al2subs(al);
 
   if(sub) {

@@ -5,7 +5,7 @@
 \title{Identify sequences that are identical to a more abundant sequence up to an
 overall shift.}
 \usage{
-isShiftDenovo(unqs, minOverlap = 20, verbose = FALSE)
+isShiftDenovo(unqs, minOverlap = 20, flagSubseqs = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{unqs}{(Required). A "uniques vector" or any object that can be coerced into one with \code{\link{getUniques}}.
@@ -13,6 +13,9 @@ This named integer vector is named by the sequences to be checked for bimeras an
 
 \item{minOverlap}{(Optional). A \code{numeric(1)}. Default is 20.
 Minimum overlap required to call something a shift.}
+
+\item{flagSubseqs}{(Optional). A \code{logical(1)}. Default is FALSE.
+Whether or not to flag strict subsequences as shifts.}
 
 \item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
@@ -29,7 +32,7 @@ sequence collection that are more abundant than the sequence being evaluated.
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 isShiftDenovo(dada1)
-isShiftDenovo(getUniques(dada1), minOverlap=50, verbose=TRUE)
+isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
 
 }
 \seealso{

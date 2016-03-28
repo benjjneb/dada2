@@ -85,7 +85,7 @@ void bi_free(Bi *bi) {
 }
 
 // The constructor for the B object. Takes in array of Raws.
-B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double omegaA, int band_size, bool vectorized_alignment, bool use_quals) {
+B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, int homo_gap_pen, double omegaA, int band_size, bool vectorized_alignment, bool use_quals) {
   unsigned int i, j, index;
 
   // Allocate memory
@@ -100,6 +100,7 @@ B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, double ome
   b->reads = 0;
   b->nraw = nraw;
   b->gap_pen = gap_pen;
+  b->homo_gap_pen = homo_gap_pen;
   b->omegaA = omegaA;
   b->band_size = band_size;
   b->vectorized_alignment = vectorized_alignment;
@@ -269,7 +270,7 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
   for(index=0, cind=0; index<b->nraw; index++) {
     raw = b->raw[index];
     // get sub object
-    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
+    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
     b->nalign++;
     if(!sub) { b->nshroud++; }
 

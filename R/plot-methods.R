@@ -122,6 +122,9 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
   if(!(all(nti %in% ACGT) && all(ntj %in% ACGT)) || any(duplicated(nti)) || any(duplicated(ntj))) {
     stop("nti and ntj must be nucleotide(s): A/C/G/T.")
   }
+  if(ncol(dq$trans) <= 1) {
+    stop("plotErrors functionality only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
+  }
   transdf = melt(dq$trans, factorsAsStrings=TRUE)
   colnames(transdf) <- c("Transition", "Qual", "count")
   transdf$from <- substr(transdf$Transition, 1, 1)
@@ -147,4 +150,52 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
   p <- p + facet_wrap(~Transition, nrow=length(nti))
   p <- p + xlab("Consensus quality score") + ylab("Error frequency (log10)")
   p
+}
+
+#' Plot quality profile of a fastq file.
+#' 
+#' This function plots a visual summary of the distribution of quality scores
+#' along the sequences within a fastq file. This function returns a \link{ggplot}
+#' graphics object, which can be further modified in ggplot2 fashion.
+#' 
+#' @param fl (Required). \code{character(1)}.
+#'  The file path to the fastq or fastq.gz file.
+#' 
+#' @return A \code{\link{ggplot}} object that will be rendered
+#'  to default device if \code{\link{print}ed},
+#'  or can be stored and further modified.
+#'  
+#' @importFrom ShortRead qa
+#' @import ggplot2
+#' 
+#' @export
+#' 
+#' @examples
+#' plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' 
+# This code is adapted from ShortRead:::.plotCycleQuality
+#
+plotQualityProfile <- function(fl) {
+  df <- qa(fl)[["perCycle"]]$quality
+  # Calculate summary statistics at each position
+  means <- rowsum(df$Score*df$Count, df$Cycle)/rowsum(df$Count, df$Cycle)
+  get_quant <- function(xx, yy, q) { xx[which(cumsum(yy)/sum(yy) >=q)][[1]] }
+  q25s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.25), simplify=TRUE)
+  q50s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.5), simplify=TRUE)
+  q75s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.75), simplify=TRUE)
+  if(!all(sapply(list(names(q25s), names(q50s), names(q75s)), identical, rownames(means)))) {
+    stop("Calculated quantiles/means weren't compatible.")
+  }
+  statdf <- data.frame(Cycle=as.integer(rownames(means)),
+                       Mean=means, 
+                       Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s))
+  # Create plot
+  ggplot(data=df, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
+    scale_fill_gradient(low="#F5F5F5", high="black") + 
+    geom_line(data=statdf, aes(y=Mean), color="#66C2A5") +
+    geom_line(data=statdf, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
+    geom_line(data=statdf, aes(y=Q50), color="#FC8D62", size=0.25) +
+    geom_line(data=statdf, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
+    ylab("Quality Score") + xlab("Cycle") +
+    theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE)
 }

@@ -93,8 +93,11 @@ getNseq <- function(object) {
 #' @param score (Optional). A 4x4 numeric matrix.
 #'  The transition scores to use for the alignment. Default is getDadaOpt("SCORE_MATRIX").
 #' 
-#' @param gap (Optional). A \code{numeric(1)}. The gap penalty.
+#' @param gap (Optional). A \code{numeric(1)}. The gap penalty. Should be negative.
 #'  Default is getDadaOpt("GAP_PENALTY").
+#'  
+#' @param homo_gap (Optional). A \code{numeric(1)}. The homopolymer gap penalty. Should be negative.
+#'  Default is NULL, meaning don't use a special homopolymer gap penalty.
 #'  
 #' @param band (Optional). A \code{numeric(1)}. The band size.
 #'  This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
@@ -113,16 +116,17 @@ getNseq <- function(object) {
 #'  nwalign(sq1, sq2)
 #'  nwalign(sq1, sq2, band=-1)
 #' 
-nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), band=getDadaOpt("BAND_SIZE"), endsfree=TRUE) {
+nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=getDadaOpt("BAND_SIZE"), endsfree=TRUE) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
   if(!C_check_ACGT(s1) || !C_check_ACGT(s2)) {
     stop("Sequences must contain only A/C/G/T characters.")
   }
+  if(is.null(homo_gap)) { homo_gap <- gap }
   if(nchar(s1) != nchar(s2) && band >= 0) {
     band <- band + abs(nchar(s1)-nchar(s2))
     # Band must be expanded to allow the shorter sequence to be shifted appropriately
   }
-  C_nwalign(s1, s2, score, gap, band, endsfree)
+  C_nwalign(s1, s2, score, gap, homo_gap, band, endsfree)
 }
 
 ################################################################################
@@ -194,4 +198,9 @@ checkConvergence <- function(dadaO) {
 
 pfasta <- function(seqs) {
   cat(paste(">", seq(length(seqs)), "\n", seqs, sep="", collapse="\n"))
+}
+
+is.list.of <- function(x, ctype) {
+  if(!is.list(x)) return(FALSE)
+  else return(all(sapply(x, is, ctype)))
 }

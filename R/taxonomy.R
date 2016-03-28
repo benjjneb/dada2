@@ -1,9 +1,11 @@
 #'
-#' assignTaxonomy assigns taxonomy to provided sequences.
+#' Classifies sequences against reference training set.
 #' 
-#' assignTaxonomy implements the RDP classifier algorithm in Wang 2007 with kmer size 8.
+#' assignTaxonomy implements the RDP classifier algorithm in Wang 2007 with kmer size 8 and
+#'  100 bootstrap replicates.
 #' 
-#' @param seqs (Required). A character vector of the sequences to be assigned.
+#' @param seqs (Required). A character vector of the sequences to be assigned, or an object coercible by
+#' \code{\link{getUniques}}.
 #'   
 #' @param refFasta (Required). A character string naming the path to the reference fasta file, or an 
 #' R connection. This reference fasta file should be formatted with the id line corresponding to the
@@ -12,10 +14,14 @@
 #'  >Kingom;Phylum;Class;Order;Family;Genus;
 #'  ACGAATGTGAAGTAA......
 #' 
-#' @param minBoot (Optional). Default 80. The minimum bootstrap confidence for assigning a taxonomic level.
+#' @param minBoot (Optional). Default 50. The minimum bootstrap confidence for assigning a taxonomic level.
 #'   
-#' @return \code{character}. An character vector of assigned taxonomies exceeding the minBoot level of
-#'   bootstrapping confidence. Levels are separated by semicolons.
+#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
+#' 
+#' @return A character matrix of assigned taxonomies exceeding the minBoot level of
+#'   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
+#'   taxonomic levels. NA indicates that the sequence was not consistently classified at
+#'   that level at the minBoot threshhold. 
 #' 
 #' @export
 #' 
@@ -23,7 +29,14 @@
 #' @importFrom ShortRead sread
 #' @importFrom ShortRead id
 #' 
-assignTaxonomy <- function(seqs, refFasta, minBoot=80) {
+#' @examples
+#' \dontrun{
+#'  taxa <- assignTaxonomy(dadaF, "gg_13_8_97_dada.fa")
+#' }
+#' 
+assignTaxonomy <- function(seqs, refFasta, minBoot=50, verbose=FALSE) {
+  # Get character vector of sequences
+  seqs <- getSequences(seqs)
   # Read in the reference fasta
   refsr <- readFasta(refFasta)
   refs <- as.character(sread(refsr))
@@ -31,9 +44,13 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=80) {
   tax <- sapply(tax, function(x) gsub("^\\s+|\\s+$", "", x)) # Remove leading/trailing whitespace
   # Parse the taxonomies from the id string
   tax.depth <- sapply(strsplit(tax, ";"), length)
-  td <- tax.depth[[1]]
-  if(!all(sapply(strsplit(tax, ";"), length) == td)) {
-    stop("References must all be assigned to the same taxonomic depth.")
+  td <- max(tax.depth)
+  for(i in seq(length(tax))) {
+    if(tax.depth[[i]] < td) {
+      for(j in seq(td - tax.depth[[i]])) {
+        tax[[i]] <- paste0(tax[[i]], "_DADA2_UNSPECIFIED;")
+      }
+    }
   }
   # Create the integer maps from reference to type ("genus") and for each tax level
   genus.unq <- unique(tax)
@@ -46,16 +63,18 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=80) {
   }
   tax.mat.int <- as.matrix(tax.df)
   # Assign  
-  assignment <- C_assign_taxonomy(seqs, refs, ref.to.genus, tax.mat.int)
+  assignment <- C_assign_taxonomy(seqs, refs, ref.to.genus, tax.mat.int, verbose)
   # Parse results and return tax consistent with minBoot
   bestHit <- genus.unq[assignment$tax]
   boots <- assignment$boot
   taxes <- strsplit(bestHit, ";")
   taxes <- lapply(seq_along(taxes), function(i) taxes[[i]][boots[i,]>minBoot])
-  taxes <- unlist(lapply(taxes, paste, collapse=";"))
-  taxes <- paste0(taxes, ";") # Add suffix ;
-  
-#  assignment$taxes <- taxes #####
-#  return(assignment) #####  
-  taxes
+  # Convert to character matrix
+  tax.out <- matrix(NA_character_, nrow=length(seqs), ncol=td)
+  for(i in seq(length(seqs))) {
+    tax.out[i,1:length(taxes[[i]])] <- taxes[[i]]
+  }
+  rownames(tax.out) <- seqs
+  tax.out[tax.out=="_DADA2_UNSPECIFIED"] <- NA_character_
+  tax.out
 }

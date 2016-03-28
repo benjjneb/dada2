@@ -5,8 +5,8 @@
 \title{Needlman-Wunsch alignment with ends-free gapping.}
 \usage{
 nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
-  gap = getDadaOpt("GAP_PENALTY"), band = getDadaOpt("BAND_SIZE"),
-  endsfree = TRUE)
+  gap = getDadaOpt("GAP_PENALTY"), homo_gap = NULL,
+  band = getDadaOpt("BAND_SIZE"), endsfree = TRUE)
 }
 \arguments{
 \item{s1}{(Required). \code{character(1)}. The first sequence to align. A/C/G/T only.}
@@ -16,8 +16,11 @@ nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
 \item{score}{(Optional). A 4x4 numeric matrix.
 The transition scores to use for the alignment. Default is getDadaOpt("SCORE_MATRIX").}
 
-\item{gap}{(Optional). A \code{numeric(1)}. The gap penalty.
+\item{gap}{(Optional). A \code{numeric(1)}. The gap penalty. Should be negative.
 Default is getDadaOpt("GAP_PENALTY").}
+
+\item{homo_gap}{(Optional). A \code{numeric(1)}. The homopolymer gap penalty. Should be negative.
+Default is NULL, meaning don't use a special homopolymer gap penalty.}
 
 \item{band}{(Optional). A \code{numeric(1)}. The band size.
 This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.

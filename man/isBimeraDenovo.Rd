@@ -39,7 +39,7 @@ Maximum shift allowed when aligning sequences to potential "parents".}
  TRUE if sequence is a bimera of more abundant "parent" sequences. Otherwise FALSE.
 }
 \description{
-This function is a wrapper around isBimera for collections of DADA denoised
+This function is a wrapper around \code{\link{isBimera}} for collections of DADA denoised
 sequences. Each sequence is evaluated against a set of "parents" drawn from the
 sequence collection that are sufficiently more abundant than the sequence
 being evaluated.
@@ -48,7 +48,7 @@ being evaluated.
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 isBimeraDenovo(dada1)
-isBimeraDenovo(getUniques(dada1), minFoldParentOverAbundance = 2, allowOneOff=FALSE)
+isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 
 }
 \seealso{

@@ -95,7 +95,7 @@ int get_best_genus(int *karray, unsigned int arraylen, unsigned int n_kmers, uns
 // Assigns taxonomy to sequence based on provided ref seqs and corresponding taxonomies.
 //
 // [[Rcpp::export]]
-Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat) {
+Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool verbose) {
   size_t i, j, g;
   int kmer;
   unsigned int k=8;
@@ -113,13 +113,6 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
       Rcpp::stop("Invalid map from references to genus.");
     }
   }
-
-  // Rprintf("Make reference kvec array by sequence.\n");
-  unsigned char *ref_kmers = (unsigned char *) malloc((nref * n_kmers) * sizeof(unsigned char));
-  if(ref_kmers == NULL) Rcpp::stop("Memory allocation failed.");
-  for(i=0;i<nref;i++) {
-    tax_kvec(refs[i].c_str(), k, &ref_kmers[i*n_kmers]);
-  }
   
   // Rprintf("Count seqs in each genus (M_g).\n");
   double *genus_num_plus1 = (double *) calloc(ngenus, sizeof(double));
@@ -131,33 +124,33 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     genus_num_plus1[g]++;
   }
   
-  // Rprintf("Make reference kvec array by genus.\n");
   unsigned int *genus_kmers = (unsigned int *) calloc((ngenus * n_kmers), sizeof(unsigned int));
   if(genus_kmers == NULL) Rcpp::stop("Memory allocation failed.");
-  
   unsigned int *genus_kv;
-  unsigned char *ref_kv;
-  for(i=0;i<nref;i++) {
-    g = ref_to_genus[i];
-    ref_kv = &ref_kmers[i*n_kmers];
-    genus_kv = &genus_kmers[g*n_kmers];
-    for(kmer=0;kmer<n_kmers;kmer++) {
-      if(ref_kv[kmer]) { genus_kv[kmer]++; }
-    }
-  }
-  
-  // Rprintf("Calculate word priors (Pi).\n");
   double *kmer_prior = (double *) calloc(n_kmers, sizeof(double));
   if(kmer_prior == NULL) Rcpp::stop("Memory allocation failed.");
+  
+  unsigned char *ref_kv = (unsigned char *) malloc(n_kmers * sizeof(unsigned char));
+  if(ref_kv == NULL) Rcpp::stop("Memory allocation failed.");
   for(i=0;i<nref;i++) {
-    ref_kv = &ref_kmers[i*n_kmers];
+    // Calculate kmer-vector of this reference sequences
+    tax_kvec(refs[i].c_str(), k, ref_kv);
+    // Assign the kmer-counts to the appropriate "genus" and kmer-prior
+    g = ref_to_genus[i];
+    genus_kv = &genus_kmers[g*n_kmers];
     for(kmer=0;kmer<n_kmers;kmer++) {
-      if(ref_kv[kmer]) { kmer_prior[kmer]++; }
+      if(ref_kv[kmer]) { 
+        genus_kv[kmer]++;
+        kmer_prior[kmer]++;
+      }
     }
   }
+  
+  // Correct word priors
   for(kmer=0;kmer<n_kmers;kmer++) {
     kmer_prior[kmer] = (kmer_prior[kmer] + 0.5)/(1.0 + nref);
   }
+  if(verbose) { Rprintf("Finished processing reference fasta."); }
   
   // Rprintf("Get size of the kmer arrays for the sequences to be classified.\n");
   unsigned int max_arraylen = 0;
@@ -213,9 +206,9 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
       }
       if(boot_g == max_g) { boot_match++; }
     }
+    Rcpp::checkUserInterrupt();
   }
   
-  free(ref_kmers);
   free(genus_num_plus1);
   free(genus_kmers);
   free(kmer_prior);

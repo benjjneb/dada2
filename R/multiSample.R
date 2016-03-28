@@ -42,10 +42,12 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
     rownames(rval) <- names(unqs)
   }
   # Order columns
-  if(orderBy == "abundance") {
-    rval <- rval[,order(colSums(rval), decreasing=TRUE),drop=FALSE]
-  } else if(orderBy == "nsamples") {
-    rval <- rval[,order(colSums(rval>0), decreasing=TRUE),drop=FALSE]
+  if(!is.null(orderBy)) {
+    if(orderBy == "abundance") {
+      rval <- rval[,order(colSums(rval), decreasing=TRUE),drop=FALSE]
+    } else if(orderBy == "nsamples") {
+      rval <- rval[,order(colSums(rval>0), decreasing=TRUE),drop=FALSE]
+    }
   }
   
   return(rval)

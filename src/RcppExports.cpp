@@ -9,8 +9,8 @@
 using namespace Rcpp;
 
 // C_nwalign
-Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band, bool endsfree);
-RcppExport SEXP dada2_C_nwalign(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
+Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int homo_gap_p, int band, bool endsfree);
+RcppExport SEXP dada2_C_nwalign(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP homo_gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -18,9 +18,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
     Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
+    Rcpp::traits::input_parameter< int >::type homo_gap_p(homo_gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type band(bandSEXP);
     Rcpp::traits::input_parameter< bool >::type endsfree(endsfreeSEXP);
-    __result = Rcpp::wrap(C_nwalign(s1, s2, score, gap_p, band, endsfree));
+    __result = Rcpp::wrap(C_nwalign(s1, s2, score, gap_p, homo_gap_p, band, endsfree));
     return __result;
 END_RCPP
 }
@@ -119,8 +120,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // dada_uniques
-Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose);
-RcppExport SEXP dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP qmaxSEXP, SEXP final_consensusSEXP, SEXP vectorized_alignmentSEXP, SEXP verboseSEXP) {
+Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, int homo_gap, bool verbose);
+RcppExport SEXP dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP qmaxSEXP, SEXP final_consensusSEXP, SEXP vectorized_alignmentSEXP, SEXP homo_gapSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -141,14 +142,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type qmax(qmaxSEXP);
     Rcpp::traits::input_parameter< bool >::type final_consensus(final_consensusSEXP);
     Rcpp::traits::input_parameter< bool >::type vectorized_alignment(vectorized_alignmentSEXP);
+    Rcpp::traits::input_parameter< int >::type homo_gap(homo_gapSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, verbose));
+    __result = Rcpp::wrap(dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, homo_gap, verbose));
     return __result;
 END_RCPP
 }
 // C_assign_taxonomy
-Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat);
-RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP) {
+Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool verbose);
+RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -156,7 +158,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<std::string> >::type refs(refsSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type ref_to_genus(ref_to_genusSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type genusmat(genusmatSEXP);
-    __result = Rcpp::wrap(C_assign_taxonomy(seqs, refs, ref_to_genus, genusmat));
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    __result = Rcpp::wrap(C_assign_taxonomy(seqs, refs, ref_to_genus, genusmat, verbose));
     return __result;
 END_RCPP
 }

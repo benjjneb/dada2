@@ -7,20 +7,17 @@
 #' forward and reverse reads were in the same order. Use of the concatenate option will
 #' result in concatenating forward and reverse reads without attempting a merge/alignment step.
 #' 
-#' @param dadaF (Required). A \code{\link{dada-class}} object.
+#' @param dadaF (Required). A \code{\link{dada-class}} object, or a list of such objects.
 #'  The output of dada() function on the forward reads.
 #' 
-#' @param derepF (Required). A \code{\link{derep-class}} object.
+#' @param derepF (Required). A \code{\link{derep-class}} object, or a list of such objects.
 #'  The derep-class object returned by derepFastq() that was used as the input to the
 #'  dada-class object passed to the dadaF argument.
 #'  
-#'  Alternatively the map itself (derepFastq()$map) can be provided in place of the
-#'  derep-class object.
-#'   
-#' @param dadaR (Required). A \code{\link{dada-class}} object.
+#' @param dadaR (Required). A \code{\link{dada-class}} object, or a list of such objects.
 #'  The output of dada() function on the reverse reads.
 #' 
-#' @param derepR (Required). A \code{\link{derep-class}} object.
+#' @param derepR (Required). A \code{\link{derep-class}} object, or a list of such objects.
 #'  See derepF description, but for the reverse reads.
 #'
 #' @param minOverlap (Optional). A \code{numeric(1)} of the minimum length of the overlap (in nucleotides)
@@ -43,7 +40,9 @@
 #' 
 #' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
-#' @return Dataframe. One row for each unique pairing of forward/reverse denoised sequences.
+#' @return A data.frame, or a list of data.frames. 
+#' The data.frame(s) have a row for each unique pairing of forward/reverse denoised sequences.
+#' The following columns are reported...
 #' \itemize{
 #'  \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
 #'  \item{$sequence: The merged sequence.}
@@ -57,6 +56,7 @@
 #'          FALSE otherwise.}
 #'  \item{$...: Additional columns specified in the propagateCol argument.}
 #' }
+#' A list of data.frames is returned if a list of input objects was provided.
 #' 
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}
 #' @export
@@ -71,69 +71,83 @@
 #' mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 #' 
 mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch=0, returnRejects=FALSE, propagateCol=character(0), justConcatenate=FALSE, verbose=FALSE) {
-  if(class(derepF) == "derep") mapF <- derepF$map
-  else mapF <- derepF
-  if(class(derepR) == "derep") mapR <- derepR$map
-  else mapR <- derepR
-  if(!(is.integer(mapF) && is.integer(mapR))) stop("Incorrect format of derep arguments.")
-  rF <- dadaF$map[mapF]
-  rR <- dadaR$map[mapR]
-  if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
-  
-  pairdf <- data.frame(sequence = "", abundance=0, forward=rF, reverse=rR)
-  ups <- unique(pairdf) # The unique forward/reverse pairs of denoised sequences
-  Funqseq <- unname(as.character(dadaF$clustering$sequence[ups$forward]))
-  Runqseq <- rc(unname(as.character(dadaR$clustering$sequence[ups$reverse])))
-  
-  if (justConcatenate == TRUE) {
-    # Simply concatenate the sequences together
-    ups$sequence <- mapply(function(x,y) paste0(x,"NNNNNNNNNN", y), Funqseq, Runqseq, SIMPLIFY=FALSE);  
-    ups$nmatch <- 0
-    ups$nmismatch <- 0
-    ups$nindel <- 0
-    ups$prefer <- NA
-    ups$accept <- TRUE
-  } else {
-    # Align forward and reverse reads.
-    # Use unbanded N-W align to compare forward/reverse
-    # May want to adjust align params here, but for now just using dadaOpt
-    alvecs <- mapply(function(x,y) nwalign(x,y,band=-1), Funqseq, Runqseq, SIMPLIFY=FALSE)
-    outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
-    ups$nmatch <- outs[,1]
-    ups$nmismatch <- outs[,2]
-    ups$nindel <- outs[,3]
-    ups$prefer <- 1 + (dadaR$clustering$n0[ups$reverse] > dadaR$clustering$n0[ups$forward])
-    ups$accept <- (ups$nmatch > minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
-    # Make the sequence
-    ups$sequence <- mapply(C_pair_consensus, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer);
-    # Additional param to indicate whether 1:forward or 2:reverse takes precedence
-    # Must also strip out any indels in the return
-    # This function is only used here.
+  if(is(dadaF, "dada")) dadaF <- list(dadaF)
+  if(is(derepF, "derep")) derepF <- list(derepF)
+  if(is(dadaR, "dada")) dadaR <- list(dadaR)
+  if(is(derepR, "derep")) derepR <- list(derepR)
+  if(!(is.list.of(dadaF, "dada") && is.list.of(derepF, "derep") && is.list.of(dadaR, "dada") && is.list.of(derepR, "derep"))) {
+    stop("This function requires dada-class and derep-class input arguments.")
   }
+  nrecs <- c(length(dadaF), length(derepF), length(dadaR), length(derepR))
+  if(length(unique(nrecs))>1) stop("The dadaF/derepF/dadaR/derepR arguments must be the same length.")
   
-  # Add abundance and sequence to the output data.frame
-  tab <- table(pairdf$forward, pairdf$reverse)
-  ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
-  ups$sequence[!ups$accept] <- ""
-  # Add columns from forward/reverse clustering
-  propagateCol <- propagateCol[propagateCol %in% colnames(dadaF$clustering)]
-  for(col in propagateCol) {
-    ups[,paste0("F.",col)] <- dadaF$clustering[ups$forward,col]
-    ups[,paste0("R.",col)] <- dadaR$clustering[ups$reverse,col]
+  rval <- list()
+  for(i in seq_along(dadaF))  {
+    mapF <- derepF[[i]]$map
+    mapR <- derepR[[i]]$map
+    if(!(is.integer(mapF) && is.integer(mapR))) stop("Incorrect format of $map in derep-class arguments.")
+    rF <- dadaF[[i]]$map[mapF]
+    rR <- dadaR[[i]]$map[mapR]
+    if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
+    
+    pairdf <- data.frame(sequence = "", abundance=0, forward=rF, reverse=rR)
+    ups <- unique(pairdf) # The unique forward/reverse pairs of denoised sequences
+    Funqseq <- unname(as.character(dadaF[[i]]$clustering$sequence[ups$forward]))
+    Runqseq <- rc(unname(as.character(dadaR[[i]]$clustering$sequence[ups$reverse])))
+    
+    if (justConcatenate == TRUE) {
+      # Simply concatenate the sequences together
+      ups$sequence <- mapply(function(x,y) paste0(x,"NNNNNNNNNN", y), Funqseq, Runqseq, SIMPLIFY=FALSE);  
+      ups$nmatch <- 0
+      ups$nmismatch <- 0
+      ups$nindel <- 0
+      ups$prefer <- NA
+      ups$accept <- TRUE
+    } else {
+      # Align forward and reverse reads.
+      # Use unbanded N-W align to compare forward/reverse
+      # May want to adjust align params here, but for now just using dadaOpt
+      alvecs <- mapply(function(x,y) nwalign(x,y,band=-1), Funqseq, Runqseq, SIMPLIFY=FALSE)
+      outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
+      ups$nmatch <- outs[,1]
+      ups$nmismatch <- outs[,2]
+      ups$nindel <- outs[,3]
+      ups$prefer <- 1 + (dadaR[[i]]$clustering$n0[ups$reverse] > dadaF[[i]]$clustering$n0[ups$forward])
+      ups$accept <- (ups$nmatch > minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
+      # Make the sequence
+      ups$sequence <- mapply(C_pair_consensus, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer);
+      # Additional param to indicate whether 1:forward or 2:reverse takes precedence
+      # Must also strip out any indels in the return
+      # This function is only used here.
+    }
+    
+    # Add abundance and sequence to the output data.frame
+    tab <- table(pairdf$forward, pairdf$reverse)
+    ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
+    ups$sequence[!ups$accept] <- ""
+    # Add columns from forward/reverse clustering
+    propagateCol <- propagateCol[propagateCol %in% colnames(dadaF[[i]]$clustering)]
+    for(col in propagateCol) {
+      ups[,paste0("F.",col)] <- dadaF[[i]]$clustering[ups$forward,col]
+      ups[,paste0("R.",col)] <- dadaR[[i]]$clustering[ups$reverse,col]
+    }
+    # Sort output by abundance and name
+    ups <- ups[order(ups$abundance, decreasing=TRUE),]
+    rownames(ups) <- paste0("s", ups$forward, "_", ups$reverse)
+    if(verbose) {
+      message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
+    }
+    if(!returnRejects) { ups <- ups[ups$accept,] }
+    
+    if(any(duplicated(ups$sequence))) {
+      message("Duplicate sequences in merged output.")
+    }
+    rval[[i]] <- ups
   }
-  # Sort output by abundance and name
-  ups <- ups[order(ups$abundance, decreasing=TRUE),]
-  rownames(ups) <- paste0("s", ups$forward, "_", ups$reverse)
-  if(verbose) {
-    message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
-  }
-  if(!returnRejects) { ups <- ups[ups$accept,] }
+  if(length(rval) == 1) rval <- rval[[1]]
+  else if(!is.null(names(dadaF))) names(rval) <- names(dadaF)
   
-  if(any(duplicated(ups$sequence))) {
-    message("Duplicate sequences in merged output.")
-  }
-  
-  ups
+  return(rval)
 }
 
 #' @importFrom ShortRead FastqStreamer
@@ -222,6 +236,8 @@ isMatch <- function(al, minOverlap, verbose=FALSE) {
 #' dadaF <- dada(derepF, err=tperr1,
 #'               errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' dada2:::dada_to_seq_table(dadaF, derepF, srF)
+#' 
+#' @keywords internal
 #' 
 dada_to_seq_table = function(dadaRes, derep, sr, 
                              idRegExpr = c("\\s.+$", ""), 

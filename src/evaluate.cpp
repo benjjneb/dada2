@@ -10,11 +10,12 @@ using namespace Rcpp;
 // @param score The 4x4 score matrix for nucleotide transitions.
 // @param gap_p The gap penalty.
 // @param band The band size (-1 turns off banding).
+// @param endsfree Whether to allow free end gaps.
 // 
 // @return A \code{character(2)}. The aligned strings.
 // 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int band, bool endsfree) {
+Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int homo_gap_p, int band, bool endsfree) {
   int i, j;
   char **al;
   // Make integer-ized c-style sequence strings
@@ -32,8 +33,15 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
   }
   // Perform alignment and convert back to ACGT
   if(endsfree) {
-    al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
+    if(gap_p == homo_gap_p) {
+      al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
+    } else {
+      al = nwalign_endsfree_homo(seq1, seq2, c_score, gap_p, homo_gap_p, band);
+    }
   } else {
+    if(gap_p != homo_gap_p) {
+      Rprintf("Warning: A separate homopolymer gap penalty isn't implemented when endsfree=FALSE.\n\tAll gaps will be penalized by the regular gap penalty.\n");
+    }
     al = nwalign(seq1, seq2, c_score, gap_p, band);
   }
   int2nt(al[0], al[0]);
