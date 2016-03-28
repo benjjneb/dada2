@@ -161,7 +161,9 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
 #' @param fl (Required). \code{character(1)}.
 #'  The file path to the fastq or fastq.gz file.
 #' 
-#' @return A \link{ggplot} object.
+#' @return A \code{\link{ggplot}} object that will be rendered
+#'  to default device if \code{\link{print}ed},
+#'  or can be stored and further modified.
 #'  
 #' @importFrom ShortRead qa
 #' @import ggplot2
@@ -169,7 +171,7 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
 #' @export
 #' 
 #' @examples
-#' plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2")) + ggtitle("Test")
+#' plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' 
 # This code is adapted from ShortRead:::.plotCycleQuality
 #

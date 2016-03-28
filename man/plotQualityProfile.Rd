@@ -11,7 +11,9 @@ plotQualityProfile(fl)
 The file path to the fastq or fastq.gz file.}
 }
 \value{
-A \link{ggplot} object.
+A \code{\link{ggplot}} object that will be rendered
+ to default device if \code{\link{print}ed},
+ or can be stored and further modified.
 }
 \description{
 This function plots a visual summary of the distribution of quality scores
@@ -19,7 +21,7 @@ along the sequences within a fastq file. This function returns a \link{ggplot}
 graphics object, which can be further modified in ggplot2 fashion.
 }
 \examples{
-plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2")) + ggtitle("Test")
+plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 
 }
 

@@ -146,9 +146,9 @@ With that second sample processed, we can go ahead and create a sequence table.
 
 # Create sequence table <a id="sec:sequence-table"></a>
 
-Finally we want to combine the inferred sapmles into one unified table. For that purpose we use `makeSequenceTable`:
+Finally we want to combine the inferred samples into one unified table. For that purpose we use `makeSequenceTable`:
 ```{r make-table}
 seqtab <- makeSequenceTable(list(merger1, merger2))
 ```
 
-This is the final products of the dada2 pipeline, a matrix in which each row corresponds to a processed sample, and each column corresponds to an inferred sample sequence (the more accurate equivalent to an OTU table). From here we recommend proceeding forward with our friend [the phyloseq package](https://joey711.github.io/phyloseq/) for further analysis...
+This is the final product of the dada2 pipeline, a matrix in which each row corresponds to a processed sample, and each column corresponds to an inferred sample sequence (a more precise analogue to the common "OTU table"). From here we recommend proceeding forward with our friend [the phyloseq package](https://joey711.github.io/phyloseq/) for further analysis...
