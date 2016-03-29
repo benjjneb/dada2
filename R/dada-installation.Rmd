@@ -1,17 +1,12 @@
 ---
 title: "DADA2 Installation"
-author: "Ben Callahan, Paul McMurdie, Susan Holmes"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteIndexEntry{Installation and Testing}
-  \usepackage[utf8]{inputenc}
+author: "Benjamin Callahan, Paul McMurdie"
+output:
+  html_document:
+    theme: flatly
 ---
 
-
-## Installation Instructions
-
-### 0. Install External Dependencies
+## 0. Install External Dependencies
 
 The following instructions assume that you have installed R 
 and have installed 
@@ -30,7 +25,7 @@ biocLite(suppressUpdates = FALSE)
 biocLite("ShortRead", suppressUpdates = FALSE)
 ```
 
-### 1. Install using devtools
+## 1. Install using devtools
 
 The easiest method is to use the devtools package to install from github:
 
@@ -42,7 +37,7 @@ devtools::install_github("benjjneb/dada2")
 
 If that worked you're done (see step 4)! If it failed on missing dependencies, goto step 2.
 
-### 1a. Install manually from source
+## 1a. Install manually from source
 
 Alternatively, you can install from the source by hand. Download [the zipped package](https://github.com/benjjneb/dada2/archive/master.zip) and unzip it.
 
@@ -71,7 +66,7 @@ Check Package Version
 packageVersion("dada2")
 ```
 
-### 2. Troubleshoot Dependencies (Optional)
+## 2. Troubleshoot Dependencies (Optional)
 
 At this point, 
 there may be complaints about missing dependencies.
@@ -88,7 +83,7 @@ biocLite("missing_package_2")
 # ... and so on
 ```
 
-### 3. Re-attempt dada2 Installation
+## 3. Re-attempt dada2 Installation
 
 Install again, after dependencies have been installed.
 
@@ -109,7 +104,7 @@ install.packages("path/to/dada2",
 You should now be done, if installation was successful.
 If not, do not panic, and post a message to [the issue tracker](https://github.com/benjjneb/dada2/issues).
 
-### 4. Load Package, Explore Function Documentation
+## 4. Load Package, Explore Function Documentation
 
 ```{r load-dada2, message=FALSE}
 library("dada2")
@@ -124,4 +119,4 @@ help(package="dada2")
 ?dada
 ```
 
-You are ready to use DADA2!
+You are ready to use DADA2! Consider starting by taking a look at our [tutorial on paired-end Miseq data](tutorial.html).
