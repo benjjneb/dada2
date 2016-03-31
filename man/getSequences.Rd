@@ -2,7 +2,7 @@
 % Please edit documentation in R/misc.R
 \name{getSequences}
 \alias{getSequences}
-\title{Get vector of sequences.}
+\title{Get vector of sequences from input object.}
 \usage{
 getSequences(object)
 }
@@ -14,9 +14,9 @@ getSequences(object)
 }
 \description{
 This function extracts the unique sequences from several different data objects, including
- \code{\link{dada-class}}, \code{\link{derep-class}} and \code{data.frame} objects that have both
- $sequence and $abundance columns. This function wraps the \code{\link{getUniques}} function, but
- return only the names (i.e. the sequences).
+ including \code{\link{dada-class}} and \code{\link{derep-class}} objects, as well as 
+ \code{data.frame} objects that have both $sequence and $abundance columns. This function 
+ wraps the \code{\link{getUniques}} function, but return only the names (i.e. the sequences).
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

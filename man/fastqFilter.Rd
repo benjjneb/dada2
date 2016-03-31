@@ -2,41 +2,50 @@
 % Please edit documentation in R/filter.R
 \name{fastqFilter}
 \alias{fastqFilter}
-\title{fastqFilter filters and trims fastq files.}
+\title{Filter and trim a fastq file.}
 \usage{
 fastqFilter(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0,
   minQ = 0, maxEE = Inf, n = 1e+06, compress = TRUE, verbose = FALSE)
 }
 \arguments{
-\item{fn}{(Required). A character string naming the path to the fastq file, or an R connection.}
+\item{fn}{(Required). The path to the input fastq file, or an R connection to that file.}
 
-\item{fout}{(Required). A character string naming the path to the output file, or an R connection.}
+\item{fout}{(Required). The path to the output file, or an R connection to that file.
+Note that by default (\code{compress=TRUE}) the output fastq file is gzipped.}
 
-\item{truncQ}{(Optional). Truncate reads at the first instance of a quality score less than
-or equal to truncQ. Default is 2, a special quality score indicating the end of good quality
-sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding.}
+\item{truncQ}{(Optional). Default 2.
+Truncate reads at the first instance of a quality score less than or equal to \code{truncQ}.
+The default value of 2 is a special quality score indicating the end of good quality
+  sequence in Illumina 1.8+.}
 
-\item{truncLen}{(Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
-this are discarded.}
+\item{truncLen}{(Optional). Default 0 (no truncation).
+Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
+Note that \code{\link{dada}} currently requires all sequences to be the same length.}
 
-\item{trimLeft}{(Optional). Remove trimLeft nucleotides from the start of each read. If both
-truncLen and trimLeft are used, all filtered reads will have length truncLen-trimLeft.}
+\item{trimLeft}{(Optional). Default 0.
+The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
+\code{trimLeft} are provided, filtered reads will have length \code{truncLen-trimLeft}.}
 
-\item{maxN}{(Optional). After truncation, sequences with more than maxN Ns will be discarded.
-Default is 0. Currently dada() does not allow Ns.}
+\item{maxN}{(Optional). Default 0.
+After truncation, sequences with more than \code{maxN} Ns will be discarded. 
+Note that \code{\link{dada}} currently does not allow Ns.}
 
-\item{minQ}{(Optional). After truncation, reads contain a quality score below minQ will be discarded.}
+\item{minQ}{(Optional). Default 0.
+After truncation, reads contain a quality score below minQ will be discarded.}
 
-\item{maxEE}{(Optional). After truncation, reads with higher than maxEE "expected errors" will be discarded.
+\item{maxEE}{(Optional). Default \code{Inf} (no EE filtering).
+After truncation, reads with higher than maxEE "expected errors" will be discarded.
 Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
 
 \item{n}{(Optional). The number of records (reads) to read in and filter at any one time. 
 This controls the peak memory requirement so that very large fastq files are supported. 
 Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.}
 
-\item{compress}{(Optional). A \code{logical(1)} indicating whether the output should be gz compressed.}
+\item{compress}{(Optional). Default TRUE.
+Whether the output fastq file should be gzip compressed.}
 
-\item{verbose}{(Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.}
+\item{verbose}{(Optional). Default FALSE.
+Whether to output status messages.}
 }
 \value{
 NULL.
@@ -44,11 +53,11 @@ NULL.
 \description{
 fastqFilter takes an input fastq file (can be compressed), filters it based on several
 user-definable criteria, and outputs those reads which pass the filter and their associated
-qualities to a new fastq file (also can be compressed). Several functions in the ShortRead
+qualities to a new fastq file (also can be compressed). Several functions in the \code{ShortRead}
 package are leveraged to do this filtering.
 }
 \details{
-fastqFilter replicates most of the functionality of the fastq_filter command in usearch
+\code{fastqFilter} replicates most of the functionality of the fastq_filter command in usearch
 (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html).
 }
 \examples{

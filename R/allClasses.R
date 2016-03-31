@@ -1,5 +1,5 @@
 ############################################################################
-#' derep - A class representing dereplicated sequences
+#' A class representing dereplicated sequences
 #' 
 #' A \code{\link{list}} with the following three members.
 #' \itemize{
@@ -39,3 +39,17 @@ setClass("derep", contains = "list")
 #' @name dada-class
 #' @rdname dada-class
 setClass("dada", contains = "list")
+############################################################################
+#' The named integer vector format used to represent collections of unique DNA sequences.
+#'
+#' The uniques vector is an \code{integer} vector that is named by the unique sequence, and 
+#' valued by the abundance of that sequence. This format is commonly used within the 
+#' \code{\link{dada2-package}}, for function inputs and outputs. The \code{\link{getUniques}}
+#' function coerces a variety of input objects into the uniques-vector format, including
+#' \code{\link{dada-class}} and \code{\link{derep-class}} objects.
+#' 
+#' @seealso \code{\link{getUniques}}
+#' 
+#' @name uniques-vector
+#' @rdname uniques-vector
+NULL

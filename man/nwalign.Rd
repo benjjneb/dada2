@@ -2,7 +2,7 @@
 % Please edit documentation in R/misc.R
 \name{nwalign}
 \alias{nwalign}
-\title{Needlman-Wunsch alignment with ends-free gapping.}
+\title{Needlman-Wunsch alignment.}
 \usage{
 nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
   gap = getDadaOpt("GAP_PENALTY"), homo_gap = NULL,
@@ -13,27 +13,27 @@ nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
 
 \item{s2}{(Required). \code{character(1)}. The second sequence to align. A/C/G/T only.}
 
-\item{score}{(Optional). A 4x4 numeric matrix.
-The transition scores to use for the alignment. Default is getDadaOpt("SCORE_MATRIX").}
+\item{score}{(Optional). A 4x4 numeric matrix. Default is getDadaOpt("SCORE_MATRIX").
+The match/mismatch used for the alignment.}
 
-\item{gap}{(Optional). A \code{numeric(1)}. The gap penalty. Should be negative.
-Default is getDadaOpt("GAP_PENALTY").}
+\item{gap}{(Optional). \code{numeric(1)}. Default is getDadaOpt("GAP_PENALTY").
+The alignment gap penalty. Should be negative.}
 
-\item{homo_gap}{(Optional). A \code{numeric(1)}. The homopolymer gap penalty. Should be negative.
-Default is NULL, meaning don't use a special homopolymer gap penalty.}
+\item{homo_gap}{(Optional). \code{numeric(1)}. Default NULL (no special homopolymer penalty).
+The alignment gap penalty within homopolymer regions. Should be negative.}
 
-\item{band}{(Optional). A \code{numeric(1)}. The band size.
+\item{band}{(Optional). \code{numeric(1)}.  Default is getDadaOpt("BAND_SIZE").
 This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
-Default is getDadaOpt("BAND_SIZE"). Set band = -1 for unbanded alignment.}
+Set \code{band = -1} to turn off banding.}
 
 \item{endsfree}{(Optional). \code{logical(1)}. Default TRUE.
-Ends-free gapping (or not).}
+Allow free gapping at the ends of sequences.}
 }
 \value{
 \code{character(2)}. The aligned sequences.
 }
 \description{
-This function performs a Needleman-Wunsch alignment with free gaps at the ends of the sequences.
+This function performs a Needleman-Wunsch alignment between two sequences.
 }
 \examples{
  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"

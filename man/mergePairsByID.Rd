@@ -75,20 +75,20 @@ with a NNNNNNNNNN (10 Ns) spacer inserted between them.}
 \item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
 \value{
-A \code{\link{data.table}}. 
- One row for each unique pairing of forward/reverse denoised sequences.
+A \code{data.frame} with a row for each unique pairing of forward/reverse denoised sequences, 
+and the following columns:
 \itemize{
- \item{$abundance: }{Number of reads corresponding to this forward/reverse combination.}
- \item{$sequence: The merged sequence.}
- \item{$forward: The index of the forward denoised sequence.}
- \item{$reverse: The index of the reverse denoised sequence.}
- \item{$nmatch: Number of matching nts in the overlap region.}
- \item{$nmismatch: Number of mismatching nts in the overlap region.}
- \item{$nindel: Number of indels in the overlap region.}
- \item{$prefer: The sequence used for the overlap region. 1=forward; 2=reverse.}
- \item{$accept: TRUE if overlap between forward and reverse denoised sequences was at least minOverlap and had at most maxMismatch differences.
-         FALSE otherwise.}
- \item{$...: Additional columns specified in the includeCol argument.}
+ \item{\code{$abundance}: Number of reads corresponding to this forward/reverse combination.}
+ \item{\code{$sequence}: The merged sequence.}
+ \item{\code{$forward}: The index of the forward denoised sequence.}
+ \item{\code{$reverse}: The index of the reverse denoised sequence.}
+ \item{\code{$nmatch}: Number of matches nts in the overlap region.}
+ \item{\code{$nmismatch}: Number of mismatches in the overlap region.}
+ \item{\code{$nindel}: Number of indels in the overlap region.}
+ \item{\code{$prefer}: The sequence used for the overlap region. 1=forward; 2=reverse.}
+ \item{\code{$accept}: TRUE if overlap between forward and reverse denoised sequences was at least 
+               \code{minOverlap} and had at most \code{maxMismatch} differences. FALSE otherwise.}
+ \item{\code{$...}: Additional columns specified in \code{propagateCol}.}
 }
 }
 \description{

@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequenceIO.R
 \name{derepFastq}
 \alias{derepFastq}
-\title{Read and Dereplicate a Fastq file.}
+\title{Read in and dereplicate a fastq file.}
 \usage{
 derepFastq(fls, n = 1e+06, verbose = FALSE)
 }
@@ -12,17 +12,16 @@ The file path(s) to the fastq or fastq.gz file(s).
 Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.}
 
 \item{n}{(Optional). \code{numeric(1)}.
-the maximum number of records (reads) to parse and dereplicate
+The maximum number of records (reads) to parse and dereplicate
 at any one time. This controls the peak memory requirement
 so that large fastq files are supported.
 Default is \code{1e6}, one-million reads.
 See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
 which is passed on.}
 
-\item{verbose}{(Optional). \code{logical(1)}.
-Whether or not to throw standard R \code{\link{message}}s 
-on the intermittent and final status of the dereplication.
-Default is \code{FALSE}, no messages.}
+\item{verbose}{(Optional). Default FALSE.
+If TRUE, throw standard R \code{\link{message}}s 
+on the intermittent and final status of the dereplication.}
 }
 \value{
 A \code{\link{derep-class}} object or list of such objects.

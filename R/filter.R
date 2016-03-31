@@ -1,43 +1,52 @@
-#' fastqFilter filters and trims fastq files.
+#' Filter and trim a fastq file.
 #' 
 #' fastqFilter takes an input fastq file (can be compressed), filters it based on several
 #' user-definable criteria, and outputs those reads which pass the filter and their associated
-#' qualities to a new fastq file (also can be compressed). Several functions in the ShortRead
+#' qualities to a new fastq file (also can be compressed). Several functions in the \code{ShortRead}
 #' package are leveraged to do this filtering.
 #' 
-#' fastqFilter replicates most of the functionality of the fastq_filter command in usearch
+#' \code{fastqFilter} replicates most of the functionality of the fastq_filter command in usearch
 #' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). 
 #' 
-#' @param fn (Required). A character string naming the path to the fastq file, or an R connection.
+#' @param fn (Required). The path to the input fastq file, or an R connection to that file.
 #'   
-#' @param fout (Required). A character string naming the path to the output file, or an R connection.
+#' @param fout (Required). The path to the output file, or an R connection to that file.
+#'  Note that by default (\code{compress=TRUE}) the output fastq file is gzipped.
 #' 
-#' @param truncQ (Optional). Truncate reads at the first instance of a quality score less than
-#'    or equal to truncQ. Default is 2, a special quality score indicating the end of good quality
-#'    sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding. 
+#' @param truncQ (Optional). Default 2.
+#'  Truncate reads at the first instance of a quality score less than or equal to \code{truncQ}.
+#'  The default value of 2 is a special quality score indicating the end of good quality
+#'    sequence in Illumina 1.8+.
 #'  
-#' @param truncLen (Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
-#'    this are discarded.
+#' @param truncLen (Optional). Default 0 (no truncation).
+#'  Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
+#'  Note that \code{\link{dada}} currently requires all sequences to be the same length.
 #'  
-#' @param trimLeft (Optional). Remove trimLeft nucleotides from the start of each read. If both
-#'    truncLen and trimLeft are used, all filtered reads will have length truncLen-trimLeft.
+#' @param trimLeft (Optional). Default 0.
+#'  The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
+#'  \code{trimLeft} are provided, filtered reads will have length \code{truncLen-trimLeft}.
 #'  
-#' @param maxN (Optional). After truncation, sequences with more than maxN Ns will be discarded.
-#'    Default is 0. Currently dada() does not allow Ns.
+#' @param maxN (Optional). Default 0.
+#'  After truncation, sequences with more than \code{maxN} Ns will be discarded. 
+#'  Note that \code{\link{dada}} currently does not allow Ns.
 #'  
-#' @param minQ (Optional). After truncation, reads contain a quality score below minQ will be discarded.
+#' @param minQ (Optional). Default 0.
+#'  After truncation, reads contain a quality score below minQ will be discarded.
 #'
-#' @param maxEE (Optional). After truncation, reads with higher than maxEE "expected errors" will be discarded.
+#' @param maxEE (Optional). Default \code{Inf} (no EE filtering).
+#'  After truncation, reads with higher than maxEE "expected errors" will be discarded.
 #'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
 #'  
 #' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
 #'
-#' @param compress (Optional). A \code{logical(1)} indicating whether the output should be gz compressed.
+#' @param compress (Optional). Default TRUE.
+#'  Whether the output fastq file should be gzip compressed.
 #' 
-#' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.  
-#'     
+#' @param verbose (Optional). Default FALSE.
+#'  Whether to output status messages.  
+#' 
 #' @return NULL.
 #' 
 #' @seealso 
@@ -129,69 +138,80 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
   }
 }
 
-#' fastqPairedFilter filters and trims paired forward and reverse fastq files.
+#' Filters and trims paired forward and reverse fastq files.
 #' 
 #' fastqPairedFilter takes in two input fastq file (can be compressed), filters them based on several
 #' user-definable criteria, and outputs those reads which pass the filter in both directions along
 #' with their associated qualities to two new fastq file (also can be compressed). Several functions
-#' in the ShortRead package are leveraged to do this filtering. The filtered forward/reverse reads
+#' in the \code{ShortRead} package are leveraged to do this filtering. The filtered forward/reverse reads
 #' remain identically ordered.
 #' 
 #' fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
 #' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but only pairs of reads that both
 #' pass the filter are retained.
 #' 
-#' @param fn (Required). A \code{character(2)} naming the paths to the forward/reverse fastq files.
+#' @param fn (Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.
 #'   
-#' @param fout (Required). A \code{character(2)} naming the path to the output file.
+#' @param fout (Required). A \code{character(2)} naming the paths to the (forward,reverse) output files.
+#'  Note that by default (\code{compress=TRUE}) the output fastq files are gzipped.
 #' 
-#' FILTERING AND TRIMMING ARGUMENTS can be provided as a length 1 or length 2 vector. If provided as a length 1
-#' vector the same criteria is used for forward and reverse. If provided as a length 2 vector, the
-#' first value is used for the forward reads, the second value for the reverse reads.
+#' \strong{FILTERING AND TRIMMING ARGUMENTS} that follow can be provided as length 1 or length 2 vectors. 
+#' If a length 1 vector is provided, the same parameter value is used for the forward and reverse sequence files.
+#' If a length 2 vector is provided, the first value is used for the forward reads, and the second 
+#'   for the reverse reads.
 #' 
-#' @param truncQ (Optional). Truncate reads at the first instance of a quality score less than
-#'    or equal to truncQ. Default is 2, a special quality score indicating the end of good quality
-#'    sequence in Illumina 1.8+. Can provide truncQ as an integer or appropriate ascii encoding. 
+#' @param truncQ (Optional). Default 2.
+#'  Truncate reads at the first instance of a quality score less than or equal to \code{truncQ}.
+#'  The default value of 2 is a special quality score indicating the end of good quality
+#'    sequence in Illumina 1.8+.
 #'  
-#' @param truncLen (Optional). A \code{numeric(1)} Truncate after truncLen bases, reads shorter than
-#'    this are discarded. THIS PARAMETER TRIMS ALL READS TO THE SAME LENGTH WHICH IS NEEDED FOR THE
-#'    dada() FUNCTION!
+#' @param truncLen (Optional). Default 0 (no truncation).
+#'  Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
+#'  Note that \code{\link{dada}} currently requires all sequences to be the same length.
 #'  
-#' @param trimLeft (Optional). Remove trimLeft nucleotides from the start of each read. If both
-#'    truncLen and trimLeft are used, all filtered reads will have length truncLen-trimLeft.
+#' @param trimLeft (Optional). Default 0.
+#'  The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
+#'  \code{trimLeft} are provided, filtered reads will have length \code{truncLen-trimLeft}.
 #'  
-#' @param maxN (Optional). After truncation, sequences with more than maxN Ns will be discarded.
-#'    Default is 0. Currently dada() does not allow Ns.
+#' @param maxN (Optional). Default 0.
+#'  After truncation, sequences with more than \code{maxN} Ns will be discarded. 
+#'  Note that \code{\link{dada}} currently does not allow Ns.
 #'  
-#' @param minQ (Optional). After truncation, reads contain a quality score below minQ will be discarded.
+#' @param minQ (Optional). Default 0.
+#'  After truncation, reads contain a quality score below minQ will be discarded.
 #'
-#' @param maxEE (Optional). After truncation, reads with higher than maxEE "expected errors" will be discarded.
+#' @param maxEE (Optional). Default \code{Inf} (no EE filtering).
+#'  After truncation, reads with higher than maxEE "expected errors" will be discarded.
 #'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
+#'  
+#' \strong{ID MATCHING ARGUMENTS} that follow enforce matching between the sequence identification
+#'  strings in the forward and reverse reads. The function can automatically detect and match ID fields in 
+#'  Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393
 #' 
-#' ID MATCHING ARGUMENTS implement matching between the sequence identification strings in the forward and reverse
-#'  reads. The function can automatically detect and match ID fields in Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393
-#' 
-#' @param matchIDs (Optional). A \code{logical(1)} indicating whether to enforce matching between the sequence
-#'    identifiers in the id lines of the forward and reverse fastq files.
+#' @param matchIDs (Optional). Default FALSE.
+#'  Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
 #'    If TRUE, only paired reads that share id fields (see below) are output.
-#'    If FALSE, no read ID checking is done. Default is FALSE
-#'    NOTE: Further dada(...) processing assumes matching order between forward and reverse reads. If that
-#'      matched order is not present
+#'    If FALSE, no read ID checking is done.
+#'  Note: \code{matchIDs=FALSE} essentially assumes matching order between forward and reverse reads. If that
+#'    matched order is not present future processing steps may break (in particular \code{\link{mergePairs}}).
 #'
-#' @param id.sep (Optional). A \code{character(1)} indicating the separator between fields in the id string
-#'    of the input fastq files. Passed to the strsplit(...) function. Default is "\\s" (white-space).
+#' @param id.sep (Optional). Default "\\s" (white-space).
+#'  The separator between fields in the id-line of the input fastq files. Passed to the \code{\link{strsplit}}.
 #' 
-#' @param id.field (Optional). A code{numeric(1)} indicating which field contains the sequence identifier.
-#'    If NULL (the default) and matchIDs is TRUE, then the function attempts to automatically detect
-#'    the sequence identifier, assuming Illumina formatted output.
+#' @param id.field (Optional). Default NULL (automatic detection).
+#'  The field of the id-line containing the sequence identifier.
+#'  If NULL (the default) and matchIDs is TRUE, the function attempts to automatically detect
+#'    the sequence identifier field under the assumption of Illumina formatted output.
 #'
 #' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
 #'  
-#' @param compress (Optional). A \code{logical(1)} indicating whether the output should be gz compressed.
+#' @param compress (Optional). Default TRUE.
+#'  Whether the output fastq files should be gzip compressed.
 #' 
-#' @param verbose (Optional). A \code{logical(1)}. If TRUE, some status messages are displayed.
+#' @param verbose (Optional). Default FALSE.
+#'  Whether to output status messages.  
 #' 
 #' @return NULL.
 #' 

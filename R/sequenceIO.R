@@ -1,5 +1,5 @@
 ################################################################################
-#' Read and Dereplicate a Fastq file.
+#' Read in and dereplicate a fastq file.
 #' 
 #' A custom interface to \code{\link[ShortRead]{FastqStreamer}} 
 #' for dereplicating amplicon sequences from fastq or compressed fastq files,
@@ -10,17 +10,16 @@
 #'  Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
 #' 
 #' @param n (Optional). \code{numeric(1)}.
-#'  the maximum number of records (reads) to parse and dereplicate
+#'  The maximum number of records (reads) to parse and dereplicate
 #'  at any one time. This controls the peak memory requirement
 #'  so that large fastq files are supported.
 #'  Default is \code{1e6}, one-million reads.
 #'  See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
 #'  which is passed on.
 #' 
-#' @param verbose (Optional). \code{logical(1)}.
-#'  Whether or not to throw standard R \code{\link{message}}s 
+#' @param verbose (Optional). Default FALSE.
+#'  If TRUE, throw standard R \code{\link{message}}s 
 #'  on the intermittent and final status of the dereplication.
-#'  Default is \code{FALSE}, no messages.
 #'
 #' @return A \code{\link{derep-class}} object or list of such objects. 
 #'
@@ -153,18 +152,24 @@ qtables2 <- function(x, qeff = FALSE) {
 #' A wrapper for writeFastq in the ShortRead package.
 #' Default output format is compatible with uchime.
 #' 
-#' @param unqs The uniques vector. E.g. the $uniques from the output of \code{\link{derepFastq}}.
+#' @param unqs (Required).
+#'  A \code{\link{uniques-vector}} or any object that can be coerced
+#'  into one with \code{\link{getUniques}}.
+#'   
+#' @param fout (Required).
+#'  The file path of the output file.
 #' 
-#' @param fout The file path of the output file. The file you want to write.
-#' 
-#' @param ids A character vector of sequence ids, one for each element in \code{unqs}.
-#'  Default value is \code{NULL}, in which case a uchime-compatible ID is assigned.
+#' @param ids (Optional). \code{character}. Default NULL.
+#'  A vector of sequence ids, one for each element in \code{unqs}.
+#'  If NULL, a uchime-compatible ID is assigned.
 #'  
-#' @param mode A character string flag passed on to \code{\link[ShortRead]{writeFasta}}
+#' @param mode (Optional). Default "w".
+#'  Passed on to \code{\link[ShortRead]{writeFasta}}
 #'  indicating the type of file writing mode. Default is \code{"w"}.
 #'  
-#' @param width The number of characters per line in the file. Default is 20000.
-#'  Passed on to \code{\link[ShortRead]{writeFasta}}.
+#' @param width (Optional). Default 20000.
+#'  The number of characters per line in the file. Default is effectively one line
+#'  per sequence. Passed on to \code{\link[ShortRead]{writeFasta}}.
 #'  
 #' @param ... Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.
 #' 

@@ -1,22 +1,26 @@
 #'
-#' Classifies sequences against reference training set.
+#' Classifies sequences against reference training dataset.
 #' 
 #' assignTaxonomy implements the RDP classifier algorithm in Wang 2007 with kmer size 8 and
 #'  100 bootstrap replicates.
 #' 
-#' @param seqs (Required). A character vector of the sequences to be assigned, or an object coercible by
-#' \code{\link{getUniques}}.
+#' @param seqs (Required). A character vector of the sequences to be assigned, or an object 
+#' coercible by \code{\link{getUniques}}.
 #'   
-#' @param refFasta (Required). A character string naming the path to the reference fasta file, or an 
-#' R connection. This reference fasta file should be formatted with the id line corresponding to the
-#' taxonomy (or classification) of the reference sequence, with each level separated by a semicolon. Eg.
+#' @param refFasta (Required). The path to the reference fasta file, or an 
+#' R connection Can be compresssed.
+#' This reference fasta file should be formatted so that the id lines correspond to the
+#' taxonomy (or classification) of the associated sequence, and each taxonomic level is 
+#' separated by a semicolon. Eg.
 #' 
 #'  >Kingom;Phylum;Class;Order;Family;Genus;
 #'  ACGAATGTGAAGTAA......
 #' 
-#' @param minBoot (Optional). Default 50. The minimum bootstrap confidence for assigning a taxonomic level.
+#' @param minBoot (Optional). Default 50. 
+#' The minimum bootstrap confidence for assigning a taxonomic level.
 #'   
-#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
+#' @param verbose (Optional). Default FALSE.
+#'  If TRUE, print status to standard output.
 #' 
 #' @return A character matrix of assigned taxonomies exceeding the minBoot level of
 #'   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
@@ -31,7 +35,8 @@
 #' 
 #' @examples
 #' \dontrun{
-#'  taxa <- assignTaxonomy(dadaF, "gg_13_8_97_dada.fa")
+#'  taxa <- assignTaxonomy(dadaF, "gg_13_8_train_set_97.fa.gz")
+#'  taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
 #' }
 #' 
 assignTaxonomy <- function(seqs, refFasta, minBoot=50, verbose=FALSE) {

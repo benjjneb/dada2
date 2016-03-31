@@ -2,14 +2,14 @@
 #' 
 #' This is similar to original DADA article, Figure 6.
 #' 
-#' @param dadaOut (Required). The object returned by \code{\link{dada}}.
+#' @param dadaOut (Required). A \code{\link{dada-class}} object.
 #' 
-#' @param facetByGrp (Optional). Logical(1).
+#' @param facetByGrp (Optional). Default TRUE.
 #'  Whether to plot all substitution groups together in one panel
 #'  or separately on a grid of panels with a linear model fit.
 #' 
-#' @return A \code{\link{ggplot}2} object that will be rendered
-#'  to default device if \code{\link{print}ed},
+#' @return A \code{\link{ggplot}2} object.
+#'  Will be rendered to default device if \code{\link{print}ed},
 #'  or can be stored and further modified.
 #'  See \code{\link{ggsave}} for additional options.
 #' 
@@ -70,43 +70,41 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
   return(p1)
 }
 
-#' Plot error rates after dada processing.
+#' Plot observed error rates after denoising.
 #' 
 #' This function plots the observed frequency of each transition
 #' (eg. A->C) as a function of the associated quality score. It also plots the final
 #' estimated error rates (if they exist). The initial input rates and the expected error
-#' rates under the nominal definition of quality scores can also be included.
+#' rates under the nominal definition of quality scores can also be shown.
 #' 
-#' @param dq Required. A \code{\link{dada-class}} object.
+#' @param dq (Required). A \code{\link{dada-class}} object.
 #' 
-#' @param nti Optional. Default c("A","C","G","T"). Some combination of the 4 DNA nucleotides.
-#' @param ntj Optional. Default c("A","C","G","T"). Some combination of the 4 DNA nucleotides.
+#' @param nti (Optional). Default c("A","C","G","T"). 
+#'  Some combination of the 4 DNA nucleotides.
+#'  
+#' @param ntj (Optional). Default c("A","C","G","T"). 
+#'  Some combination of the 4 DNA nucleotides.
+#'  
 #'  The error rates from nti->ntj will be plotted. If multiple nti or ntj are chosen,
 #'   error rates from each-to-each will be plotted in a grid.
 #'  
-#' @param err_out Optional. Default TRUE.
-#'  A \code{logical(1)} determining whether to plot the output error rates (solid).
+#' @param err_out (Optional). Default TRUE.
+#'  If TRUE, plot the output error rates (solid line).
 #' 
-#' @param err_in Optional. Default FALSE.
-#'  A \code{logical(1)} determining whether to plot the initial input error rates (dashed).
+#' @param err_in (Optional). Default FALSE.
+#'  If TRUE, plot the input error rates (dashed line).
 #'
-#' @param nominalQ Optional. Default FALSE.
-#'  A \code{logical(1)} determining whether to plot the expected error rate (red) if the
-#'  quality score exactly matched its nominal definition: Q = -10 log10(p_err).
+#' @param nominalQ (Optional). Default FALSE.
+#'  If TRUE, plot the expected error rates (red line) if quality scores
+#'  exactly matched their nominal definition: Q = -10 log10(p_err).
 #'  
-#' @return A \code{\link{ggplot}} object that will be rendered
-#'  to default device if \code{\link{print}ed},
+#' @return A \code{\link{ggplot}2} object.
+#'  Will be rendered to default device if \code{\link{print}ed},
 #'  or can be stored and further modified.
+#'  See \code{\link{ggsave}} for additional options.
 #'  
 #' @importFrom reshape2 melt
 #' @import ggplot2
-# @importFrom ggplot2 ggplot
-# @importFrom ggplot2 aes
-# @importFrom ggplot2 geom_point
-# @importFrom ggplot2 geom_line
-# @importFrom ggplot2 facet_wrap
-# @importFrom ggplot2 xlab
-# @importFrom ggplot2 ylab
 #' 
 #' @export
 #' 
@@ -155,15 +153,15 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
 #' Plot quality profile of a fastq file.
 #' 
 #' This function plots a visual summary of the distribution of quality scores
-#' along the sequences within a fastq file. This function returns a \link{ggplot}
-#' graphics object, which can be further modified in ggplot2 fashion.
+#' as a function of sequence position for the input fastq file.
 #' 
 #' @param fl (Required). \code{character(1)}.
 #'  The file path to the fastq or fastq.gz file.
 #' 
-#' @return A \code{\link{ggplot}} object that will be rendered
-#'  to default device if \code{\link{print}ed},
+#' @return A \code{\link{ggplot}2} object.
+#'  Will be rendered to default device if \code{\link{print}ed},
 #'  or can be stored and further modified.
+#'  See \code{\link{ggsave}} for additional options.
 #'  
 #' @importFrom ShortRead qa
 #' @import ggplot2
