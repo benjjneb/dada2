@@ -46,6 +46,6 @@ isBimera(sqs1[[20]], sqs1[1:10])
 
 }
 \seealso{
-\code{\link{isBimeraDenovo}}
+\code{\link{isBimeraDenovo}}, \code{\link{removeBimeraDenovo}}
 }
 

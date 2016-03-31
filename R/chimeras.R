@@ -30,7 +30,9 @@
 #' @return \code{logical(1)}.
 #'  TRUE if sq is a bimera of two of the parents. Otherwise FALSE.
 #'
-#' @seealso \code{\link{isBimeraDenovo}}
+#' @seealso 
+#'  \code{\link{isBimeraDenovo}}, \code{\link{removeBimeraDenovo}}
+#'  
 #' @export
 #' 
 #' @examples
@@ -64,31 +66,32 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 }
 
 ################################################################################
-#' Identify bimeras de-novo from collections of unique sequences.
+#' Identify bimeras from collections of unique sequences.
 #' 
-#' This function is a wrapper around \code{\link{isBimera}} for collections of DADA denoised
-#' sequences. Each sequence is evaluated against a set of "parents" drawn from the
-#' sequence collection that are sufficiently more abundant than the sequence
-#' being evaluated.
+#' This function is a wrapper around \code{\link{isBimera}} for collections of unique
+#' sequences (i.e. sequences with associated abundances). Each sequence is evaluated 
+#' against a set of "parents" drawn from the sequence collection that are sufficiently
+#' more abundant than the sequence being evaluated. A logical vector is returned, with
+#' an entry for each input sequence indicating whether it was (was not) consistent with
+#' being a bimera of those more abundant "parents".
 #' 
-#' @param unqs (Required). A "uniques vector" or any object that can be coerced into one with \code{\link{getUniques}}.
-#'   This named integer vector is named by the sequences to be checked for bimeras and valued by their abundances.
+#' @param unqs (Required). A \code{\link{uniques-vector}} or any object that can be coerced
+#'  into one with \code{\link{getUniques}}.
 #'   
 #' @param minFoldParentOverAbundance (Optional). A \code{numeric(1)}. Default is 1.
-#'   Only sequences more than this-fold abundant than a sequence can be its "parents".
-#'   Default is intentionally permissive, as aggressively removing chimeras
-#'    is the conservative choice for downstream analysis.
+#'   Only sequences greater than this-fold more abundant than a sequence can be its 
+#'   "parents".
 #'   
 #' @param minParentAbundance (Optional). A \code{numeric(1)}. Default is 8.
 #'   Only sequences at least this abundant can be "parents".
 #' 
 #' @param allowOneOff (Optional). A \code{logical(1)}. Default is TRUE.
 #'   If TRUE, sequences that have one mismatch or indel to an exact bimera are also
-#'   flagged.
+#'   flagged as bimeric.
 #' 
 #' @param minOneOffParentDistance (Optional). A \code{numeric(1)}. Default is 4.
 #'   Only sequences with at least this many mismatches to the potential bimeric sequence
-#'   considered as possible "parents" when flagging one-off bimeras. Note that there is
+#'   considered as possible "parents" when flagging one-off bimeras. There is
 #'   no such screen when considering exact bimeras.
 #'   
 #' @param maxShift (Optional). A \code{numeric(1)}. Default is 16.
@@ -99,7 +102,8 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #'
 #' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
-#' @seealso \code{\link{isBimera}}
+#' @seealso 
+#'  \code{\link{isBimera}}, \code{\link{removeBimeraDenovo}}
 #' 
 #' @export
 #' 
@@ -130,13 +134,13 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 }
 
 ################################################################################
-#' Remove bimeras de-novo from collections of unique sequences.
+#' Remove bimeras from collections of unique sequences.
 #' 
 #' This function is a wrapper around \code{\link{isBimeraDenovo}}. Bimeras identified by
-#' \link{isBimeraDenovo} are removed, and the bimera-free object is returned.
+#' \link{isBimeraDenovo} are removed, and a bimera-free collection of unique sequences is returned.
 #' 
-#' @param unqs (Required). A "uniques vector" or an object or list of objects that can be coerced 
-#'   into one with \code{\link{getUniques}}.
+#' @param unqs (Required). A \code{\link{uniques-vector}} or any object that can be coerced
+#'  into one with \code{\link{getUniques}}. A list of such objects can also be provided.
 #'   
 #' @param ... (Optional). Arguments to be passed to \code{\link{isBimeraDenovo}}.
 #'   
@@ -202,12 +206,12 @@ getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent 
 #' Identify sequences that are identical to a more abundant sequence up to an
 #' overall shift.
 #' 
-#' This function is a wrapper around isShift for collections of DADA denoised
-#' sequences. Each sequence is evaluated against a set of "parents" drawn from the
-#' sequence collection that are more abundant than the sequence being evaluated.
+#' This function is a wrapper around isShift for collections of unique
+#' sequences. Each unique sequence is evaluated against a set of "parents" drawn from
+#' the sequence collection that are more abundant than the sequence being evaluated.
 #' 
-#' @param unqs (Required). A "uniques vector" or any object that can be coerced into one with \code{\link{getUniques}}.
-#'   This named integer vector is named by the sequences to be checked for bimeras and valued by their abundances.
+#' @param unqs (Required). A \code{\link{uniques-vector}} or any object that can be coerced
+#'  into one with \code{\link{getUniques}}.
 #'   
 #' @param minOverlap (Optional). A \code{numeric(1)}. Default is 20.
 #'   Minimum overlap required to call something a shift.

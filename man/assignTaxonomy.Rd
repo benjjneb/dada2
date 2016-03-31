@@ -2,24 +2,28 @@
 % Please edit documentation in R/taxonomy.R
 \name{assignTaxonomy}
 \alias{assignTaxonomy}
-\title{Classifies sequences against reference training set.}
+\title{Classifies sequences against reference training dataset.}
 \usage{
 assignTaxonomy(seqs, refFasta, minBoot = 50, verbose = FALSE)
 }
 \arguments{
-\item{seqs}{(Required). A character vector of the sequences to be assigned, or an object coercible by
-\code{\link{getUniques}}.}
+\item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 
+coercible by \code{\link{getUniques}}.}
 
-\item{refFasta}{(Required). A character string naming the path to the reference fasta file, or an 
-R connection. This reference fasta file should be formatted with the id line corresponding to the
-taxonomy (or classification) of the reference sequence, with each level separated by a semicolon. Eg.
+\item{refFasta}{(Required). The path to the reference fasta file, or an 
+R connection Can be compresssed.
+This reference fasta file should be formatted so that the id lines correspond to the
+taxonomy (or classification) of the associated sequence, and each taxonomic level is 
+separated by a semicolon. Eg.
 
  >Kingom;Phylum;Class;Order;Family;Genus;
  ACGAATGTGAAGTAA......}
 
-\item{minBoot}{(Optional). Default 50. The minimum bootstrap confidence for assigning a taxonomic level.}
+\item{minBoot}{(Optional). Default 50. 
+The minimum bootstrap confidence for assigning a taxonomic level.}
 
-\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
+\item{verbose}{(Optional). Default FALSE.
+If TRUE, print status to standard output.}
 }
 \value{
 A character matrix of assigned taxonomies exceeding the minBoot level of
@@ -33,7 +37,8 @@ assignTaxonomy implements the RDP classifier algorithm in Wang 2007 with kmer si
 }
 \examples{
 \dontrun{
- taxa <- assignTaxonomy(dadaF, "gg_13_8_97_dada.fa")
+ taxa <- assignTaxonomy(dadaF, "gg_13_8_train_set_97.fa.gz")
+ taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
 }
 
 }

@@ -15,7 +15,7 @@ The output of \code{\link{dada}} function.}
 A \code{\link{derep-class}} object.
 An object returned by \code{\link{derepFastq}()}.
 Should be the same object that served as input
-to the \code{\link{dada}()} function.}
+to the \code{\link{dada}} function.}
 
 \item{sr}{(Required). The trimmed and filtered reads 
 that you used as input for \code{\link{derepFastq}},

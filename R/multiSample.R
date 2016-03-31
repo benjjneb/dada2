@@ -2,17 +2,17 @@
 #' Construct a sample-by-sequence observation matrix.
 #' 
 #' This function contructs a sequence table (analogous to an OTU table) from
-#' the provided list of samples. 
+#' the provided list of samples.
 #' 
 #' @param samples (Required). A \code{list} of the samples to include in the sequence table. 
-#' Names are propagated to the rownames of the return matrix. Samples can be provided in any
-#' format that can be processed by \code{\link{getUniques}}.
+#' Samples can be provided in any format that can be processed by \code{\link{getUniques}}.
+#' Sample names are propagated to the rownames of the sequence table.
 #' 
-#' @param orderBy (Optional). String. Default is "abundance".
+#' @param orderBy (Optional). \code{character(1)}. Default "abundance".
 #' Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
 #' Valid values: "abundance", "nsamples", NULL.
 #' 
-#' @return Integer \code{matrix}.
+#' @return Named integer matrix.
 #' A row for each sample, and a column for each unique sequence across all the samples.
 #' Note that the columns are named by the sequence which can make display a little unwieldy.
 #' 
@@ -54,26 +54,23 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 }
 
 ################################################################################
-#' Collapse together sequences that are identical up to shifts and/or length.
+#' Combine together sequences that are identical up to shifts and/or length.
 #' 
 #' This function takes as input a sequence table and returns a sequence table in which
 #' any sequences that are identical up to shifts or length variation, i.e. that have
 #' no mismatches or internal indels when aligned, are collapsed together. The most abundant
-#' sequences is chosen as the representative of the collapsed sequences.
+#' sequence is chosen as the representative of the collapsed sequences. This function can
+#' be thought of as implementing greedy 100\% OTU clustering, with end-gapping is ignored.
 #' 
-#' This function can be thought of as implementing greedy 100-percent OTU clustering, where end-gapping
-#' is ignored. The current implementation relies on full alignments and is therefore much slower
-#' than necessary. A better implementation would be good.
+#' @param seqtab (Required). A sample by sequence matrix, the return of \code{\link{makeSequenceTable}}.
 #' 
-#' @param seqtab (Required). A samples by sequence matrix, the return of \code{\link{makeSequenceTable}}.
-#' 
-#' @param minOverlap (Optional). \code{numeric(1)}. Default is 20.
+#' @param minOverlap (Optional). \code{numeric(1)}. Default 20.
 #' The minimum amount of overlap between sequences required to collapse them together.
 #' 
 #' @param verbose (Optional). \code{logical(1)}. Default FALSE.
-#' If TRUE, a summary of this function is printed to standard output.
+#' If TRUE, a summary of the function results are printed to standard output.
 #' 
-#' @return Integer \code{matrix}.
+#' @return Named integer matrix.
 #' A row for each sample, and a column for each collapsed sequence across all the samples.
 #' Note that the columns are named by the sequence which can make display a little unwieldy.
 #' Columns are in the same order (modulo the removed columns) as in the input matrix.

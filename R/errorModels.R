@@ -1,18 +1,19 @@
 #' Use a loess fit to estimate error rates from transition counts.
 #' 
-#' This function accepts a matrix of observed transitions (eg. row 2 = A->C) by
-#' the quality score (eg. col 31 = Q30). It returns a matrix of estimated error
-#' rates of the same shape. Error rates are estimates by loess fitting each
-#' transition (i.e. A->C, A->G, A->T) as a function of the quality score, and
-#' taking the self-transitions (i.e. A->A) as the left-over probability.
+#' This function accepts a matrix of observed transitions, with each transition
+#' correponding to a row (eg. row 2 = A->C) and each column to a quality score
+#' (eg. col 31 = Q30). It returns a matrix of estimated error
+#' rates of the same shape. Error rates are estimates by a \code{\link{loess}} fit
+#' of the observed rates of each transition as a function of the quality score.
+#' Self-transitions (i.e. A->A) are taken to be the left-over probability.
 #' 
 #' @param trans (Required). A matrix of the observed transition counts. Must be 16 rows,
 #' with the rows named "A2A", "A2C", ...
 #' 
 #' @return A numeric matrix with 16 rows and the same number of columns as trans.
 #'  The estimated error rates for each transition (row, eg. "A2C") and quality score
-#'  (column, eg. 31), as determined by loess smoothing over the quality scores within
-#'  each transition category.
+#'  (column, eg. 31), as determined by \code{\link{loess}} smoothing over the quality
+#'  scores within each transition category.
 #' 
 #' @export
 #' 
@@ -61,18 +62,18 @@ loessErrfun <- function(trans) {
   return(err)
 }
 
-#' Inflates an error rate matrix by a specified factor accounting for saturation.
+#' Inflates an error rate matrix by a specified factor, while accounting for saturation.
 #' 
 #' Error rates are "inflated" by the specified factor, while appropriately saturating so that rates
 #' cannot exceed 1. The formula is:
 #'   new_err_rate <- err_rate * inflate / (1 + (inflate-1) * err_rate)
 #'   
-#' @param err (Required). A matrix of error rates (16 rows, named "A2A", "A2C", ...).
+#' @param err (Required). A numeric matrix of transition rates (16 rows, named "A2A", "A2C", ...).
 #' 
-#' @param inflation (Required). The factor with which to inflate the transition rates.
+#' @param inflation (Required). The fold-factor by which to inflate the transition rates.
 #' 
-#' @param inflateSelfTransitions (Optional). If True, self-transitions (eg. A->A) also inflated.
-#'  Default is FALSE.
+#' @param inflateSelfTransitions (Optional). Default FALSE.
+#'  If True, self-transitions (eg. A->A) are also inflated.
 #'  
 #' @return An error rate matrix of the same dimensions as the input error rate matrix.
 #'  
@@ -190,8 +191,8 @@ getBadBases <- function(clust, birth_subs, omegaB = 1e-20, minOccurence = 4, ver
 
 #' An empirical error matrix.
 #'
-#' A dataset containing the error matrix estimated by DADA2 from the mock community featured
-#' in Schirmer 2015 (metaID 35).
+#' A dataset containing the error matrix estimated by fitting a piecewise linear model to
+#' the errors observed in the mock community featured in Schirmer 2015 (metaID 35).
 #'
 #' @format A numerical matrix with 16 rows and 41 columns.
 #'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)

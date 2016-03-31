@@ -7,18 +7,24 @@
 uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000, ...)
 }
 \arguments{
-\item{unqs}{The uniques vector. E.g. the $uniques from the output of \code{\link{derepFastq}}.}
+\item{unqs}{(Required).
+A \code{\link{uniques-vector}} or any object that can be coerced
+into one with \code{\link{getUniques}}.}
 
-\item{fout}{The file path of the output file. The file you want to write.}
+\item{fout}{(Required).
+The file path of the output file.}
 
-\item{ids}{A character vector of sequence ids, one for each element in \code{unqs}.
-Default value is \code{NULL}, in which case a uchime-compatible ID is assigned.}
+\item{ids}{(Optional). \code{character}. Default NULL.
+A vector of sequence ids, one for each element in \code{unqs}.
+If NULL, a uchime-compatible ID is assigned.}
 
-\item{mode}{A character string flag passed on to \code{\link[ShortRead]{writeFasta}}
+\item{mode}{(Optional). Default "w".
+Passed on to \code{\link[ShortRead]{writeFasta}}
 indicating the type of file writing mode. Default is \code{"w"}.}
 
-\item{width}{The number of characters per line in the file. Default is 20000.
-Passed on to \code{\link[ShortRead]{writeFasta}}.}
+\item{width}{(Optional). Default 20000.
+The number of characters per line in the file. Default is effectively one line
+per sequence. Passed on to \code{\link[ShortRead]{writeFasta}}.}
 
 \item{...}{Additional parameters passed on to \code{\link[ShortRead]{writeFasta}}.}
 }

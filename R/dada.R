@@ -27,57 +27,51 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts) # NOT YET IMPLEMENTED
 #' If dada is run in selfConsist=TRUE mode, the algorithm will infer both the sample composition and
 #'  the parameters of its error model from the data.
 #'  
-#' @param derep (Required). A derep-class object, the output of \code{\link{derepFastq}}.
-#' 
-#'  A list of derep objects can be provided, in which case each will be independently denoised with
-#'  a shared error model.
+#' @param derep (Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
+#'  A list of such objects can be provided, in which case each will be denoised with a shared error model.
 #'  
 #' @param err (Required). 16xN numeric matrix. Each entry must be between 0 and 1.
 #' 
 #'  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
 #'  
-#'  Rows correspond to the 16 possible transitions (t_ij) indexed as so... 
-#'    1:A->A,  2:A->C,  3:A->G,  4:A->T,  5:C->A,  6:C->C,  7:C->G,  8:C->T,
-#'    9:G->A, 10:G->C, 11:G->G, 12:G->T, 13:T->A, 14:T->C, 15:T->G, 16:T->T
+#'  Rows correspond to the 16 possible transitions (t_ij) indexed such that 1:A->A, 2:A->C, ..., 16:T->T
 #'    
-#'  Columns correspond to consensus quality scores. Typically there are 41 columns for the quality scores 0-40.
+#'  Columns correspond to quality scores. Typically there are 41 columns for the quality scores 0-40.
 #'  However, if USE_QUALS=FALSE, the matrix must have only one column.
 #'  
-#'  If selfConsist = TRUE, this argument can be passed in as NULL and an initial error matrix will be estimated from the data
+#'  If selfConsist = TRUE, \code{err} can be set to NULL and an initial error matrix will be estimated from the data
 #'  by assuming that all reads are errors away from one true sequence.
 #'    
-#' @param errorEstimationFunction (Optional). Function. Default loessErrfun.
+#' @param errorEstimationFunction (Optional). Function. Default \code{\link{loessErrfun}}.
 #' 
-#'  If USE_QUALS = TRUE, \code{errorEstimationFunction(dada()$trans_out)} is computed after sample inference finishes 
-#'    and the return value is used as the new estimate of the err matrix.
+#'  If USE_QUALS = TRUE, \code{errorEstimationFunction(dada()$trans_out)} is computed after sample inference, 
+#'    and the return value is used as the new estimate of the err matrix in $err_out.
 #'    
 #'  If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).
 #'  
 #' @param selfConsist (Optional). \code{logical(1)}. Default FALSE.
 #' 
-#'  If selfConsist = TRUE, the algorithm will alternate between sample inference and error rate estimation until convergence.
-#'    Error rate estimation is performed by the errorEstimationFunction, which is required for selfConsist mode. If dada is
-#'    run in selfConsist mode without specifying this function, the default loessErrfun will be used.
+#'  If selfConsist = TRUE, the algorithm will alternate between sample inference and error rate estimation 
+#'    until convergence. Error rate estimation is performed by \code{errorEstimationFunction}.
 #'    
-#'  If selfConsist=FALSE the algorithm performs one round of sample inference based on the provided err matrix.
+#'  If selfConsist=FALSE the algorithm performs one round of sample inference based on the provided \code{err} matrix.
 #'   
-#' @param aggregate (Optional). \code{logical(1)}. Default is FALSE.
+#' @param pool (Optional). \code{logical(1)}. Default is FALSE.
 #' 
-#'  If aggregate = TRUE, the algorithm will pool together all samples prior to sample inference.
-#'  If aggregate = FALSE (default), sample inference is performed on each sample individually.
+#'  If pool = TRUE, the algorithm will pool together all samples prior to sample inference.
+#'  If pool = FALSE, sample inference is performed on each sample individually.
 #'  
-#'  aggregate has no effect if only 1 sample is provided, and aggregate does not affect error rate estimation in selfConsist
-#'    mode, which always pools the observed transitions across samples.
+#'  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
+#'   error rates, which are always estimated from pooled observations across samples.
 #'   
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
-#' 
-#'  See \code{\link{setDadaOpt}} for a discussion of the various dada options. 
+#'  See \code{\link{setDadaOpt}} for a full list and description of these options. 
 #'
-#' @return A \code{\link{dada-class}} object or list of such objects of a list of derep objects was provided. 
+#' @return A \code{\link{dada-class}} object or list of such objects if a list of dereps was provided. 
 #'   
 #' @details
 #' 
-#' Briefly, DADA implements a statiscal test for the notion that a specific sequence was seen too many times
+#' Briefly, \code{dada} implements a statiscal test for the notion that a specific sequence was seen too many times
 #'  to have been caused by amplicon errors from currently inferred sample sequences. Overly-abundant
 #'  sequences are used as the seeds of new clusters of sequencing reads, and the final set of clusters
 #'  is taken to represent the denoised composition of the sample. A more detailed explanation of the algorithm
@@ -88,18 +82,16 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts) # NOT YET IMPLEMENTED
 #'  \item{Rosen MJ, Callahan BJ, Fisher DS, Holmes SP (2012). Denoising PCR-amplified metagenome data. BMC bioinformatics, 13(1), 283.}
 #' }
 #'  
-#' DADA depends on a parametric error model of substitutions. Thus the quality of its sample inference is affected
-#'  by the accuracy of the estimated error rates. DADA's selfConsist mode allows these error rates to be inferred 
+#' \code{dada} depends on a parametric error model of substitutions. Thus the quality of its sample inference is affected
+#'  by the accuracy of the estimated error rates. \code{selfConsist} mode allows these error rates to be inferred 
 #'  from the data.
 #'  
-#' All of DADA's comparisons between sequences depend on pairwise alignments. This step is the most computationally
-#'  intensive part of the algorithm, and two alignment heuristics have been implemented for speed: A kmer-distance
-#'  screen and a banded Needleman-Wunsch alignmemt. See \code{\link{setDadaOpt}}.
+#' All comparisons between sequences performed by \code{dada} depend on pairwise alignments. This step is the most 
+#'  computationally intensive part of the algorithm, and two alignment heuristics have been implemented for speed:
+#'  A kmer-distance screen and banded Needleman-Wunsch alignmemt. See \code{\link{setDadaOpt}}.
 #'  
 #' @seealso 
-#'  \code{\link{derepFastq}}
-#' 
-#'  \code{\link{setDadaOpt}}
+#'  \code{\link{derepFastq}}, \code{\link{setDadaOpt}}
 #'
 #' @export
 #'
@@ -108,13 +100,13 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts) # NOT YET IMPLEMENTED
 #' derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 #' dada(derep1, err=tperr1)
 #' dada(list(sam1=derep1, sam2=derep2), err=tperr1, selfConsist=TRUE)
-#' dada(derep1, err=inflateErr(tperr1,2), BAND_SIZE=32, OMEGA_A=1e-20)
+#' dada(derep1, err=inflateErr(tperr1,3), BAND_SIZE=32, OMEGA_A=1e-20)
 #'
 dada <- function(derep,
                  err,
                  errorEstimationFunction = loessErrfun,
                  selfConsist = FALSE, 
-                 aggregate = FALSE, ...) {
+                 pool = FALSE, ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
@@ -173,9 +165,9 @@ dada <- function(derep,
     warning("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.")
   }
   
-  # Aggregate the derep objects if so indicated
-  if(length(derep) <= 1) { aggregate <- FALSE }
-  if(aggregate) { # Make derep a length 1 list of aggregated derep object
+  # Pool the derep objects if so indicated
+  if(length(derep) <= 1) { pool <- FALSE }
+  if(pool) { # Make derep a length 1 list of pooled derep object
     derep.in <- derep
     derep <- list(combineDereps2(derep))
   }
@@ -263,7 +255,7 @@ dada <- function(derep,
       else { qi <- unname(t(derep[[i]]$quals)) } # Need transpose so that sequences are columns
 
       if(nconsist == 1) {
-        if(aggregate) {
+        if(pool) {
           cat("Samples 1 -", length(derep.in), "Pooled:", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
         } else {
           cat("Sample", i, "-", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
@@ -379,13 +371,13 @@ dada <- function(derep,
     rval2[[i]]$call <- call
   }
 
-  # If aggregate=TRUE, expand the rval and prune the individual return objects
-  if(aggregate) {
+  # If pool=TRUE, expand the rval and prune the individual return objects
+  if(pool) {
     # Expand rval into a list of the proper length
     rval1 <- rval2[[1]]
     rval2 = replicate(length(derep.in), list(denoised=NULL, clustering=NULL, sequence=NULL, quality=NULL, birth_subs=NULL, trans=NULL, map=NULL,
                                           err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
-    # Make map named by the aggregated unique sequence
+    # Make map named by the pooled unique sequence
     map <- map[[1]]
     names(map) <- names(derep[[1]]$uniques)
     for(i in seq_along(derep.in)) {
@@ -393,7 +385,7 @@ dada <- function(derep,
       # Identify which output clusters to keep
       keep <- unique(map[names(derep[[1]]$uniques) %in% names(derep.in[[i]]$uniques)])
       keep <- seq(length(rval2[[i]]$denoised)) %in% keep # -> logical
-      newBi <- cumsum(keep) # maps aggregated cluster index to individual index
+      newBi <- cumsum(keep) # maps pooled cluster index to individual index
       # Prune $denoised, $clustering, $sequence, $quality
       rval2[[i]]$denoised <- rval2[[i]]$denoised[keep]
       rval2[[i]]$clustering <- rval2[[i]]$clustering[keep,] # Leaves old (char of integer) rownames!

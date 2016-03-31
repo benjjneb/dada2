@@ -2,7 +2,7 @@
 % Please edit documentation in R/misc.R
 \name{nwhamming}
 \alias{nwhamming}
-\title{Hamming distance after Needlman-Wunsch alignment with ends-free gapping.}
+\title{Hamming distance after Needlman-Wunsch alignment.}
 \usage{
 nwhamming(s1, s2, ...)
 }
@@ -14,11 +14,12 @@ nwhamming(s1, s2, ...)
 \item{...}{(Optional). Further arguments to pass on to \code{\link{nwalign}}.}
 }
 \value{
-\code{integer(1)}. The total number of mismatches and gaps, excluding gaps at the beginning and end of the alignment.
+\code{integer(1)}. The total number of mismatches and gaps, excluding gaps at the beginning
+ and end of the alignment.
 }
 \description{
-This function performs a Needleman-Wunsch alignment with free gaps at the ends of the sequences, and then counts
-the number of mismatches and indels in that alignment. Gaps at the beginning and end are ignored.
+This function performs a Needleman-Wunsch alignment between two sequences, and then counts
+the number of mismatches and indels in that alignment. End gaps are not included in this count.
 }
 \examples{
  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"

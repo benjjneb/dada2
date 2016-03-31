@@ -2,13 +2,13 @@
 % Please edit documentation in R/chimeras.R
 \name{removeBimeraDenovo}
 \alias{removeBimeraDenovo}
-\title{Remove bimeras de-novo from collections of unique sequences.}
+\title{Remove bimeras from collections of unique sequences.}
 \usage{
 removeBimeraDenovo(unqs, ..., verbose = FALSE)
 }
 \arguments{
-\item{unqs}{(Required). A "uniques vector" or an object or list of objects that can be coerced 
-into one with \code{\link{getUniques}}.}
+\item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced
+into one with \code{\link{getUniques}}. A list of such objects can also be provided.}
 
 \item{...}{(Optional). Arguments to be passed to \code{\link{isBimeraDenovo}}.}
 
@@ -20,7 +20,7 @@ A uniques vector, or an object of matching class if a data.frame or sequence tab
 }
 \description{
 This function is a wrapper around \code{\link{isBimeraDenovo}}. Bimeras identified by
-\link{isBimeraDenovo} are removed, and the bimera-free object is returned.
+\link{isBimeraDenovo} are removed, and a bimera-free collection of unique sequences is returned.
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

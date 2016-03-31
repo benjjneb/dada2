@@ -8,15 +8,15 @@ makeSequenceTable(samples, orderBy = "abundance")
 }
 \arguments{
 \item{samples}{(Required). A \code{list} of the samples to include in the sequence table. 
-Names are propagated to the rownames of the return matrix. Samples can be provided in any
-format that can be processed by \code{\link{getUniques}}.}
+Samples can be provided in any format that can be processed by \code{\link{getUniques}}.
+Sample names are propagated to the rownames of the sequence table.}
 
-\item{orderBy}{(Optional). String. Default is "abundance".
+\item{orderBy}{(Optional). \code{character(1)}. Default "abundance".
 Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
 Valid values: "abundance", "nsamples", NULL.}
 }
 \value{
-Integer \code{matrix}.
+Named integer matrix.
 A row for each sample, and a column for each unique sequence across all the samples.
 Note that the columns are named by the sequence which can make display a little unwieldy.
 }

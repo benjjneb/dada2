@@ -7,15 +7,15 @@
 plotComplementarySubstitutions(dadaOut, facetByGrp = TRUE)
 }
 \arguments{
-\item{dadaOut}{(Required). The object returned by \code{\link{dada}}.}
+\item{dadaOut}{(Required). A \code{\link{dada-class}} object.}
 
-\item{facetByGrp}{(Optional). Logical(1).
+\item{facetByGrp}{(Optional). Default TRUE.
 Whether to plot all substitution groups together in one panel
 or separately on a grid of panels with a linear model fit.}
 }
 \value{
-A \code{\link{ggplot}2} object that will be rendered
- to default device if \code{\link{print}ed},
+A \code{\link{ggplot}2} object.
+ Will be rendered to default device if \code{\link{print}ed},
  or can be stored and further modified.
  See \code{\link{ggsave}} for additional options.
 }

@@ -3,7 +3,7 @@
 \docType{class}
 \name{derep-class}
 \alias{derep-class}
-\title{derep - A class representing dereplicated sequences}
+\title{A class representing dereplicated sequences}
 \description{
 A \code{\link{list}} with the following three members.
 \itemize{

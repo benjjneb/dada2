@@ -8,8 +8,8 @@ overall shift.}
 isShiftDenovo(unqs, minOverlap = 20, flagSubseqs = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{unqs}{(Required). A "uniques vector" or any object that can be coerced into one with \code{\link{getUniques}}.
-This named integer vector is named by the sequences to be checked for bimeras and valued by their abundances.}
+\item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced
+into one with \code{\link{getUniques}}.}
 
 \item{minOverlap}{(Optional). A \code{numeric(1)}. Default is 20.
 Minimum overlap required to call something a shift.}
@@ -24,9 +24,9 @@ Whether or not to flag strict subsequences as shifts.}
  TRUE if sequence is an exact shift of a more abundant sequence. Otherwise FALSE.
 }
 \description{
-This function is a wrapper around isShift for collections of DADA denoised
-sequences. Each sequence is evaluated against a set of "parents" drawn from the
-sequence collection that are more abundant than the sequence being evaluated.
+This function is a wrapper around isShift for collections of unique
+sequences. Each unique sequence is evaluated against a set of "parents" drawn from
+the sequence collection that are more abundant than the sequence being evaluated.
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

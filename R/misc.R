@@ -1,14 +1,13 @@
 ################################################################################
-#' Get the "uniques vector": Integer vector named by sequence and valued by abundance.
+#' Get the uniques-vector from the input object.
 #' 
-#' This function extracts the "uniques vector" from several different data objects, including
-#'  \code{\link{dada-class}}, \code{\link{derep-class}} and \code{data.frame} objects that have both
-#'  $sequence and $abundance columns.
-#'  The return value is an integer vector named by sequence and valued by abundance. If input is already
-#'  a "uniques vector", that same vector will be returned.
-#'  The uniques format is used by several functions within the dada2 package.
+#' This function extracts the \code{\link{uniques-vector}} from several different data objects, 
+#'  including \code{\link{dada-class}} and \code{\link{derep-class}} objects, as well as 
+#'  \code{data.frame} objects that have both $sequence and $abundance columns.
+#'  The return value is an integer vector named by sequence and valued by abundance. If the input is
+#'  already in \code{\link{uniques-vector}} format, that same vector will be returned.
 #' 
-#' @param object (Required). The object from which to extract the uniques vector.
+#' @param object (Required). The object from which to extract the \code{\link{uniques-vector}}.
 #' 
 #' @return \code{integer}.
 #'  An integer vector named by unique sequence and valued by abundance.
@@ -48,12 +47,12 @@ getUniques <- function(object) {
 }
 
 ################################################################################
-#' Get vector of sequences.
+#' Get vector of sequences from input object.
 #' 
 #' This function extracts the unique sequences from several different data objects, including
-#'  \code{\link{dada-class}}, \code{\link{derep-class}} and \code{data.frame} objects that have both
-#'  $sequence and $abundance columns. This function wraps the \code{\link{getUniques}} function, but
-#'  return only the names (i.e. the sequences).
+#'  including \code{\link{dada-class}} and \code{\link{derep-class}} objects, as well as 
+#'  \code{data.frame} objects that have both $sequence and $abundance columns. This function 
+#'  wraps the \code{\link{getUniques}} function, but return only the names (i.e. the sequences).
 #' 
 #' @param object (Required). The object from which to extract the sequences.
 #' 
@@ -82,29 +81,29 @@ getNseq <- function(object) {
 }
 
 ################################################################################
-#' Needlman-Wunsch alignment with ends-free gapping.
+#' Needlman-Wunsch alignment.
 #' 
-#' This function performs a Needleman-Wunsch alignment with free gaps at the ends of the sequences.
+#' This function performs a Needleman-Wunsch alignment between two sequences.
 #' 
 #' @param s1 (Required). \code{character(1)}. The first sequence to align. A/C/G/T only.
 #' 
 #' @param s2 (Required). \code{character(1)}. The second sequence to align. A/C/G/T only.
 #' 
-#' @param score (Optional). A 4x4 numeric matrix.
-#'  The transition scores to use for the alignment. Default is getDadaOpt("SCORE_MATRIX").
+#' @param score (Optional). A 4x4 numeric matrix. Default is getDadaOpt("SCORE_MATRIX").
+#'  The match/mismatch used for the alignment.
 #' 
-#' @param gap (Optional). A \code{numeric(1)}. The gap penalty. Should be negative.
-#'  Default is getDadaOpt("GAP_PENALTY").
+#' @param gap (Optional). \code{numeric(1)}. Default is getDadaOpt("GAP_PENALTY").
+#'  The alignment gap penalty. Should be negative.
 #'  
-#' @param homo_gap (Optional). A \code{numeric(1)}. The homopolymer gap penalty. Should be negative.
-#'  Default is NULL, meaning don't use a special homopolymer gap penalty.
+#' @param homo_gap (Optional). \code{numeric(1)}. Default NULL (no special homopolymer penalty).
+#'  The alignment gap penalty within homopolymer regions. Should be negative.
 #'  
-#' @param band (Optional). A \code{numeric(1)}. The band size.
+#' @param band (Optional). \code{numeric(1)}.  Default is getDadaOpt("BAND_SIZE").
 #'  This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
-#'  Default is getDadaOpt("BAND_SIZE"). Set band = -1 for unbanded alignment.
+#'  Set \code{band = -1} to turn off banding.
 #'  
 #' @param endsfree (Optional). \code{logical(1)}. Default TRUE.
-#'  Ends-free gapping (or not).
+#'  Allow free gapping at the ends of sequences.
 #'  
 #' @return \code{character(2)}. The aligned sequences.
 #' 
@@ -130,10 +129,10 @@ nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GA
 }
 
 ################################################################################
-#' Hamming distance after Needlman-Wunsch alignment with ends-free gapping.
+#' Hamming distance after Needlman-Wunsch alignment.
 #' 
-#' This function performs a Needleman-Wunsch alignment with free gaps at the ends of the sequences, and then counts
-#' the number of mismatches and indels in that alignment. Gaps at the beginning and end are ignored.
+#' This function performs a Needleman-Wunsch alignment between two sequences, and then counts
+#' the number of mismatches and indels in that alignment. End gaps are not included in this count.
 #' 
 #' @param s1 (Required). \code{character(1)}. The first sequence to align. A/C/G/T only.
 #' 
@@ -141,7 +140,8 @@ nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GA
 #' 
 #' @param ... (Optional). Further arguments to pass on to \code{\link{nwalign}}.
 #' 
-#' @return \code{integer(1)}. The total number of mismatches and gaps, excluding gaps at the beginning and end of the alignment.
+#' @return \code{integer(1)}. The total number of mismatches and gaps, excluding gaps at the beginning
+#'  and end of the alignment.
 #' 
 #' @export
 #' 

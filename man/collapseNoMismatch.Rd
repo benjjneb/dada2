@@ -2,21 +2,21 @@
 % Please edit documentation in R/multiSample.R
 \name{collapseNoMismatch}
 \alias{collapseNoMismatch}
-\title{Collapse together sequences that are identical up to shifts and/or length.}
+\title{Combine together sequences that are identical up to shifts and/or length.}
 \usage{
 collapseNoMismatch(seqtab, minOverlap = 20, verbose = FALSE)
 }
 \arguments{
-\item{seqtab}{(Required). A samples by sequence matrix, the return of \code{\link{makeSequenceTable}}.}
+\item{seqtab}{(Required). A sample by sequence matrix, the return of \code{\link{makeSequenceTable}}.}
 
-\item{minOverlap}{(Optional). \code{numeric(1)}. Default is 20.
+\item{minOverlap}{(Optional). \code{numeric(1)}. Default 20.
 The minimum amount of overlap between sequences required to collapse them together.}
 
 \item{verbose}{(Optional). \code{logical(1)}. Default FALSE.
-If TRUE, a summary of this function is printed to standard output.}
+If TRUE, a summary of the function results are printed to standard output.}
 }
 \value{
-Integer \code{matrix}.
+Named integer matrix.
 A row for each sample, and a column for each collapsed sequence across all the samples.
 Note that the columns are named by the sequence which can make display a little unwieldy.
 Columns are in the same order (modulo the removed columns) as in the input matrix.
@@ -25,12 +25,8 @@ Columns are in the same order (modulo the removed columns) as in the input matri
 This function takes as input a sequence table and returns a sequence table in which
 any sequences that are identical up to shifts or length variation, i.e. that have
 no mismatches or internal indels when aligned, are collapsed together. The most abundant
-sequences is chosen as the representative of the collapsed sequences.
-}
-\details{
-This function can be thought of as implementing greedy 100-percent OTU clustering, where end-gapping
-is ignored. The current implementation relies on full alignments and is therefore much slower
-than necessary. A better implementation would be good.
+sequence is chosen as the representative of the collapsed sequences. This function can
+be thought of as implementing greedy 100\% OTU clustering, with end-gapping is ignored.
 }
 \examples{
 derep1 <- derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

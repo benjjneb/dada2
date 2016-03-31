@@ -2,17 +2,17 @@
 % Please edit documentation in R/errorModels.R
 \name{inflateErr}
 \alias{inflateErr}
-\title{Inflates an error rate matrix by a specified factor accounting for saturation.}
+\title{Inflates an error rate matrix by a specified factor, while accounting for saturation.}
 \usage{
 inflateErr(err, inflation, inflateSelfTransitions = FALSE)
 }
 \arguments{
-\item{err}{(Required). A matrix of error rates (16 rows, named "A2A", "A2C", ...).}
+\item{err}{(Required). A numeric matrix of transition rates (16 rows, named "A2A", "A2C", ...).}
 
-\item{inflation}{(Required). The factor with which to inflate the transition rates.}
+\item{inflation}{(Required). The fold-factor by which to inflate the transition rates.}
 
-\item{inflateSelfTransitions}{(Optional). If True, self-transitions (eg. A->A) also inflated.
-Default is FALSE.}
+\item{inflateSelfTransitions}{(Optional). Default FALSE.
+If True, self-transitions (eg. A->A) are also inflated.}
 }
 \value{
 An error rate matrix of the same dimensions as the input error rate matrix.

@@ -2,31 +2,30 @@
 % Please edit documentation in R/chimeras.R
 \name{isBimeraDenovo}
 \alias{isBimeraDenovo}
-\title{Identify bimeras de-novo from collections of unique sequences.}
+\title{Identify bimeras from collections of unique sequences.}
 \usage{
 isBimeraDenovo(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8,
   allowOneOff = TRUE, minOneOffParentDistance = 4, maxShift = 16,
   verbose = FALSE)
 }
 \arguments{
-\item{unqs}{(Required). A "uniques vector" or any object that can be coerced into one with \code{\link{getUniques}}.
-This named integer vector is named by the sequences to be checked for bimeras and valued by their abundances.}
+\item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced
+into one with \code{\link{getUniques}}.}
 
 \item{minFoldParentOverAbundance}{(Optional). A \code{numeric(1)}. Default is 1.
-Only sequences more than this-fold abundant than a sequence can be its "parents".
-Default is intentionally permissive, as aggressively removing chimeras
- is the conservative choice for downstream analysis.}
+Only sequences greater than this-fold more abundant than a sequence can be its 
+"parents".}
 
 \item{minParentAbundance}{(Optional). A \code{numeric(1)}. Default is 8.
 Only sequences at least this abundant can be "parents".}
 
 \item{allowOneOff}{(Optional). A \code{logical(1)}. Default is TRUE.
 If TRUE, sequences that have one mismatch or indel to an exact bimera are also
-flagged.}
+flagged as bimeric.}
 
 \item{minOneOffParentDistance}{(Optional). A \code{numeric(1)}. Default is 4.
 Only sequences with at least this many mismatches to the potential bimeric sequence
-considered as possible "parents" when flagging one-off bimeras. Note that there is
+considered as possible "parents" when flagging one-off bimeras. There is
 no such screen when considering exact bimeras.}
 
 \item{maxShift}{(Optional). A \code{numeric(1)}. Default is 16.
@@ -39,10 +38,12 @@ Maximum shift allowed when aligning sequences to potential "parents".}
  TRUE if sequence is a bimera of more abundant "parent" sequences. Otherwise FALSE.
 }
 \description{
-This function is a wrapper around \code{\link{isBimera}} for collections of DADA denoised
-sequences. Each sequence is evaluated against a set of "parents" drawn from the
-sequence collection that are sufficiently more abundant than the sequence
-being evaluated.
+This function is a wrapper around \code{\link{isBimera}} for collections of unique
+sequences (i.e. sequences with associated abundances). Each sequence is evaluated 
+against a set of "parents" drawn from the sequence collection that are sufficiently
+more abundant than the sequence being evaluated. A logical vector is returned, with
+an entry for each input sequence indicating whether it was (was not) consistent with
+being a bimera of those more abundant "parents".
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
@@ -52,6 +53,6 @@ isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE
 
 }
 \seealso{
-\code{\link{isBimera}}
+\code{\link{isBimera}}, \code{\link{removeBimeraDenovo}}
 }
 
