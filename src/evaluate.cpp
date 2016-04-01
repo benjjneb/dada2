@@ -202,7 +202,7 @@ int get_ham_endsfree(const char *seq1, const char *seq2, int len) {
   // Find end of internal part of alignment
   j=len-1;
   gap1 = (seq1[j]==6); 
-  gap1 = (seq2[j]==6);
+  gap2 = (seq2[j]==6);
   while(gap1 || gap2) {
     j--;
     gap1 = (gap1 && (seq1[j]==6));
@@ -311,7 +311,7 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
       if(left_oo > oo_max_left_oo) { oo_max_left_oo=left_oo; }
       if(right_oo > oo_max_right_oo) { oo_max_right_oo=right_oo; }
     }
-    
+
     // Evaluate, and break if found bimeric model
     if((max_right+max_left)>=sq.size()) {
       rval = true;
