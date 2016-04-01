@@ -21,8 +21,8 @@ C_get_overlaps <- function(s1, s2, allow, max_shift) {
     .Call('dada2_C_get_overlaps', PACKAGE = 'dada2', s1, s2, allow, max_shift)
 }
 
-C_is_bimera <- function(sq, pars, max_shift) {
-    .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, max_shift)
+C_is_bimera <- function(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift) {
+    .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift)
 }
 
 C_pair_consensus <- function(s1, s2, prefer) {

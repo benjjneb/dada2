@@ -126,7 +126,8 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
       return(FALSE)
     } else {
       if(test) {
-        C_is_bimera(sq, pars, maxShift)
+        C_is_bimera(sq, pars, allowOneOff, minOneOffParentDistance, 
+                    getDadaOpt("SCORE_MATRIX"), getDadaOpt("GAP_PENALTY"), maxShift)
       } else {
         isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
       }
