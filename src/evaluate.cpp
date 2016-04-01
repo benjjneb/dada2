@@ -3,14 +3,14 @@
 using namespace Rcpp;
 
 //------------------------------------------------------------------
-// Exposes ends-free Needleman-Wunsh alignment to R.
+// Exposes Needleman-Wunsch alignment to R.
 //
 // @param s1 A \code{character(1)} of DNA sequence 1.
 // @param s2 A \code{character(1)} of DNA sequence 2.
 // @param score The 4x4 score matrix for nucleotide transitions.
 // @param gap_p The gap penalty.
 // @param band The band size (-1 turns off banding).
-// @param endsfree Whether to allow free end gaps.
+// @param endsfree If TRUE, allow free end gaps.
 // 
 // @return A \code{character(2)}. The aligned strings.
 // 
@@ -170,7 +170,7 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, in
   for(i=s1.size()-1;i>=0;i--) {
     is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
     is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
-    if(is_nt2) { 
+    if(is_nt2) { // bug, doesn't diff++ for indels when gap is in seq2
       if(i <= end && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
         diff++;
       }
@@ -184,6 +184,90 @@ Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, in
   }
   
   Rcpp::IntegerVector rval = Rcpp::IntegerVector::create(_["left"]=left, _["right"]=right);
+  return(rval);
+}
+
+
+//------------------------------------------------------------------
+// Determines whether sq is a perfect bimera of some combination from pars.
+// 
+// @param sq The query DNA sequence.
+// @param pars Potential bimeric "parents".
+// @param max_shift A \code{integer(1)} of the maximum alignment shift allowed.
+// 
+// [[Rcpp::export]]
+bool C_is_bimera(std::string sq, std::vector<std::string> pars, int max_shift) {
+  // For now hardcoding alignment params, and only finding perfect bimeras
+  // al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band);
+  int i, j, left, right, pos, len, max_len;
+  int score[4][4];
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      if(i==j) score[i][j] = 5;
+      else score[i][j] = -4;
+    }
+  }
+  int gap_p = -8;
+
+  // Make integer-ized c-style sequence strings
+  char *seq1 = (char *) malloc(sq.size()+1); //E
+  max_len=0;
+  for(i=0;i<pars.size();i++) {
+    len = pars[i].size();
+    if(len>max_len) { max_len = len; }
+  }
+  char *seq2 = (char *) malloc(max_len+1); //E
+  if (seq1 == NULL || seq2 == NULL)  Rcpp::stop("Memory allocation failed.");
+  nt2int(seq1, sq.c_str());
+    
+  char **al; // Remember, alignments must be freed!
+  int max_left=0, max_right=0;
+  
+  bool rval = false;
+  for(i=0;i<pars.size();i++) {
+    nt2int(seq2, pars[i].c_str());
+    al = nwalign_endsfree(seq1, seq2, score, gap_p, max_shift);
+    len = strlen(al[0]);
+
+    pos=0; left=0;
+    while(al[0][pos] == 6 && pos<len) {
+      pos++;
+    }
+    while(al[1][pos] == 6 && pos<max_shift) {
+      pos++; left++;
+    }
+    while(pos<len && al[0][pos] == al[1][pos]) {
+      pos++; left++;
+    }
+    
+    pos=len-1; right=0;
+    while(al[0][pos] == 6 && pos >= 0) { 
+      pos--;
+    }
+    while(al[1][pos] == 6 && pos>+(len-max_shift)) {
+      pos--; right++;
+    }
+    while(pos>=0 && al[0][pos] == al[1][pos]) {
+      pos--; right++;
+    }
+
+    if((left+right) >= sq.size()) { // Toss id/pure-shift/internal-indel "parents"
+      continue;
+    }
+    if(left > max_left) { max_left=left; }
+    if(right > max_right) { max_right=right; }
+    // Evaluate, and break if found bimeric model
+    if((max_right+max_left)>=sq.size()) {
+      rval = true;
+      break;
+    }
+  }
+  
+  free(seq1);
+  free(seq2);
+  free(al[0]);
+  free(al[1]);
+  free(al);
   return(rval);
 }
 
@@ -245,7 +329,7 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefe
 // @return A \code{logical}. Whether or not each input character was ACGT only.
 // 
 // [[Rcpp::export]]
-Rcpp::LogicalVector C_check_ACGT(std::vector<std::string> seqs) {
+Rcpp::LogicalVector C_isACGT(std::vector<std::string> seqs) {
   unsigned int i, pos, strlen;
   bool justACGT;
   const char *cstr;

@@ -85,7 +85,7 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
 }
 
 /* note: input sequence must end with string termination character, '\0' */
-char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band) {
+char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap_p, int band) {
   static size_t nnw = 0;
   int i, j;
   int l, r;
@@ -111,19 +111,32 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
     p[j] = 2;
   }
   
+  // Calculate left/right-bands in case of different lengths
+  int lband, rband;
+  if(len2 > len1) {
+    lband = band;
+    rband = band+len2-len1;
+  } else if(len1 > len2) {
+    lband = band+len1-len2;
+    rband = band;
+  } else {
+    lband = band;
+    rband = band;
+  }
+  
   // Fill out band boundaries of d.
   if(band>=0 && (band<len1 || band<len2)) {
     for(i=0;i<=len1;i++) {
-      if(i-band-1 >= 0) { d[i*ncol + i-band-1] = -9999; }
-      if(i+band+1 <= len2) { d[i*ncol + i+band+1] = -9999; }
+      if(i-lband-1 >= 0) { d[i*ncol + i-lband-1] = -9999; }
+      if(i+rband+1 <= len2) { d[i*ncol + i+rband+1] = -9999; }
     }
   }
   
   // Fill out the body of the DP matrix.
   for (i = 1; i <= len1; i++) {
     if(band>=0) {
-      l = i-band; if(l < 1) { l = 1; }
-      r = i+band; if(r>len2) { r = len2; }
+      l = i-lband; if(l < 1) { l = 1; }
+      r = i+rband; if(r>len2) { r = len2; }
     } else { l=1; r=len2; }
 
     for (j = l; j <= r; j++) {
@@ -168,7 +181,7 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
   j = len2;  
 
   while ( i > 0 || j > 0 ) {
-///    Rprintf("(%i, %i): p=%i, d=%i\n", i, j, p[i*ncol + j], d[i*ncol + j]);
+//    Rprintf("(%i, %i): p=%i, d=%i\n", i, j, p[i*ncol + j], d[i*ncol + j]);
     switch ( p[i*ncol + j] ) {
     case 1:
       al0[len_al] = s1[--i];
@@ -218,7 +231,7 @@ char **nwalign_endsfree(char *s1, char *s2, int score[4][4], int gap_p, int band
 
 /* note: input sequence must end with string termination character, '\0' */
 /* 08-17-15: MJR homopolymer free gapping version of ends-free alignment */
-char **nwalign_endsfree_homo(char *s1, char *s2, int score[4][4], int gap_p, int homo_gap_p, int band) {
+char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], int gap_p, int homo_gap_p, int band) {
   static size_t nnw = 0;
   int i, j, k;
   int l, r;
@@ -275,19 +288,32 @@ char **nwalign_endsfree_homo(char *s1, char *s2, int score[4][4], int gap_p, int
     p[j] = 2;
   }
   
+  // Calculate left/right-bands in case of different lengths
+  int lband, rband;
+  if(len2 > len1) {
+    lband = band;
+    rband = band+len2-len1;
+  } else if(len1 > len2) {
+    lband = band+len1-len2;
+    rband = band;
+  } else {
+    lband = band;
+    rband = band;
+  }
+  
   // Fill out band boundaries of d.
   if(band>=0 && (band<len1 || band<len2)) {
     for(i=0;i<=len1;i++) {
-      if(i-band-1 >= 0) { d[i*ncol + i-band-1] = -9999; }
-      if(i+band+1 <= len2) { d[i*ncol + i+band+1] = -9999; }
+      if(i-lband-1 >= 0) { d[i*ncol + i-lband-1] = -9999; }
+      if(i+rband+1 <= len2) { d[i*ncol + i+rband+1] = -9999; }
     }
   }
   
   // Fill out the body of the DP matrix.
   for (i = 1; i <= len1; i++) {
     if(band>=0) {
-      l = i-band; if(l < 1) { l = 1; }
-      r = i+band; if(r>len2) { r = len2; }
+      l = i-lband; if(l < 1) { l = 1; }
+      r = i+rband; if(r>len2) { r = len2; }
     } else { l=1; r=len2; }
     
     for (j = l; j <= r; j++) {
@@ -388,7 +414,7 @@ char **nwalign_endsfree_homo(char *s1, char *s2, int score[4][4], int gap_p, int
 // Not used within the dada method
 // Separate function to avoid if statement within performance critical nwalign_endsfree
 /* note: input sequence must end with string termination character, '\0' */
-char **nwalign(char *s1, char *s2, int score[4][4], int gap_p, int band) {
+char **nwalign(const char *s1, const char *s2, int score[4][4], int gap_p, int band) {
   static size_t nnw = 0;
   int i, j;
   int l, r;
@@ -417,19 +443,32 @@ char **nwalign(char *s1, char *s2, int score[4][4], int gap_p, int band) {
     p[j] = 2;
   }
   
+  // Calculate left/right-bands in case of different lengths
+  int lband, rband;
+  if(len2 > len1) {
+    lband = band;
+    rband = band+len2-len1;
+  } else if(len1 > len2) {
+    lband = band+len1-len2;
+    rband = band;
+  } else {
+    lband = band;
+    rband = band;
+  }
+  
   // Fill out band boundaries of d.
   if(band>=0 && (band<len1 || band<len2)) {
     for(i=0;i<=len1;i++) {
-      if(i-band-1 >= 0) { d[i*ncol + i-band-1] = -9999; }
-      if(i+band+1 <= len2) { d[i*ncol + i+band+1] = -9999; }
+      if(i-lband-1 >= 0) { d[i*ncol + i-lband-1] = -9999; }
+      if(i+rband+1 <= len2) { d[i*ncol + i+rband+1] = -9999; }
     }
   }
   
   // Fill out the body of the DP matrix.
   for (i = 1; i <= len1; i++) {
     if(band>=0) {
-      l = i-band; if(l < 1) { l = 1; }
-      r = i+band; if(r>len2) { r = len2; }
+      l = i-lband; if(l < 1) { l = 1; }
+      r = i+rband; if(r>len2) { r = len2; }
     } else { l=1; r=len2; }
 
     for (j = l; j <= r; j++) {

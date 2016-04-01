@@ -113,7 +113,7 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' isBimeraDenovo(dada1)
 #' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 #' 
-isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE, test=FALSE) {
   unqs <- getUniques(unqs)
   abunds <- unname(unqs)
   seqs <- names(unqs)
@@ -125,7 +125,11 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
     } else if (length(pars) == 1) {
       return(FALSE)
     } else {
-      isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
+      if(test) {
+        C_is_bimera(sq, pars, maxShift)
+      } else {
+        isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
+      }
     }
   }
   bims <- mapply(loopFun, seqs, abunds)

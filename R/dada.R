@@ -130,7 +130,7 @@ dada <- function(derep,
     if(!(is.integer(derep[[i]]$uniques))) {
       stop("Invalid derep$uniques vector. Must be integer valued.")
     }
-    if(!(all(C_check_ACGT(names(derep[[i]]$uniques))))) {
+    if(!(all(C_isACGT(names(derep[[i]]$uniques))))) {
       stop("Invalid derep$uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
     if(sum(tabulate(nchar(names(derep[[i]]$uniques)))>0) > 1) {
