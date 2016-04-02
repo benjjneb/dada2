@@ -66,20 +66,6 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
-// C_get_overlaps
-Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, int max_shift);
-RcppExport SEXP dada2_C_get_overlaps(SEXP s1SEXP, SEXP s2SEXP, SEXP allowSEXP, SEXP max_shiftSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
-    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
-    Rcpp::traits::input_parameter< int >::type allow(allowSEXP);
-    Rcpp::traits::input_parameter< int >::type max_shift(max_shiftSEXP);
-    __result = Rcpp::wrap(C_get_overlaps(s1, s2, allow, max_shift));
-    return __result;
-END_RCPP
-}
 // C_is_bimera
 bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift);
 RcppExport SEXP dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {

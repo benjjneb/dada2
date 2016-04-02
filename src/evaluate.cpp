@@ -111,82 +111,8 @@ Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
   return(rval);
 }
 
-//------------------------------------------------------------------
-// Calculates the size of perfect overlap on the left and right side
-// of the child sequence (s2) to the aligned parent (s1).
-// 
-// @param s1 A \code{character(1)} of DNA sequence 1.
-// @param s2 A \code{character(1)} of DNA sequence 2.
-// @param allow A \code{integer(1)} How many mismatches+indels to allow in an overlap.
-// @param max_shift A \code{integer(1)} of the maximum alignment shift allowed.
-// 
-// [[Rcpp::export]]
-Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, int max_shift) {
-  int left, right, start, end, i, diff;
-  bool s1gap, s2gap, is_nt1, is_nt2;
-  if(s1.size() != s2.size()) {
-    Rprintf("Warning: Aligned strings are not the same length.\n");
-    return R_NilValue;
-  }
-
-  // Find start of align (end of initial gapping)
-  s1gap = s2gap = true;
-  start = -1;
-  do {
-    start++;
-    s1gap = s1gap && (s1[start] == '-');
-    s2gap = s2gap && (s2[start] == '-');
-  } while((s1gap || s2gap) && start < max_shift && start < s1.size());
-
-  // Find end of align (start of terminal gapping)
-  s1gap = s2gap = true;
-  end = s1.size();
-  do {
-    end--;
-    s1gap = s1gap && (s1[end] == '-');
-    s2gap = s2gap && (s2[end] == '-');
-  } while((s1gap || s2gap) && end > s1.size()-1-max_shift && end > start);
-
-
-  // Count the length of alignment with <= allow indels/mismatches from the left and right sides
-  left=0; diff=0;
-  for(i=0;i<s1.size();i++) {
-    is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
-    is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
-    if(is_nt2) { 
-      if(i >= start && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
-        diff++;
-      } 
-      
-      if(diff <= allow) { // Still OK
-        left++;
-      } else {
-        break;
-      }
-    }
-  }
-  
-  right=0; diff=0;
-  for(i=s1.size()-1;i>=0;i--) {
-    is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
-    is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
-    if(is_nt2) { // bug, doesn't diff++ for indels when gap is in seq2
-      if(i <= end && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
-        diff++;
-      }
-      
-      if(diff <= allow) { // match or in overhang
-        right++;
-      } else {
-        break;
-      }
-    }
-  }
-  
-  Rcpp::IntegerVector rval = Rcpp::IntegerVector::create(_["left"]=left, _["right"]=right);
-  return(rval);
-}
-
+// Internal function to get hamming distance between aligned seqs
+//  without counting end gaps
 int get_ham_endsfree(const char *seq1, const char *seq2, int len) {
   int i, j, pos, ham;
   bool gap1, gap2;
@@ -302,9 +228,8 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
     }
     if(left > max_left) { max_left=left; }
     if(right > max_right) { max_right=right; }
-    ///! Need to evaluate whether parents are allowed for one-off models
-    ///! And only store max_left/max_right from allowable parents
-    ///! As well as max_left_oo and max_right_oo
+
+    // Need to evaluate whether parents are allowed for one-off models
     if(allow_one_off && get_ham_endsfree(al[0], al[1], len) >= min_one_off_par_dist) {
       if(left > oo_max_left) { oo_max_left=left; }
       if(right > oo_max_right) { oo_max_right=right; }
@@ -432,7 +357,7 @@ Rcpp::LogicalVector C_isACGT(std::vector<std::string> seqs) {
 //' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
 //' pairwise alignments to do.
 //'
-//' @return DataFrame.
+//' @return data.frame
 //'
 //' @examples
 //' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

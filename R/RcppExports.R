@@ -17,10 +17,6 @@ C_eval_pair <- function(s1, s2) {
     .Call('dada2_C_eval_pair', PACKAGE = 'dada2', s1, s2)
 }
 
-C_get_overlaps <- function(s1, s2, allow, max_shift) {
-    .Call('dada2_C_get_overlaps', PACKAGE = 'dada2', s1, s2, allow, max_shift)
-}
-
 C_is_bimera <- function(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift) {
     .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift)
 }
@@ -52,7 +48,7 @@ C_isACGT <- function(seqs) {
 #' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
 #' pairwise alignments to do.
 #'
-#' @return DataFrame.
+#' @return data.frame
 #'
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

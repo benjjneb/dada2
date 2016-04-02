@@ -25,7 +25,7 @@ The score matrix used during the alignment. Coerced to integer.}
 pairwise alignments to do.}
 }
 \value{
-DataFrame.
+data.frame
 }
 \description{
 Generate the kmer-distance and the alignment distance from the
