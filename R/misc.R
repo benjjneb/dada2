@@ -117,14 +117,15 @@ getNseq <- function(object) {
 #' 
 nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=getDadaOpt("BAND_SIZE"), endsfree=TRUE) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
-  if(!C_check_ACGT(s1) || !C_check_ACGT(s2)) {
+  if(!C_isACGT(s1) || !C_isACGT(s2)) {
     stop("Sequences must contain only A/C/G/T characters.")
   }
   if(is.null(homo_gap)) { homo_gap <- gap }
-  if(nchar(s1) != nchar(s2) && band >= 0) {
-    band <- band + abs(nchar(s1)-nchar(s2))
-    # Band must be expanded to allow the shorter sequence to be shifted appropriately
-  }
+###!
+#  if(nchar(s1) != nchar(s2) && band >= 0) {
+#    band <- band + abs(nchar(s1)-nchar(s2))
+#    # Band must be expanded to allow the shorter sequence to be shifted appropriately
+#  }
   C_nwalign(s1, s2, score, gap, homo_gap, band, endsfree)
 }
 
