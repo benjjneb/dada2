@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Benjamin Callahan" />
+
+
+<title>Introduction to dada2</title>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<link href="data:text/css;charset=utf-8,pre%20%2Eoperator%2C%0Apre%20%2Eparen%20%7B%0Acolor%3A%20rgb%28104%2C%20118%2C%20135%29%0A%7D%0Apre%20%2Eliteral%20%7B%0Acolor%3A%20%23990073%0A%7D%0Apre%20%2Enumber%20%7B%0Acolor%3A%20%23099%3B%0A%7D%0Apre%20%2Ecomment%20%7B%0Acolor%3A%20%23998%3B%0Afont%2Dstyle%3A%20italic%0A%7D%0Apre%20%2Ekeyword%20%7B%0Acolor%3A%20%23900%3B%0Afont%2Dweight%3A%20bold%0A%7D%0Apre%20%2Eidentifier%20%7B%0Acolor%3A%20rgb%280%2C%200%2C%200%29%3B%0A%7D%0Apre%20%2Estring%20%7B%0Acolor%3A%20%23d14%3B%0A%7D%0A" rel="stylesheet" type="text/css" />
+<script src="data:application/x-javascript;base64,CnZhciBobGpzPW5ldyBmdW5jdGlvbigpe2Z1bmN0aW9uIG0ocCl7cmV0dXJuIHAucmVwbGFjZSgvJi9nbSwiJmFtcDsiKS5yZXBsYWNlKC88L2dtLCImbHQ7Iil9ZnVuY3Rpb24gZihyLHEscCl7cmV0dXJuIFJlZ0V4cChxLCJtIisoci5jST8iaSI6IiIpKyhwPyJnIjoiIikpfWZ1bmN0aW9uIGIocil7Zm9yKHZhciBwPTA7cDxyLmNoaWxkTm9kZXMubGVuZ3RoO3ArKyl7dmFyIHE9ci5jaGlsZE5vZGVzW3BdO2lmKHEubm9kZU5hbWU9PSJDT0RFIil7cmV0dXJuIHF9aWYoIShxLm5vZGVUeXBlPT0zJiZxLm5vZGVWYWx1ZS5tYXRjaCgvXHMrLykpKXticmVha319fWZ1bmN0aW9uIGgodCxzKXt2YXIgcD0iIjtmb3IodmFyIHI9MDtyPHQuY2hpbGROb2Rlcy5sZW5ndGg7cisrKXtpZih0LmNoaWxkTm9kZXNbcl0ubm9kZVR5cGU9PTMpe3ZhciBxPXQuY2hpbGROb2Rlc1tyXS5ub2RlVmFsdWU7aWYocyl7cT1xLnJlcGxhY2UoL1xuL2csIiIpfXArPXF9ZWxzZXtpZih0LmNoaWxkTm9kZXNbcl0ubm9kZU5hbWU9PSJCUiIpe3ArPSJcbiJ9ZWxzZXtwKz1oKHQuY2hpbGROb2Rlc1tyXSl9fX1pZigvTVNJRSBbNjc4XS8udGVzdChuYXZpZ2F0b3IudXNlckFnZW50KSl7cD1wLnJlcGxhY2UoL1xyL2csIlxuIil9cmV0dXJuIHB9ZnVuY3Rpb24gYShzKXt2YXIgcj1zLmNsYXNzTmFtZS5zcGxpdCgvXHMrLyk7cj1yLmNvbmNhdChzLnBhcmVudE5vZGUuY2xhc3NOYW1lLnNwbGl0KC9ccysvKSk7Zm9yKHZhciBxPTA7cTxyLmxlbmd0aDtxKyspe3ZhciBwPXJbcV0ucmVwbGFjZSgvXmxhbmd1YWdlLS8sIiIpO2lmKGVbcF0pe3JldHVybiBwfX19ZnVuY3Rpb24gYyhxKXt2YXIgcD1bXTsoZnVuY3Rpb24ocyx0KXtmb3IodmFyIHI9MDtyPHMuY2hpbGROb2Rlcy5sZW5ndGg7cisrKXtpZihzLmNoaWxkTm9kZXNbcl0ubm9kZVR5cGU9PTMpe3QrPXMuY2hpbGROb2Rlc1tyXS5ub2RlVmFsdWUubGVuZ3RofWVsc2V7aWYocy5jaGlsZE5vZGVzW3JdLm5vZGVOYW1lPT0iQlIiKXt0Kz0xfWVsc2V7aWYocy5jaGlsZE5vZGVzW3JdLm5vZGVUeXBlPT0xKXtwLnB1c2goe2V2ZW50OiJzdGFydCIsb2Zmc2V0OnQsbm9kZTpzLmNoaWxkTm9kZXNbcl19KTt0PWFyZ3VtZW50cy5jYWxsZWUocy5jaGlsZE5vZGVzW3JdLHQpO3AucHVzaCh7ZXZlbnQ6InN0b3AiLG9mZnNldDp0LG5vZGU6cy5jaGlsZE5vZGVzW3JdfSl9fX19cmV0dXJuIHR9KShxLDApO3JldHVybiBwfWZ1bmN0aW9uIGsoeSx3LHgpe3ZhciBxPTA7dmFyIHo9IiI7dmFyIHM9W107ZnVuY3Rpb24gdSgpe2lmKHkubGVuZ3RoJiZ3Lmxlbmd0aCl7aWYoeVswXS5vZmZzZXQhPXdbMF0ub2Zmc2V0KXtyZXR1cm4oeVswXS5vZmZzZXQ8d1swXS5vZmZzZXQpP3k6d31lbHNle3JldHVybiB3WzBdLmV2ZW50PT0ic3RhcnQiP3k6d319ZWxzZXtyZXR1cm4geS5sZW5ndGg/eTp3fX1mdW5jdGlvbiB0KEQpe3ZhciBBPSI8IitELm5vZGVOYW1lLnRvTG93ZXJDYXNlKCk7Zm9yKHZhciBCPTA7QjxELmF0dHJpYnV0ZXMubGVuZ3RoO0IrKyl7dmFyIEM9RC5hdHRyaWJ1dGVzW0JdO0ErPSIgIitDLm5vZGVOYW1lLnRvTG93ZXJDYXNlKCk7aWYoQy52YWx1ZSE9PXVuZGVmaW5lZCYmQy52YWx1ZSE9PWZhbHNlJiZDLnZhbHVlIT09bnVsbCl7QSs9Jz0iJyttKEMudmFsdWUpKyciJ319cmV0dXJuIEErIj4ifXdoaWxlKHkubGVuZ3RofHx3Lmxlbmd0aCl7dmFyIHY9dSgpLnNwbGljZSgwLDEpWzBdO3orPW0oeC5zdWJzdHIocSx2Lm9mZnNldC1xKSk7cT12Lm9mZnNldDtpZih2LmV2ZW50PT0ic3RhcnQiKXt6Kz10KHYubm9kZSk7cy5wdXNoKHYubm9kZSl9ZWxzZXtpZih2LmV2ZW50PT0ic3RvcCIpe3ZhciBwLHI9cy5sZW5ndGg7ZG97ci0tO3A9c1tyXTt6Kz0oIjwvIitwLm5vZGVOYW1lLnRvTG93ZXJDYXNlKCkrIj4iKX13aGlsZShwIT12Lm5vZGUpO3Muc3BsaWNlKHIsMSk7d2hpbGUocjxzLmxlbmd0aCl7eis9dChzW3JdKTtyKyt9fX19cmV0dXJuIHorbSh4LnN1YnN0cihxKSl9ZnVuY3Rpb24gaigpe2Z1bmN0aW9uIHEoeCx5LHYpe2lmKHguY29tcGlsZWQpe3JldHVybn12YXIgdTt2YXIgcz1bXTtpZih4Lmspe3gubFI9Zih5LHgubHx8aGxqcy5JUix0cnVlKTtmb3IodmFyIHcgaW4geC5rKXtpZigheC5rLmhhc093blByb3BlcnR5KHcpKXtjb250aW51ZX1pZih4Lmtbd10gaW5zdGFuY2VvZiBPYmplY3Qpe3U9eC5rW3ddfWVsc2V7dT14Lms7dz0ia2V5d29yZCJ9Zm9yKHZhciByIGluIHUpe2lmKCF1Lmhhc093blByb3BlcnR5KHIpKXtjb250aW51ZX14Lmtbcl09W3csdVtyXV07cy5wdXNoKHIpfX19aWYoIXYpe2lmKHguYldLKXt4LmI9IlxcYigiK3Muam9pbigifCIpKyIpXFxzIn14LmJSPWYoeSx4LmI/eC5iOiJcXEJ8XFxiIik7aWYoIXguZSYmIXguZVcpe3guZT0iXFxCfFxcYiJ9aWYoeC5lKXt4LmVSPWYoeSx4LmUpfX1pZih4Lmkpe3guaVI9Zih5LHguaSl9aWYoeC5yPT09dW5kZWZpbmVkKXt4LnI9MX1pZigheC5jKXt4LmM9W119eC5jb21waWxlZD10cnVlO2Zvcih2YXIgdD0wO3Q8eC5jLmxlbmd0aDt0Kyspe2lmKHguY1t0XT09InNlbGYiKXt4LmNbdF09eH1xKHguY1t0XSx5LGZhbHNlKX1pZih4LnN0YXJ0cyl7cSh4LnN0YXJ0cyx5LGZhbHNlKX19Zm9yKHZhciBwIGluIGUpe2lmKCFlLmhhc093blByb3BlcnR5KHApKXtjb250aW51ZX1xKGVbcF0uZE0sZVtwXSx0cnVlKX19ZnVuY3Rpb24gZChCLEMpe2lmKCFqLmNhbGxlZCl7aigpO2ouY2FsbGVkPXRydWV9ZnVuY3Rpb24gcShyLE0pe2Zvcih2YXIgTD0wO0w8TS5jLmxlbmd0aDtMKyspe2lmKChNLmNbTF0uYlIuZXhlYyhyKXx8W251bGxdKVswXT09cil7cmV0dXJuIE0uY1tMXX19fWZ1bmN0aW9uIHYoTCxyKXtpZihEW0xdLmUmJkRbTF0uZVIudGVzdChyKSl7cmV0dXJuIDF9aWYoRFtMXS5lVyl7dmFyIE09dihMLTEscik7cmV0dXJuIE0/TSsxOjB9cmV0dXJuIDB9ZnVuY3Rpb24gdyhyLEwpe3JldHVybiBMLmkmJkwuaVIudGVzdChyKX1mdW5jdGlvbiBLKE4sTyl7dmFyIE09W107Zm9yKHZhciBMPTA7TDxOLmMubGVuZ3RoO0wrKyl7TS5wdXNoKE4uY1tMXS5iKX12YXIgcj1ELmxlbmd0aC0xO2Rve2lmKERbcl0uZSl7TS5wdXNoKERbcl0uZSl9ci0tfXdoaWxlKERbcisxXS5lVyk7aWYoTi5pKXtNLnB1c2goTi5pKX1yZXR1cm4gZihPLE0uam9pbigifCIpLHRydWUpfWZ1bmN0aW9uIHAoTSxMKXt2YXIgTj1EW0QubGVuZ3RoLTFdO2lmKCFOLnQpe04udD1LKE4sRSl9Ti50Lmxhc3RJbmRleD1MO3ZhciByPU4udC5leGVjKE0pO3JldHVybiByP1tNLnN1YnN0cihMLHIuaW5kZXgtTCksclswXSxmYWxzZV06W00uc3Vic3RyKEwpLCIiLHRydWVdfWZ1bmN0aW9uIHooTixyKXt2YXIgTD1FLmNJP3JbMF0udG9Mb3dlckNhc2UoKTpyWzBdO3ZhciBNPU4ua1tMXTtpZihNJiZNIGluc3RhbmNlb2YgQXJyYXkpe3JldHVybiBNfXJldHVybiBmYWxzZX1mdW5jdGlvbiBGKEwsUCl7TD1tKEwpO2lmKCFQLmspe3JldHVybiBMfXZhciByPSIiO3ZhciBPPTA7UC5sUi5sYXN0SW5kZXg9MDt2YXIgTT1QLmxSLmV4ZWMoTCk7d2hpbGUoTSl7cis9TC5zdWJzdHIoTyxNLmluZGV4LU8pO3ZhciBOPXooUCxNKTtpZihOKXt4Kz1OWzFdO3IrPSc8c3BhbiBjbGFzcz0iJytOWzBdKyciPicrTVswXSsiPC9zcGFuPiJ9ZWxzZXtyKz1NWzBdfU89UC5sUi5sYXN0SW5kZXg7TT1QLmxSLmV4ZWMoTCl9cmV0dXJuIHIrTC5zdWJzdHIoTyxMLmxlbmd0aC1PKX1mdW5jdGlvbiBKKEwsTSl7aWYoTS5zTCYmZVtNLnNMXSl7dmFyIHI9ZChNLnNMLEwpO3grPXIua2V5d29yZF9jb3VudDtyZXR1cm4gci52YWx1ZX1lbHNle3JldHVybiBGKEwsTSl9fWZ1bmN0aW9uIEkoTSxyKXt2YXIgTD1NLmNOPyc8c3BhbiBjbGFzcz0iJytNLmNOKyciPic6IiI7aWYoTS5yQil7eSs9TDtNLmJ1ZmZlcj0iIn1lbHNle2lmKE0uZUIpe3krPW0ocikrTDtNLmJ1ZmZlcj0iIn1lbHNle3krPUw7TS5idWZmZXI9cn19RC5wdXNoKE0pO0ErPU0ucn1mdW5jdGlvbiBHKE4sTSxRKXt2YXIgUj1EW0QubGVuZ3RoLTFdO2lmKFEpe3krPUooUi5idWZmZXIrTixSKTtyZXR1cm4gZmFsc2V9dmFyIFA9cShNLFIpO2lmKFApe3krPUooUi5idWZmZXIrTixSKTtJKFAsTSk7cmV0dXJuIFAuckJ9dmFyIEw9dihELmxlbmd0aC0xLE0pO2lmKEwpe3ZhciBPPVIuY04/Ijwvc3Bhbj4iOiIiO2lmKFIuckUpe3krPUooUi5idWZmZXIrTixSKStPfWVsc2V7aWYoUi5lRSl7eSs9SihSLmJ1ZmZlcitOLFIpK08rbShNKX1lbHNle3krPUooUi5idWZmZXIrTitNLFIpK099fXdoaWxlKEw+MSl7Tz1EW0QubGVuZ3RoLTJdLmNOPyI8L3NwYW4+IjoiIjt5Kz1PO0wtLTtELmxlbmd0aC0tfXZhciByPURbRC5sZW5ndGgtMV07RC5sZW5ndGgtLTtEW0QubGVuZ3RoLTFdLmJ1ZmZlcj0iIjtpZihyLnN0YXJ0cyl7SShyLnN0YXJ0cywiIil9cmV0dXJuIFIuckV9aWYodyhNLFIpKXt0aHJvdyJJbGxlZ2FsIn19dmFyIEU9ZVtCXTt2YXIgRD1bRS5kTV07dmFyIEE9MDt2YXIgeD0wO3ZhciB5PSIiO3RyeXt2YXIgcyx1PTA7RS5kTS5idWZmZXI9IiI7ZG97cz1wKEMsdSk7dmFyIHQ9RyhzWzBdLHNbMV0sc1syXSk7dSs9c1swXS5sZW5ndGg7aWYoIXQpe3UrPXNbMV0ubGVuZ3RofX13aGlsZSghc1syXSk7aWYoRC5sZW5ndGg+MSl7dGhyb3ciSWxsZWdhbCJ9cmV0dXJue3I6QSxrZXl3b3JkX2NvdW50OngsdmFsdWU6eX19Y2F0Y2goSCl7aWYoSD09IklsbGVnYWwiKXtyZXR1cm57cjowLGtleXdvcmRfY291bnQ6MCx2YWx1ZTptKEMpfX1lbHNle3Rocm93IEh9fX1mdW5jdGlvbiBnKHQpe3ZhciBwPXtrZXl3b3JkX2NvdW50OjAscjowLHZhbHVlOm0odCl9O3ZhciByPXA7Zm9yKHZhciBxIGluIGUpe2lmKCFlLmhhc093blByb3BlcnR5KHEpKXtjb250aW51ZX12YXIgcz1kKHEsdCk7cy5sYW5ndWFnZT1xO2lmKHMua2V5d29yZF9jb3VudCtzLnI+ci5rZXl3b3JkX2NvdW50K3Iucil7cj1zfWlmKHMua2V5d29yZF9jb3VudCtzLnI+cC5rZXl3b3JkX2NvdW50K3Aucil7cj1wO3A9c319aWYoci5sYW5ndWFnZSl7cC5zZWNvbmRfYmVzdD1yfXJldHVybiBwfWZ1bmN0aW9uIGkocixxLHApe2lmKHEpe3I9ci5yZXBsYWNlKC9eKCg8W14+XSs+fFx0KSspL2dtLGZ1bmN0aW9uKHQsdyx2LHUpe3JldHVybiB3LnJlcGxhY2UoL1x0L2cscSl9KX1pZihwKXtyPXIucmVwbGFjZSgvXG4vZywiPGJyPiIpfXJldHVybiByfWZ1bmN0aW9uIG4odCx3LHIpe3ZhciB4PWgodCxyKTt2YXIgdj1hKHQpO3ZhciB5LHM7aWYodil7eT1kKHYseCl9ZWxzZXtyZXR1cm59dmFyIHE9Yyh0KTtpZihxLmxlbmd0aCl7cz1kb2N1bWVudC5jcmVhdGVFbGVtZW50KCJwcmUiKTtzLmlubmVySFRNTD15LnZhbHVlO3kudmFsdWU9ayhxLGMocykseCl9eS52YWx1ZT1pKHkudmFsdWUsdyxyKTt2YXIgdT10LmNsYXNzTmFtZTtpZighdS5tYXRjaCgiKFxcc3xeKShsYW5ndWFnZS0pPyIrdisiKFxcc3wkKSIpKXt1PXU/KHUrIiAiK3YpOnZ9aWYoL01TSUUgWzY3OF0vLnRlc3QobmF2aWdhdG9yLnVzZXJBZ2VudCkmJnQudGFnTmFtZT09IkNPREUiJiZ0LnBhcmVudE5vZGUudGFnTmFtZT09IlBSRSIpe3M9dC5wYXJlbnROb2RlO3ZhciBwPWRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoImRpdiIpO3AuaW5uZXJIVE1MPSI8cHJlPjxjb2RlPiIreS52YWx1ZSsiPC9jb2RlPjwvcHJlPiI7dD1wLmZpcnN0Q2hpbGQuZmlyc3RDaGlsZDtwLmZpcnN0Q2hpbGQuY049cy5jTjtzLnBhcmVudE5vZGUucmVwbGFjZUNoaWxkKHAuZmlyc3RDaGlsZCxzKX1lbHNle3QuaW5uZXJIVE1MPXkudmFsdWV9dC5jbGFzc05hbWU9dTt0LnJlc3VsdD17bGFuZ3VhZ2U6dixrdzp5LmtleXdvcmRfY291bnQscmU6eS5yfTtpZih5LnNlY29uZF9iZXN0KXt0LnNlY29uZF9iZXN0PXtsYW5ndWFnZTp5LnNlY29uZF9iZXN0Lmxhbmd1YWdlLGt3Onkuc2Vjb25kX2Jlc3Qua2V5d29yZF9jb3VudCxyZTp5LnNlY29uZF9iZXN0LnJ9fX1mdW5jdGlvbiBvKCl7aWYoby5jYWxsZWQpe3JldHVybn1vLmNhbGxlZD10cnVlO3ZhciByPWRvY3VtZW50LmdldEVsZW1lbnRzQnlUYWdOYW1lKCJwcmUiKTtmb3IodmFyIHA9MDtwPHIubGVuZ3RoO3ArKyl7dmFyIHE9YihyW3BdKTtpZihxKXtuKHEsaGxqcy50YWJSZXBsYWNlKX19fWZ1bmN0aW9uIGwoKXtpZih3aW5kb3cuYWRkRXZlbnRMaXN0ZW5lcil7d2luZG93LmFkZEV2ZW50TGlzdGVuZXIoIkRPTUNvbnRlbnRMb2FkZWQiLG8sZmFsc2UpO3dpbmRvdy5hZGRFdmVudExpc3RlbmVyKCJsb2FkIixvLGZhbHNlKX1lbHNle2lmKHdpbmRvdy5hdHRhY2hFdmVudCl7d2luZG93LmF0dGFjaEV2ZW50KCJvbmxvYWQiLG8pfWVsc2V7d2luZG93Lm9ubG9hZD1vfX19dmFyIGU9e307dGhpcy5MQU5HVUFHRVM9ZTt0aGlzLmhpZ2hsaWdodD1kO3RoaXMuaGlnaGxpZ2h0QXV0bz1nO3RoaXMuZml4TWFya3VwPWk7dGhpcy5oaWdobGlnaHRCbG9jaz1uO3RoaXMuaW5pdEhpZ2hsaWdodGluZz1vO3RoaXMuaW5pdEhpZ2hsaWdodGluZ09uTG9hZD1sO3RoaXMuSVI9IlthLXpBLVpdW2EtekEtWjAtOV9dKiI7dGhpcy5VSVI9IlthLXpBLVpfXVthLXpBLVowLTlfXSoiO3RoaXMuTlI9IlxcYlxcZCsoXFwuXFxkKyk/Ijt0aGlzLkNOUj0iXFxiKDBbeFhdW2EtZkEtRjAtOV0rfChcXGQrKFxcLlxcZCopP3xcXC5cXGQrKShbZUVdWy0rXT9cXGQrKT8pIjt0aGlzLkJOUj0iXFxiKDBiWzAxXSspIjt0aGlzLlJTUj0iIXwhPXwhPT18JXwlPXwmfCYmfCY9fFxcKnxcXCo9fFxcK3xcXCs9fCx8XFwufC18LT18L3wvPXw6fDt8PHw8PHw8PD18PD18PXw9PXw9PT18Pnw+PXw+Pnw+Pj18Pj4+fD4+Pj18XFw/fFxcW3xcXHt8XFwofFxcXnxcXF49fFxcfHxcXHw9fFxcfFxcfHx+Ijt0aGlzLkVSPSIoPyFbXFxzXFxTXSkiO3RoaXMuQkU9e2I6IlxcXFwuIixyOjB9O3RoaXMuQVNNPXtjTjoic3RyaW5nIixiOiInIixlOiInIixpOiJcXG4iLGM6W3RoaXMuQkVdLHI6MH07dGhpcy5RU009e2NOOiJzdHJpbmciLGI6JyInLGU6JyInLGk6IlxcbiIsYzpbdGhpcy5CRV0scjowfTt0aGlzLkNMQ009e2NOOiJjb21tZW50IixiOiIvLyIsZToiJCJ9O3RoaXMuQ0JMQ0xNPXtjTjoiY29tbWVudCIsYjoiL1xcKiIsZToiXFwqLyJ9O3RoaXMuSENNPXtjTjoiY29tbWVudCIsYjoiIyIsZToiJCJ9O3RoaXMuTk09e2NOOiJudW1iZXIiLGI6dGhpcy5OUixyOjB9O3RoaXMuQ05NPXtjTjoibnVtYmVyIixiOnRoaXMuQ05SLHI6MH07dGhpcy5CTk09e2NOOiJudW1iZXIiLGI6dGhpcy5CTlIscjowfTt0aGlzLmluaGVyaXQ9ZnVuY3Rpb24ocixzKXt2YXIgcD17fTtmb3IodmFyIHEgaW4gcil7cFtxXT1yW3FdfWlmKHMpe2Zvcih2YXIgcSBpbiBzKXtwW3FdPXNbcV19fXJldHVybiBwfX0oKTtobGpzLkxBTkdVQUdFUy5jcHA9ZnVuY3Rpb24oKXt2YXIgYT17a2V5d29yZDp7ImZhbHNlIjoxLCJpbnQiOjEsImZsb2F0IjoxLCJ3aGlsZSI6MSwicHJpdmF0ZSI6MSwiY2hhciI6MSwiY2F0Y2giOjEsImV4cG9ydCI6MSx2aXJ0dWFsOjEsb3BlcmF0b3I6MixzaXplb2Y6MixkeW5hbWljX2Nhc3Q6Mix0eXBlZGVmOjIsY29uc3RfY2FzdDoyLCJjb25zdCI6MSxzdHJ1Y3Q6MSwiZm9yIjoxLHN0YXRpY19jYXN0OjIsdW5pb246MSxuYW1lc3BhY2U6MSx1bnNpZ25lZDoxLCJsb25nIjoxLCJ0aHJvdyI6MSwidm9sYXRpbGUiOjIsInN0YXRpYyI6MSwicHJvdGVjdGVkIjoxLGJvb2w6MSx0ZW1wbGF0ZToxLG11dGFibGU6MSwiaWYiOjEsInB1YmxpYyI6MSxmcmllbmQ6MiwiZG8iOjEsInJldHVybiI6MSwiZ290byI6MSxhdXRvOjEsInZvaWQiOjIsImVudW0iOjEsImVsc2UiOjEsImJyZWFrIjoxLCJuZXciOjEsZXh0ZXJuOjEsdXNpbmc6MSwidHJ1ZSI6MSwiY2xhc3MiOjEsYXNtOjEsImNhc2UiOjEsdHlwZWlkOjEsInNob3J0IjoxLHJlaW50ZXJwcmV0X2Nhc3Q6MiwiZGVmYXVsdCI6MSwiZG91YmxlIjoxLHJlZ2lzdGVyOjEsZXhwbGljaXQ6MSxzaWduZWQ6MSx0eXBlbmFtZToxLCJ0cnkiOjEsInRoaXMiOjEsInN3aXRjaCI6MSwiY29udGludWUiOjEsd2NoYXJfdDoxLGlubGluZToxLCJkZWxldGUiOjEsYWxpZ25vZjoxLGNoYXIxNl90OjEsY2hhcjMyX3Q6MSxjb25zdGV4cHI6MSxkZWNsdHlwZToxLG5vZXhjZXB0OjEsbnVsbHB0cjoxLHN0YXRpY19hc3NlcnQ6MSx0aHJlYWRfbG9jYWw6MSxyZXN0cmljdDoxLF9Cb29sOjEsY29tcGxleDoxfSxidWlsdF9pbjp7c3RkOjEsc3RyaW5nOjEsY2luOjEsY291dDoxLGNlcnI6MSxjbG9nOjEsc3RyaW5nc3RyZWFtOjEsaXN0cmluZ3N0cmVhbToxLG9zdHJpbmdzdHJlYW06MSxhdXRvX3B0cjoxLGRlcXVlOjEsbGlzdDoxLHF1ZXVlOjEsc3RhY2s6MSx2ZWN0b3I6MSxtYXA6MSxzZXQ6MSxiaXRzZXQ6MSxtdWx0aXNldDoxLG11bHRpbWFwOjEsdW5vcmRlcmVkX3NldDoxLHVub3JkZXJlZF9tYXA6MSx1bm9yZGVyZWRfbXVsdGlzZXQ6MSx1bm9yZGVyZWRfbXVsdGltYXA6MSxhcnJheToxLHNoYXJlZF9wdHI6MX19O3JldHVybntkTTp7azphLGk6IjwvIixjOltobGpzLkNMQ00saGxqcy5DQkxDTE0saGxqcy5RU00se2NOOiJzdHJpbmciLGI6IidcXFxcPy4iLGU6IiciLGk6Ii4ifSx7Y046Im51bWJlciIsYjoiXFxiKFxcZCsoXFwuXFxkKik/fFxcLlxcZCspKHV8VXxsfEx8dWx8VUx8ZnxGKSJ9LGhsanMuQ05NLHtjTjoicHJlcHJvY2Vzc29yIixiOiIjIixlOiIkIn0se2NOOiJzdGxfY29udGFpbmVyIixiOiJcXGIoZGVxdWV8bGlzdHxxdWV1ZXxzdGFja3x2ZWN0b3J8bWFwfHNldHxiaXRzZXR8bXVsdGlzZXR8bXVsdGltYXB8dW5vcmRlcmVkX21hcHx1bm9yZGVyZWRfc2V0fHVub3JkZXJlZF9tdWx0aXNldHx1bm9yZGVyZWRfbXVsdGltYXB8YXJyYXkpXFxzKjwiLGU6Ij4iLGs6YSxyOjEwLGM6WyJzZWxmIl19XX19fSgpO2hsanMuTEFOR1VBR0VTLnI9e2RNOntjOltobGpzLkhDTSx7Y046Im51bWJlciIsYjoiXFxiMFt4WF1bMC05YS1mQS1GXStbTGldP1xcYiIsZTpobGpzLklNTUVESUFURV9SRSxyOjB9LHtjTjoibnVtYmVyIixiOiJcXGJcXGQrKD86W2VFXVsrXFwtXT9cXGQqKT9MXFxiIixlOmhsanMuSU1NRURJQVRFX1JFLHI6MH0se2NOOiJudW1iZXIiLGI6IlxcYlxcZCtcXC4oPyFcXGQpKD86aVxcYik/IixlOmhsanMuSU1NRURJQVRFX1JFLHI6MX0se2NOOiJudW1iZXIiLGI6IlxcYlxcZCsoPzpcXC5cXGQqKT8oPzpbZUVdWytcXC1dP1xcZCopP2k/XFxiIixlOmhsanMuSU1NRURJQVRFX1JFLHI6MH0se2NOOiJudW1iZXIiLGI6IlxcLlxcZCsoPzpbZUVdWytcXC1dP1xcZCopP2k/XFxiIixlOmhsanMuSU1NRURJQVRFX1JFLHI6MX0se2NOOiJrZXl3b3JkIixiOiIoPzp0cnlDYXRjaHxsaWJyYXJ5fHNldEdlbmVyaWN8c2V0R3JvdXBHZW5lcmljKVxcYiIsZTpobGpzLklNTUVESUFURV9SRSxyOjEwfSx7Y046ImtleXdvcmQiLGI6IlxcLlxcLlxcLiIsZTpobGpzLklNTUVESUFURV9SRSxyOjEwfSx7Y046ImtleXdvcmQiLGI6IlxcLlxcLlxcZCsoPyFbXFx3Ll0pIixlOmhsanMuSU1NRURJQVRFX1JFLHI6MTB9LHtjTjoia2V5d29yZCIsYjoiXFxiKD86ZnVuY3Rpb24pIixlOmhsanMuSU1NRURJQVRFX1JFLHI6Mn0se2NOOiJrZXl3b3JkIixiOiIoPzppZnxpbnxicmVha3xuZXh0fHJlcGVhdHxlbHNlfGZvcnxyZXR1cm58c3dpdGNofHdoaWxlfHRyeXxzdG9wfHdhcm5pbmd8cmVxdWlyZXxhdHRhY2h8ZGV0YWNofHNvdXJjZXxzZXRNZXRob2R8c2V0Q2xhc3MpXFxiIixlOmhsanMuSU1NRURJQVRFX1JFLHI6MX0se2NOOiJsaXRlcmFsIixiOiIoPzpOQXxOQV9pbnRlZ2VyX3xOQV9yZWFsX3xOQV9jaGFyYWN0ZXJffE5BX2NvbXBsZXhfKVxcYiIsZTpobGpzLklNTUVESUFURV9SRSxyOjEwfSx7Y046ImxpdGVyYWwiLGI6Iig/Ok5VTEx8VFJVRXxGQUxTRXxUfEZ8SW5mfE5hTilcXGIiLGU6aGxqcy5JTU1FRElBVEVfUkUscjoxfSx7Y046ImlkZW50aWZpZXIiLGI6IlthLXpBLVouXVthLXpBLVowLTkuX10qXFxiIixlOmhsanMuSU1NRURJQVRFX1JFLHI6MH0se2NOOiJvcGVyYXRvciIsYjoiPFxcLSg/IVxccypcXGQpIixlOmhsanMuSU1NRURJQVRFX1JFLHI6Mn0se2NOOiJvcGVyYXRvciIsYjoiXFwtPnw8XFwtIixlOmhsanMuSU1NRURJQVRFX1JFLHI6MX0se2NOOiJvcGVyYXRvciIsYjoiJSV8fiIsZTpobGpzLklNTUVESUFURV9SRX0se2NOOiJvcGVyYXRvciIsYjoiPj18PD18PT18IT18XFx8XFx8fCYmfD18XFwrfFxcLXxcXCp8L3xcXF58Pnw8fCF8JnxcXHx8XFwkfDoiLGU6aGxqcy5JTU1FRElBVEVfUkUscjowfSx7Y046Im9wZXJhdG9yIixiOiIlIixlOiIlIixpOiJcXG4iLHI6MX0se2NOOiJpZGVudGlmaWVyIixiOiJgIixlOiJgIixyOjB9LHtjTjoic3RyaW5nIixiOiciJyxlOiciJyxjOltobGpzLkJFXSxyOjB9LHtjTjoic3RyaW5nIixiOiInIixlOiInIixjOltobGpzLkJFXSxyOjB9LHtjTjoicGFyZW4iLGI6IltbKHtcXF0pfV0iLGU6aGxqcy5JTU1FRElBVEVfUkUscjowfV19fTsKaGxqcy5pbml0SGlnaGxpZ2h0aW5nT25Mb2FkKCk7Cgo="></script>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+<link href="data:text/css;charset=utf-8,body%2C%20td%20%7B%0Afont%2Dfamily%3A%20sans%2Dserif%3B%0Abackground%2Dcolor%3A%20white%3B%0Afont%2Dsize%3A%2013px%3B%0A%7D%0Abody%20%7B%0Amax%2Dwidth%3A%20800px%3B%0Amargin%3A%200%20auto%3B%0Apadding%3A%201em%201em%202em%3B%0Aline%2Dheight%3A%2020px%3B%0A%7D%0A%0Adiv%23TOC%20li%20%7B%0Alist%2Dstyle%3Anone%3B%0Abackground%2Dimage%3Anone%3B%0Abackground%2Drepeat%3Anone%3B%0Abackground%2Dposition%3A0%3B%0A%7D%0A%0Ap%2C%20pre%20%7B%20margin%3A%200em%200em%201em%3B%0A%7D%0A%0Aimg%2C%20table%20%7B%0Amargin%3A%200em%20auto%201em%3B%0A%7D%0Ap%20%7B%0Atext%2Dalign%3A%20justify%3B%0A%7D%0Att%2C%20code%2C%20pre%20%7B%0Afont%2Dfamily%3A%20%27DejaVu%20Sans%20Mono%27%2C%20%27Droid%20Sans%20Mono%27%2C%20%27Lucida%20Console%27%2C%20Consolas%2C%20Monaco%2C%20monospace%3B%0A%7D%0Ah1%2C%20h2%2C%20h3%2C%20h4%2C%20h5%2C%20h6%20%7B%20font%2Dfamily%3A%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Amargin%3A%201%2E2em%200em%200%2E6em%200em%3B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Ah1%2Etitle%20%7B%0Afont%2Dsize%3A%20250%25%3B%0Afont%2Dweight%3A%20normal%3B%0Acolor%3A%20%2387b13f%3B%0Aline%2Dheight%3A%201%2E1em%3B%0Amargin%2Dtop%3A%200px%3B%0Aborder%2Dbottom%3A%200px%3B%0A%7D%0Ah1%20%7B%0Afont%2Dsize%3A%20160%25%3B%0Afont%2Dweight%3A%20normal%3B%0Aline%2Dheight%3A%201%2E4em%3B%0Aborder%2Dbottom%3A%201px%20%231a81c2%20solid%3B%0A%7D%0Ah2%20%7B%0Afont%2Dsize%3A%20130%25%3B%20%7D%0Ah1%2C%20h2%2C%20h3%20%7B%0Acolor%3A%20%231a81c2%3B%0A%7D%0Ah3%2C%20h4%2C%20h5%2C%20h6%20%7B%0Afont%2Dsize%3A115%25%3B%0A%7D%20%0A%0Aa%20%7B%20color%3A%20%231a81c2%3B%20%7D%0Aa%3Aactive%20%7B%20outline%3A%20none%3B%20%7D%0Aa%3Avisited%20%7B%20color%3A%20%231a81c2%3B%20%7D%0Aa%3Ahover%20%7B%20color%3A%20%234c94c2%3B%20%7D%0Apre%2C%20img%20%7B%0Amax%2Dwidth%3A%20100%25%3B%0Adisplay%3A%20block%3B%0A%7D%0Apre%20%7B%0Aborder%3A%200px%20none%3B%0Abackground%2Dcolor%3A%20%23F8F8F8%3B%0Awhite%2Dspace%3A%20pre%3B%0Aoverflow%2Dx%3A%20auto%3B%0A%7D%0Apre%20code%20%7B%0Aborder%3A%201px%20%23aaa%20dashed%3B%0Abackground%2Dcolor%3A%20white%3B%0Adisplay%3A%20block%3B%0Apadding%3A%201em%3B%20color%3A%20%23111%3B%0Aoverflow%2Dx%3A%20inherit%3B%0A%7D%0A%0Apre%20code%5Bclass%5D%20%7B%0Abackground%2Dcolor%3A%20inherit%3B%0A%7D%0A%0Apre%5Bclass%5D%20code%20%7B%0Abackground%2Dcolor%3A%20inherit%3B%0A%7D%0A%0Acode%20%7B%20background%2Dcolor%3A%20transparent%3B%0Acolor%3A%20%2387b13f%3B%0Afont%2Dsize%3A%2092%25%3B%0A%7D%0A%0Atable%2C%20td%2C%20th%20%7B%0Aborder%3A%20none%3B%0Apadding%3A%200%200%2E5em%3B%0A%7D%0A%0Atbody%20tr%3Anth%2Dchild%28odd%29%20td%20%7B%0Abackground%2Dcolor%3A%20%23F8F8F8%3B%0A%7D%0Ablockquote%20%7B%0Acolor%3A%23666666%3B%0Amargin%3A0%3B%0Apadding%2Dleft%3A%201em%3B%0Aborder%2Dleft%3A%200%2E5em%20%23EEE%20solid%3B%0A%7D%0Ahr%20%7B%0Aheight%3A%200px%3B%0Aborder%2Dbottom%3A%20none%3B%0Aborder%2Dtop%2Dwidth%3A%20thin%3B%0Aborder%2Dtop%2Dstyle%3A%20dotted%3B%0Aborder%2Dtop%2Dcolor%3A%20%23999999%3B%0A%7D%0Aspan%2Eheader%2Dsection%2Dnumber%20%7B%0Apadding%2Dright%3A%201em%3B%0A%7D%0Aspan%2Etoc%2Dsection%2Dnumber%3A%3Aafter%20%7B%0Acontent%3A%20%22%20%22%3B%0Awhite%2Dspace%3A%20pre%3B%0A%7D%0A%40media%20print%20%7B%0A%2A%20%7B%0Abackground%3A%20transparent%20%21important%3B%0Acolor%3A%20black%20%21important%3B%0Afilter%3Anone%20%21important%3B%0A%2Dms%2Dfilter%3A%20none%20%21important%3B%0A%7D%0Abody%20%7B%0Afont%2Dsize%3A12pt%3B%0Amax%2Dwidth%3A100%25%3B%0A%7D%0Aa%2C%20a%3Avisited%20%7B%0Atext%2Ddecoration%3A%20underline%3B%0A%7D%0Ahr%20%7B%0Avisibility%3A%20hidden%3B%0Apage%2Dbreak%2Dbefore%3A%20always%3B%0A%7D%0Apre%2C%20blockquote%20%7B%0Apadding%2Dright%3A%201em%3B%0Apage%2Dbreak%2Dinside%3A%20avoid%3B%0A%7D%0Atr%2C%20img%20%7B%0Apage%2Dbreak%2Dinside%3A%20avoid%3B%0A%7D%0Aimg%20%7B%0Amax%2Dwidth%3A%20100%25%20%21important%3B%0A%7D%0A%40page%20%3Aleft%20%7B%0Amargin%3A%2015mm%2020mm%2015mm%2010mm%3B%0A%7D%0A%40page%20%3Aright%20%7B%0Amargin%3A%2015mm%2010mm%2015mm%2020mm%3B%0A%7D%0Ap%2C%20h2%2C%20h3%20%7B%0Aorphans%3A%203%3B%20widows%3A%203%3B%0A%7D%0Ah2%2C%20h3%20%7B%0Apage%2Dbreak%2Dafter%3A%20avoid%3B%0A%7D%0A%7D%0A" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript">
+document.addEventListener("DOMContentLoaded", function() {
+  var links = document.links;  
+  for (var i = 0, linksLength = links.length; i < linksLength; i++)
+    if(links[i].hostname != window.location.hostname)
+      links[i].target = '_blank';
+});
+</script>
+
+</head>
+
+<body>
+
+
+<div id="header">
+<h1 class="title">Introduction to dada2</h1>
+<h4 class="author"><em>Benjamin Callahan</em></h4>
+<h4 class="date"><em>Sun Apr 3 17:54:33 2016</em></h4>
+</div>
+
+<h1>Contents</h1>
+<div id="TOC">
+<ul>
+<li><a href="#sample-inference-from-amplicon-sequencing-data-with-dada2"><span class="toc-section-number">1</span> Sample inference from amplicon sequencing data with <em>dada2</em></a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction</a></li>
+<li><a href="#overview-of-the-dada2-pipeline"><span class="toc-section-number">3</span> Overview of the dada2 pipeline <a id="sec:pipeline-overview"></a></a></li>
+<li><a href="#filter-and-trim"><span class="toc-section-number">4</span> Filter and Trim <a id="sec:filter"></a></a></li>
+<li><a href="#dereplicate"><span class="toc-section-number">5</span> Dereplicate <a id="sec:derep"></a></a></li>
+<li><a href="#infer-sample-composition"><span class="toc-section-number">6</span> Infer sample composition <a id="sec:dada"></a></a></li>
+<li><a href="#identify-chimeras"><span class="toc-section-number">7</span> Identify chimeras <a id="sec:chimeras"></a></a></li>
+<li><a href="#merge-forwardreverse-reads"><span class="toc-section-number">8</span> Merge forward/reverse reads <a id="sec:merge"></a></a></li>
+<li><a href="#a-second-sample"><span class="toc-section-number">9</span> A second sample <a id="sec:second-sample"></a></a></li>
+<li><a href="#create-sequence-table"><span class="toc-section-number">10</span> Create sequence table <a id="sec:sequence-table"></a></a></li>
+</ul>
+</div>
+
+<div id="sample-inference-from-amplicon-sequencing-data-with-dada2" class="section level1">
+<h1><span class="header-section-number">1</span> Sample inference from amplicon sequencing data with <em>dada2</em></h1>
+<p>Benjamin Callahan, Joey McMurdie, Susan Holmes</p>
+<p>Statistics Department, Stanford University</p>
+<p>Stanford, CA 94305, USA</p>
+<p><a href="mailto:benjaming.j.callahan@gmail.com">benjaming.j.callahan@gmail.com</a></p>
+<p><a href="http://benjjneb.github.io/dada2/">DADA2 Home Page</a></p>
+</div>
+<div id="introduction" class="section level1">
+<h1><span class="header-section-number">2</span> Introduction</h1>
+<p>The investigation of environmental microbial communities and microbiomes has been driven in significant part by the recent widespread adoption of amplicon sequencing. In amplicon sequencing a particular genetic locus is amplified from a sample of the community of interest, and then sequenced on a next-generation sequencing platform. This technique removes the need to culture microbes in order to detect their presence, and cost-effectively provides a deep census of a microbial community.</p>
+<p>However, the process of amplicon sequencing introduces errors into the DNA sequences being analyzed, and these errors severely complicate the interpretation of the results. DADA2 implements a novel algorithm that models the errors introduced during amplicon sequencing, and uses that error model to infer the true sample composition. DADA2 takes the place of the ubiquitous “OTU-picking” step in amplicon sequencing workflows. As demonstrated in <a href="http://biorxiv.org/content/early/2015/08/06/024034">our preprint</a>, the DADA2 method provides both better sensitivity and specificity than OTU methods: It detect real biological variation missed by OTU methods while outputting fewer spurious sequences.</p>
+</div>
+<div id="overview-of-the-dada2-pipeline" class="section level1">
+<h1><span class="header-section-number">3</span> Overview of the dada2 pipeline <a id="sec:pipeline-overview"></a></h1>
+<p>The starting point for the dada2 pipeline is a set of demultiplexed fastq files corresponding to the samples in your amplicon sequencing study. That is, dada2 expects there to be an individual fastq file for each sample (or two fastq files, one forward and one reverse, for each sample). Demultiplexing is often performed at the sequencing center, but if that has not been done there are a variety of tools do accomplish this, including the popular <a href="http://qiime.org/scripts/split_libraries_fastq.html">QIIME python script split_libraries_fastq.py</a>.</p>
+<p>Once demultiplexed fastq files are obtained, the dada2 pipeline proceeds as follows:</p>
+<ol style="list-style-type: decimal">
+<li>Filter and Trim: <code>fastqFilter()</code> or <code>fastqPairedFilter()</code></li>
+<li>Dereplicate: <code>derepFastq()</code></li>
+<li>Infer sample composition: <code>dada()</code></li>
+<li>Identify chimeras: <code>isBimeraDenovo()</code></li>
+<li>Merge paired reads: <code>mergePairs()</code></li>
+<li>Make sequence table: <code>makeSequenceTable()</code></li>
+</ol>
+<p>The output of this pipeline is a sample-by-sequence matrix, with each entry corresponding to the number of times that inferred sample sequence was observed in that sample. This table is analogous to the common OTU table, except at higher resolution (exact sample sequences rather than 97% OTUs).</p>
+<p>We’ll now go through that pipeline on a highly simplified dataset one paired-end sample (and we’ll add a second later).</p>
+</div>
+<div id="filter-and-trim" class="section level1">
+<h1><span class="header-section-number">4</span> Filter and Trim <a id="sec:filter"></a></h1>
+<p>We’ll start by getting the filenames of our example paired-end fastq files. Usually you will define these filenames directly, or read them out of a directory, but for this tutorial we’re using files included with the package, which we can identify via a particular function call:</p>
+<pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
+<pre><code>## [1] '0.99.7'</code></pre>
+<pre class="r"><code>fnF1 &lt;- system.file(&quot;extdata&quot;, &quot;sam1F.fastq.gz&quot;, package=&quot;dada2&quot;)
+fnR1 &lt;- system.file(&quot;extdata&quot;, &quot;sam1R.fastq.gz&quot;, package=&quot;dada2&quot;)
+
+filtF1 &lt;- tempfile(fileext=&quot;.fastq.gz&quot;)
+filtR1 &lt;- tempfile(fileext=&quot;.fastq.gz&quot;)</code></pre>
+<p>Note that the dada2 package “speaks” the gzip format natively, all fastq files can remain in the space-saving gzip format throughout.</p>
+<p>Now that we have the filenames, we’ll go ahead and filter and trim those fastq files. Filtering is an important step when dealing with sequence data, as low-quality sequences can contain unexpected and misleading errors. Trimming is also usually advised, as Illumina sequencing quality tends to drop off at the end of reads, and the initial nucleotides can also be problematic due to calibration issues:</p>
+<pre class="r"><code>fastqPairedFilter(c(fnF1, fnR1), fout=c(filtF1, filtR1), maxN=0, trimLeft=10, truncLen=c(240, 200), maxEE=2, compress=TRUE, verbose=TRUE)</code></pre>
+<pre><code>## Read in 1500 paired-sequences, outputted 890 filtered paired-sequences.</code></pre>
+<p>The <code>fastqPairedFilter(...)</code> function filters the forward and reverse reads jointly, outputting only those pairs of reads that both pass the filter. In this function call we did four things: We filtered out all reads with more than <code>maxN=0</code> ambiguous nucleotides. We removed the first <code>trimLeft=10</code> nucleotides of each read. We truncated the forward and reverse reads at <code>truncLen=c(240, 200)</code> nucleotides respectively. And we filtered out all reads with more than two <a href="http://www.drive5.com/usearch/manual/expected_errors.html">expected errors</a>. The filtered output files were stored as gzipped fastq files (<code>compress=TRUE</code>).</p>
+<p>This represents a fairly standard set of filtering/trimming parameters. However, it is always worth evaluating whether the filtering parameters you are using are appropriate for your data. One size does not fit all!</p>
+<p>An important consideration: This filtering assumes that the input pairs of forward/reverse reads were consistent with each other. That is, it assumes there was one forward read for every reverse read (and vice-versa) and that the ordering was the same in both fastq files. If this isn’t the case, the <code>matchIDs</code> argument of <code>fastqPairedFilter</code> should be explored.</p>
+</div>
+<div id="dereplicate" class="section level1">
+<h1><span class="header-section-number">5</span> Dereplicate <a id="sec:derep"></a></h1>
+<p>The next thing we want to do is “dereplicate” the filtered fastq files. During dereplication, we condense the data by collapsing together all reads that encode the same sequence, which significantly reduces later computation times:</p>
+<pre class="r"><code>derepF1 &lt;- derepFastq(filtF1, verbose=TRUE)</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpS5XZto/file235940a9134c.fastq.gz</code></pre>
+<pre><code>## Encountered 332 unique sequences from 890 total sequences read.</code></pre>
+<pre class="r"><code>derepR1 &lt;- derepFastq(filtR1, verbose=TRUE)</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpS5XZto/file23591c3203be.fastq.gz</code></pre>
+<pre><code>## Encountered 485 unique sequences from 890 total sequences read.</code></pre>
+<p>Dereplication is a common step in almost all modern sample-inference (or OTU-picking) pipelines, but a unique feature of <code>derepFastq</code> is that it maintains a summary of the quality information for each dereplicated sequence in <code>$quals</code>.</p>
+<hr />
+</div>
+<div id="infer-sample-composition" class="section level1">
+<h1><span class="header-section-number">6</span> Infer sample composition <a id="sec:dada"></a></h1>
+<p>The core method of the dada2 package is at the sample inference stage. The <code>dada(...)</code> function implements <a href="http://biorxiv.org/content/early/2015/08/06/024034">the algorithm described in our preprint</a>, and is simultaneously more sensitive and more specific than any OTU algorithm we have ever tested.</p>
+<p>The dada algorithm depends on a parametric model of the errors introduced by PCR amplification and sequencing. Those error parameters typically vary between sequencing runs and PCR protocols, so our method provides a way to estimate those parameters from the data itself. We recommend using this self-consistent estimation on at least a subset of your data for accurate sample inference.</p>
+<p>Here we call the <code>dada(...)</code> function in <code>selfConsist=TRUE</code> mode, which causes it to alternate between inferring the sample composition and estimating the error rate parameters until convergence is reached:</p>
+<pre class="r"><code>dadaF1 &lt;- dada(derepF1, err=inflateErr(tperr1,3), selfConsist=TRUE)</code></pre>
+<pre><code>## Sample 1 - 890 reads in 332 unique sequences.
+##    selfConsist step 2 
+##    selfConsist step 3 
+## 
+## 
+## Convergence after  3  rounds.</code></pre>
+<pre class="r"><code>dadaR1 &lt;- dada(derepR1, err=inflateErr(tperr1,3), selfConsist=TRUE)</code></pre>
+<pre><code>## Sample 1 - 890 reads in 485 unique sequences.
+##    selfConsist step 2 
+##    selfConsist step 3 
+## 
+## 
+## Convergence after  3  rounds.</code></pre>
+<pre class="r"><code>print(dadaF1)</code></pre>
+<pre><code>## dada-class: object describing DADA2 denoising results
+## 8 sample sequences were inferred from 332 input unique sequences.
+## Key parameters: OMEGA_A = 1e-40, BAND_SIZE = 16, USE_QUALS = TRUE</code></pre>
+<p>The <code>dada(...)</code> algorithm inferred 8 sample sequences in the forward reads. As mentioned above, a set of error rate parameters is required, which <code>err=inflateErr(tperr1, 3)</code> provides here. However, in <code>selfConsist=TRUE</code> mode, this is just an initial guess, and the algorithm continues until it converges on a consistent estimate of the error rates.</p>
+</div>
+<div id="identify-chimeras" class="section level1">
+<h1><span class="header-section-number">7</span> Identify chimeras <a id="sec:chimeras"></a></h1>
+<p>The <code>dada(...)</code> algorithm models and removes substitution errors, but chimeras are another importance source of spurious sequences in amplicon sequencing. Chimeras are formed during PCR amplification, when one sequence is incompletely amplified, and in the next amplication step is completed by copying a different sequence. The result is a sequencing read which is half one sample sequence, and half the other.</p>
+<p>We identify those sequence using the <code>isBimeraDenovo(...)</code> function in the dada2 pipeline:</p>
+<pre class="r"><code>bimerasF1 &lt;- isBimeraDenovo(dadaF1, verbose=TRUE)</code></pre>
+<pre><code>## Identified 0 bimeras out of 8 input sequences.</code></pre>
+<pre class="r"><code>bimerasR1 &lt;- isBimeraDenovo(dadaR1, verbose=TRUE)</code></pre>
+<pre><code>## Identified 0 bimeras out of 7 input sequences.</code></pre>
+<p>The return value of <code>isBimeraDenovo(...)</code> is a logical vector with a <code>TRUE</code> at each position in which the sequence is found to be consistently explained as a chimera produced by more abundant parent sequences. We’ll use that in the next step (merging) to remove the merged sequences in which either the forward or reverse read was identified as a chimera.</p>
+</div>
+<div id="merge-forwardreverse-reads" class="section level1">
+<h1><span class="header-section-number">8</span> Merge forward/reverse reads <a id="sec:merge"></a></h1>
+<p>Thus far we’ve inferred the sample sequences in the forward and reverse reads independently. Now its time to merge those inferred sequences together, throwing out those pairs of reads that don’t match. We’ll follow that up by removing merged reads which were identified as chimeras:</p>
+<pre class="r"><code>merger1 &lt;- mergePairs(dadaF1, derepF1, dadaR1, derepR1, verbose=TRUE)</code></pre>
+<pre><code>## 841 paired-reads (in 7 unique pairings) successfully merged out of 890 (in 9 pairings) input.</code></pre>
+<pre class="r"><code>merger1.nochim &lt;- merger1[!bimerasF1[merger1$forward] &amp; !bimerasR1[merger1$reverse],]</code></pre>
+<p>The <code>mergePairs(...)</code> function returns a <code>data.frame</code> corresponding to each successfully merged unique sequence. The <code>$forward</code> and <code>$reverse</code> columns record which forward and reverse sequence contributed to that merged sequence. Thus, the second command removes all merged sequences which are made up of a chimeric forward or reverse sequence. At the end we have a data.frame of merged, error-free, non-chimeric sample sequences!</p>
+</div>
+<div id="a-second-sample" class="section level1">
+<h1><span class="header-section-number">9</span> A second sample <a id="sec:second-sample"></a></h1>
+<p>In order to show an example of making a sequence table, and to reiterate the workflow outlined above, we now process a second sample:</p>
+<pre class="r"><code># Assign filenames
+fnF2 &lt;- system.file(&quot;extdata&quot;, &quot;sam2F.fastq.gz&quot;, package=&quot;dada2&quot;)
+fnR2 &lt;- system.file(&quot;extdata&quot;, &quot;sam2R.fastq.gz&quot;, package=&quot;dada2&quot;)
+filtF2 &lt;- tempfile(fileext=&quot;.fastq.gz&quot;)
+filtR2 &lt;- tempfile(fileext=&quot;.fastq.gz&quot;)
+# Filter and Trim
+fastqPairedFilter(c(fnF2, fnR2), fout=c(filtF2, filtR2), maxN=0, trimLeft=10, truncLen=c(240, 200), maxEE=2, compress=TRUE, verbose=TRUE)</code></pre>
+<pre><code>## Read in 1500 paired-sequences, outputted 858 filtered paired-sequences.</code></pre>
+<pre class="r"><code># Dereplicate
+derepF2 &lt;- derepFastq(filtF2, verbose=TRUE)</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpS5XZto/file235910501de8.fastq.gz</code></pre>
+<pre><code>## Encountered 305 unique sequences from 858 total sequences read.</code></pre>
+<pre class="r"><code>derepR2 &lt;- derepFastq(filtR2, verbose=TRUE)</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpS5XZto/file23597bdb72b5.fastq.gz</code></pre>
+<pre><code>## Encountered 448 unique sequences from 858 total sequences read.</code></pre>
+<pre class="r"><code># Infer sample composition
+dadaF2 &lt;- dada(derepF2, err=inflateErr(tperr1,3), selfConsist=TRUE)</code></pre>
+<pre><code>## Sample 1 - 858 reads in 305 unique sequences.
+##    selfConsist step 2 
+## 
+## 
+## Convergence after  2  rounds.</code></pre>
+<pre class="r"><code>dadaR2 &lt;- dada(derepR2, err=inflateErr(tperr1,3), selfConsist=TRUE)</code></pre>
+<pre><code>## Sample 1 - 858 reads in 448 unique sequences.
+##    selfConsist step 2 
+##    selfConsist step 3 
+## 
+## 
+## Convergence after  3  rounds.</code></pre>
+<pre class="r"><code># Identify chimeras
+bimerasF2 &lt;- isBimeraDenovo(dadaF2, verbose=TRUE)</code></pre>
+<pre><code>## Identified 0 bimeras out of 8 input sequences.</code></pre>
+<pre class="r"><code>bimerasR2 &lt;- isBimeraDenovo(dadaR2, verbose=TRUE)</code></pre>
+<pre><code>## Identified 0 bimeras out of 7 input sequences.</code></pre>
+<pre class="r"><code># Merge
+merger2 &lt;- mergePairs(dadaF2, derepF2, dadaR2, derepR2, verbose=TRUE)</code></pre>
+<pre><code>## 785 paired-reads (in 6 unique pairings) successfully merged out of 858 (in 8 pairings) input.</code></pre>
+<pre class="r"><code>merger2.nochim &lt;- merger2[!bimerasF2[merger2$forward] &amp; !bimerasR2[merger2$reverse],]</code></pre>
+<p>With that second sample processed, we can go ahead and create a sequence table.</p>
+</div>
+<div id="create-sequence-table" class="section level1">
+<h1><span class="header-section-number">10</span> Create sequence table <a id="sec:sequence-table"></a></h1>
+<p>Finally we want to combine the inferred samples into one unified table. For that purpose we use <code>makeSequenceTable</code>:</p>
+<pre class="r"><code>seqtab &lt;- makeSequenceTable(list(merger1, merger2))</code></pre>
+<p>This is the final product of the dada2 pipeline, a matrix in which each row corresponds to a processed sample, and each column corresponds to an inferred sample sequence (a more precise analogue to the common “OTU table”). From here we recommend proceeding forward with our friend <a href="https://joey711.github.io/phyloseq/">the phyloseq package</a> for further analysis…</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

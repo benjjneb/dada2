@@ -3,14 +3,14 @@
 using namespace Rcpp;
 
 //------------------------------------------------------------------
-// Exposes ends-free Needleman-Wunsh alignment to R.
+// Exposes Needleman-Wunsch alignment to R.
 //
 // @param s1 A \code{character(1)} of DNA sequence 1.
 // @param s2 A \code{character(1)} of DNA sequence 2.
 // @param score The 4x4 score matrix for nucleotide transitions.
 // @param gap_p The gap penalty.
 // @param band The band size (-1 turns off banding).
-// @param endsfree Whether to allow free end gaps.
+// @param endsfree If TRUE, allow free end gaps.
 // 
 // @return A \code{character(2)}. The aligned strings.
 // 
@@ -111,79 +111,150 @@ Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
   return(rval);
 }
 
+// Internal function to get hamming distance between aligned seqs
+//  without counting end gaps
+int get_ham_endsfree(const char *seq1, const char *seq2, int len) {
+  int i, j, pos, ham;
+  bool gap1, gap2;
+  // Find start of internal part of alignment
+  i=0;
+  gap1 = (seq1[i]==6); 
+  gap2 = (seq2[i]==6);
+  while(gap1 || gap2) {
+    i++;
+    gap1 = (gap1 && (seq1[i]==6));
+    gap2 = (gap2 && (seq2[i]==6));
+  }
+  // Find end of internal part of alignment
+  j=len-1;
+  gap1 = (seq1[j]==6); 
+  gap2 = (seq2[j]==6);
+  while(gap1 || gap2) {
+    j--;
+    gap1 = (gap1 && (seq1[j]==6));
+    gap2 = (gap2 && (seq2[j]==6));
+  }
+  // Calculate hamming distance over internal part
+  ham=0;
+  for(pos=i;pos<=j;pos++) {
+    if(seq1[pos] != seq2[pos]) { ham++; }
+  }
+  return(ham);
+}
+
 //------------------------------------------------------------------
-// Calculates the size of perfect overlap on the left and right side
-// of the child sequence (s2) to the aligned parent (s1).
+// Determines whether sq is a perfect bimera of some combination from pars.
 // 
-// @param s1 A \code{character(1)} of DNA sequence 1.
-// @param s2 A \code{character(1)} of DNA sequence 2.
-// @param allow A \code{integer(1)} How many mismatches+indels to allow in an overlap.
+// @param sq The query DNA sequence.
+// @param pars Potential bimeric "parents".
 // @param max_shift A \code{integer(1)} of the maximum alignment shift allowed.
 // 
 // [[Rcpp::export]]
-Rcpp::IntegerVector C_get_overlaps(std::string s1, std::string s2, int allow, int max_shift) {
-  int left, right, start, end, i, diff;
-  bool s1gap, s2gap, is_nt1, is_nt2;
-  if(s1.size() != s2.size()) {
-    Rprintf("Warning: Aligned strings are not the same length.\n");
-    return R_NilValue;
+bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift) {
+  // For now only finding perfect bimeras
+  int i, j, left, right, left_oo, right_oo, pos, len, max_len;
+  // Make  c-style 2d score array
+  int c_score[4][4];
+  for(i=0;i<4;i++) {
+    for(j=0;j<4;j++) {
+      c_score[i][j] = (int) score(i,j);
+    }
   }
 
-  // Find start of align (end of initial gapping)
-  s1gap = s2gap = true;
-  start = -1;
-  do {
-    start++;
-    s1gap = s1gap && (s1[start] == '-');
-    s2gap = s2gap && (s2[start] == '-');
-  } while((s1gap || s2gap) && start < max_shift && start < s1.size());
+  // Make integer-ized c-style sequence strings
+  char *seq1 = (char *) malloc(sq.size()+1); //E
+  // Get max length of the parent sequences
+  max_len=0;
+  for(i=0;i<pars.size();i++) {
+    len = pars[i].size();
+    if(len>max_len) { max_len = len; }
+  }
+  char *seq2 = (char *) malloc(max_len+1); //E
+  if (seq1 == NULL || seq2 == NULL)  Rcpp::stop("Memory allocation failed.");
+  nt2int(seq1, sq.c_str());
+    
+  char **al; // Remember, alignments must be freed!
+  int max_left=0, max_right=0;
+  int oo_max_left=0, oo_max_right=0, oo_max_left_oo=0, oo_max_right_oo=0;
+  
+  bool rval = false;
+  for(i=0;i<pars.size();i++) {
+    nt2int(seq2, pars[i].c_str());
+    al = nwalign_endsfree(seq1, seq2, c_score, gap_p, max_shift);
+    len = strlen(al[0]);
 
-  // Find end of align (start of terminal gapping)
-  s1gap = s2gap = true;
-  end = s1.size();
-  do {
-    end--;
-    s1gap = s1gap && (s1[end] == '-');
-    s2gap = s2gap && (s2[end] == '-');
-  } while((s1gap || s2gap) && end > s1.size()-1-max_shift && end > start);
+    pos=0; left=0;
+    while(al[0][pos] == 6 && pos<len) {
+      pos++; // Scan in until query starts
+    }
+    while(al[1][pos] == 6 && pos<max_shift) {
+      pos++; left++; // Credit as ends-free coverage until parent starts
+    }
+    while(pos<len && al[0][pos] == al[1][pos]) {
+      pos++; left++; // Credit as covered until a mismatch
+    }
+    if(allow_one_off) {
+      // Step forward, and credit to one-off further matches (and this mismatch if not a gap)
+      left_oo = left;
+      pos++;
+      if(pos<len && al[0][pos] != 6) { left_oo++; }
+      while(pos<len && al[0][pos] == al[1][pos]) {
+        pos++; left_oo++;
+      }
+    }
+    
+    pos=len-1; right=0;
+    while(al[0][pos] == 6 && pos >= 0) { 
+      pos--;
+    }
+    while(al[1][pos] == 6 && pos>+(len-max_shift)) {
+      pos--; right++;
+    }
+    while(pos>=0 && al[0][pos] == al[1][pos]) {
+      pos--; right++;
+    }
+    if(allow_one_off) {
+      // Step forward, and credit to one-off further matches (and this mismatch if not a gap)
+      right_oo = right;
+      pos--;
+      if(pos>=0 && al[0][pos] != 6) { right_oo++; }
+      while(pos>=0 && al[0][pos] == al[1][pos]) {
+        pos--; right_oo++;
+      }
+    }
+    
+    if((left+right) >= sq.size()) { // Toss id/pure-shift/internal-indel "parents"
+      continue;
+    }
+    if(left > max_left) { max_left=left; }
+    if(right > max_right) { max_right=right; }
 
+    // Need to evaluate whether parents are allowed for one-off models
+    if(allow_one_off && get_ham_endsfree(al[0], al[1], len) >= min_one_off_par_dist) {
+      if(left > oo_max_left) { oo_max_left=left; }
+      if(right > oo_max_right) { oo_max_right=right; }
+      if(left_oo > oo_max_left_oo) { oo_max_left_oo=left_oo; }
+      if(right_oo > oo_max_right_oo) { oo_max_right_oo=right_oo; }
+    }
 
-  // Count the length of alignment with <= allow indels/mismatches from the left and right sides
-  left=0; diff=0;
-  for(i=0;i<s1.size();i++) {
-    is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
-    is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
-    if(is_nt2) { 
-      if(i >= start && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
-        diff++;
-      } 
-      
-      if(diff <= allow) { // Still OK
-        left++;
-      } else {
+    // Evaluate, and break if found bimeric model
+    if((max_right+max_left)>=sq.size()) {
+      rval = true;
+      break;
+    }
+    if(allow_one_off) {
+      if((oo_max_left+oo_max_right_oo)>=sq.size() || (oo_max_left_oo+oo_max_right)>=sq.size()) {
+        rval=true;
         break;
       }
     }
   }
   
-  right=0; diff=0;
-  for(i=s1.size()-1;i>=0;i--) {
-    is_nt1 = (s1[i] == 'A' || s1[i] == 'C' || s1[i] == 'G' || s1[i] == 'T');
-    is_nt2 = (s2[i] == 'A' || s2[i] == 'C' || s2[i] == 'G' || s2[i] == 'T');
-    if(is_nt2) { 
-      if(i <= end && !(is_nt1 && is_nt2 && s1[i]==s2[i])) { // mismatch or indel
-        diff++;
-      }
-      
-      if(diff <= allow) { // match or in overhang
-        right++;
-      } else {
-        break;
-      }
-    }
-  }
-  
-  Rcpp::IntegerVector rval = Rcpp::IntegerVector::create(_["left"]=left, _["right"]=right);
+  free(seq1);
+  free(seq2);
+  free(al[0]);
+  free(al[1]);
+  free(al);
   return(rval);
 }
 
@@ -245,7 +316,7 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefe
 // @return A \code{logical}. Whether or not each input character was ACGT only.
 // 
 // [[Rcpp::export]]
-Rcpp::LogicalVector C_check_ACGT(std::vector<std::string> seqs) {
+Rcpp::LogicalVector C_isACGT(std::vector<std::string> seqs) {
   unsigned int i, pos, strlen;
   bool justACGT;
   const char *cstr;
@@ -286,7 +357,7 @@ Rcpp::LogicalVector C_check_ACGT(std::vector<std::string> seqs) {
 //' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
 //' pairwise alignments to do.
 //'
-//' @return DataFrame.
+//' @return data.frame
 //'
 //' @examples
 //' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

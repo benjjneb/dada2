@@ -40,29 +40,10 @@
 #' sqs1 <- getSequences(derep1)
 #' isBimera(sqs1[[20]], sqs1[1:10])
 #' 
-isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) { # Note that order of sq/parents is reversed here from internals
-  # (l0,r0) or (l0,r0,l1,r1,match,mismatch,indel) if allowOneOff
-  ov <- t(unname(sapply(parents, function(x) getOverlaps(x, sq, allowOneOff=allowOneOff, maxShift=maxShift))))
-  # Remove identical (or strictly shifted) parents
-  id_or_fullshift <- apply(ov[,1:2], 1, function(x) max(x) >= nchar(sq))
-  ov <- ov[!id_or_fullshift,,drop=FALSE]
-  # Return FALSE if now too few parents
-  if(nrow(ov) <= 1) return(FALSE)
-  # Return TRUE if the max left/right 0-overlaps are as long as the sequence
-  if((max(ov[,1]) + max(ov[,2])) >= nchar(sq)) {
-    return(TRUE)
-  } else if(allowOneOff) {
-    too_close <- (apply(ov[,6:7], 1, sum) < minOneOffParentDistance)
-    ov <- ov[!too_close,,drop=FALSE]
-    # Return FALSE if now too few parents
-    if(nrow(ov) <= 1) return(FALSE)
-    # Return TRUE if the max left/right 0/1-overlaps are as long as the sequence
-    if((max(ov[,1]) + max(ov[,4])) >= nchar(sq) || (max(ov[,2]) + max(ov[,3])) >= nchar(sq)) {
-      return(TRUE)
-    }
-  }
-  # If haven't returned TRUE, then not a bimera
-  return(FALSE)
+isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) {
+  rval <- C_is_bimera(sq, parents, allowOneOff, minOneOffParentDistance, 
+              getDadaOpt("SCORE_MATRIX"), getDadaOpt("GAP_PENALTY"), maxShift)
+  return(rval)
 }
 
 ################################################################################
@@ -187,19 +168,6 @@ removeBimeraDenovo <- function(unqs, ..., verbose=FALSE) {
     outs <- outs[[1]]
   }
   outs
-}
-
-# Internal function that finds the best overlap between two sequences.
-# Uses NW alignment with ends-free gapping.
-getOverlaps <- function(parent, sq, allowOneOff=FALSE, maxShift=16) {  # parent must be first, sq is being evaluated as a potential bimera
-  al <- nwalign(parent, sq, band=maxShift)
-  lr <- C_get_overlaps(al[1], al[2], 0, maxShift)
-  if(allowOneOff) {
-    lr1 <- C_get_overlaps(al[1], al[2], 1, maxShift)
-    diff1 <- C_eval_pair(al[1], al[2])
-    lr <- c(lr,lr1,diff1)
-  }
-  return(lr)
 }
 
 ################################################################################
