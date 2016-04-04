@@ -5,8 +5,8 @@
 \title{Needlman-Wunsch alignment.}
 \usage{
 nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
-  gap = getDadaOpt("GAP_PENALTY"), homo_gap = NULL,
-  band = getDadaOpt("BAND_SIZE"), endsfree = TRUE)
+  gap = getDadaOpt("GAP_PENALTY"), homo_gap = NULL, band = -1,
+  endsfree = TRUE)
 }
 \arguments{
 \item{s1}{(Required). \code{character(1)}. The first sequence to align. A/C/G/T only.}
@@ -22,8 +22,8 @@ The alignment gap penalty. Should be negative.}
 \item{homo_gap}{(Optional). \code{numeric(1)}. Default NULL (no special homopolymer penalty).
 The alignment gap penalty within homopolymer regions. Should be negative.}
 
-\item{band}{(Optional). \code{numeric(1)}.  Default is getDadaOpt("BAND_SIZE").
-This Needleman-Wunsch alignment is banded. This value specifies the radius of that band.
+\item{band}{(Optional). \code{numeric(1)}.  Default -1 (no banding).
+This Needleman-Wunsch alignment can be banded. This value specifies the radius of that band.
 Set \code{band = -1} to turn off banding.}
 
 \item{endsfree}{(Optional). \code{logical(1)}. Default TRUE.
@@ -39,7 +39,7 @@ This function performs a Needleman-Wunsch alignment between two sequences.
  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
  sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
  nwalign(sq1, sq2)
- nwalign(sq1, sq2, band=-1)
+ nwalign(sq1, sq2, band=16)
 
 }
 

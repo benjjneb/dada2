@@ -25,7 +25,7 @@ the number of mismatches and indels in that alignment. End gaps are not included
  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
  sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
 nwhamming(sq1, sq2)
-nwhamming(sq1, sq2, band=-1)
+nwhamming(sq1, sq2, band=16)
 
 }
 
