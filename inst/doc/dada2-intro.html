@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function() {
 <div id="header">
 <h1 class="title">Introduction to dada2</h1>
 <h4 class="author"><em>Benjamin Callahan</em></h4>
-<h4 class="date"><em>Sun Apr 3 17:54:33 2016</em></h4>
+<h4 class="date"><em>Sat Apr 9 15:56:29 2016</em></h4>
 </div>
 
 <h1>Contents</h1>
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function() {
 <h1><span class="header-section-number">4</span> Filter and Trim <a id="sec:filter"></a></h1>
 <p>We’ll start by getting the filenames of our example paired-end fastq files. Usually you will define these filenames directly, or read them out of a directory, but for this tutorial we’re using files included with the package, which we can identify via a particular function call:</p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] '0.99.7'</code></pre>
+<pre><code>## [1] '0.99.8'</code></pre>
 <pre class="r"><code>fnF1 &lt;- system.file(&quot;extdata&quot;, &quot;sam1F.fastq.gz&quot;, package=&quot;dada2&quot;)
 fnR1 &lt;- system.file(&quot;extdata&quot;, &quot;sam1R.fastq.gz&quot;, package=&quot;dada2&quot;)
 
@@ -119,10 +119,10 @@ filtR1 &lt;- tempfile(fileext=&quot;.fastq.gz&quot;)</code></pre>
 <h1><span class="header-section-number">5</span> Dereplicate <a id="sec:derep"></a></h1>
 <p>The next thing we want to do is “dereplicate” the filtered fastq files. During dereplication, we condense the data by collapsing together all reads that encode the same sequence, which significantly reduces later computation times:</p>
 <pre class="r"><code>derepF1 &lt;- derepFastq(filtF1, verbose=TRUE)</code></pre>
-<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpS5XZto/file235940a9134c.fastq.gz</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmphqGiTq/file11051e15177d.fastq.gz</code></pre>
 <pre><code>## Encountered 332 unique sequences from 890 total sequences read.</code></pre>
 <pre class="r"><code>derepR1 &lt;- derepFastq(filtR1, verbose=TRUE)</code></pre>
-<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpS5XZto/file23591c3203be.fastq.gz</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmphqGiTq/file11057ab91ef8.fastq.gz</code></pre>
 <pre><code>## Encountered 485 unique sequences from 890 total sequences read.</code></pre>
 <p>Dereplication is a common step in almost all modern sample-inference (or OTU-picking) pipelines, but a unique feature of <code>derepFastq</code> is that it maintains a summary of the quality information for each dereplicated sequence in <code>$quals</code>.</p>
 <hr />
@@ -183,10 +183,10 @@ fastqPairedFilter(c(fnF2, fnR2), fout=c(filtF2, filtR2), maxN=0, trimLeft=10, tr
 <pre><code>## Read in 1500 paired-sequences, outputted 858 filtered paired-sequences.</code></pre>
 <pre class="r"><code># Dereplicate
 derepF2 &lt;- derepFastq(filtF2, verbose=TRUE)</code></pre>
-<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpS5XZto/file235910501de8.fastq.gz</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmphqGiTq/file11052bfdb2e3.fastq.gz</code></pre>
 <pre><code>## Encountered 305 unique sequences from 858 total sequences read.</code></pre>
 <pre class="r"><code>derepR2 &lt;- derepFastq(filtR2, verbose=TRUE)</code></pre>
-<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpS5XZto/file23597bdb72b5.fastq.gz</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmphqGiTq/file11051ceb6ba5.fastq.gz</code></pre>
 <pre><code>## Encountered 448 unique sequences from 858 total sequences read.</code></pre>
 <pre class="r"><code># Infer sample composition
 dadaF2 &lt;- dada(derepF2, err=inflateErr(tperr1,3), selfConsist=TRUE)</code></pre>

@@ -158,6 +158,9 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
 #' @param fl (Required). \code{character(1)}.
 #'  The file path to the fastq or fastq.gz file.
 #' 
+#' @param n (Optional). Default 1,000,000.
+#'  The number of records to sample from the fastq file.
+#' 
 #' @return A \code{\link{ggplot}2} object.
 #'  Will be rendered to default device if \code{\link{print}ed},
 #'  or can be stored and further modified.
@@ -173,8 +176,8 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
 #' 
 # This code is adapted from ShortRead:::.plotCycleQuality
 #
-plotQualityProfile <- function(fl) {
-  df <- qa(fl)[["perCycle"]]$quality
+plotQualityProfile <- function(fl, n=1000000) {
+  df <- qa(fl, n=n)[["perCycle"]]$quality
   # Calculate summary statistics at each position
   means <- rowsum(df$Score*df$Count, df$Cycle)/rowsum(df$Count, df$Cycle)
   get_quant <- function(xx, yy, q) { xx[which(cumsum(yy)/sum(yy) >=q)][[1]] }

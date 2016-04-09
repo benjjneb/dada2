@@ -4,11 +4,14 @@
 \alias{plotQualityProfile}
 \title{Plot quality profile of a fastq file.}
 \usage{
-plotQualityProfile(fl)
+plotQualityProfile(fl, n = 1e+06)
 }
 \arguments{
 \item{fl}{(Required). \code{character(1)}.
 The file path to the fastq or fastq.gz file.}
+
+\item{n}{(Optional). Default 1,000,000.
+The number of records to sample from the fastq file.}
 }
 \value{
 A \code{\link{ggplot}2} object.

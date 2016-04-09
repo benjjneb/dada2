@@ -13,10 +13,8 @@ assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("VERBOSE", FALSE, envir=dada_opts)
-# assign("USE_SINGLETONS", FALSE, envir=dada_opts)
-# assign("OMEGA_S", 1e-3, envir = dada_opts)
+assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
-assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts) # NOT YET IMPLEMENTED
 
 #' High resolution sample inference from amplicon data.
 #' 
@@ -187,7 +185,7 @@ dada <- function(derep,
     if(ncol(err) < qmax+1) { # qmax = 0 if USE_QUALS = FALSE
       message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
   Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err), ").
-  In selfConsist mode this should converge to the proper error rates, otherwise this is probably not what you want.")
+  In selfConsist mode this should converge to the proper error rates, otherwise this may not be what you want.")
       for (q in seq(ncol(err), qmax)) { 
         err <- cbind(err, err[1:16, q])
         colnames(err)[q+1] <- q
@@ -256,7 +254,7 @@ dada <- function(derep,
 
       if(nconsist == 1) {
         if(pool) {
-          cat("Samples 1 -", length(derep.in), "Pooled:", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
+          cat(length(derep.in), "samples were pooled:", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
         } else {
           cat("Sample", i, "-", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
         }

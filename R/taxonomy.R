@@ -73,11 +73,13 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, verbose=FALSE) {
   bestHit <- genus.unq[assignment$tax]
   boots <- assignment$boot
   taxes <- strsplit(bestHit, ";")
-  taxes <- lapply(seq_along(taxes), function(i) taxes[[i]][boots[i,]>minBoot])
+  taxes <- lapply(seq_along(taxes), function(i) taxes[[i]][boots[i,]>=minBoot])
   # Convert to character matrix
   tax.out <- matrix(NA_character_, nrow=length(seqs), ncol=td)
   for(i in seq(length(seqs))) {
-    tax.out[i,1:length(taxes[[i]])] <- taxes[[i]]
+    if(length(taxes[[i]]) > 0) {
+      tax.out[i,1:length(taxes[[i]])] <- taxes[[i]]
+    }
   }
   rownames(tax.out) <- seqs
   tax.out[tax.out=="_DADA2_UNSPECIFIED"] <- NA_character_
