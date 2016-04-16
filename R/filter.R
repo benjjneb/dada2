@@ -6,7 +6,8 @@
 #' package are leveraged to do this filtering.
 #' 
 #' \code{fastqFilter} replicates most of the functionality of the fastq_filter command in usearch
-#' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). 
+#' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). It adds the ability to remove
+#' contaminating phiX sequences as part of the filtering process.
 #' 
 #' @param fn (Required). The path to the input fastq file, or an R connection to that file.
 #'   
@@ -37,6 +38,10 @@
 #'  After truncation, reads with higher than maxEE "expected errors" will be discarded.
 #'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
 #'  
+#' @param rm.phix (Optional). Default FALSE.
+#'  If TRUE, discard reads that match against the phiX genome, as determined by 
+#'  \code{\link{isPhiX}}.
+#'
 #' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
@@ -46,6 +51,8 @@
 #' 
 #' @param verbose (Optional). Default FALSE.
 #'  Whether to output status messages.  
+#' 
+#' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}}.
 #' 
 #' @return NULL.
 #' 
@@ -77,7 +84,7 @@
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, n = 1e6, compress = TRUE, verbose = FALSE){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, compress = TRUE, verbose = FALSE, ...){
   start <- max(1, trimLeft + 1)
   end <- truncLen
   if(end < start) { end = NA }
@@ -123,6 +130,12 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
     if(maxEE < Inf) keep <- keep & maxEEFilter(maxEE)(fq)
     fq <- fq[keep]
     
+    # Remove phiX
+    if(rm.phix) {
+      is.phi <- isPhiX(as(sread(fq), "character"), ...)
+      fq <- fq[!is.phi]
+    }
+    
     outseqs <- outseqs + length(fq)
     
     if(first) {
@@ -133,8 +146,10 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
     }
   }
   
+  if(outseqs==0) { file.remove(fout) }
+  
   if(verbose) {
-    message("Read in ", inseqs, ", outputted ", outseqs, " filtered sequences.")
+    message("Read in ", inseqs, ", output ", outseqs, " filtered sequences.")
   }
 }
 
@@ -148,7 +163,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' 
 #' fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
 #' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but only pairs of reads that both
-#' pass the filter are retained.
+#' pass the filter are retained. An added function is the option to remove
+#' contaminating phiX sequences as part of the filtering process.
 #' 
 #' @param fn (Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.
 #'   
@@ -184,6 +200,10 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #'  After truncation, reads with higher than maxEE "expected errors" will be discarded.
 #'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
 #'  
+#' @param rm.phix (Optional). Default FALSE.
+#'  If TRUE, discard reads that match against the phiX genome, as determined by 
+#'  \code{\link{isPhiX}}.
+#'
 #' \strong{ID MATCHING ARGUMENTS} that follow enforce matching between the sequence identification
 #'  strings in the forward and reverse reads. The function can automatically detect and match ID fields in 
 #'  Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393
@@ -212,6 +232,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' 
 #' @param verbose (Optional). Default FALSE.
 #'  Whether to output status messages.  
+#' 
+#' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}}.
 #' 
 #' @return NULL.
 #' 
@@ -247,19 +269,19 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' filtFastqR <- tempfile(fileext=".fastq.gz")
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
-#'                     truncLen=c(240, 200), maxEE=2, verbose=TRUE)
+#'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE, ...){
   # Warning: This assumes that forward/reverse reads are in the same order unless matchIDs=TRUE
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
   
-  for(var in c("maxN", "truncQ", "truncLen", "trimLeft", "minQ", "maxEE")) {
+  for(var in c("maxN", "truncQ", "truncLen", "trimLeft", "minQ", "maxEE", "rm.phix")) {
     if(length(get(var)) == 1) { # Double the 1 value to be the same for F and R
       assign(var, c(get(var), get(var)))
     }
     if(length(get(var)) != 2) {
-      stop(paste("Input variable", var, "must be length 2 (Forward, Reverse)."))
+      stop(paste("Input variable", var, "must be length 1 or 2 (Forward, Reverse)."))
     }
   }
 
@@ -396,6 +418,21 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     fqR <- fqR[keep]
     
     if(length(fqF) != length(fqR)) stop("Filtering caused mismatch between forward and reverse sequence lists: ", length(fqF), ", ", length(fqR), ".")
+
+    # Remove phiX
+    if(rm.phix[[1]] && rm.phix[[2]]) {
+      is.phi <- isPhiX(as(sread(fqF), "character"), ...)
+      is.phi <- is.phi | isPhiX(as(sread(fqR), "character"), ...)
+    } else if(rm.phix[[1]] && !rm.phix[[2]]) {
+      is.phi <- isPhiX(as(sread(fqF), "character"), ...)
+    } else if(!rm.phix[[1]] && rm.phix[[2]]) {
+      is.phi <- isPhiX(as(sread(fqR), "character"), ...)
+    }
+    if(any(rm.phix)) {
+      fqF <- fqF[!is.phi]
+      fqR <- fqR[!is.phi]
+    }
+    
     outseqs <- outseqs + length(fqF)    
     
     if(first) {
@@ -408,8 +445,13 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     }
   }
   
+  if(outseqs==0) {
+    file.remove(fout[[1]])
+    file.remove(fout[[2]])
+  }
+  
   if(verbose) {
-    message("Read in ", inseqs, " paired-sequences, outputted ", outseqs, " filtered paired-sequences.")
+    message("Read in ", inseqs, " paired-sequences, output ", outseqs, " filtered paired-sequences.")
   }
 }
 
@@ -440,4 +482,47 @@ minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
   srFilter(function(x) {
     width(x) >= minLen
   }, name = .name)
+}
+
+################################################################################
+#' Determine if input sequence(s) match the phiX genome.
+#' 
+#' This function compares the word-profile of the input
+#' sequences to the phiX genome, and the reverse complement of the phiX genome. If
+#' enough exactly matching words are found, the sequence is flagged.
+#' 
+#' @param seqs (Required). A \code{character} vector of A/C/G/T sequences.
+#' 
+#' @param wordSize (Optional). Default 16.
+#'  The size of the words to use for comparison.
+#'   
+#' @param minMatches (Optional). Default 2.
+#' The minimum number of words in the input sequences that must match the phiX genome
+#' (or its reverse complement) for the sequence to be flagged.
+#' 
+#' @param nonOverlapping (Optional). Default TRUE.
+#' If TRUE, only non-overlapping matching words are counted.
+#' 
+#' @return \code{logical(1)}.
+#'  TRUE if sequence was fount to match the phiX genome.
+#'
+#' @seealso 
+#'  \code{\link{fastqFilter}}, \code{\link{fastqPairedFilter}}
+#'  
+#' @export
+#' 
+#' @importFrom ShortRead readFasta
+#' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' sqs1 <- getSequences(derep1)
+#' isPhiX(sqs1)
+#' isPhiX(sqs1, wordSize=20,  minMatches=1)
+#' 
+isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE) {
+  sq.phix <- as(sread(readFasta(system.file("extdata", "phix_genome.fa", package="dada2"))), "character")
+  rc.phix <- rc(sq.phix)
+  hits <- C_matchRef(seqs, sq.phix, wordSize, nonOverlapping)
+  hits.rc <- C_matchRef(seqs, rc.phix, wordSize, nonOverlapping)
+  return((hits >= minMatches) | (hits.rc >= minMatches))
 }
