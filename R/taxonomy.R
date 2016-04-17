@@ -13,7 +13,7 @@
 #' taxonomy (or classification) of the associated sequence, and each taxonomic level is 
 #' separated by a semicolon. Eg.
 #' 
-#'  >Kingom;Phylum;Class;Order;Family;Genus;
+#'  >Kingom;Phylum;Class;Order;Family;Genus;   
 #'  ACGAATGTGAAGTAA......
 #' 
 #' @param minBoot (Optional). Default 50. 

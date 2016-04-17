@@ -77,7 +77,8 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
 #' estimated error rates (if they exist). The initial input rates and the expected error
 #' rates under the nominal definition of quality scores can also be shown.
 #' 
-#' @param dq (Required). A \code{\link{dada-class}} object.
+#' @param dq (Required). A \code{\link{dada-class}} object, or a list of such objects
+#'  that were pooled to estimate a common set of error rates.
 #' 
 #' @param nti (Optional). Default c("A","C","G","T"). 
 #'  Some combination of the 4 DNA nucleotides.
@@ -87,6 +88,9 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
 #'  
 #'  The error rates from nti->ntj will be plotted. If multiple nti or ntj are chosen,
 #'   error rates from each-to-each will be plotted in a grid.
+#'  
+#' @param obs (Optional). Default TRUE.
+#'  If TRUE, the observed error rates are plotted as points.  
 #'  
 #' @param err_out (Optional). Default TRUE.
 #'  If TRUE, plot the output error rates (solid line).
@@ -115,14 +119,28 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
 #' plotErrors(dada1, "A", "C")
 #' plotErrors(dada1, nti="A", ntj=c("A","C","G","T"), err_in=TRUE, nominalQ=TRUE)
 #' 
-plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_out=TRUE, err_in=FALSE, nominalQ=FALSE) {
+plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=TRUE, err_out=TRUE, err_in=FALSE, nominalQ=FALSE) {
   ACGT <- c("A", "C", "G", "T")
   if(!(all(nti %in% ACGT) && all(ntj %in% ACGT)) || any(duplicated(nti)) || any(duplicated(ntj))) {
     stop("nti and ntj must be nucleotide(s): A/C/G/T.")
   }
-  if(ncol(dq$trans) <= 1) {
-    stop("plotErrors functionality only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
+  
+  if(is.list.of(dq, "dada")) {
+    if(!all(sapply(dq, function(x) identical(x$err_out, dq[[1]]$err_out)))) {
+      stop("If list of dada-class objects provided, all must have the same output error rates.")
+    }
+    trans <- Reduce("+", lapply(dq, function(x) x$trans))
+    dq <- dq[[1]]
+    dq$trans <- trans
   }
+  
+  if(!is(dq, "dada")) {
+    stop("plotErrors requires a dada-class object or list of such objects.")
+  }
+  if(ncol(dq$trans) <= 1) {
+    stop("plotErrors only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
+  }
+  
   transdf = melt(dq$trans, factorsAsStrings=TRUE)
   colnames(transdf) <- c("Transition", "Qual", "count")
   transdf$from <- substr(transdf$Transition, 1, 1)
@@ -141,7 +159,8 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), err_o
   transdf$Nominal <- (1/3)*10^-(transdf$Qual/10)
   transdf$Nominal[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")] <- 1 - 10^-(transdf$Qual[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")]/10)
   
-  p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual, y=log10(Observed))) + geom_point(na.rm=TRUE)
+  p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual, y=log10(Observed)))
+  if(obs) p <- p + geom_point(na.rm=TRUE)
   if(err_out && !is.null(dq$err_out))  p <- p + geom_line(aes(y=log10(Estimated)))
   if(err_in)   p <- p + geom_line(aes(y=log10(Input)), linetype="dashed")
   if(nominalQ) p <- p + geom_line(aes(y=log10(Nominal)), color="red")
