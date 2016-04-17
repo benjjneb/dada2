@@ -6,8 +6,15 @@ fnR1 <- system.file("extdata", "sam1R.fastq.gz", package="dada2")
 filtF1 <- tempfile(fileext=".fastq.gz")
 filtR1 <- tempfile(fileext=".fastq.gz")
 
+## ----inspect-------------------------------------------------------------
+plotQualityProfile(fnF1) # Forward
+plotQualityProfile(fnR1) # Reverse
+
 ## ----filter--------------------------------------------------------------
-fastqPairedFilter(c(fnF1, fnR1), fout=c(filtF1, filtR1), maxN=0, trimLeft=10, truncLen=c(240, 200), maxEE=2, compress=TRUE, verbose=TRUE)
+fastqPairedFilter(c(fnF1, fnR1), fout=c(filtF1, filtR1), 
+                  trimLeft=10, truncLen=c(240, 200), 
+                  maxN=0, maxEE=2,
+                  compress=TRUE, verbose=TRUE)
 
 ## ----derep---------------------------------------------------------------
 derepF1 <- derepFastq(filtF1, verbose=TRUE)
@@ -18,13 +25,12 @@ dadaF1 <- dada(derepF1, err=inflateErr(tperr1,3), selfConsist=TRUE)
 dadaR1 <- dada(derepR1, err=inflateErr(tperr1,3), selfConsist=TRUE)
 print(dadaF1)
 
-## ----bimeras-------------------------------------------------------------
-bimerasF1 <- isBimeraDenovo(dadaF1, verbose=TRUE)
-bimerasR1 <- isBimeraDenovo(dadaR1, verbose=TRUE)
-
 ## ----merge---------------------------------------------------------------
 merger1 <- mergePairs(dadaF1, derepF1, dadaR1, derepR1, verbose=TRUE)
-merger1.nochim <- merger1[!bimerasF1[merger1$forward] & !bimerasR1[merger1$reverse],]
+
+## ----bimeras-------------------------------------------------------------
+bim1 <- isBimeraDenovo(merger1, verbose=TRUE)
+merger1.nochim <- merger1[!bim1,]
 
 ## ----sample2, warning=FALSE----------------------------------------------
 # Assign filenames
@@ -40,13 +46,11 @@ derepR2 <- derepFastq(filtR2, verbose=TRUE)
 # Infer sample composition
 dadaF2 <- dada(derepF2, err=inflateErr(tperr1,3), selfConsist=TRUE)
 dadaR2 <- dada(derepR2, err=inflateErr(tperr1,3), selfConsist=TRUE)
-# Identify chimeras
-bimerasF2 <- isBimeraDenovo(dadaF2, verbose=TRUE)
-bimerasR2 <- isBimeraDenovo(dadaR2, verbose=TRUE)
 # Merge
 merger2 <- mergePairs(dadaF2, derepF2, dadaR2, derepR2, verbose=TRUE)
-merger2.nochim <- merger2[!bimerasF2[merger2$forward] & !bimerasR2[merger2$reverse],]
 
 ## ----make-table----------------------------------------------------------
 seqtab <- makeSequenceTable(list(merger1, merger2))
+seqtab.nochim <- removeBimeraDenovo(seqtab, verbose=TRUE)
+dim(seqtab.nochim)
 

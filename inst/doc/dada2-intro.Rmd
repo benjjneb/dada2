@@ -23,26 +23,26 @@ Stanford, CA 94305, USA
 [DADA2 Home Page](http://benjjneb.github.io/dada2/)
 
 # Introduction
-The investigation of environmental microbial communities and microbiomes has been driven in significant part by the recent widespread adoption of amplicon sequencing. In amplicon sequencing a particular genetic locus is amplified from a sample of the community of interest, and then sequenced on a next-generation sequencing platform. This technique removes the need to culture microbes in order to detect their presence, and cost-effectively provides a deep census of a microbial community.
+The investigation of environmental microbial communities and microbiomes has been driven in significant part by the recent widespread adoption of amplicon sequencing. In amplicon sequencing a particular genetic locus is amplified from DNA extracted from the community of interest, and then sequenced on a next-generation sequencing platform. This technique removes the need to culture microbes in order to detect their presence, and cost-effectively provides a deep census of a microbial community.
 
-However, the process of amplicon sequencing introduces errors into the DNA sequences being analyzed, and these errors severely complicate the interpretation of the results. DADA2 implements a novel algorithm that models the errors introduced during amplicon sequencing, and uses that error model to infer the true sample composition. DADA2 takes the place of the ubiquitous "OTU-picking" step in amplicon sequencing workflows. As demonstrated in [our preprint](http://biorxiv.org/content/early/2015/08/06/024034), the DADA2 method provides both better sensitivity and specificity than OTU methods: It detect real biological variation missed by OTU methods while outputting fewer spurious sequences.
+However, the process of amplicon sequencing introduces errors into the DNA sequences being analyzed, and these errors severely complicate the interpretation of the results. DADA2 implements a novel algorithm that models the errors introduced during amplicon sequencing, and uses that error model to infer the true sample composition. DADA2 takes the place of the ubiquitous "OTU-picking" step in amplicon sequencing workflows. As demonstrated in [our preprint](http://biorxiv.org/content/early/2015/08/06/024034) and in [further benchmarking](http://benjjneb.github.io/dada2/R/SotA.html), the DADA2 method provides both better sensitivity and specificity than OTU methods: DADA2 detect real biological variation missed by OTU methods while outputting fewer spurious sequences.
 
 # Overview of the dada2 pipeline <a id="sec:pipeline-overview"></a>
 
-The starting point for the dada2 pipeline is a set of demultiplexed fastq files corresponding to the samples in your amplicon sequencing study. That is, dada2 expects there to be an individual fastq file for each sample (or two fastq files, one forward and one reverse, for each sample). Demultiplexing is often performed at the sequencing center, but if that has not been done there are a variety of tools do accomplish this, including the popular [QIIME python script split\_libraries\_fastq.py](http://qiime.org/scripts/split_libraries_fastq.html).
+The starting point for the dada2 pipeline is a set of demultiplexed fastq files corresponding to the samples in your amplicon sequencing study. That is, dada2 expects there to be an individual fastq file for each sample (or two fastq files, one forward and one reverse, for each sample). Demultiplexing is often performed at the sequencing center, but if that has not been done there are a variety of tools do accomplish this, including the popular QIIME python scripts [split\_libraries\_fastq.py](http://qiime.org/scripts/split_libraries_fastq.html) followed by [split\_sequence\_file\_on\_sample\_ids.py](http://qiime.org/scripts/split_sequence_file_on_sample_ids.html), and the utility [idemp](https://github.com/yhwu/idemp), among others.
 
-Once demultiplexed fastq files are obtained, the dada2 pipeline proceeds as follows:
+Once demultiplexed fastq files are in hand, the dada2 pipeline proceeds as follows:
 
 1. Filter and Trim: `fastqFilter()` or `fastqPairedFilter()`
 2. Dereplicate: `derepFastq()`
 3. Infer sample composition: `dada()`
-4. Identify chimeras: `isBimeraDenovo()`
-5. Merge paired reads: `mergePairs()`
-6. Make sequence table: `makeSequenceTable()`
+4. Merge paired reads: `mergePairs()`
+5. Make sequence table: `makeSequenceTable()`
+6. Remove chimeras: `isBimeraDenovo()` or `removeBimeraDenovo()`
 
-The output of this pipeline is a sample-by-sequence matrix, with each entry corresponding to the number of times that inferred sample sequence was observed in that sample. This table is analogous to the common OTU table, except at higher resolution (exact sample sequences rather than 97\% OTUs).
+The output of the dada2 pipeline is a sample-by-sequence matrix, with each entry corresponding to the number of times that inferred sample sequence was observed in that sample. This table is analogous to the common OTU table, except at higher resolution (exact sample sequences rather than 97\% OTUs).
 
-We'll now go through that pipeline on a highly simplified dataset one paired-end sample (and we'll add a second later).
+We'll now go through that pipeline on a highly simplified dataset of just one paired-end sample (we'll add a second later).
 
 # Filter and Trim <a id="sec:filter"></a>
 
@@ -58,14 +58,25 @@ filtR1 <- tempfile(fileext=".fastq.gz")
 
 Note that the dada2 package "speaks" the gzip format natively, all fastq files can remain in the space-saving gzip format throughout.
 
-Now that we have the filenames, we'll go ahead and filter and trim those fastq files. Filtering is an important step when dealing with sequence data, as low-quality sequences can contain unexpected and misleading errors. Trimming is also usually advised, as Illumina sequencing quality tends to drop off at the end of reads, and the initial nucleotides can also be problematic due to calibration issues:
-```{r filter}
-fastqPairedFilter(c(fnF1, fnR1), fout=c(filtF1, filtR1), maxN=0, trimLeft=10, truncLen=c(240, 200), maxEE=2, compress=TRUE, verbose=TRUE)
+Now that we have the filenames, we're going to inspect the quality profile of our data:
+```{r inspect}
+plotQualityProfile(fnF1) # Forward
+plotQualityProfile(fnR1) # Reverse
 ```
 
-The `fastqPairedFilter(...)` function filters the forward and reverse reads jointly, outputting only those pairs of reads that both pass the filter. In this function call we did four things: We filtered out all reads with more than `maxN=0` ambiguous nucleotides. We removed the first `trimLeft=10` nucleotides of each read. We truncated the forward and reverse reads at `truncLen=c(240, 200)` nucleotides respectively. And we filtered out all reads with more than two [expected errors](http://www.drive5.com/usearch/manual/expected_errors.html). The filtered output files were stored as gzipped fastq files (`compress=TRUE`).
+After inspecting the quality profiles, it is clear that the reverse read quality drops off more severely than in the forward read. Thus we are going to trim the forward reads at position 240, and the reverse reads at position 200.
 
-This represents a fairly standard set of filtering/trimming parameters. However, it is always worth evaluating whether the filtering parameters you are using are appropriate for your data. One size does not fit all!
+Filtering is an important step when dealing with sequence data, as low-quality sequences can contain unexpected and misleading errors. Trimming is also usually advised, as Illumina sequencing quality tends to drop off at the end of reads, and the initial nucleotides can also be problematic due to calibration issues:
+```{r filter}
+fastqPairedFilter(c(fnF1, fnR1), fout=c(filtF1, filtR1), 
+                  trimLeft=10, truncLen=c(240, 200), 
+                  maxN=0, maxEE=2,
+                  compress=TRUE, verbose=TRUE)
+```
+
+The `fastqPairedFilter(...)` function filters the forward and reverse reads jointly, outputting only those pairs of reads that both pass the filter. In this function call we did four things: We removed the first `trimLeft=10` nucleotides of each read. We truncated the forward and reverse reads at `truncLen=c(240, 200)` nucleotides respectively. We filtered out all reads with more than `maxN=0` ambiguous nucleotides. And we filtered out all reads with more than two [expected errors](http://www.drive5.com/usearch/manual/expected_errors.html). The filtered output files were stored as gzipped fastq files (`compress=TRUE`).
+
+This represents a fairly standard set of filtering/trimming parameters. However, it is always worth evaluating whether the filtering and trimming parameters you are using are appropriate for your data. One size does not fit all!
 
 An important consideration: This filtering assumes that the input pairs of forward/reverse reads were consistent with each other. That is, it assumes there was one forward read for every reverse read (and vice-versa) and that the ordering was the same in both fastq files. If this isn't the case, the `matchIDs` argument of `fastqPairedFilter` should be explored.
 
@@ -79,7 +90,6 @@ derepR1 <- derepFastq(filtR1, verbose=TRUE)
 
 Dereplication is a common step in almost all modern sample-inference (or OTU-picking) pipelines, but a unique feature of `derepFastq` is that it maintains a summary of the quality information for each dereplicated sequence in `$quals`.
 
----
 # Infer sample composition <a id="sec:dada"></a>
 
 The core method of the dada2 package is at the sample inference stage. The `dada(...)` function implements [the algorithm described in our preprint](http://biorxiv.org/content/early/2015/08/06/024034), and is simultaneously more sensitive and more specific than any OTU algorithm we have ever tested.
@@ -95,27 +105,26 @@ print(dadaF1)
 
 The `dada(...)` algorithm inferred `r nrow(dadaF1$clustering)` sample sequences in the forward reads. As mentioned above, a set of error rate parameters is required, which `err=inflateErr(tperr1, 3)` provides here. However, in `selfConsist=TRUE` mode, this is just an initial guess, and the algorithm continues until it converges on a consistent estimate of the error rates.
 
-# Identify chimeras <a id="sec:chimeras"></a>
+# Merge forward/reverse reads <a id="sec:merge"></a>
+
+We've inferred the sample sequences in the forward and reverse reads independently. Now it's time to merge those inferred sequences together, throwing out those pairs of reads that don't match:
+```{r merge}
+merger1 <- mergePairs(dadaF1, derepF1, dadaR1, derepR1, verbose=TRUE)
+```
+
+The `mergePairs(...)` function returns a `data.frame` corresponding to each successfully merged unique sequence. The `$forward` and `$reverse` columns record which forward and reverse sequence contributed to that merged sequence. Thus, the second command removes all merged sequences which are made up of a chimeric forward or reverse sequence. At the end we have a data.frame of merged, error-free, non-chimeric sample sequences! 
+
+# Remove chimeras <a id="sec:chimeras"></a>
 
 The `dada(...)` algorithm models and removes substitution errors, but chimeras are another importance source of spurious sequences in amplicon sequencing. Chimeras are formed during PCR amplification, when one sequence is incompletely amplified, and in the next amplication step is completed by copying a different sequence. The result is a sequencing read which is half one sample sequence, and half the other.
 
 We identify those sequence using the `isBimeraDenovo(...)` function in the dada2 pipeline:
 ```{r bimeras}
-bimerasF1 <- isBimeraDenovo(dadaF1, verbose=TRUE)
-bimerasR1 <- isBimeraDenovo(dadaR1, verbose=TRUE)
+bim1 <- isBimeraDenovo(merger1, verbose=TRUE)
+merger1.nochim <- merger1[!bim1,]
 ```
 
-The return value of `isBimeraDenovo(...)` is a logical vector with a `TRUE` at each position in which the sequence is found to be consistently explained as a chimera produced by more abundant parent sequences. We'll use that in the next step (merging) to remove the merged sequences in which either the forward or reverse read was identified as a chimera.
-
-# Merge forward/reverse reads <a id="sec:merge"></a>
-
-Thus far we've inferred the sample sequences in the forward and reverse reads independently. Now its time to merge those inferred sequences together, throwing out those pairs of reads that don't match. We'll follow that up by removing merged reads which were identified as chimeras:
-```{r merge}
-merger1 <- mergePairs(dadaF1, derepF1, dadaR1, derepR1, verbose=TRUE)
-merger1.nochim <- merger1[!bimerasF1[merger1$forward] & !bimerasR1[merger1$reverse],]
-```
-
-The `mergePairs(...)` function returns a `data.frame` corresponding to each successfully merged unique sequence. The `$forward` and `$reverse` columns record which forward and reverse sequence contributed to that merged sequence. Thus, the second command removes all merged sequences which are made up of a chimeric forward or reverse sequence. At the end we have a data.frame of merged, error-free, non-chimeric sample sequences! 
+The return value of `isBimeraDenovo(...)` is a logical vector with a `TRUE` at each position in which the sequence is found to be consistently explained as a chimera produced by more abundant parent sequences. We used that vector to remove those chimeric sequences from the `merger1` data.frame.
 
 # A second sample <a id="sec:second-sample"></a>
 
@@ -134,12 +143,8 @@ derepR2 <- derepFastq(filtR2, verbose=TRUE)
 # Infer sample composition
 dadaF2 <- dada(derepF2, err=inflateErr(tperr1,3), selfConsist=TRUE)
 dadaR2 <- dada(derepR2, err=inflateErr(tperr1,3), selfConsist=TRUE)
-# Identify chimeras
-bimerasF2 <- isBimeraDenovo(dadaF2, verbose=TRUE)
-bimerasR2 <- isBimeraDenovo(dadaR2, verbose=TRUE)
 # Merge
 merger2 <- mergePairs(dadaF2, derepF2, dadaR2, derepR2, verbose=TRUE)
-merger2.nochim <- merger2[!bimerasF2[merger2$forward] & !bimerasR2[merger2$reverse],]
 ```
 
 With that second sample processed, we can go ahead and create a sequence table.
@@ -149,6 +154,8 @@ With that second sample processed, we can go ahead and create a sequence table.
 Finally we want to combine the inferred samples into one unified table. For that purpose we use `makeSequenceTable`:
 ```{r make-table}
 seqtab <- makeSequenceTable(list(merger1, merger2))
+seqtab.nochim <- removeBimeraDenovo(seqtab, verbose=TRUE)
+dim(seqtab.nochim)
 ```
 
-This is the final product of the dada2 pipeline, a matrix in which each row corresponds to a processed sample, and each column corresponds to an inferred sample sequence (a more precise analogue to the common "OTU table"). From here we recommend proceeding forward with our friend [the phyloseq package](https://joey711.github.io/phyloseq/) for further analysis...
+This is the final product of the dada2 pipeline, a matrix in which each row corresponds to a processed sample, and each column corresponds to an non-chimeric inferred sample sequence (a more precise analogue to the common "OTU table"). From here we recommend proceeding forward with our friend [the phyloseq package](https://joey711.github.io/phyloseq/) for further analysis...

@@ -56,6 +56,10 @@ C_subpos <- function(s1, s2) {
     .Call('dada2_C_subpos', PACKAGE = 'dada2', s1, s2)
 }
 
+C_matchRef <- function(seqs, ref, word_size, non_overlapping) {
+    .Call('dada2_C_matchRef', PACKAGE = 'dada2', seqs, ref, word_size, non_overlapping)
+}
+
 C_nwvec <- function(s1, s2, match, mismatch, gap_p, band) {
     .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band)
 }

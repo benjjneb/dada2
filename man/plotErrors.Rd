@@ -5,10 +5,11 @@
 \title{Plot observed error rates after denoising.}
 \usage{
 plotErrors(dq, nti = c("A", "C", "G", "T"), ntj = c("A", "C", "G", "T"),
-  err_out = TRUE, err_in = FALSE, nominalQ = FALSE)
+  obs = TRUE, err_out = TRUE, err_in = FALSE, nominalQ = FALSE)
 }
 \arguments{
-\item{dq}{(Required). A \code{\link{dada-class}} object.}
+\item{dq}{(Required). A \code{\link{dada-class}} object, or a list of such objects
+that were pooled to estimate a common set of error rates.}
 
 \item{nti}{(Optional). Default c("A","C","G","T"). 
 Some combination of the 4 DNA nucleotides.}
@@ -18,6 +19,9 @@ Some combination of the 4 DNA nucleotides.
 
 The error rates from nti->ntj will be plotted. If multiple nti or ntj are chosen,
  error rates from each-to-each will be plotted in a grid.}
+
+\item{obs}{(Optional). Default TRUE.
+If TRUE, the observed error rates are plotted as points.}
 
 \item{err_out}{(Optional). Default TRUE.
 If TRUE, plot the output error rates (solid line).}

@@ -5,7 +5,8 @@
 \title{Filter and trim a fastq file.}
 \usage{
 fastqFilter(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0,
-  minQ = 0, maxEE = Inf, n = 1e+06, compress = TRUE, verbose = FALSE)
+  minQ = 0, maxEE = Inf, rm.phix = FALSE, n = 1e+06, compress = TRUE,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). The path to the input fastq file, or an R connection to that file.}
@@ -37,6 +38,10 @@ After truncation, reads contain a quality score below minQ will be discarded.}
 After truncation, reads with higher than maxEE "expected errors" will be discarded.
 Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
 
+\item{rm.phix}{(Optional). Default FALSE.
+If TRUE, discard reads that match against the phiX genome, as determined by 
+\code{\link{isPhiX}}.}
+
 \item{n}{(Optional). The number of records (reads) to read in and filter at any one time. 
 This controls the peak memory requirement so that very large fastq files are supported. 
 Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.}
@@ -46,6 +51,8 @@ Whether the output fastq file should be gzip compressed.}
 
 \item{verbose}{(Optional). Default FALSE.
 Whether to output status messages.}
+
+\item{...}{(Optional). Arguments passed on to \code{\link{isPhiX}}.}
 }
 \value{
 NULL.
@@ -58,7 +65,8 @@ package are leveraged to do this filtering.
 }
 \details{
 \code{fastqFilter} replicates most of the functionality of the fastq_filter command in usearch
-(http://www.drive5.com/usearch/manual/cmd_fastq_filter.html).
+(http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). It adds the ability to remove
+contaminating phiX sequences as part of the filtering process.
 }
 \examples{
 testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")

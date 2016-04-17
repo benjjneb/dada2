@@ -10,8 +10,7 @@ Peer reviewed publication: In progress.
 
 ### Installation
 
-source("https://bioconductor.org/biocLite.R")
-biocLite("dada2")
+Installation instructions are available on [the DADA2 front page](http://benjjneb.github.io/dada2/).
 
 ### Tutorial
 
