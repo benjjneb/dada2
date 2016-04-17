@@ -106,6 +106,20 @@ BEGIN_RCPP
     return __result;
 END_RCPP
 }
+// C_matchRef
+Rcpp::IntegerVector C_matchRef(std::vector<std::string> seqs, std::string ref, unsigned int word_size, bool non_overlapping);
+RcppExport SEXP dada2_C_matchRef(SEXP seqsSEXP, SEXP refSEXP, SEXP word_sizeSEXP, SEXP non_overlappingSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
+    Rcpp::traits::input_parameter< std::string >::type ref(refSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type word_size(word_sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type non_overlapping(non_overlappingSEXP);
+    __result = Rcpp::wrap(C_matchRef(seqs, ref, word_size, non_overlapping));
+    return __result;
+END_RCPP
+}
 // C_nwvec
 Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band);
 RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP) {

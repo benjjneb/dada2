@@ -6,8 +6,8 @@
 \usage{
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf,
-  Inf), matchIDs = FALSE, id.sep = "\\\\s", id.field = NULL, n = 1e+06,
-  compress = TRUE, verbose = FALSE)
+  Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, id.sep = "\\\\s",
+  id.field = NULL, n = 1e+06, compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.}
@@ -41,9 +41,13 @@ The number of nucleotides to remove from the start of each read. If both \code{t
 After truncation, reads contain a quality score below minQ will be discarded.}
 
 \item{maxEE}{(Optional). Default \code{Inf} (no EE filtering).
- After truncation, reads with higher than maxEE "expected errors" will be discarded.
- Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
- 
+After truncation, reads with higher than maxEE "expected errors" will be discarded.
+Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
+
+\item{rm.phix}{(Optional). Default FALSE.
+ If TRUE, discard reads that match against the phiX genome, as determined by 
+ \code{\link{isPhiX}}.
+
 \strong{ID MATCHING ARGUMENTS} that follow enforce matching between the sequence identification
  strings in the forward and reverse reads. The function can automatically detect and match ID fields in 
  Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393}
@@ -72,6 +76,8 @@ Whether the output fastq files should be gzip compressed.}
 
 \item{verbose}{(Optional). Default FALSE.
 Whether to output status messages.}
+
+\item{...}{(Optional). Arguments passed on to \code{\link{isPhiX}}.}
 }
 \value{
 NULL.
@@ -86,7 +92,8 @@ remain identically ordered.
 \details{
 fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
 (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but only pairs of reads that both
-pass the filter are retained.
+pass the filter are retained. An added function is the option to remove
+contaminating phiX sequences as part of the filtering process.
 }
 \examples{
 
@@ -96,7 +103,7 @@ filtFastqF <- tempfile(fileext=".fastq.gz")
 filtFastqR <- tempfile(fileext=".fastq.gz")
 fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
 fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
-                    truncLen=c(240, 200), maxEE=2, verbose=TRUE)
+                    truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 
 }
 \seealso{
