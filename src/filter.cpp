@@ -1,16 +1,14 @@
-// [[Rcpp::plugins(cpp11)]]
+////// [[Rcpp::plugins(cpp11)]]
 #include "dada.h"
 #include <Rcpp.h>
-#include <unordered_set>
+////#include <unordered_set> ///!
 using namespace Rcpp;
 
-// phiX is 5386 nt-long circular genome
-// Try store all 16nt words, then map into that?
 // [[Rcpp::export]]
 Rcpp::IntegerVector C_matchRef(std::vector<std::string> seqs, std::string ref,
                              unsigned int word_size, bool non_overlapping) {
   int i,j;
-  std::unordered_set<std::string> phash;
+  std::set<std::string> phash; ///!
   Rcpp::IntegerVector rval(seqs.size());
   
   unsigned int len = ref.size();
