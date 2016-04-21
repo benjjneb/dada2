@@ -10,8 +10,10 @@ Peer reviewed publication: In progress.
 
 ### Installation
 
+```S
 source("https://bioconductor.org/biocLite.R")
 biocLite("dada2")
+```
 
 ### Tutorial
 
