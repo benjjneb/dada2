@@ -255,10 +255,10 @@ void bi_assign_center(Bi *bi) {
 
 /*
  compare:
- Performs alignments and computes lambda for all raws to the specified Bi
- Stores only those that can possibly be recruited to this Bi
+Performs alignments and computes lambda for all raws to the specified Bi
+Stores only those that can possibly be recruited to this Bi
 */
-void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, unsigned int qmax) {
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
   unsigned int index, cind;
   double lambda;
   Raw *raw;
@@ -273,9 +273,9 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
     sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
     b->nalign++;
     if(!sub) { b->nshroud++; }
-
+    
     // Calculate lambda for that sub
-    lambda = compute_lambda(raw, sub, errMat, b->use_quals, qmax);
+    lambda = compute_lambda(raw, sub, errMat, b->use_quals);
     
     // Store lambda and set self
     if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
@@ -294,10 +294,68 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
     }
     sub_free(sub);
   }
-//  b->bi[i]->update_e = true;
-//  b_e_update(b);
+  //  b->bi[i]->update_e = true;
+  //  b_e_update(b);
 }
 
+typedef struct {
+  unsigned int start;
+  unsigned int end;
+  
+} tc_input;
+
+/*
+ compare_threaded:
+Performs alignments and computes lambda for all raws to the specified Bi
+Stores only those that can possibly be recruited to this Bi
+ MULTITHREADED
+*/
+/*
+void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
+  unsigned int index, cind;
+  double lambda;
+  Raw *raw;
+  Sub *sub;
+  Comparison comp;
+  
+  // align all raws to this sequence and compute corresponding lambda
+  if(verbose) { Rprintf("C%iLU:", i); }
+  for(index=0, cind=0; index<b->nraw; index++) {
+    raw = b->raw[index];
+    // get sub object
+    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
+    b->nalign++;
+    if(!sub) { b->nshroud++; }
+    
+    // Calculate lambda for that sub
+    lambda = compute_lambda(raw, sub, errMat, b->use_quals);
+    
+    // Store lambda and set self
+    if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
+    
+    // Store comparison if potentially useful
+    if(lambda * b->reads > raw->E_minmax) { // This cluster could attract this raw
+      if(lambda * b->bi[i]->center->reads > raw->E_minmax) { // Better E_minmax, set
+        raw->E_minmax = lambda * b->bi[i]->center->reads;
+      }
+      comp.i = i;
+      comp.index = index;
+      comp.lambda = lambda;
+      comp.hamming = sub->nsubs;
+      b->bi[i]->comp.push_back(comp);
+      b->bi[i]->comp_index.insert(std::make_pair(index, cind++));
+    }
+    sub_free(sub);
+  }
+  //  b->bi[i]->update_e = true;
+  //  b_e_update(b);
+}
+
+void *t_compare(void *tc_in) {
+  
+}
+*/
+ 
 /*
 void b_e_update(B *b) {
   unsigned int i, index;

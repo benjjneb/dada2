@@ -103,16 +103,14 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
 
 // Returns a 16xN matrix with the observed counts of each transition categorized by
 // type (row) and quality (column). Assumes qualities start at 0.
-Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int qmax) {
+Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool has_quals, int ncol) {
   unsigned int i, r, pos0, pos1, nti0, nti1, qual, t_ij;
-  int ncol;
   Sub *sub;
   Raw *raw, *center;
   
-  if(has_quals) { ncol = qmax+1; }
-  else { ncol = 1; }
+  if(!has_quals) { ncol = 1; }
   
-  // Storage for counts for 0...qmax and each nti->ntj
+  // Storage for counts for 0...(ncol-1) and each nti->ntj
   Rcpp::IntegerMatrix transMat(16, ncol);
 
   for(i=0;i<b->nclust;i++) {

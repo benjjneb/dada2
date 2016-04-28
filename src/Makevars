@@ -1,0 +1,3 @@
+PKG_CPPFLAGS = -pthread
+PKG_LIBS = -pthread
+CXX_STD = CXX11
