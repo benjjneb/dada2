@@ -6,6 +6,8 @@
 #include <string.h>
 #include <math.h>
 #include <Rcpp.h>
+#include <unordered_map>
+#include <unordered_set>
 //#include <gsl/gsl_cdf.h>
 #include "strmap.h" // an ANSI C hash table
 
@@ -96,7 +98,7 @@ typedef struct {
   double birth_e; // the expected number of reads at birth
   Comparison birth_comp; // the Comparison object at birth
   std::vector<Comparison> comp;
-  std::map<unsigned int, unsigned int> comp_index;
+  std::unordered_map<unsigned int, unsigned int> comp_index;
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).

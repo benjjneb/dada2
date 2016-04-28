@@ -35,6 +35,7 @@ URL: http://benjjneb.github.io/dada2/
 BugReports: https://github.com/benjjneb/dada2/issues
 LinkingTo: Rcpp
 LazyData: true
+SystemRequirements: C++11
 Collate:
     'RcppExports.R'
     'allClasses.R'

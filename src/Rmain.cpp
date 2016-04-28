@@ -120,7 +120,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
   Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, qmax);
   Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, seqlen);
-  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err, use_quals);
+//  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err, use_quals);
   Rcpp::DataFrame df_birth_subs = b_make_birth_subs_df(bb, birth_subs, has_quals);
   
   // Free the created subs
@@ -147,7 +147,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   free(raws);
   
   // Organize return List  
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap, _["exp"] = df_expected);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap);
 }
 
 B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, bool verbose) {
