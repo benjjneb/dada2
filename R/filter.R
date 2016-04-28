@@ -271,7 +271,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
 #'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE, ...){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE, ...){
   # Warning: This assumes that forward/reverse reads are in the same order unless matchIDs=TRUE
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
