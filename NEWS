@@ -1,7 +1,86 @@
-CHANGES IN VERSION 0.1
+CHANGES IN VERSION 1.0
 -----------------------
 
 NEW FEATURES
 
-    o First commit
+    o The dada2 package is now available from Bioconductor (http://bioconductor.org)
+
+
+CHANGES IN VERSION 0.99.9
+-----------------------
+
+NEW FEATURES
+
+    o fastqFilter and fastqPairedFilter can now remove phiX contamination if rm.phix argument set to TRUE
+
+
+CHANGES IN VERSION 0.99.8
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o Banding in nwalign is now turned off by default
+
+BUG FIXES
+
+    o Graceful handling of sequences which are not classified at any level by assignTaxonomy
+
+
+CHANGES IN VERSION 0.99.7
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o isBimera was rewritten in C, significantly increasing speed
+
+BUG FIXES
+
+    o An edge case bimera detection bug was fixed
+
+
+CHANGES IN VERSION 0.99.6
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o Function documentation was reviewed and revised throughout the package
+
+
+CHANGES IN VERSION 0.99.5
+-----------------------
+
+NEW FEATURES
+
+    o plotQualityProfile displays a visual summary of the quality scores over sequences in a fastq file
+    
+    o removeBimeraDenovo conveniently identifies and removes chimeras from the input unique sequences
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The dada2 package is now part of the devel branch of Bioconductor (http://bioconductor.org)
+
+BUG FIXES
+
+    o assignTaxonomy now handles varying levels of taxonomic classification in the training data
+
+
+CHANGES IN VERSION 0.10.7
+-----------------------
+
+NEW FEATURES
+
+    o dada2 now supports 454 pyrosequencing. When calling the dada function on 454 data, we recommend
+       using the parameters USE_QUALS = FALSE, HOMOPOLYMER_GAP_PENALTY = -1, BAND_SIZE = 32
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o mergePairs is now "vectorized" over lists of input dada-class and derep-class objects
+
+    o Added a homo_gap argument to nwalign which sets the homopolymer gap penalty in the N-W alignment
+
+BUG FIXES
+
+    o assignTaxonomy now uses less memory
+
+
 
