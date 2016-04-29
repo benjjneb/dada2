@@ -369,8 +369,8 @@ void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   
   // Threaded loop to perform all comparisons
   for(thr=0;thr<NTHREADS;thr++) {
-    inp[thr].start = (b->nraw*thr)/3;
-    inp[thr].end = (b->nraw*(thr+1))/3;
+    inp[thr].start = (b->nraw*thr)/NTHREADS;
+    inp[thr].end = (b->nraw*(thr+1))/NTHREADS;
     inp[thr].b = b;
     inp[thr].i = i;
     inp[thr].use_kmers = use_kmers;

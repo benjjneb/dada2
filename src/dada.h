@@ -12,7 +12,7 @@
 //#include <gsl/gsl_cdf.h>
 #include "strmap.h" // an ANSI C hash table
 
-#define NTHREADS 3
+#define NTHREADS 5
 #define TRACKING 0
 #define MAXMAXD 18
 #define ALIGN_SQUAWK 100000
