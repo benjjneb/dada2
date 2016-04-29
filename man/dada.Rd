@@ -5,7 +5,7 @@
 \title{High resolution sample inference from amplicon data.}
 \usage{
 dada(derep, err, errorEstimationFunction = loessErrfun, selfConsist = FALSE,
-  pool = FALSE, ...)
+  pool = FALSE, nthreads = 1, ...)
 }
 \arguments{
 \item{derep}{(Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
@@ -44,6 +44,9 @@ A list of such objects can be provided, in which case each will be denoised with
  
  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
   error rates, which are always estimated from pooled observations across samples.}
+
+\item{nthreads}{(Optional). Default is 1.
+The number of threads to use in the core algorithm.}
 
 \item{...}{(Optional). All dada_opts can be passed in as arguments to the dada() function.
 See \code{\link{setDadaOpt}} for a full list and description of these options.}

@@ -346,13 +346,13 @@ Stores only those that can possibly be recruited to this Bi
 MULTITHREADED
 */
 
-void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
+void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose) {
   unsigned int index, cind, thr, j, row, col, ncol;
   double lambda;
   Raw *raw;
   Comparison comp;
-  pthread_t threads[NTHREADS];
-  tc_input inp[NTHREADS];
+  pthread_t threads[nthreads-1];
+  tc_input inp[nthreads];
   Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
   if(comps==NULL) Rcpp::stop("Memory allocation failed.");
   
@@ -368,9 +368,9 @@ void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   }
   
   // Threaded loop to perform all comparisons
-  for(thr=0;thr<NTHREADS;thr++) {
-    inp[thr].start = (b->nraw*thr)/NTHREADS;
-    inp[thr].end = (b->nraw*(thr+1))/NTHREADS;
+  for(thr=0;thr<nthreads;thr++) {
+    inp[thr].start = (b->nraw*thr)/nthreads;
+    inp[thr].end = (b->nraw*(thr+1))/nthreads;
     inp[thr].b = b;
     inp[thr].i = i;
     inp[thr].use_kmers = use_kmers;
@@ -378,11 +378,13 @@ void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutof
     inp[thr].comps = &comps[inp[thr].start];
     inp[thr].ncol = ncol;
     inp[thr].err_mat = err_mat;
+    if(thr == nthreads-1) { break; } // run in this thread
     pthread_create(&threads[thr], NULL, t_compare, (void *) &inp[thr]);
   }
+  t_compare((void *) &inp[nthreads-1]);
   
   // Join the threads into a final vector of comparisons (and free stuff)  
-  for(thr=0; thr<NTHREADS; thr++) {
+  for(thr=0; thr<(nthreads-1); thr++) {
     pthread_join(threads[thr], NULL);
   }
 

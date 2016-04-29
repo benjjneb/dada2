@@ -12,9 +12,7 @@
 //#include <gsl/gsl_cdf.h>
 #include "strmap.h" // an ANSI C hash table
 
-#define NTHREADS 5
 #define TRACKING 0
-#define MAXMAXD 18
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 1
@@ -30,7 +28,6 @@
 #define FALSE 0
 #define MAX_SHUFFLE 10
 #define QMIN 0
-//#define QMAX 40       // Now a dynamic variable
 #define QSTEP 1
 #define GAP_GLYPH 9999
 #define ALL_SHUFFLE_STEP 50
@@ -137,7 +134,7 @@ void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle2(B *b);
 void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
-void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
+void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose);
 void b_consensus_update(B *b);
 //void b_e_update(B *b);
 void b_p_update(B *b);
