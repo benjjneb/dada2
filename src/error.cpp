@@ -24,9 +24,12 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
         max_reads = max_raw->reads;
       }
     }
-//    ntcpy(oseq, b->bi[i]->seq);
-    ntcpy(oseq, max_raw->seq);
-    Rseqs.push_back(std::string(oseq));
+    if(!max_raw) {
+      Rseqs.push_back(std::string(""));
+    } else {
+      ntcpy(oseq, max_raw->seq);
+      Rseqs.push_back(std::string(oseq));
+    }
   }
   
   // Create output vectors for other columns of clustering data.frame

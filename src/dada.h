@@ -12,11 +12,12 @@
 //#include <gsl/gsl_cdf.h>
 #include "strmap.h" // an ANSI C hash table
 
+#define NTHREADS 3
 #define TRACKING 0
 #define MAXMAXD 18
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
-#define VERBOSE 0
+#define VERBOSE 1
 #define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
 // SEQLEN MAY NOT BE INCREASED BEYOND 1000 WITHOUT REVISITING AL2SUBS
 #define MIN_BUCKETS 10
@@ -136,6 +137,7 @@ void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle2(B *b);
 void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
+void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
 void b_consensus_update(B *b);
 //void b_e_update(B *b);
 void b_p_update(B *b);
@@ -170,7 +172,8 @@ void sub_free(Sub *sub);
 // methods implemented in pval.cpp
 double calc_pA(int reads, double E_reads);
 double get_pA(Raw *raw, Bi *bi);
-double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals);
+double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int ncol);
+double compute_lambda_ts(Raw *raw, Sub *sub, unsigned int ncol, double *err_mat, bool use_quals);
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp

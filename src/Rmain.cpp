@@ -114,11 +114,12 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     }
   }
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
+///  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(); ///t CRASHING
   Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, err.ncol());
   Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, seqlen);
-//  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err, use_quals);
+  //  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err, use_quals);
   Rcpp::DataFrame df_birth_subs = b_make_birth_subs_df(bb, birth_subs, has_quals);
-  
+
   // Free the created subs
   for(index=0;index<bb->nraw;index++) {
     sub_free(subs[index]);
@@ -152,14 +153,14 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
   
   B *bb;
   bb = b_new(raws, nraw, score, gap_pen, homo_gap_pen, omegaA, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi
-  b_compare(bb, 0, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
+  b_compare_threaded(bb, 0, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
   b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
     if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
-    b_compare(bb, newi, use_kmers, kdist_cutoff, errMat, verbose);
+    b_compare_threaded(bb, newi, use_kmers, kdist_cutoff, errMat, verbose);
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {
