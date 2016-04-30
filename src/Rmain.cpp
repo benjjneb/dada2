@@ -156,6 +156,7 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
   B *bb;
   bb = b_new(raws, nraw, score, gap_pen, homo_gap_pen, omegaA, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi
   b_compare_threaded(bb, 0, FALSE, 1.0, errMat, nthreads, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
+//  b_compare(bb, 0, FALSE, 1.0, errMat, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
   b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
@@ -163,6 +164,7 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) ) {
     if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
     b_compare_threaded(bb, newi, use_kmers, kdist_cutoff, errMat, nthreads, verbose);
+//    b_compare(bb, newi, use_kmers, kdist_cutoff, errMat, verbose);
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {

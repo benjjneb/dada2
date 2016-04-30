@@ -302,7 +302,7 @@ dada <- function(derep,
       map[[i]] <- res$map
 #      exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
-      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, qmax)  # Assumes C sides is returning one col for each integer from 0 to qmax
+      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
     }
     # Accumulate the sub matrix
     cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient

@@ -15,7 +15,7 @@
 #define TRACKING 0
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
-#define VERBOSE 1
+#define VERBOSE 0
 #define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
 // SEQLEN MAY NOT BE INCREASED BEYOND 1000 WITHOUT REVISITING AL2SUBS
 #define MIN_BUCKETS 10
