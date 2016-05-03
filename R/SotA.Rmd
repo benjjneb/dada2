@@ -481,4 +481,4 @@ Common tools, including many of those tested in the paper [Open-Source Sequence 
 
 As shown above, our method DADA2 improves on both the sensitivity and specificity of commonly used methods, detecting both more real variants and (far) fewer spurious ones. This difference can be dramatic: The common QIIME/uclust pipeline reports 20,084 OTUs in an 18-strain mock community, ~20,000 of which are spurious. In comparison, DADA2 without SNVs reports just 39 sequence variants, which consist of the 18 expected strains, a handful of contaminants, and ~5 spurious sequences. Of note, this dramatic reduction in spurious output is achieved without imposing aggressive filters.
 
-Accurate analyses start with accurate data, and [DADA2](http://http://benjjneb.github.io/dada2/) improves the accuracy of amplicon sequencing data by powerfully separating sequence errors from true biological diversity.
+Accurate analyses start with accurate data, and [DADA2](http://benjjneb.github.io/dada2/) improves the accuracy of amplicon sequencing data by powerfully separating sequence errors from true biological diversity.
