@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
 
 <meta name="author" content="Benjamin Callahan" />
 
@@ -40,25 +40,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 
 
-
-</head>
-
-<body>
-
 <style type="text/css">
-.main-container {
-  max-width: 940px;
-  margin-left: auto;
-  margin-right: auto;
-}
-code {
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.04);
-}
-img {
-  max-width:100%;
-  height: auto;
-}
 h1 {
   font-size: 34px;
 }
@@ -79,6 +61,30 @@ h5 {
 }
 h6 {
   font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type="text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
@@ -109,7 +115,8 @@ $(document).ready(function () {
 <div class="fluid-row" id="header">
 
 
-<h1 class="title">Taxonomic assignment in R with dada2</h1>
+
+<h1 class="title toc-ignore">Taxonomic assignment in R with dada2</h1>
 <h4 class="author"><em>Benjamin Callahan</em></h4>
 <h4 class="date"><em>March 29, 2016</em></h4>
 
@@ -121,19 +128,19 @@ $(document).ready(function () {
 <p>The primary goal of <a href="http://benjjneb.github.io/dada2/">the dada2 package</a> is to infer the exact sequence variants in amplicon sequenced samples and their associated abundances. However, a common companion step, especially when sequencing taxonomic marker genes such as 16S or 18S rRNA, is to assign taxonomies to the inferred sequence variants (or OTUs if using an OTU method).</p>
 <p>In order to facilitate this, the dada2 package provides the <code>assignTaxonomy(...)</code> function, which implements the RDP classifier method described in <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/">Wang et al. 2007</a>. In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence of the taxonomic assignment.</p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] '0.99.5'</code></pre>
+<pre><code>## [1] '1.0.0'</code></pre>
 <p>We’ll go through a short example to demonstrate the method in action, but first we consider the issue of the training dataset.</p>
 </div>
 <div id="taxonomic-training-sets" class="section level2">
 <h2>Taxonomic training sets</h2>
-<p>Gzip-ed version of <a href="https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0">the <strong>dada2-compatible fastas for RDP, Silva and GreenGenes can be downloaded here</strong></a>.</p>
+<p>Gzip-ed version of <a href="https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0">the <strong>dada2-compatible fastas for RDP, Silva and GreenGenes can be downloaded here</strong></a>. Please be aware that the Silva uses a <a href="https://www.arb-silva.de/silva-license-information/">dual licensing model for academia and commercial users</a>.</p>
 <p>The <code>assignTaxonomy(...)</code> function expects the training data to be provided in the form of a fasta file (or compressed fasta file) in which the taxonomy corresponding to each sequence is encoded in the id line in the following fashion:</p>
 <pre><code>&gt;Level1;Level2;Level3;Level4;Level5;Level6;
 ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC
 &gt;Level1;Level2;Level3;Level4;Level5;Level6;
 CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC</code></pre>
 <p>In order to simplify the most common use case, we have provided appropriately formatted training fasta files for the three most common datasets used for 16S classification: the <a href="http://rdp.cme.msu.edu/">RDP training set 14</a>, the <a href="http://www.arb-silva.de/documentation/release-123/">Silva v123 database</a>, and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the Green Genes 13.8 release</a>.</p>
-<p>In addition to thanking the folks at RDP, Silva and GreenGenes for making these datasets available, we also want to thank Pat Schloss and the <a href="http://www.mothur.org">mothur</a> team for making cleaner versions of the Silva and RDP training set available. To be specific, we created the dada2-compatible training fastas from <a href="http://www.mothur.org/wiki/Silva_reference_files">the mothur-compatible Silva.nr_v123 files</a> (<a href="http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/">described here</a>), the <a href="http://mothur.org/wiki/RDP_reference_files">mothur-compatible 16S rRNA reference (RDP)</a> (<a href="http://blog.mothur.org/2015/05/27/RDP-v14-reference_files/">described here</a>), and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
+<p>In addition to thanking the folks at RDP, Silva and GreenGenes for making these datasets available, we also want to thank Pat Schloss and the <a href="http://www.mothur.org">mothur</a> team for making cleaner versions of the Silva and RDP training set available. To be specific, we created the dada2-compatible training fastas from <a href="http://www.mothur.org/wiki/Silva_reference_files">the mothur-compatible Silva.nr_v123 files</a> (<a href="http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/">described here</a>, and <a href="https://www.arb-silva.de/silva-license-information/">license here</a>), the <a href="http://mothur.org/wiki/RDP_reference_files">mothur-compatible 16S rRNA reference (RDP)</a> (<a href="http://blog.mothur.org/2015/05/27/RDP-v14-reference_files/">described here</a>), and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
 <p><em>In order to follow along with the examples below, <a href="https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0">download</a> the <code>rdp_train_set_14.fa.gz</code> file to an appropriate location on your local machine.</em></p>
 </div>
 <div id="taxonomic-assignment-in-action" class="section level2">
