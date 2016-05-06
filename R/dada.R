@@ -395,11 +395,12 @@ dada <- function(derep,
       # Prune $denoised, $clustering, $sequence, $quality
       rval2[[i]]$denoised <- rval2[[i]]$denoised[keep]
       rval2[[i]]$clustering <- rval2[[i]]$clustering[keep,] # Leaves old (char of integer) rownames!
+      rownames(rval2[[i]]$clustering) <- as.character(newBi[as.integer(rownames(rval2[[i]]$clustering))])
       rval2[[i]]$sequence <- rval2[[i]]$sequence[keep]
       rval2[[i]]$quality <- rval2[[i]]$quality[keep,,drop=FALSE] # Not the qualities for this sample alone!
       # Prune birth_subs and remap its $clust column
       rval2[[i]]$birth_subs <- rval2[[i]]$birth_subs[keep[rval2[[i]]$birth_subs$clust],,drop=FALSE]
-      rval2[[i]]$birth_subs <- newBi[rval2[[i]]$birth_subs$clust]      
+      rval2[[i]]$birth_subs$clust <- newBi[rval2[[i]]$birth_subs$clust]      
       # Remap $map
       rval2[[i]]$map <- newBi[map[names(derep.in[[i]]$uniques)]]
       # Recalculate abundances (both $denoised and $clustering$abundance)
