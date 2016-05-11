@@ -7,7 +7,7 @@ Exact sample inference from Illumina amplicon data. Resolves real variants diffe
 
 ### DADA2 Articles
 
-Preprint describing DADA2's accuracy and precision: [DADA2: High resolution sample inference from amplicon data](http://dx.doi.org/10.1101/024034)
+Preprint describing DADA2's accuracy and precision: [DADA2: High resolution sample inference from amplicon data](http://dx.doi.org/10.1101/024034).
 
 Peer reviewed publication: DADA2: High resolution sample inference from Illumina amplicon data. Nature Methods, in press.
 
