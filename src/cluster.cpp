@@ -310,7 +310,7 @@ typedef struct {
 
 void *t_compare(void *tc_in) {
   tc_input *inp = (tc_input *) tc_in;
-  unsigned int index, hamming, j;
+  unsigned int index, j;
   Raw *raw;
   Sub *sub;
   B *b = inp->b;
@@ -347,7 +347,7 @@ MULTITHREADED
 */
 
 void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose) {
-  unsigned int index, cind, thr, j, row, col, ncol;
+  unsigned int index, cind, thr, row, col, ncol;
   double lambda;
   Raw *raw;
   Comparison comp;
@@ -387,7 +387,7 @@ void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   for(thr=0; thr<(nthreads-1); thr++) {
     pthread_join(threads[thr], NULL);
   }
-
+  
   // Selectively store
   for(index=0, cind=0; index<b->nraw; index++) {
     b->nalign++; ///t
@@ -412,6 +412,100 @@ void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   free(err_mat);
   free(comps);
 }
+
+struct CompareParallel : public RcppParallel::Worker
+{
+  // source data
+  B *b;
+  unsigned int i;
+  
+  // destination vector
+  std::vector<Comparison> output;
+  
+  // parameters
+  bool use_kmers;
+  double kdist_cutoff;
+  unsigned int ncol;
+  double *err_mat;
+  
+  // initialize with source and destination
+  CompareParallel(B *b, unsigned int i, std::vector<Comparison> output, bool use_kmers, double kdist_cutoff, 
+                  unsigned int ncol, double *err_mat) 
+    : b(b), i(i), output(output), use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), ncol(ncol), err_mat(err_mat) {}
+  
+  // take the square root of the range of elements requested
+  void operator()(std::size_t begin, std::size_t end) {
+    Raw *raw;
+    Sub *sub;
+    
+    for(std::size_t index=begin;index<end;index++) {
+      raw = b->raw[index];
+      sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
+      
+      // Make comparison object
+      output[index].i = i;
+      output[index].index = index;
+      output[index].lambda = compute_lambda_ts(raw, sub, ncol, err_mat, b->use_quals);
+      if(sub) {
+        output[index].hamming = sub->nsubs;
+      } else {
+        output[index].hamming = -1;
+      }
+      
+      // Free sub
+      sub_free(sub);
+    }
+  }
+};
+
+
+void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose) {
+  unsigned int index, cind, row, col, ncol;
+  double lambda;
+  Raw *raw;
+  Comparison comp;
+
+  
+  // Make thread-safe simple array for the error rate matrix
+  double *err_mat = (double *) malloc(sizeof(double) * errMat.ncol() * errMat.nrow());
+  if(err_mat==NULL) Rcpp::stop("Memory allocation failed.");
+  ncol = errMat.ncol();
+  if(errMat.nrow() != 16) { Rcpp::stop("Error matrix doesn't have 16 rows."); }
+  for(row=0;row<errMat.nrow();row++) {
+    for(col=0;col<errMat.ncol();col++) {
+      err_mat[row*ncol + col] = errMat(row, col);
+    }
+  }
+  
+  // Parallelize for loop to perform all comparisons
+  std::vector<Comparison> comps(b->nraw);
+  CompareParallel compareParallel(b, i, comps, use_kmers, kdist_cutoff, ncol, err_mat);
+  parallelFor(0, b->nraw, compareParallel);
+  
+  // Selectively store
+  for(index=0, cind=0; index<b->nraw; index++) {
+    b->nalign++; ///t
+    raw = b->raw[index];
+    comp = comps[index];
+    lambda = comp.lambda;
+    
+    // Store self-lambda
+    if(index == b->bi[i]->center->index) { 
+      b->bi[i]->self = lambda; 
+    }
+    
+    // Store comparison if potentially useful
+    if(lambda * b->reads > raw->E_minmax) { // This cluster could attract this raw
+      if(lambda * b->bi[i]->center->reads > raw->E_minmax) { // Better E_minmax, set
+        raw->E_minmax = lambda * b->bi[i]->center->reads;
+      }
+      b->bi[i]->comp.push_back(comp);
+      b->bi[i]->comp_index.insert(std::make_pair(index, cind++));
+    }
+  }
+  free(err_mat);
+}
+
 
 /*
 void b_e_update(B *b) {

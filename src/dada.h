@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <Rcpp.h>
+#include <RcppParallel.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <pthread.h>

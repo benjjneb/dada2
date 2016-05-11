@@ -1,3 +1,4 @@
 PKG_CPPFLAGS = -pthread
 PKG_LIBS = -pthread
+PKG_LIBS += $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")
 CXX_STD = CXX11

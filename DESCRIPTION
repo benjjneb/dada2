@@ -16,24 +16,29 @@ License: LGPL-3
 LazyLoad: yes
 Depends:
     R (>= 3.2.0),
-    Rcpp (>= 0.11.2)
+    Rcpp (>= 0.11.2),
+    RcppParallel
 Imports:
     Biostrings (>= 2.32.1),
     ggplot2 (>= 1.0),
     data.table (>= 1.9.4),
     reshape2 (>= 1.4.1),
-    ShortRead (>= 1.24.0)
+    ShortRead (>= 1.24.0),
+    RcppParallel
 Suggests:
     testthat (>= 0.9.1),
     microbenchmark (>= 1.4.2),
     BiocStyle,
     knitr,
     rmarkdown
+LinkingTo:
+    Rcpp,
+    RcppParallel
+SystemRequirements: GNU make
 VignetteBuilder: knitr
 biocViews: Microbiome, Sequencing, Classification, Metagenomics
 URL: http://benjjneb.github.io/dada2/
 BugReports: https://github.com/benjjneb/dada2/issues
-LinkingTo: Rcpp
 LazyData: true
 Collate:
     'RcppExports.R'

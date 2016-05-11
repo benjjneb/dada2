@@ -94,6 +94,8 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #' @seealso 
 #'  \code{\link{derepFastq}}, \code{\link{setDadaOpt}}
 #'
+#' @importFrom RcppParallel RcppParallelLibs
+#'
 #' @export
 #'
 #' @examples
@@ -218,11 +220,13 @@ dada <- function(derep,
   
   # Validate alignment parameters
   if(opts$GAP_PENALTY>0) opts$GAP_PENALTY = -opts$GAP_PENALTY
-  if(is.null(opts$HOMOPOLYMER_GAP_PENALTY)) { # Don't use homopolymer gapping
-    opts$HOMOPOLYMER_GAP_PENALTY <- 99
-  } else { # Use homopolymer gapping
+  if(is.null(opts$HOMOPOLYMER_GAP_PENALTY)) { # Set gap penalties equal
+    opts$HOMOPOLYMER_GAP_PENALTY <- opts$GAP_PENALTY
+  }
+  if(opts$HOMOPOLYMER_GAP_PENALTY > 0) opts$HOMOPOLYMER_GAP_PENALTY = -opts$HOMOPOLYMER_GAP_PENALTY
+
+  if(opts$HOMOPOLYMER_GAP_PENALTY != opts$GAP_PENALTY) { # Use homopolymer gapping
     opts$VECTORIZED_ALIGNMENT <- FALSE # No homopolymer gapping in vectorized aligner
-    if(opts$HOMOPOLYMER_GAP_PENALTY > 0) opts$HOMOPOLYMER_GAP_PENALTY = -opts$HOMOPOLYMER_GAP_PENALTY
   }
   if(opts$VECTORIZED_ALIGNMENT) {
     if(length(unique(diag(opts$SCORE)))!=1 || 
