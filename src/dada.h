@@ -31,7 +31,7 @@
 #define QMIN 0
 #define QSTEP 1
 #define GAP_GLYPH 9999
-#define ALL_SHUFFLE_STEP 50
+#define GRAIN_SIZE 10
 
 
 /* -------------------------------------------
@@ -135,7 +135,8 @@ void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle2(B *b);
 void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
-void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose);
+//void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose);
+void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
 void b_consensus_update(B *b);
 //void b_e_update(B *b);
 void b_p_update(B *b);

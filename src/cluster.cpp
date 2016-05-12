@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include <RcppParallel.h>
 #include "dada.h"
 // [[Rcpp::interfaces(cpp)]]
 
@@ -296,6 +297,10 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
   }
 }
 
+/***********************************************
+ * SUPPLANTED BY RcppParallel IMPLEMETNATION
+ ***********************************************
+
 typedef struct {
   unsigned int start;
   unsigned int end;
@@ -339,12 +344,10 @@ void *t_compare(void *tc_in) {
   return(NULL);
 }
 
-/*
- compare_threaded:
-Performs alignments and computes lambda for all raws to the specified Bi
-Stores only those that can possibly be recruited to this Bi
-MULTITHREADED
-*/
+// compare_threaded:
+// Performs alignments and computes lambda for all raws to the specified Bi
+// Stores only those that can possibly be recruited to this Bi
+// MULTITHREADED
 
 void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose) {
   unsigned int index, cind, thr, row, col, ncol;
@@ -412,15 +415,16 @@ void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   free(err_mat);
   free(comps);
 }
-
+***********************************************/
+ 
 struct CompareParallel : public RcppParallel::Worker
 {
   // source data
   B *b;
   unsigned int i;
   
-  // destination vector
-  std::vector<Comparison> output;
+  // destination comparison array
+  Comparison *output;
   
   // parameters
   bool use_kmers;
@@ -429,7 +433,7 @@ struct CompareParallel : public RcppParallel::Worker
   double *err_mat;
   
   // initialize with source and destination
-  CompareParallel(B *b, unsigned int i, std::vector<Comparison> output, bool use_kmers, double kdist_cutoff, 
+  CompareParallel(B *b, unsigned int i, Comparison *output, bool use_kmers, double kdist_cutoff, 
                   unsigned int ncol, double *err_mat) 
     : b(b), i(i), output(output), use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), ncol(ncol), err_mat(err_mat) {}
   
@@ -451,7 +455,7 @@ struct CompareParallel : public RcppParallel::Worker
       } else {
         output[index].hamming = -1;
       }
-      
+
       // Free sub
       sub_free(sub);
     }
@@ -459,14 +463,13 @@ struct CompareParallel : public RcppParallel::Worker
 };
 
 
-void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose) {
+void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
   unsigned int index, cind, row, col, ncol;
   double lambda;
   Raw *raw;
   Comparison comp;
-
   
-  // Make thread-safe simple array for the error rate matrix
+  // Make thread-safe C-array for the error rate matrix
   double *err_mat = (double *) malloc(sizeof(double) * errMat.ncol() * errMat.nrow());
   if(err_mat==NULL) Rcpp::stop("Memory allocation failed.");
   ncol = errMat.ncol();
@@ -478,9 +481,10 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   }
   
   // Parallelize for loop to perform all comparisons
-  std::vector<Comparison> comps(b->nraw);
+  Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
+  if(comps==NULL) Rcpp::stop("Memory allocation failed.");
   CompareParallel compareParallel(b, i, comps, use_kmers, kdist_cutoff, ncol, err_mat);
-  parallelFor(0, b->nraw, compareParallel);
+  RcppParallel::parallelFor(0, b->nraw, compareParallel, GRAIN_SIZE);
   
   // Selectively store
   for(index=0, cind=0; index<b->nraw; index++) {
@@ -488,7 +492,8 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
     raw = b->raw[index];
     comp = comps[index];
     lambda = comp.lambda;
-    
+    if(lambda<0 || lambda>1) Rcpp::stop("Lambda out-of-range error.");
+
     // Store self-lambda
     if(index == b->bi[i]->center->index) { 
       b->bi[i]->self = lambda; 
@@ -504,6 +509,7 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
     }
   }
   free(err_mat);
+  free(comps);
 }
 
 

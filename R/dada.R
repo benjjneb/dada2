@@ -62,8 +62,10 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
 #'   error rates, which are always estimated from pooled observations across samples.
 #'   
-#' @param nthreads (Optional). Default is 1.
-#'  The number of threads to use in the core algorithm.   
+#' @param multithreading (Optional). Default is FALSE.
+#'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+#'  If an integer is provided, the number of threads to use is set by passing the argument on to
+#'  \code{\link{RcppParallel::setThreadOptions}}.
 #'   
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
 #'  See \code{\link{setDadaOpt}} for a full list and description of these options. 
@@ -95,6 +97,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'  \code{\link{derepFastq}}, \code{\link{setDadaOpt}}
 #'
 #' @importFrom RcppParallel RcppParallelLibs
+#' @improtFrom RcppParallel setThreadOptions
 #'
 #' @export
 #'
@@ -110,7 +113,7 @@ dada <- function(derep,
                  errorEstimationFunction = loessErrfun,
                  selfConsist = FALSE, 
                  pool = FALSE,
-                 nthreads = 1, ...) {
+                 multithread = FALSE, ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
@@ -240,10 +243,12 @@ dada <- function(derep,
     if(opts$BAND_SIZE == 0) opts$VECTORIZED_ALIGNMENT=FALSE
   }
   
-  # Check nthreads
-  if(nthreads < 1) { nthreads <- 1 }
-  if(nthreads > 255) { nthreads <- 255 }
-  
+  # Check for numeric multithreading argument
+  if(is.numeric(multithread)) {
+    RcppParallel::setThreadOptions(numThreads = multithread)
+    multithread <- TRUE
+  }
+
   # Initialize
   cur <- NULL
   if(initializeErr) { nconsist <- 0 } else { nconsist <- 1 }
@@ -291,7 +296,7 @@ dada <- function(derep,
 #                          opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
-                          nthreads,
+                          multithread,
                           opts[["VERBOSE"]])
       
       # Augment the returns
