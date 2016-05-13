@@ -62,10 +62,10 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
 #'   error rates, which are always estimated from pooled observations across samples.
 #'   
-#' @param multithreading (Optional). Default is FALSE.
+#' @param multithread (Optional). Default is FALSE.
 #'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
 #'  If an integer is provided, the number of threads to use is set by passing the argument on to
-#'  \code{\link{RcppParallel::setThreadOptions}}.
+#'  \code{\link{setThreadOptions}}.
 #'   
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
 #'  See \code{\link{setDadaOpt}} for a full list and description of these options. 
@@ -97,7 +97,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'  \code{\link{derepFastq}}, \code{\link{setDadaOpt}}
 #'
 #' @importFrom RcppParallel RcppParallelLibs
-#' @improtFrom RcppParallel setThreadOptions
+#' @importFrom RcppParallel setThreadOptions
 #'
 #' @export
 #'
