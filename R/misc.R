@@ -193,8 +193,8 @@ checkConvergence <- function(dadaO) {
   sapply(dadaO$err_in, function(x) sum(abs(dadaO$err_out-x)))
 }
 
-pfasta <- function(seqs) {
-  cat(paste(">", seq(length(seqs)), "\n", seqs, sep="", collapse="\n"))
+pfasta <- function(seqs, ids=seq(length(seqs))) {
+  cat(paste(">", ids, "\n", seqs, sep="", collapse="\n"))
 }
 
 is.list.of <- function(x, ctype) {

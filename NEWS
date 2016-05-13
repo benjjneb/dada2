@@ -1,3 +1,20 @@
+CHANGES IN VERSION 1.1
+-----------------------
+
+NEW FEATURES
+
+    o Multithreading. The dada(...) function is now multithreaded. This behavior is controlled by the multithread argument to the function, and is FALSE by default.
+    
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The phiX removal functionality in fastqFilter/fastqPairedFilter is now substantially faster.
+
+BUG FIXES
+
+    o Certain diagnostic return values of dada(..., pool=TRUE) are now appropriately constructed.
+
+    o A 2-5% speedup from switching to C++11 hashed containers.
+
 CHANGES IN VERSION 1.0
 -----------------------
 

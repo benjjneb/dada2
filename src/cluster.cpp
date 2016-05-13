@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include <RcppParallel.h>
 #include "dada.h"
 // [[Rcpp::interfaces(cpp)]]
 
@@ -255,10 +256,10 @@ void bi_assign_center(Bi *bi) {
 
 /*
  compare:
- Performs alignments and computes lambda for all raws to the specified Bi
- Stores only those that can possibly be recruited to this Bi
+Performs alignments and computes lambda for all raws to the specified Bi
+Stores only those that can possibly be recruited to this Bi
 */
-void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, unsigned int qmax) {
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
   unsigned int index, cind;
   double lambda;
   Raw *raw;
@@ -273,13 +274,13 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
     sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
     b->nalign++;
     if(!sub) { b->nshroud++; }
-
-    // Calculate lambda for that sub
-    lambda = compute_lambda(raw, sub, errMat, b->use_quals, qmax);
     
+    // Calculate lambda for that sub
+    lambda = compute_lambda(raw, sub, errMat, b->use_quals, errMat.ncol());
+
     // Store lambda and set self
     if(index == b->bi[i]->center->index) { b->bi[i]->self = lambda; }
-    
+
     // Store comparison if potentially useful
     if(lambda * b->reads > raw->E_minmax) { // This cluster could attract this raw
       if(lambda * b->bi[i]->center->reads > raw->E_minmax) { // Better E_minmax, set
@@ -294,9 +295,223 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
     }
     sub_free(sub);
   }
-//  b->bi[i]->update_e = true;
-//  b_e_update(b);
 }
+
+/***********************************************
+ * SUPPLANTED BY RcppParallel IMPLEMETNATION
+ ***********************************************
+
+typedef struct {
+  unsigned int start;
+  unsigned int end;
+  B *b;
+  unsigned int i;
+  bool use_kmers;
+  double kdist_cutoff;
+  Comparison *comps;
+  unsigned int ncol;
+  double *err_mat;
+} tc_input;
+
+void *t_compare(void *tc_in) {
+  tc_input *inp = (tc_input *) tc_in;
+  unsigned int index, j;
+  Raw *raw;
+  Sub *sub;
+  B *b = inp->b;
+  unsigned int i = inp->i;
+  Comparison *comps = inp->comps;
+
+  for(index=inp->start, j=0; index<inp->end; index++, j++) {
+    // Make sub object
+    raw = b->raw[index];
+    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, inp->use_kmers, inp->kdist_cutoff, b->band_size, b->vectorized_alignment);
+
+    // Make comparison object
+    comps[j].i = i;
+    comps[j].index = index;
+    comps[j].lambda = compute_lambda_ts(raw, sub, inp->ncol, inp->err_mat, b->use_quals);
+    if(sub) {
+      comps[j].hamming = sub->nsubs;
+    } else {
+      comps[j].hamming = -1;
+    }
+
+    // Free sub
+    sub_free(sub);
+  }
+  
+  return(NULL);
+}
+
+// compare_threaded:
+// Performs alignments and computes lambda for all raws to the specified Bi
+// Stores only those that can possibly be recruited to this Bi
+// MULTITHREADED
+
+void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose) {
+  unsigned int index, cind, thr, row, col, ncol;
+  double lambda;
+  Raw *raw;
+  Comparison comp;
+  pthread_t threads[nthreads-1];
+  tc_input inp[nthreads];
+  Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
+  if(comps==NULL) Rcpp::stop("Memory allocation failed.");
+  
+  // Make thread-safe simple array for the error rate matrix
+  double *err_mat = (double *) malloc(sizeof(double) * errMat.ncol() * errMat.nrow());
+  if(err_mat==NULL) Rcpp::stop("Memory allocation failed.");
+  ncol = errMat.ncol();
+  if(errMat.nrow() != 16) { Rcpp::stop("Error matrix doesn't have 16 rows."); }
+  for(row=0;row<errMat.nrow();row++) {
+    for(col=0;col<errMat.ncol();col++) {
+      err_mat[row*ncol + col] = errMat(row, col);
+    }
+  }
+  
+  // Threaded loop to perform all comparisons
+  for(thr=0;thr<nthreads;thr++) {
+    inp[thr].start = (b->nraw*thr)/nthreads;
+    inp[thr].end = (b->nraw*(thr+1))/nthreads;
+    inp[thr].b = b;
+    inp[thr].i = i;
+    inp[thr].use_kmers = use_kmers;
+    inp[thr].kdist_cutoff = kdist_cutoff;
+    inp[thr].comps = &comps[inp[thr].start];
+    inp[thr].ncol = ncol;
+    inp[thr].err_mat = err_mat;
+    if(thr == nthreads-1) { break; } // run in this thread
+    pthread_create(&threads[thr], NULL, t_compare, (void *) &inp[thr]);
+  }
+  t_compare((void *) &inp[nthreads-1]);
+  
+  // Join the threads into a final vector of comparisons (and free stuff)  
+  for(thr=0; thr<(nthreads-1); thr++) {
+    pthread_join(threads[thr], NULL);
+  }
+  
+  // Selectively store
+  for(index=0, cind=0; index<b->nraw; index++) {
+    b->nalign++; ///t
+    raw = b->raw[index];
+    comp = comps[index];
+    lambda = comp.lambda;
+    
+    // Store self-lambda
+    if(index == b->bi[i]->center->index) { 
+      b->bi[i]->self = lambda; 
+    }
+    
+    // Store comparison if potentially useful
+    if(lambda * b->reads > raw->E_minmax) { // This cluster could attract this raw
+      if(lambda * b->bi[i]->center->reads > raw->E_minmax) { // Better E_minmax, set
+        raw->E_minmax = lambda * b->bi[i]->center->reads;
+      }
+      b->bi[i]->comp.push_back(comp);
+      b->bi[i]->comp_index.insert(std::make_pair(index, cind++));
+    }
+  }
+  free(err_mat);
+  free(comps);
+}
+***********************************************/
+ 
+struct CompareParallel : public RcppParallel::Worker
+{
+  // source data
+  B *b;
+  unsigned int i;
+  
+  // destination comparison array
+  Comparison *output;
+  
+  // parameters
+  bool use_kmers;
+  double kdist_cutoff;
+  unsigned int ncol;
+  double *err_mat;
+  
+  // initialize with source and destination
+  CompareParallel(B *b, unsigned int i, Comparison *output, bool use_kmers, double kdist_cutoff, 
+                  unsigned int ncol, double *err_mat) 
+    : b(b), i(i), output(output), use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), ncol(ncol), err_mat(err_mat) {}
+  
+  // take the square root of the range of elements requested
+  void operator()(std::size_t begin, std::size_t end) {
+    Raw *raw;
+    Sub *sub;
+    
+    for(std::size_t index=begin;index<end;index++) {
+      raw = b->raw[index];
+      sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment);
+      
+      // Make comparison object
+      output[index].i = i;
+      output[index].index = index;
+      output[index].lambda = compute_lambda_ts(raw, sub, ncol, err_mat, b->use_quals);
+      if(sub) {
+        output[index].hamming = sub->nsubs;
+      } else {
+        output[index].hamming = -1;
+      }
+
+      // Free sub
+      sub_free(sub);
+    }
+  }
+};
+
+
+void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose) {
+  unsigned int index, cind, row, col, ncol;
+  double lambda;
+  Raw *raw;
+  Comparison comp;
+  
+  // Make thread-safe C-array for the error rate matrix
+  double *err_mat = (double *) malloc(sizeof(double) * errMat.ncol() * errMat.nrow());
+  if(err_mat==NULL) Rcpp::stop("Memory allocation failed.");
+  ncol = errMat.ncol();
+  if(errMat.nrow() != 16) { Rcpp::stop("Error matrix doesn't have 16 rows."); }
+  for(row=0;row<errMat.nrow();row++) {
+    for(col=0;col<errMat.ncol();col++) {
+      err_mat[row*ncol + col] = errMat(row, col);
+    }
+  }
+  
+  // Parallelize for loop to perform all comparisons
+  Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
+  if(comps==NULL) Rcpp::stop("Memory allocation failed.");
+  CompareParallel compareParallel(b, i, comps, use_kmers, kdist_cutoff, ncol, err_mat);
+  RcppParallel::parallelFor(0, b->nraw, compareParallel, GRAIN_SIZE);
+  
+  // Selectively store
+  for(index=0, cind=0; index<b->nraw; index++) {
+    b->nalign++; ///t
+    raw = b->raw[index];
+    comp = comps[index];
+    lambda = comp.lambda;
+    if(lambda<0 || lambda>1) Rcpp::stop("Lambda out-of-range error.");
+
+    // Store self-lambda
+    if(index == b->bi[i]->center->index) { 
+      b->bi[i]->self = lambda; 
+    }
+    
+    // Store comparison if potentially useful
+    if(lambda * b->reads > raw->E_minmax) { // This cluster could attract this raw
+      if(lambda * b->bi[i]->center->reads > raw->E_minmax) { // Better E_minmax, set
+        raw->E_minmax = lambda * b->bi[i]->center->reads;
+      }
+      b->bi[i]->comp.push_back(comp);
+      b->bi[i]->comp_index.insert(std::make_pair(index, cind++));
+    }
+  }
+  free(err_mat);
+  free(comps);
+}
+
 
 /*
 void b_e_update(B *b) {
@@ -403,6 +618,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
   for(i=0;i<b->nclust;i++) {
     for(r=0; r<b->bi[i]->nraw; r++) {
       raw = b->bi[i]->raw[r];
+      if(b->bi[i]->center->index == raw->index) { continue; } // Don't bud centers
       ci = b->bi[i]->comp_index[raw->index];
       hamming = b->bi[i]->comp[ci].hamming;
       lambda = b->bi[i]->comp[ci].lambda;

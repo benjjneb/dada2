@@ -1,14 +1,13 @@
-////// [[Rcpp::plugins(cpp11)]]
+// [[Rcpp::plugins(cpp11)]]
 #include "dada.h"
 #include <Rcpp.h>
-////#include <unordered_set> ///!
 using namespace Rcpp;
 
 // [[Rcpp::export]]
 Rcpp::IntegerVector C_matchRef(std::vector<std::string> seqs, std::string ref,
                              unsigned int word_size, bool non_overlapping) {
   int i,j;
-  std::set<std::string> phash; ///!
+  std::unordered_set<std::string> phash; ///!
   Rcpp::IntegerVector rval(seqs.size());
   
   unsigned int len = ref.size();
