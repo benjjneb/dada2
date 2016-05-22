@@ -1,0 +1,38 @@
+name: "dada2"
+navbar:
+  title: "dada2"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Download"
+      href: download.html
+    - text: "Installation"
+      href: dada-installation.html
+    - text: "Walkthrough"
+      href: tutorial.html
+    - text: "Manual"
+      href: https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf
+    - text: "More"
+      icon: fa-gear
+      menu:
+        - text: "Manuscript"
+          href: http://biorxiv.org/content/early/2015/08/06/024034
+        - text: "Benchmarking"
+          href: SotA.html
+        - text: "Taxonomy"
+          href: assign.html
+        - text: "Options"
+          href: page_b.html
+  right:
+    - icon: fa-question fa-lg
+      menu:
+      - text: "Issues"
+        href: https://github.com/benjjneb/dada2/issues
+      - text: "FAQ"
+        href: faq.html
+output:
+  html_document:
+    theme: flatly
+    highlight: textmate
+    include:
+      after_body: footer.html

@@ -1,0 +1,30 @@
+---
+title: "Frequently Asked Questions"
+---
+
+## How can I demultiplex my fastq files?
+
+The dada2 workflow assumes that you are starting with demultiplexed fastq files. That is, there is one fastq (or one forward and one reverse) for each sample. This is commonly the format in which sequencing data is received from sequencing centers, but especially when using single-index barcoding it is also fairly common to receive un-demultiplexed data alongside an "index" fastq.
+
+There are multiple methods to demultiplex such data. We use [the idemp tool](https://github.com/yhwu/idemp). The [fastx-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/) performs demultiplexing.
+
+You can also demultiplex using [QIIME](http://qiime.org/) by running `split_libraries_fastq.py` followed by `split_sequence_file_on_sample_ids.py`. If using QIIME to demultiplex paired-end data, we recommend turning off filtering as the QIIME filtering causes the forward/reverse reads to be in mismatched order. You can do this by passing `split_libraries_fastq.py` the following arguments: `-r 999 -n 999 -q 0 -p 0.0001`.
+
+&nbsp;
+
+## Can I use dada2 with my 454 data?
+
+Yes. We recommend the following 454-specific parameters when using the `dada` function on 454 data for best results:
+
+```S
+dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)
+```
+
+&nbsp;
+
+## Why aren't any of my reads being successfully merged?
+
+Do your reads overlap after the trimming and filtering you performed? In the tutorial we analyzed 2x250 Miseq reads using the 515F and 805R primers, meaning the reads strongly overlap and we could trim as dictated by the quality scores. However, if you are using a less-overlapping sequencing/primer-set combination, you must retain enough sequence for the reads to healthily overlap (`mergePairs` requires 20 nts of overlap by default).
+
+Another possibility is that you have bad data. One quick way to test this is to simply look at the forward reads alone. If it's 16S data, does assignTaxonomy identify any of the, say, top 20 output sequences? If not, or if you are using non-16S data, try BLAST-ing the top output sequences against nt. Are they hitting what you expect? If not, you probably have a bad sequencing run on your hands.
+
