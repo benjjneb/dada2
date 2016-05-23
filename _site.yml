@@ -21,6 +21,8 @@ navbar:
           href: SotA.html
         - text: "Taxonomy"
           href: assign.html
+        - text: "Pooling"
+          href: pool.html
         - text: "Options"
           href: page_b.html
   right:
