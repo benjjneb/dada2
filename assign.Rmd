@@ -20,7 +20,7 @@ We'll go through a short example to demonstrate the method in action, but first 
 
 ## Taxonomic training sets
 
-Gzip-ed version of [the **dada2-compatible fastas for RDP, Silva and GreenGenes can be downloaded here**](https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0). Please be aware that the Silva uses a [dual licensing model for academia and commercial users](https://www.arb-silva.de/silva-license-information/).
+*Gzip-ed version of the dada2-formatted training fastas for the [RDP](Training/rdp_train_set_14.fa.gz), [Silva](Training/silva_nr_v123_train_set.fa.gz) and [GreenGenes](Training/gg_13_8_train_set_97.fa.gz) reference databases are available. Please be aware that the Silva uses a [dual licensing model for academia and commercial users](https://www.arb-silva.de/silva-license-information/).*
 
 The `assignTaxonomy(...)` function expects the training data to be provided in the form of a fasta file (or compressed fasta file) in which the taxonomy corresponding to each sequence is encoded in the id line in the following fashion:
 
@@ -35,7 +35,7 @@ In order to simplify the most common use case, we have provided appropriately fo
 
 In addition to thanking the folks at RDP, Silva and GreenGenes for making these datasets available, we also want to thank Pat Schloss and the [mothur](http://www.mothur.org) team for making cleaner versions of the Silva and RDP training set available. To be specific, we created the dada2-compatible training fastas from [the mothur-compatible Silva.nr_v123 files](http://www.mothur.org/wiki/Silva_reference_files) ([described here](http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/), and [license here](https://www.arb-silva.de/silva-license-information/)), the [mothur-compatible 16S rRNA reference (RDP)](http://mothur.org/wiki/RDP_reference_files) ([described here](http://blog.mothur.org/2015/05/27/RDP-v14-reference_files/)), and [the GreenGenes 13.8 OTUs clustered at 97\%](ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/).
 
-*In order to follow along with the examples below, [download]("https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0") the `rdp_train_set_14.fa.gz` file to an appropriate location on your local machine.*
+*In order to follow along with the examples below, [download](Training/rdp_train_set_14.fa.gz) the `rdp_train_set_14.fa.gz` file to an appropriate location on your local machine.*
 
 &nbsp;
 

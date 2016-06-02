@@ -50,7 +50,7 @@ dd1 <- dada(drps[[1]], err=NULL, selfConsist=TRUE)
 plotErrors(dd1, nominalQ=TRUE)
 ```
 
-The two things to look for in the output of `plotErrors` is that the observed error rates (black dots) are reasonably well fit by the modeled error rates (black line), and that the error rates are sensible, in particular that they are mostly monotonic decreasing with quality score.
+The two things to look for in the output of `plotErrors` are that the observed error rates (black dots) are reasonably well fit by the modeled error rates (black line), and that the error rates are sensible, in particular that they are mostly decreasing with quality score.
 
 Now let's pool our samples while estimating error rates:
 ```{r estimate-pool}

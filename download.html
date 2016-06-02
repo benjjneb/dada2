@@ -182,13 +182,36 @@ $(document).ready(function () {
   <a href="download.html">Download</a>
 </li>
 <li>
-  <a href="dada-installation.html">Installation</a>
+  <a href="dada-installation.html">Install</a>
 </li>
 <li>
   <a href="tutorial.html">Walkthrough</a>
 </li>
-<li>
-  <a href="https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+    </li>
+    <li>
+      <a href="https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+    </li>
+    <li>
+      <a href="assign.html">Taxonomy</a>
+    </li>
+    <li>
+      <a href="pool.html">Pooling</a>
+    </li>
+    <li>
+      <a href="faq.html">FAQ</a>
+    </li>
+  </ul>
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -200,39 +223,29 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://biorxiv.org/content/early/2015/08/06/024034">Manuscript</a>
+      <a href="SMBS_DADA2.pdf">Symposium Slides</a>
     </li>
     <li>
       <a href="SotA.html">Benchmarking</a>
     </li>
     <li>
-      <a href="assign.html">Taxonomy</a>
-    </li>
-    <li>
-      <a href="pool.html">Pooling</a>
-    </li>
-    <li>
-      <a href="page_b.html">Options</a>
+      <a href="https://purl.stanford.edu/mh194vj6733">Manuscript code</a>
     </li>
   </ul>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+        <li>
+  <a href="https://github.com/benjjneb/dada2/issues">
     <span class="fa fa-question fa-lg"></span>
      
-     
-    <span class="caret"></span>
   </a>
-  <ul class="dropdown-menu" role="menu">
-    <li>
-      <a href="https://github.com/benjjneb/dada2/issues">Issues</a>
-    </li>
-    <li>
-      <a href="faq.html">FAQ</a>
-    </li>
-  </ul>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
 </li>
       </ul>
     </div><!--/.nav-collapse -->
@@ -257,7 +270,7 @@ $(document).ready(function () {
 </div>
 <div id="binaries" class="section level2">
 <h2>Binaries</h2>
-<p>Binaries are available through <a href="https://www.bioconductor.org/packages/3.3/bioc/html/dada2.html">Bioconductor</a>. Currently, <strong>binary installation is only supported for the current release and R version 3.3 and later</strong>.</p>
+<p>Binaries are available through <a href="https://www.bioconductor.org/packages/3.3/bioc/html/dada2.html">Bioconductor</a>. Currently, <strong>binary installation is only supported for the current release version of dada2, and only on R 3.3 and later</strong>.</p>
 <pre class="s"><code>## try http:// if https:// URLs are not supported
 source(&quot;https://bioconductor.org/biocLite.R&quot;)
 biocLite(&quot;dada2&quot;)</code></pre>
@@ -265,7 +278,7 @@ biocLite(&quot;dada2&quot;)</code></pre>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
   <hr>
-  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail.com)
+  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
 </div>
 
 

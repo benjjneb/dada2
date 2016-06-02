@@ -10,7 +10,7 @@ title: "Download dada2"
 
 ## Binaries
 
-Binaries are available through [Bioconductor](https://www.bioconductor.org/packages/3.3/bioc/html/dada2.html). Currently, **binary installation is only supported for the current release and  R version 3.3 and later**.
+Binaries are available through [Bioconductor](https://www.bioconductor.org/packages/3.3/bioc/html/dada2.html). Currently, **binary installation is only supported for the current release version of dada2, and only on  R 3.3 and later**.
 
 ```S
 ## try http:// if https:// URLs are not supported

@@ -2,7 +2,7 @@
 title: "DADA2 Pipeline Tutorial"
 ---
 
-Here we go through the DADA2 pipeline on a small multi-sample dataset. Our starting point is a set of Illumina-sequenced paired-end fastq files that have been split (or demultiplexed) by sample and from which the barcodes/adapters have already been removed. The end product is a sequence table, analogous to the ubiquitous "OTU table", which records the number of times sample sequences were observed in each sample. We also assign taxonomies to each output sequence.
+Here we walk through the DADA2 pipeline on a small multi-sample dataset. Our starting point is a set of Illumina-sequenced paired-end fastq files that have been split (or demultiplexed) by sample and from which the barcodes/adapters have already been removed. The end product is a sequence table, analogous to the ubiquitous "OTU table", which records the number of times each biological sequence variant was observed in each sample. We also assign taxonomies to the output sequences.
 
 -----------------------
 
@@ -197,7 +197,7 @@ Appropriately formatted training fastas for the RDP training set 14, the GreenGe
 
 **Assign taxonomy:**
 ```{r taxify}
-taxa <- assignTaxonomy(seqtab.nochim, paste0(path, "rdp_train_set_14.fa.gz"))
+taxa <- assignTaxonomy(seqtab.nochim, "rdp_train_set_14.fa.gz")
 colnames(taxa) <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus")
 unname(head(taxa))
 ```

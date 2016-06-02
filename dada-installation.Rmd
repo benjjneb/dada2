@@ -6,7 +6,7 @@ title: "DADA2 Installation"
 
 ## **Install binaries from Bioconductor**
 
-Binary installation is available through the Bioconductor package repository. Currently, **binary installation is only supported for the current release and  R version 3.3 and later**.
+Binary installation is available through the Bioconductor package repository. Currently, **binary installation is only supported for the current release version of dada2, and only on  R 3.3 and later**.
 
 ```S
 ## try http:// if https:// URLs are not supported

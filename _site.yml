@@ -6,32 +6,38 @@ navbar:
       href: index.html
     - text: "Download"
       href: download.html
-    - text: "Installation"
+    - text: "Install"
       href: dada-installation.html
     - text: "Walkthrough"
       href: tutorial.html
-    - text: "Manual"
-      href: https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf
-    - text: "More"
+    - text: "Documentation"
       icon: fa-gear
       menu:
         - text: "Manuscript"
-          href: http://biorxiv.org/content/early/2015/08/06/024034
-        - text: "Benchmarking"
-          href: SotA.html
+          href: http://dx.doi.org/10.1038/nmeth.3869
+        - text: "Manual"
+          href: https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf
         - text: "Taxonomy"
           href: assign.html
         - text: "Pooling"
           href: pool.html
-        - text: "Options"
-          href: page_b.html
+        - text: "FAQ"
+          href: faq.html
+      href: https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf
+    - text: "More"
+      icon: fa-gear
+      menu:
+        - text: "Symposium Slides"
+          href: SMBS_DADA2.pdf
+        - text: "Benchmarking"
+          href: SotA.html
+        - text: "Manuscript code"
+          href: https://purl.stanford.edu/mh194vj6733
   right:
     - icon: fa-question fa-lg
-      menu:
-      - text: "Issues"
-        href: https://github.com/benjjneb/dada2/issues
-      - text: "FAQ"
-        href: faq.html
+      href: https://github.com/benjjneb/dada2/issues
+    - icon: fa-github fa-lg
+      href: https://github.com/benjjneb/dada2
 output:
   html_document:
     theme: flatly

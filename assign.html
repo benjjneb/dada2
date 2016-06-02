@@ -182,13 +182,36 @@ $(document).ready(function () {
   <a href="download.html">Download</a>
 </li>
 <li>
-  <a href="dada-installation.html">Installation</a>
+  <a href="dada-installation.html">Install</a>
 </li>
 <li>
   <a href="tutorial.html">Walkthrough</a>
 </li>
-<li>
-  <a href="https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+    </li>
+    <li>
+      <a href="https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+    </li>
+    <li>
+      <a href="assign.html">Taxonomy</a>
+    </li>
+    <li>
+      <a href="pool.html">Pooling</a>
+    </li>
+    <li>
+      <a href="faq.html">FAQ</a>
+    </li>
+  </ul>
 </li>
 <li class="dropdown">
   <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -200,39 +223,29 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://biorxiv.org/content/early/2015/08/06/024034">Manuscript</a>
+      <a href="SMBS_DADA2.pdf">Symposium Slides</a>
     </li>
     <li>
       <a href="SotA.html">Benchmarking</a>
     </li>
     <li>
-      <a href="assign.html">Taxonomy</a>
-    </li>
-    <li>
-      <a href="pool.html">Pooling</a>
-    </li>
-    <li>
-      <a href="page_b.html">Options</a>
+      <a href="https://purl.stanford.edu/mh194vj6733">Manuscript code</a>
     </li>
   </ul>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+        <li>
+  <a href="https://github.com/benjjneb/dada2/issues">
     <span class="fa fa-question fa-lg"></span>
      
-     
-    <span class="caret"></span>
   </a>
-  <ul class="dropdown-menu" role="menu">
-    <li>
-      <a href="https://github.com/benjjneb/dada2/issues">Issues</a>
-    </li>
-    <li>
-      <a href="faq.html">FAQ</a>
-    </li>
-  </ul>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
 </li>
       </ul>
     </div><!--/.nav-collapse -->
@@ -260,7 +273,7 @@ $(document).ready(function () {
 </div>
 <div id="taxonomic-training-sets" class="section level2">
 <h2>Taxonomic training sets</h2>
-<p>Gzip-ed version of <a href="https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0">the <strong>dada2-compatible fastas for RDP, Silva and GreenGenes can be downloaded here</strong></a>. Please be aware that the Silva uses a <a href="https://www.arb-silva.de/silva-license-information/">dual licensing model for academia and commercial users</a>.</p>
+<p><em>Gzip-ed version of the dada2-formatted training fastas for the <a href="Training/rdp_train_set_14.fa.gz">RDP</a>, <a href="Training/silva_nr_v123_train_set.fa.gz">Silva</a> and <a href="Training/gg_13_8_train_set_97.fa.gz">GreenGenes</a> reference databases are available. Please be aware that the Silva uses a <a href="https://www.arb-silva.de/silva-license-information/">dual licensing model for academia and commercial users</a>.</em></p>
 <p>The <code>assignTaxonomy(...)</code> function expects the training data to be provided in the form of a fasta file (or compressed fasta file) in which the taxonomy corresponding to each sequence is encoded in the id line in the following fashion:</p>
 <pre><code>&gt;Level1;Level2;Level3;Level4;Level5;Level6;
 ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC
@@ -268,7 +281,7 @@ ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCA
 CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC</code></pre>
 <p>In order to simplify the most common use case, we have provided appropriately formatted training fasta files for the three most common datasets used for 16S classification: the <a href="http://rdp.cme.msu.edu/">RDP training set 14</a>, the <a href="http://www.arb-silva.de/documentation/release-123/">Silva v123 database</a>, and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the Green Genes 13.8 release</a>.</p>
 <p>In addition to thanking the folks at RDP, Silva and GreenGenes for making these datasets available, we also want to thank Pat Schloss and the <a href="http://www.mothur.org">mothur</a> team for making cleaner versions of the Silva and RDP training set available. To be specific, we created the dada2-compatible training fastas from <a href="http://www.mothur.org/wiki/Silva_reference_files">the mothur-compatible Silva.nr_v123 files</a> (<a href="http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/">described here</a>, and <a href="https://www.arb-silva.de/silva-license-information/">license here</a>), the <a href="http://mothur.org/wiki/RDP_reference_files">mothur-compatible 16S rRNA reference (RDP)</a> (<a href="http://blog.mothur.org/2015/05/27/RDP-v14-reference_files/">described here</a>), and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
-<p><em>In order to follow along with the examples below, <a href="%22https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0%22">download</a> the <code>rdp_train_set_14.fa.gz</code> file to an appropriate location on your local machine.</em></p>
+<p><em>In order to follow along with the examples below, <a href="Training/rdp_train_set_14.fa.gz">download</a> the <code>rdp_train_set_14.fa.gz</code> file to an appropriate location on your local machine.</em></p>
 <p> </p>
 </div>
 <div id="taxonomic-assignment-in-action" class="section level2">
@@ -344,7 +357,7 @@ unname(taxa.80)</code></pre>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
   <hr>
-  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail.com)
+  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
 </div>
 
 
