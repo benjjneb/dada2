@@ -16,6 +16,7 @@ Peer reviewed publication: DADA2: High resolution sample inference from Illumina
 The dada2 package binaries are available through Bioconductor:
 
 ```S
+## try http:// if https:// URLs are not supported
 source("https://bioconductor.org/biocLite.R")
 biocLite("dada2")
 ```
