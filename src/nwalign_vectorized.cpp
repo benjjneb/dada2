@@ -35,26 +35,40 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   size_t len2 = strlen(s2);
   int16_t d_free;
   size_t center;
-  size_t col_min, col_max;
+  size_t col_min, col_max, even;
   size_t i_max, j_min;
   int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_index;
   
   // Require same length sequences
-  if(len1 != len2) {
-    Rcpp::stop("Vectorized alignment currently only implemented for same length sequences.");
-  }
+///v  if(len1 != len2) {
+///v    Rcpp::stop("Vectorized alignment currently only implemented for same length sequences.");
+///v  }
 
   // Deal with band possibilities
   if(band == 0) {
     Rcpp::stop("Vectorized alignment not currently implemented for band = 0.");
   }
-  if(band<0 || band>len1) {
-    band = len1;
+  if(band<0 || band>len1 || band > len2) {
+    band = len1 < len2 ? len1 : len2; ///v
   }
 
+  ///v DEFINE LBAND AND RBAND WITH LARGER SEQ GETTING AN EXPANDED BAND
+  // Calculate left/right-bands in case of different lengths
+  int lband, rband;
+  if(len2 > len1) {
+    lband = band;
+    rband = band+len2-len1;
+  } else if(len1 > len2) {
+    lband = band+len1-len2;
+    rband = band;
+  } else {
+    lband = band;
+    rband = band;
+  }
+  
   // Allocate the DP matrices
-  center=1 + (band+1)/2;
-  ncol = 3 + band;
+  center=1 + (lband+1)/2;
+  ncol = 3 + (lband+1)/2 + rband/2; // 3 = left-barrier + center + right barrier
   nrow = len1 + len2 + 2;
   int16_t *d = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   int16_t *p = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
@@ -68,7 +82,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   // Fill out "left" "column" of d, p.
   row=1;
   col=center-1;
-  while(row<band+1) {
+  while(row<lband+1) {
     d[row*ncol + col] = 0; // ends-free gap
     p[row*ncol + col] = 3;
     if(row%2==0) {
@@ -80,7 +94,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   // Fill out "top" "row" of d, p.
   row=1;
   col=center;
-  while(row<band+1) {
+  while(row<rband+1) {
     d[row*ncol + col] = 0;
     p[row*ncol + col] = 2;
     if(row%2 == 1) {
@@ -90,17 +104,9 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   }
     
   // Fill out band boundaries
-  if(band%2 == 0) { // even band
+  if(lband%2 == 0) { // even band
     for(row=0,ptr_index=&d[0];row<len1+len2+1;row++,ptr_index+=ncol) {
       *ptr_index = -9999;
-    }
-    
-    ptr_index = &d[band+2];
-    for(row=0;row<len1+len2+1;row+=2) {
-      *ptr_index = -9999; // even row
-      ptr_index += (ncol-1);
-      *ptr_index = -9999; // odd row
-      ptr_index += (ncol+1);
     }
   } else { // odd band
     ptr_index = &d[1];
@@ -110,43 +116,46 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
       *ptr_index = -9999;
       ptr_index += (ncol+1);
     }
-    for(row=0,ptr_index=&d[band+2];row<len1+len2+1;row++,ptr_index+=ncol) {
+  }
+  
+  if(rband%2 == 0) { // even band
+    ptr_index = &d[ncol-1];
+    for(row=0;row<len1+len2+1;row+=2) {
+      *ptr_index = -9999; // even row
+      ptr_index += (ncol-1);
+      *ptr_index = -9999; // odd row
+      ptr_index += (ncol+1);
+    }
+  } else { // odd band
+    for(row=0,ptr_index=&d[ncol-1];row<len1+len2+1;row++,ptr_index+=ncol) {
       *ptr_index = -9999;
     }
   }
   
+  /// HERE HERE HERE
+  /// NEED TO THINK ABOUT THE 4 PARTS OF MATRIX NOW, HAVE TO JIG IN ON THE SHORTER SEQUENCE...
   // Fill out top wedge (Row 1 taken care of by ends-free)
   row = 2;
   col_min = center; // Do not fill out the ends-free cells
   col_max = center;
   i_max = 0;
   j_min = 0;
+  even = 1;
+  
   while(row <= band) {
-    // Fill out even row
+    // Fill out row
     for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
       diag_buf[col] = d[(row-2)*ncol + col] + (s1[i] == s2[j] ? match : mismatch);
     }
-    ptr_left = &d[(row-1)*ncol + col_min-1];
+    ptr_left = &d[(row-1)*ncol + col_min-even];
     ptr_diag = &diag_buf[col_min];
-    ptr_up = &d[(row-1)*ncol + col_min];
+    ptr_up = &d[(row-1)*ncol + col_min+1-even];
     dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
     
-    col_min--;
-    i_max++;
-    if(++row > band) break;
-    
-    // Fill out odd row
-    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
-      diag_buf[col] = d[(row-2)*ncol + col] + (s1[i] == s2[j] ? match : mismatch);
-    }
-    ptr_left = &d[(row-1)*ncol + col_min];
-    ptr_diag = &diag_buf[col_min];
-    ptr_up = &d[(row-1)*ncol + col_min+1];
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
-    
-    col_max++;
+    if(even) { col_min--; } else { col_max++; }
     i_max++;
     row++;
+    even = 1 - even;
   }
 
   // ----- FILL OUT BANDED BODY ------
