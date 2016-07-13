@@ -23,6 +23,12 @@ A \code{\link{ggplot}2} object.
 This function plots a visual summary of the distribution of quality scores
 as a function of sequence position for the input fastq file.
 }
+\details{
+The distribution of quality scores at each position is shown as a grey-scale
+heat map, with dark colors corresponding to higher frequency. The plotted lines
+show positional summary statistics: green is the mean, orange is the median, and
+the dashed orange lines are the 25th and 75th quantiles.
+}
 \examples{
 plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 
