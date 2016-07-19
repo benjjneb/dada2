@@ -1,3 +1,11 @@
+CHANGES IN VERSION 1.1.2
+-----------------------
+
+NEW FEATURES
+
+    o Species-level taxonomic assignment. The new assignSpecies(...) function uses exact matching to assign sequences to the species level. Currently a valid species training
+fasta is only available for the RDP taxonomic database.
+    
 CHANGES IN VERSION 1.1.1
 -----------------------
 
