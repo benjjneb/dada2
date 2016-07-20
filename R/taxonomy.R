@@ -95,8 +95,10 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
 
 # Helper function for assignSpecies
 mapHits <- function(x, refs, keep, sep="/") {
-  if(length(unique(refs[x]))<=keep) {
-    rval <- do.call(paste, c(as.list(sort(unique(refs[x]))), sep=sep))
+  hits <- refs[x]
+  hits[grepl("Escherichia", hits, fixed=TRUE) | grepl("Shigella", hits, fixed=TRUE)] <- "Escherichia/Shigella"
+  if(length(unique(hits))<=keep) {
+    rval <- do.call(paste, c(as.list(sort(unique(hits))), sep=sep))
   } else { rval <- NA_character_ }
   if(length(rval)==0) rval <- NA_character_
   rval
@@ -332,6 +334,7 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
   # Subset down to those binomials which match the curated genus
   genus.binom <- sapply(strsplit(binom, "\\s"), `[`, 1)
   gen.match <- mapply(matchGenera, genus, genus.binom, split.glyph="-")
+  # Note that raw Silva files use Escherichia-Shigella, but this is changes to E/S in dada2 version
   sr <- sr[gen.match]
   binom <- binom[gen.match]
   genus <- genus[gen.match]
@@ -349,7 +352,7 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
   cat(length(binom), "sequences with genus/species binomial annotation output.\n")
   
   # Write to disk
-  ids <- as.character(narrow(id(sr),1,15))
+  ids <- sapply(strsplit(as.character(id(sr)), "\\s"), `[`, 1)
   writeFasta(ShortRead(sread(sr), BStringSet(paste(ids, binom))), fout,
              width=20000L, compress=compress)
 }
