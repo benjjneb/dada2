@@ -1,3 +1,4 @@
 language: r
 r: bioc-release
+use_bioc: true
 cache: packages
