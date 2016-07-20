@@ -104,11 +104,11 @@ mapHits <- function(x, refs, keep, sep="/") {
 
 # Match curated genus names to binomial genus names
 # Handles Clostridium groups and split genera names
-matchGenera <- function(gen.tax, gen.binom) {
+matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
   if(is.na(gen.tax) || is.na(gen.binom)) { return(FALSE) }
   if((gen.tax==gen.binom) || 
-     grepl(paste0("^", gen.binom, "[ /]"), gen.tax) || 
-     grepl(paste0("/", gen.binom, "$"), gen.tax)) {
+     grepl(paste0("^", gen.binom, "[ _", split.glyph, "]"), gen.tax) || 
+     grepl(paste0(split.glyph, gen.binom, "$"), gen.tax)) {
     return(TRUE)
   } else {
     return(FALSE)
@@ -298,6 +298,58 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
   
   # Write to disk
   ids <- as.character(narrow(id(sr),1,10))
+  writeFasta(ShortRead(sread(sr), BStringSet(paste(ids, binom))), fout,
+             width=20000L, compress=compress)
+}
+
+#' This function creates the dada2 assignSpecies fasta file for Silva
+#' from the SILVA_123.1_SSURef_3_3_2016_fix.fasta file.
+#' @keywords internal
+makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
+  # Read in and remove records not assigned to species and non-bacteria
+  sr <- readFasta(fin)
+  is.bact <- grepl("Bacteria;", id(sr), fixed=TRUE)
+  sr <- sr[is.bact]
+  is.uncult <- grepl("[Uu]ncultured", id(sr))
+  sr <- sr[!is.uncult]
+  is.unident <- grepl("[Uu]nidentified", id(sr))
+  sr <- sr[!is.unident]
+  is.complete <- sapply(strsplit(as.character(id(sr)), ";"), length)==7
+  sr <- sr[is.complete]
+  
+  # Pull out binomial strings
+  binom <- strsplit(as.character(id(sr)), ";")
+  genus <- sapply(binom, `[`, 6)
+  binom <- sapply(binom, `[`, 7)
+  
+  genus <- gsub("Candidatus ", "", genus)
+  binom <- gsub("Candidatus ", "", binom)
+  genus <- gsub("\\[", "", genus)
+  genus <- gsub("\\]", "", genus)
+  binom <- gsub("\\[", "", binom)
+  binom <- gsub("\\]", "", binom)
+  
+  # Subset down to those binomials which match the curated genus
+  genus.binom <- sapply(strsplit(binom, "\\s"), `[`, 1)
+  gen.match <- mapply(matchGenera, genus, genus.binom, split.glyph="-")
+  sr <- sr[gen.match]
+  binom <- binom[gen.match]
+  genus <- genus[gen.match]
+
+  # Make matrix of genus/species
+  binom[sapply(strsplit(binom, "\\s"), length)==1] <- paste(binom[sapply(strsplit(binom, "\\s"), length)==1], "sp.")
+  binom2 <- cbind(sapply(strsplit(binom, "\\s"), `[`, 1),
+                  sapply(strsplit(binom, "\\s"), `[`, 2))
+  # Keep only those with a named species
+  has.spec <- !grepl("sp\\.", binom2[,2]) & !(binom2[,2]=="endosymbiont")
+  binom2 <- binom2[has.spec,]
+  sr <- sr[has.spec]
+  binom <- binom[has.spec]
+  genus <- genus[has.spec]
+  cat(length(binom), "sequences with genus/species binomial annotation output.\n")
+  
+  # Write to disk
+  ids <- as.character(narrow(id(sr),1,15))
   writeFasta(ShortRead(sread(sr), BStringSet(paste(ids, binom))), fout,
              width=20000L, compress=compress)
 }
