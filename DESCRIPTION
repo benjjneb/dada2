@@ -28,6 +28,7 @@ Suggests:
     testthat (>= 0.9.1),
     microbenchmark (>= 1.4.2),
     BiocStyle,
+    BiocInstaller,
     knitr,
     rmarkdown
 LinkingTo:
