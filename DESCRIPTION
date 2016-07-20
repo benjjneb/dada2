@@ -28,7 +28,6 @@ Suggests:
     testthat (>= 0.9.1),
     microbenchmark (>= 1.4.2),
     BiocStyle,
-    BiocInstaller,
     knitr,
     rmarkdown
 LinkingTo:
@@ -36,6 +35,7 @@ LinkingTo:
     RcppParallel
 SystemRequirements: GNU make
 VignetteBuilder: knitr
+bioc_required: true
 biocViews: Microbiome, Sequencing, Classification, Metagenomics
 URL: http://benjjneb.github.io/dada2/
 BugReports: https://github.com/benjjneb/dada2/issues
