@@ -19,6 +19,10 @@
 #' @param minBoot (Optional). Default 50. 
 #' The minimum bootstrap confidence for assigning a taxonomic level.
 #'   
+#' @param taxLevels (Optional). Default is c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species").
+#' The taxonomic levels being assigned. Truncates if deeper levels not present in
+#' training fasta.
+#'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
 #' 
@@ -39,7 +43,9 @@
 #'  taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
 #' }
 #' 
-assignTaxonomy <- function(seqs, refFasta, minBoot=50, verbose=FALSE) {
+assignTaxonomy <- function(seqs, refFasta, minBoot=50,
+                           taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
+                           verbose=FALSE) {
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
@@ -82,6 +88,7 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, verbose=FALSE) {
     }
   }
   rownames(tax.out) <- seqs
+  colnames(tax.out) <- taxLevels[1:ncol(tax.out)]
   tax.out[tax.out=="_DADA2_UNSPECIFIED"] <- NA_character_
   tax.out
 }
@@ -95,24 +102,37 @@ mapHits <- function(x, refs, keep, sep="/") {
   rval
 }
 
+# Match curated genus names to binomial genus names
+# Handles Clostridium groups and split genera names
+matchGenera <- function(gen.tax, gen.binom) {
+  if(is.na(gen.tax) || is.na(gen.binom)) { return(FALSE) }
+  if((gen.tax==gen.binom) || 
+     grepl(paste0("^", gen.binom, "[ /]"), gen.tax) || 
+     grepl(paste0("/", gen.binom, "$"), gen.tax)) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
 #'
 #' Taxonomic assignment to the species level by exact matching.
 #' 
-#' assignSpecies uses exact matching against a reference fasta to identify the 
+#' \code{assignSpecies} uses exact matching against a reference fasta to identify the 
 #' genus-species binomial classification of the input sequences.
 #' 
 #' @param seqs (Required). A character vector of the sequences to be assigned, or an object 
 #' coercible by \code{\link{getUniques}}.
 #'   
 #' @param refFasta (Required). The path to the reference fasta file, or an 
-#' R connection Can be compresssed.
+#' R connection. Can be compresssed.
 #' This reference fasta file should be formatted so that the id lines correspond to the
 #' genus-species of the associated sequence:
-#' 
+#'   
 #'  >SeqID genus species  
 #'  ACGAATGTGAAGTAA......
 #' 
-#' @param returnMultiple (Optional). Default FALSE.
+#' @param allowMultiple (Optional). Default FALSE.
 #' Defines the behavior when multiple exact matches against different species are returned.
 #' By default only unambiguous identifications are return. If TRUE, a concatenated string
 #' of all exactly matched species is returned. If an integer is provided, multiple
@@ -136,7 +156,7 @@ mapHits <- function(x, refs, keep, sep="/") {
 #'  taxa <- assignSpecies(dadaF, "rdp_species.fa.gz")
 #' }
 #' 
-assignSpecies <- function(seqs, refFasta, returnMultiple=FALSE, verbose=FALSE) {
+assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
@@ -148,25 +168,84 @@ assignSpecies <- function(seqs, refFasta, returnMultiple=FALSE, verbose=FALSE) {
   # Identify the exact hits
   hits <- lapply(seqs, function(x) grepl(x, refs, fixed=TRUE))
   # Define number of multiple species to return
-  if(is.logical(returnMultiple)) {
-    if(returnMultiple) keep <- Inf
+  if(is.logical(allowMultiple)) {
+    if(allowMultiple) keep <- Inf
     else keep <- 1
   } else {
-    keep <- as.integer(returnMultiple)
+    keep <- as.integer(allowMultiple)
   }
   # Get genus species return strings
-  rval <- cbind(unlist(sapply(hits, mapHits, refs=gens, keep=1)),
+  rval <- cbind(unlist(sapply(hits, mapHits, refs=genus, keep=1)),
                 unlist(sapply(hits, mapHits, refs=species, keep=keep)))
   colnames(rval) <- c("Genus", "Species")
+  rownames(rval) <- seqs
+  if(verbose) cat(sum(!is.na(rval[,"Species"])), "out of", length(seqs), "were assigned to the species level.\n")
   rval
+}
+
+#'
+#' Add species-level annotation to a taxonomic table.
+#' 
+#' \code{addSpecies} wraps the \code{\link{assignSpecies}} function to assign genus-species 
+#' binomials to the input sequences by exact matching against a reference fasta. Those binomials
+#' are then merged with the input taxonomic table with species annotations appended as an 
+#' additional column to the input table.
+#' Only species identifications where the genera in the input table and the binomial 
+#' classification are consistent are included in the return table.
+#' 
+#' @param taxtab (Required). A taxonomic table, the output of \code{\link{assignTaxonomy}}.
+#'   
+#' @param refFasta (Required). The path to the reference fasta file, or an 
+#' R connection. Can be compresssed.
+#' This reference fasta file should be formatted so that the id lines correspond to the
+#' genus-species binomial of the associated sequence:
+#'   
+#'  >SeqID genus species  
+#'  ACGAATGTGAAGTAA......
+#' 
+#' @param allowMultiple (Optional). Default FALSE.
+#' Defines the behavior when multiple exact matches against different species are returned.
+#' By default only unambiguous identifications are return. If TRUE, a concatenated string
+#' of all exactly matched species is returned. If an integer is provided, multiple
+#' identifications up to that many are returned as a concatenated string.
+#'   
+#' @param verbose (Optional). Default FALSE.
+#'  If TRUE, print status to standard output.
+#' 
+#' @return A character matrix one column larger than input. Rows correspond to
+#'   sequences, and columns to the taxonomic levels. NA indicates that the sequence
+#'   was not classified at that level. 
+#' 
+#' @seealso 
+#'  \code{\link{assignTaxonomy}}, \code{\link{assignSpecies}}
+#'  
+#' @export
+#' 
+#' @examples
+#' \dontrun{
+#'  taxtab <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz")
+#'  taxtab <- addSpecies(taxtab, "rdp_species_assignment_14.fa.gz")
+#' }
+#' 
+addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, verbose=FALSE) {
+  seqs <- rownames(taxtab)
+  binom <- assignSpecies(seqs, refFasta=refFasta, allowMultiple=allowMultiple, verbose=verbose)
+  # Merge tables
+  if("Genus" %in% colnames(taxtab)) gcol <- which(colnames(taxtab) == "Genus")
+  else gcol <- ncol(taxtab)
+  # Match genera
+  gen.match <- mapply(matchGenera, taxtab[,gcol], binom[,1])
+  taxtab <- cbind(taxtab, binom[,2])
+  colnames(taxtab)[ncol(taxtab)] <- "Species"
+  taxtab[!gen.match,"Species"] <- NA_character_
+  if(verbose) cat("Of which", sum(!is.na(taxtab[,"Species"])),"had genera consistent with the input table.")
+  taxtab
 }
 
 #' This function creates the dada2 assignSpecies fasta file for the RDP
 #' from the rdp_Bacteria_unaligned.fa file.
 #' @keywords internal
 makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
-  # NOTE: How to deal with genera with groups (eg. Clostridium XII) is not
-  #  yet fully resolved.
   # Read in and remove records not assigned to species
   sr <- readFasta(fin)
   is.uncult <- grepl("[Uu]ncultured", id(sr))
@@ -196,16 +275,10 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
   # Drop Candidatus strings
   binom <- gsub("Candidatus ", "", binom)
   geni <- gsub("Candidatus ", "", geni)
-  # Curated taxonomy has Clostridium groups (eg. Clostridium XI) but binomial names don't
-  geni[grepl("Clostridium", geni)] <- "Clostridium"
-  # Curated taxonomy has Escherichia/Shigella genus, but binomial names don't
-  binom <- gsub("^Escherichia ", "Escherichia/Shigella ", binom)
-  binom <- gsub("^Shigella ", "Escherichia/Shigella ", binom) 
-  ## Armatimonas/Armatimonadetes_gp1, Chthonomonas/Armatimonadetes_gp3
-  #### !!!! Still losing those two non-ecoli split genera
-  
+
   # Subset down to those binomials which match the curated genus
-  gen.match <- mapply(grepl, paste0("^", geni), binom)
+  binom.geni <- sapply(strsplit(binom, "\\s"), `[`, 1)
+  gen.match <- mapply(matchGenera, geni, binom.geni)
   sr <- sr[gen.match]
   binom <- binom[gen.match]
   geni <- geni[gen.match]
@@ -221,12 +294,10 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
   sr <- sr[has.spec]
   binom <- binom[has.spec]
   geni <- geni[has.spec]
-  cat(length(binom), "sequences with genus/species binomial annotation found.\n")
+  cat(length(binom), "sequences with genus/species binomial annotation output.\n")
   
   # Write to disk
   ids <- as.character(narrow(id(sr),1,10))
   writeFasta(ShortRead(sread(sr), BStringSet(paste(ids, binom))), fout,
              width=20000L, compress=compress)
-  
-  # Done for now.
 }
