@@ -20,11 +20,11 @@ If you wish to install the latest and greatest version, or to install to R 3.2, 
 
 &nbsp;
 
-## Tutorial
+## Tutorials
 
-The [DADA2 walkthrough on paired end Illumina Miseq data](tutorial.html) goes through a typical example workflow.
+**Start here:** The [DADA2 walkthrough on paired end Illumina Miseq data](tutorial.html) goes through a typical workflow in which raw amplicon sequence data is processed into the table of biological sequence variants present in each sample.
 
-You can also [assign taxonomy with dada2::assignTaxonomy(...)](assign.html).
+Short demonstrations of [assigning taxonomy](assign.html) and [assigning species](species.html) to sequences.
 
 &nbsp;
 
