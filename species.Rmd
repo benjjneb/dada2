@@ -5,13 +5,13 @@ date: "July 20, 2016"
 output: html_document
 ---
 
-## assignSpecies(...)
+# Accurate species assignment from 16S amplicon data
 
 --------------------------
 
-The high-resolution afforded by dada2 enables a novel method to identify sequence variants with great accuracy: exact matching against a reference database. The `assignSpecies(...)` function implements this functionality, in conjunction with [the species-specific training fasta files](https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0) now available for the RDP and Silva databases.
+The high-resolution afforded by dada2 enables a novel method to identify sequence variants with great accuracy: exact matching against a reference database. The `assignSpecies` function implements this functionality, in conjunction with [the species-specific training fasta files](https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0) now available for the RDP and Silva databases.
 
-In short, query sequence are exactly matched against all sequences from these databases with binomial genus-species nomenclature assigned. Exact matches are recorded and returned. While not appropriate for fuzzy OTUs, this is an effective way to accurately assign species to the exact sequences inferred by the dada2 pipeline.
+In short, query sequence are exactly matched against all sequences from these databases with binomial genus-species nomenclature assigned. Exact matches are recorded and returned. This method is not appropriate for fuzzy OTUs, as OTUs can include multiple biological variants within their radius. For the exact sequences inferred by dada2, however, this is an effective way to accurately assign taxonomy down to the species level.
 
 **<span style="color:red">This demonstration requires [version 1.1.2 or later of the dada2 package](https://github.com/benjjneb/dada2):</span>**
 
@@ -44,7 +44,29 @@ seqs <- c(
 
 We now run the `assignSpecies` function against the RDP training set. *To run the following on your local machine, modify the filename in the second argument to point to where the `rdp_species_assignment_14.fa.gz` file sits on your computer.*
 
-```{r}
-genus.species <- assignSpecies(seqs, "rdp_species_assignment_14.fa.gz")
+```{r assign-species}
+genus.species <- assignSpecies(seqs, "Training/rdp_species_assignment_14.fa.gz")
 unname(genus.species)
 ```
+
+By default the `assignSpecies` method only returns species assignments if there is no ambiguiuty. However, given that we are generally working with fragments of the 16S gene, it is often the case that multiple species have identical sequences over the sequence region. It may still be of interest to know what the multiple sequence hits. To have all sequence hits returned, the `returnMultiple=TRUE` argument can be passed to the `assignSpecies` function:
+
+```{r assign-species-multi}
+unname(assignSpecies(seqs, "Training/rdp_species_assignment_14.fa.gz", allowMultiple=TRUE))
+```
+
+Several of the sequences are exact matches to multiple species in the reference databases. Finer resolution of the return value of `assignSpecies` is available by choosing, for example, `allowMultiple=3`, which returns the matches species up to 3 unique species matched, but beyond that returns `NA`.
+
+## Integration with `assignTaxonomy`
+
+In many cases it is desirable to link the species annotation in with the broader taxonomic annotation afforded by `assignTaxonomy`. The convenience function `addSpecies` serves this purpose, as it takes as input a taxonomy table, and outputs a table with an added species column. *Note that only those genus-species binomials which are consistent with the genus assigned in the provided taxonomy table are retained in the output.*
+
+```{r add-species}
+tt <- assignTaxonomy(seqs, "Training/silva_nr_v123_train_set.fa.gz")
+tt.plus <- addSpecies(tt, "Training/silva_species_assignment_v123.fa.gz", verbose=TRUE)
+unname(tt.plus)
+```
+
+In our experience, for human microbiome data a bit under half the abundant RSVs will be assigned unambiguously to species-level, and a bit under 2/3rds will be assigned ambiguously (ie. allowing multiple species assignment). This fraction drops off in less samples environments.
+
+The species assignments of `assignSpecies` are based on **exact sequence matches to cultured representatives**. With the caveat that what isn't in the database can't be matched, the appropriate level of confidence in dada2 species assignements is far higher than for the fuzzy methods used elsewhere.

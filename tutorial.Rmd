@@ -211,7 +211,7 @@ unname(head(taxa))
 
 Unsurprisingly, the Bacteroidetes are well represented among the top taxa in these fecal samples.
 
-**<span style="color:red">New in [1.1](https://github.com/benjjneb/dada2):</span> Accurate species-level assignment using exact matching (`assignSpecies`).**
+**<span style="color:red">New in [1.1](https://github.com/benjjneb/dada2):</span> Accurate species-level assignment using exact matching [with `assignSpecies`](species.html).**
 
 &nbsp;
 
