@@ -174,6 +174,11 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' This function plots a visual summary of the distribution of quality scores
 #' as a function of sequence position for the input fastq file.
 #' 
+#' The distribution of quality scores at each position is shown as a grey-scale
+#' heat map, with dark colors corresponding to higher frequency. The plotted lines
+#' show positional summary statistics: green is the mean, orange is the median, and
+#' the dashed orange lines are the 25th and 75th quantiles.
+#' 
 #' @param fl (Required). \code{character(1)}.
 #'  The file path to the fastq or fastq.gz file.
 #' 
