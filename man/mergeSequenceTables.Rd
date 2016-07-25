@@ -29,6 +29,10 @@ This function combines sequence tables together into one merged sequences table.
 }
 \examples{
 
+\dontrun{
+  mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3)
+}
+
 }
 \seealso{
 \code{\link{makeSequenceTable}}

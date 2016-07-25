@@ -194,6 +194,10 @@ is.sequence.table <- function(tab) {
 #' 
 #' @examples
 #' 
+#' \dontrun{
+#'   mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3)
+#' }
+#' 
 mergeSequenceTables <- function(table1, table2, ..., orderBy = "abundance") {
   # Combine passed tables into a list
   tables <- list(table1, table2)
