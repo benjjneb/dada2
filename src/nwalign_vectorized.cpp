@@ -28,123 +28,108 @@ void dploop_vec(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, 
   }
 }
 
+void parr(int16_t *arr, int nrow, int ncol) {
+  int col, row;
+  for(row=0;row<nrow;row++) {
+    for(col=0;col<ncol;col++) {
+      Rprintf("%05d\t", arr[row*ncol+col]);
+    }
+    Rprintf("\n");
+  }
+}
+
 char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
-  size_t row, col, ncol, nrow;
+  size_t row, col, ncol, nrow, index;
   size_t i,j;
-  size_t len1 = strlen(s1);
-  size_t len2 = strlen(s2);
+  size_t len1, len2;
   int16_t d_free;
-  size_t center;
+  size_t start_col, end_col;
   size_t col_min, col_max, even;
   size_t i_max, j_min;
-  int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_index;
+  int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_index, *ptr_d, *ptr_p;
+
+  // IGNORING BANDING FOR NOW
+  // ENDSFREE ONLY FOR NOW
+  // BUT ONLY FOR STARTING GAPS, NOT YET FOR ENDING GAPS
   
-  // Require same length sequences
-///v  if(len1 != len2) {
-///v    Rcpp::stop("Vectorized alignment currently only implemented for same length sequences.");
-///v  }
-
-  // Deal with band possibilities
-  if(band == 0) {
-    Rcpp::stop("Vectorized alignment not currently implemented for band = 0.");
-  }
-  if(band<0 || band>len1 || band > len2) {
-    band = len1 < len2 ? len1 : len2; ///v
-  }
-
-  ///v DEFINE LBAND AND RBAND WITH LARGER SEQ GETTING AN EXPANDED BAND
-  // Calculate left/right-bands in case of different lengths
-  int lband, rband;
-  if(len2 > len1) {
-    lband = band;
-    rband = band+len2-len1;
-  } else if(len1 > len2) {
-    lband = band+len1-len2;
-    rband = band;
-  } else {
-    lband = band;
-    rband = band;
+  // Ensure s1 is the shorter string
+  len1 = strlen(s1);
+  len2 = strlen(s2);
+  if(len1>len2) {
+    Rcpp::stop("The shorter string must be first.");
   }
   
   // Allocate the DP matrices
-  center=1 + (lband+1)/2;
-  ncol = 3 + (lband+1)/2 + rband/2; // 3 = left-barrier + center + right barrier
-  nrow = len1 + len2 + 2;
+  start_col = 1 + (len1+1)/2;
+  end_col = start_col + (len2-len1)/2;
+  ncol = 3 + (len1+len2+1)/2; // 3 = left boundary + center + right boundary
+  nrow = len1 + len2 + 1;
   int16_t *d = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   int16_t *p = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   int16_t *diag_buf = (int16_t *) malloc(ncol * sizeof(int16_t));
   if (d == NULL || p == NULL || diag_buf == NULL)  Rcpp::stop("Memory allocation failed.");
   
+  for(row=0;row<nrow;row++) {
+    for(col=0;col<ncol;col++) {
+      d[row*ncol+col] = -9999;
+      p[row*ncol+col] = -9999;
+    }
+  }
+  
   // Fill out starting point
-  d[center] = 0;
-  p[center] = 0; // Should never be queried
+  d[start_col] = 0;
+  p[start_col] = 0; // Should never be queried
   
   // Fill out "left" "column" of d, p.
   row=1;
-  col=center-1;
-  while(row<lband+1) {
-    d[row*ncol + col] = 0; // ends-free gap
-    p[row*ncol + col] = 3;
+  col=start_col-1;
+  ptr_d=&d[ncol]; // start of 1st row
+  ptr_p=&p[ncol];
+  while(row < (len1+1)) {
+    ptr_d[col] = 0; // ends-free gap
+    ptr_p[col] = 3;
     if(row%2==0) {
       col--;
     }
     row++;
+    ptr_d += ncol;
+    ptr_p += ncol;
   }
   
   // Fill out "top" "row" of d, p.
   row=1;
-  col=center;
-  while(row<rband+1) {
-    d[row*ncol + col] = 0;
-    p[row*ncol + col] = 2;
+  col=start_col;
+  ptr_d=&d[ncol]; // start of 1st row
+  ptr_p=&p[ncol];
+  while(row < (len2+1)) {
+    ptr_d[col] = 0;
+    ptr_p[col] = 2;
     if(row%2 == 1) {
       col++;
     }
     row++;
-  }
-    
-  // Fill out band boundaries
-  if(lband%2 == 0) { // even band
-    for(row=0,ptr_index=&d[0];row<len1+len2+1;row++,ptr_index+=ncol) {
-      *ptr_index = -9999;
-    }
-  } else { // odd band
-    ptr_index = &d[1];
-    for(row=0;row<len1+len2+1;row+=2) {
-      *ptr_index = -9999;
-      ptr_index += (ncol-1);
-      *ptr_index = -9999;
-      ptr_index += (ncol+1);
-    }
+    ptr_d += ncol;
+    ptr_p += ncol;
   }
   
-  if(rband%2 == 0) { // even band
-    ptr_index = &d[ncol-1];
-    for(row=0;row<len1+len2+1;row+=2) {
-      *ptr_index = -9999; // even row
-      ptr_index += (ncol-1);
-      *ptr_index = -9999; // odd row
-      ptr_index += (ncol+1);
-    }
-  } else { // odd band
-    for(row=0,ptr_index=&d[ncol-1];row<len1+len2+1;row++,ptr_index+=ncol) {
-      *ptr_index = -9999;
-    }
-  }
+  Rprintf("D MATRIX:.....\n");
+  parr(d, len2+1, ncol);
+  Rprintf("\n");
+  Rprintf("P MATRIX:.....\n");
+  parr(p, len2+1, ncol);
+  Rprintf("\n");
   
-  /// HERE HERE HERE
-  /// NEED TO THINK ABOUT THE 4 PARTS OF MATRIX NOW, HAVE TO JIG IN ON THE SHORTER SEQUENCE...
-  // Fill out top wedge (Row 1 taken care of by ends-free)
+    // Fill out DP matrix (Row 0/1 taken care of by ends-free)
   row = 2;
-  col_min = center; // Do not fill out the ends-free cells
-  col_max = center;
-  i_max = 0;
-  j_min = 0;
-  even = 1;
+  col_min = start_col; // Do not fill out the ends-free cells
+  col_max = start_col;
+  i_max = 0; // 1st nt
+  j_min = 0; // 1st nt
+  even = 1; // TRUE
   
-  while(row <= band) {
-    // Fill out row
-    for(col=col_min,i=i_max,j=j_min;col<1+col_max;col++,i--,j++) {
+  while(row <= (len1+len2)) {
+      // Fill out row
+    for(col=col_min,i=i_max,j=j_min;col<(1+col_max);col++,i--,j++) {
       diag_buf[col] = d[(row-2)*ncol + col] + (s1[i] == s2[j] ? match : mismatch);
     }
     ptr_left = &d[(row-1)*ncol + col_min-even];
@@ -152,12 +137,63 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
     ptr_up = &d[(row-1)*ncol + col_min+1-even];
     dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
     
-    if(even) { col_min--; } else { col_max++; }
-    i_max++;
+    // Recalculate ends-free for lower boundary
+    // Redo the ends-free cells
+    // Left column
+    if(row > len1) {
+      d_free = ptr_left[0]; // first cell of left array
+      if(d_free > d[row*ncol + col_min]) { // ends-free gap is better
+        d[row*ncol + col_min] = d_free;
+        p[row*ncol + col_min] = 2;
+      } else if(d_free == d[row*ncol + col_min] && p[row*ncol + col_min] == 1) { // left gap takes precedence over diagonal move (for consistency)
+        p[row*ncol + col_min] = 2;
+      }
+    }
+    // Right column
+    if(row > len2) {
+      d_free = ptr_up[col_max-col_min]; // last cell of up array
+      if(d_free > d[row*ncol + col_max]) { // ends-free gap is better
+        d[row*ncol + col_max] = d_free;
+        p[row*ncol + col_max] = 3;
+      } else if(d_free == d[row*ncol + col_max] && p[row*ncol + col_max] != 3) { // up gap takes precedence over left or diagonal move (for consistency)
+        p[row*ncol + col_max] = 3;
+      }
+    }
+    
+    // Update indices
+    if(row<len1) { // upper tri for seq1
+      if(even) { col_min--; }
+      i_max++;
+    } else {
+      if(!even) { col_min++; }
+      j_min--;
+    }
+    if(row==len1) { // Offset to the boundary, didn't do in top wedge cause pre-filled
+      col_min--;
+      i_max++;
+      j_min--;
+    }
+
+    if(row<len2) {
+      if(!even) { col_max++; }
+    } else {
+      if(even) { col_max--; }
+    }
+    if(row==len2) { // Offset to the boundary, didn't do in top wedge cause pre-filled
+      col_max++;
+    }
+    
     row++;
     even = 1 - even;
   }
 
+  Rprintf("D MATRIX:.....\n");
+  parr(d, len1+len2+1, ncol);
+  Rprintf("\n");
+  Rprintf("P MATRIX:.....\n");
+  parr(p, len1+len2+1, ncol);
+  Rprintf("\n");
+  /*
   // ----- FILL OUT BANDED BODY ------
   // Initialize indexing values
   row=band+1;
@@ -278,7 +314,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
     }
     j_min++;
     row++;
-  }
+  } */
 
   char *al0 = (char *) malloc((nrow+1) * sizeof(char));
   char *al1 = (char *) malloc((nrow+1) * sizeof(char));
@@ -290,7 +326,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   j = len2;
   
   while ( i > 0 || j > 0 ) {
-    switch ( p[(i+j)*ncol + (2*center-i+j)/2] ) {
+    switch ( p[(i+j)*ncol + (2*start_col+j-i)/2] ) {
       case 1:
         al0[len_al] = s1[--i];
         al1[len_al] = s2[--j];
