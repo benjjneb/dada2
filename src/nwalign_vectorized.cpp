@@ -39,7 +39,7 @@ void parr(int16_t *arr, int nrow, int ncol) {
 }
 
 char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
-  size_t row, col, ncol, nrow, index;
+  size_t row, col, ncol, nrow, foo;
   size_t i,j;
   size_t len1, len2;
   int16_t d_free;
@@ -47,21 +47,39 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   size_t col_min, col_max, even;
   size_t i_max, j_min;
   int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_index, *ptr_d, *ptr_p;
-
-  // IGNORING BANDING FOR NOW
+  bool swap = false;
+  char *ptr_char;
 
   len1 = strlen(s1);
   len2 = strlen(s2);
-
+  if(len1 > len2) { // Ensure s1 is the shorter sequences
+    ptr_char = s1;
+    s1 = s2;
+    s2 = ptr_char;
+    swap = true;
+    foo = len1;
+    len1 = len2;
+    len2 = foo;
+  }
+  if(band < 0) { band = len2; }
+  
   // Allocate the DP matrices
-  start_col = 1 + (len1+1)/2;
+  start_col = 1 + (1+(band<len1 ? band : len1))/2;
   end_col = start_col + (len2-len1)/2;
-  ncol = 3 + (len1+len2+1)/2; // 3 = left boundary + center + right boundary
+  //  ncol = 3 + (len1+len2+1)/2; // 3 = left boundary + center + right boundary !!!
+  ncol = 2 + start_col + ((len2-len1+band)<len2 ? (len2-len1+band) : len2)/2;
   nrow = len1 + len2 + 1;
   int16_t *d = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   int16_t *p = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   int16_t *diag_buf = (int16_t *) malloc(ncol * sizeof(int16_t));
   if (d == NULL || p == NULL || diag_buf == NULL)  Rcpp::stop("Memory allocation failed.");
+  
+  for(row=0;row<nrow;row++) {
+    for(col=0;col<ncol;col++) {
+      d[row*ncol+col] = -9999;
+      p[row*ncol+col] = 0;
+    }
+  }
   
   // Fill out starting point
   d[start_col] = 0;
@@ -73,7 +91,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   ptr_d=&d[ncol]; // start of 1st row
   ptr_p=&p[ncol];
   d_free = end_gap_p; // end-gap score
-  while(row < (len1+1)) {
+  while(row < (1 + (band < len1 ? band : len1))) {
     ptr_d[col] = d_free; // end gap
     ptr_p[col] = 3;
     if(row%2==0) {
@@ -91,7 +109,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   ptr_d=&d[ncol]; // start of 1st row
   ptr_p=&p[ncol];
   d_free = end_gap_p; // end-gap score
-  while(row < (len2+1)) {
+  while(row < (1+(band+len2-len1 < len2 ? band+len2-len1 : len2))) {
     ptr_d[col] = d_free;
     ptr_p[col] = 2;
     if(row%2 == 1) {
@@ -108,7 +126,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   Rprintf("\n");
   Rprintf("P MATRIX:.....\n");
   parr(p, len2+1, ncol);
-  Rprintf("\n"); */
+  Rprintf("\n");*/
   
     // Fill out DP matrix (Row 0/1 taken care of by ends-free)
   row = 2;
@@ -152,26 +170,33 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
     }
     
     // Update indices
-    if(row<len1) { // upper tri for seq1
-      if(even) { col_min--; }
-      i_max++;
-    } else {
-      if(!even) { col_min++; }
-      j_min++;
-    }
-    if(row==len1) { // Offset to the boundary, didn't do in top wedge cause pre-filled
+    if(row==(band<len1 ? band : len1)) { // Offset to the boundary, didn't do in top wedge cause pre-filled
       col_min--;
       i_max++;
       j_min--;
     }
+    if(row < band && row < len1) { // upper tri for seq1
+      if(even) { col_min--; }
+      i_max++;
+    } else if(i_max < len1-1) { // banded area
+      if(even) { col_min--; i_max++; }
+      else { col_min++; j_min++; }
+    } else { // lower tri for seq1
+      if(!even) { col_min++; }
+      j_min++;
+    }
 
-    if(row<len2) {
+    if(row == (band+len2-len1 < len2 ? band+len2-len1 : len2)) {
+      // Offset to the boundary, didn't do in top wedge cause pre-filled
+      col_max++;
+    }
+    if(row<(band+len2-len1 < len2 ? band+len2-len1 : len2)) {
       if(!even) { col_max++; }
+    } else if((row+1)/2 + col_max - start_col < len2) { // "j_max" (1-index) < len2
+      if(even) { col_max--; }
+      else { col_max++; }
     } else {
       if(even) { col_max--; }
-    }
-    if(row==len2) { // Offset to the boundary, didn't do in top wedge cause pre-filled
-      col_max++;
     }
     
     row++;
@@ -183,7 +208,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   Rprintf("\n");
   Rprintf("P MATRIX:.....\n");
   parr(p, len1+len2+1, ncol);
-  Rprintf("\n"); */
+  Rprintf("\n");*/
 
   char *al0 = (char *) malloc((nrow+1) * sizeof(char));
   char *al1 = (char *) malloc((nrow+1) * sizeof(char));
@@ -221,6 +246,13 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   free(d);
   free(p);
   free(diag_buf);
+  
+  // Return to input ordering
+  if(swap) {
+    ptr_char = al0;
+    al0 = al1;
+    al1 = ptr_char;
+  }
   
   // Allocate memory to alignment strings.
   char **al = (char **) malloc( 2 * sizeof(char *) ); //E
@@ -275,6 +307,13 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   int16_t *p = (int16_t *) malloc(ncol * nrow * sizeof(int16_t));
   int16_t *diag_buf = (int16_t *) malloc(ncol * sizeof(int16_t));
   if (d == NULL || p == NULL || diag_buf == NULL)  Rcpp::stop("Memory allocation failed.");
+  
+  for(row=0;row<nrow;row++) {
+    for(col=0;col<ncol;col++) {
+      d[row*ncol+col] = -9999;
+      p[row*ncol+col] = 0;
+    }
+  }
   
   // Fill out starting point
   d[center] = 0;
