@@ -68,8 +68,8 @@ C_matchRef <- function(seqs, ref, word_size, non_overlapping) {
     .Call('dada2_C_matchRef', PACKAGE = 'dada2', seqs, ref, word_size, non_overlapping)
 }
 
-C_nwvec <- function(s1, s2, match, mismatch, gap_p, band, endsfree, test) {
-    .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band, endsfree, test)
+C_nwvec <- function(s1, s2, match, mismatch, gap_p, band, endsfree, test, debug) {
+    .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band, endsfree, test, debug)
 }
 
 C_assign_taxonomy <- function(seqs, refs, ref_to_genus, genusmat, verbose) {

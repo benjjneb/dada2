@@ -38,7 +38,7 @@ void parr(int16_t *arr, int nrow, int ncol) {
   }
 }
 
-char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
+char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band, bool debug) {
   size_t row, col, ncol, nrow, foo;
   size_t i,j;
   size_t len1, len2;
@@ -48,6 +48,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   size_t i_max, j_min;
   int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_index, *ptr_d, *ptr_p;
   bool swap = false;
+  bool recalc_left = false, recalc_right = false;
   char *ptr_char;
 
   len1 = strlen(s1);
@@ -80,7 +81,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
       p[row*ncol+col] = 0;
     }
   }
-  
+
   // Fill out starting point
   d[start_col] = 0;
   p[start_col] = 0; // Should never be queried
@@ -120,15 +121,8 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
     ptr_d += ncol;
     ptr_p += ncol;
   }
-  
-/*  Rprintf("D MATRIX:.....\n");
-  parr(d, len2+1, ncol);
-  Rprintf("\n");
-  Rprintf("P MATRIX:.....\n");
-  parr(p, len2+1, ncol);
-  Rprintf("\n");*/
-  
-    // Fill out DP matrix (Row 0/1 taken care of by ends-free)
+
+  // Fill out DP matrix (Row 0/1 taken care of by ends-free)
   row = 2;
   col_min = start_col; // Do not fill out the ends-free cells
   col_max = start_col;
@@ -146,10 +140,19 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
     ptr_up = &d[(row-1)*ncol + col_min+1-even];
     dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
     
-    // Recalculate ends-free for lower boundary
-    // Redo the ends-free cells
+    // Offset to the boundary after top wedge (w/ prefilled boundary) is done
+    if(row==(band<len1 ? band : len1)) { 
+      col_min--;
+      i_max++;
+      j_min--;
+    }
+    if(row == (band+len2-len1 < len2 ? band+len2-len1 : len2)) {
+      col_max++;
+    }
+    
+    // Recalculate ends-free cells for lower boundary
     // Left column
-    if(row > len1 && (end_gap_p > gap_p)) {
+    if(recalc_left && (end_gap_p > gap_p)) { // past first row of lower tri
       d_free = ptr_left[0] + end_gap_p; // first cell of left array
       if(d_free > d[row*ncol + col_min]) { // ends-free gap is better
         d[row*ncol + col_min] = d_free;
@@ -158,8 +161,9 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
         p[row*ncol + col_min] = 2;
       }
     }
+    if(i_max == len1-1) { recalc_left = true; }
     // Right column
-    if(row > len2 && (end_gap_p > gap_p)) {
+    if(recalc_right && (end_gap_p > gap_p)) {
       d_free = ptr_up[col_max-col_min] + end_gap_p; // last cell of up array
       if(d_free > d[row*ncol + col_max]) { // ends-free gap is better
         d[row*ncol + col_max] = d_free;
@@ -168,33 +172,33 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
         p[row*ncol + col_max] = 3;
       }
     }
+    if((row+1)/2 + col_max - start_col == len2) { recalc_right = true; }
+    // j_max (1-index) = (row+1)/2 + col_max - start_col
     
-    // Update indices
-    if(row==(band<len1 ? band : len1)) { // Offset to the boundary, didn't do in top wedge cause pre-filled
-      col_min--;
-      i_max++;
-      j_min--;
-    }
+    // Update the indices
     if(row < band && row < len1) { // upper tri for seq1
       if(even) { col_min--; }
       i_max++;
     } else if(i_max < len1-1) { // banded area
-      if(even) { col_min--; i_max++; }
-      else { col_min++; j_min++; }
+      if(band%2 == 0) {
+        if(even) { j_min++; }
+        else { i_max++; }
+      } else { // odd band
+        if(even) { col_min--; i_max++; }
+        else { col_min++; j_min++; }
+      }
     } else { // lower tri for seq1
       if(!even) { col_min++; }
       j_min++;
     }
 
-    if(row == (band+len2-len1 < len2 ? band+len2-len1 : len2)) {
-      // Offset to the boundary, didn't do in top wedge cause pre-filled
-      col_max++;
-    }
     if(row<(band+len2-len1 < len2 ? band+len2-len1 : len2)) {
       if(!even) { col_max++; }
     } else if((row+1)/2 + col_max - start_col < len2) { // "j_max" (1-index) < len2
-      if(even) { col_max--; }
-      else { col_max++; }
+      if((band+len2-len1) % 2 == 0) { // even band (including the extra band from length difference)
+        if(even) { col_max--; }
+        else { col_max++; }
+      } // no action on odd band
     } else {
       if(even) { col_max--; }
     }
@@ -203,12 +207,11 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
     even = 1 - even;
   }
 
-/*  Rprintf("D MATRIX:.....\n");
-  parr(d, len1+len2+1, ncol);
-  Rprintf("\n");
-  Rprintf("P MATRIX:.....\n");
-  parr(p, len1+len2+1, ncol);
-  Rprintf("\n");*/
+  if(debug) {
+    Rprintf("D MATRIX:.....\n");
+    parr(d, len1+len2+1, ncol);
+    Rprintf("\n");
+  }
 
   char *al0 = (char *) malloc((nrow+1) * sizeof(char));
   char *al1 = (char *) malloc((nrow+1) * sizeof(char));
@@ -275,7 +278,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   return al;
 }
 
-char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
+char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool debug) {
   size_t row, col, ncol, nrow;
   size_t i,j;
   size_t len1 = strlen(s1);
@@ -342,14 +345,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
     }
     row++;
   }
-  
-/*  Rprintf("D MATRIX:.....\n");
-  parr(d, len2+1, ncol);
-  Rprintf("\n");
-  Rprintf("P MATRIX:.....\n");
-  parr(p, len2+1, ncol);
-  Rprintf("\n"); */
-  
+
   // Fill out band boundaries
   if(band%2 == 0) { // even band
     for(row=0,ptr_index=&d[0];row<len1+len2+1;row++,ptr_index+=ncol) {
@@ -531,13 +527,12 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
     j_min++;
     row++;
   }
-  
-/*  Rprintf("D MATRIX:.....\n");
-  parr(d, len1+len2+1, ncol);
-  Rprintf("\n");
-  Rprintf("P MATRIX:.....\n");
-  parr(p, len1+len2+1, ncol);
-  Rprintf("\n"); */
+
+  if(debug) {
+    Rprintf("D MATRIX:.....\n");
+    parr(d, len1+len2+1, ncol);
+    Rprintf("\n");
+  }
   
   char *al0 = (char *) malloc((nrow+1) * sizeof(char));
   char *al1 = (char *) malloc((nrow+1) * sizeof(char));
@@ -598,7 +593,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
 }
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree, bool test) {
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree, bool test, bool debug) {
   char *seq1, *seq2;
   char **al;
 
@@ -612,13 +607,13 @@ Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int
   
   if(test) {
     if(endsfree) {
-      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, 0, (size_t) band);
+      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, 0, (size_t) band, debug);
     } else {
-      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, gap_p, (size_t) band);
+      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, gap_p, (size_t) band, debug);
     }
   } else {
     if(!endsfree) Rprintf("Standard vectorized aligner is endsfree-only.\n");
-    al = nwalign_endsfree_vectorized(seq1, seq2, match, mismatch, gap_p, (size_t) band);
+    al = nwalign_endsfree_vectorized(seq1, seq2, match, mismatch, gap_p, (size_t) band, debug);
   }
 
   int2nt(al[0], al[0]);
