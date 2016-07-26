@@ -38,7 +38,7 @@ void parr(int16_t *arr, int nrow, int ncol) {
   }
 }
 
-char **nwalign_endsfree_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
+char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
   size_t row, col, ncol, nrow, index;
   size_t i,j;
   size_t len1, len2;
@@ -49,9 +49,7 @@ char **nwalign_endsfree_vectorized2(char *s1, char *s2, int16_t match, int16_t m
   int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_index, *ptr_d, *ptr_p;
 
   // IGNORING BANDING FOR NOW
-  // ENDSFREE ONLY FOR NOW
-  // BUT ONLY FOR STARTING GAPS, NOT YET FOR ENDING GAPS
-  
+
   len1 = strlen(s1);
   len2 = strlen(s2);
 
@@ -74,13 +72,15 @@ char **nwalign_endsfree_vectorized2(char *s1, char *s2, int16_t match, int16_t m
   col=start_col-1;
   ptr_d=&d[ncol]; // start of 1st row
   ptr_p=&p[ncol];
+  d_free = end_gap_p; // end-gap score
   while(row < (len1+1)) {
-    ptr_d[col] = 0; // ends-free gap
+    ptr_d[col] = d_free; // end gap
     ptr_p[col] = 3;
     if(row%2==0) {
       col--;
     }
     row++;
+    d_free += end_gap_p;
     ptr_d += ncol;
     ptr_p += ncol;
   }
@@ -90,13 +90,15 @@ char **nwalign_endsfree_vectorized2(char *s1, char *s2, int16_t match, int16_t m
   col=start_col;
   ptr_d=&d[ncol]; // start of 1st row
   ptr_p=&p[ncol];
+  d_free = end_gap_p; // end-gap score
   while(row < (len2+1)) {
-    ptr_d[col] = 0;
+    ptr_d[col] = d_free;
     ptr_p[col] = 2;
     if(row%2 == 1) {
       col++;
     }
     row++;
+    d_free += end_gap_p;
     ptr_d += ncol;
     ptr_p += ncol;
   }
@@ -129,8 +131,8 @@ char **nwalign_endsfree_vectorized2(char *s1, char *s2, int16_t match, int16_t m
     // Recalculate ends-free for lower boundary
     // Redo the ends-free cells
     // Left column
-    if(row > len1) {
-      d_free = ptr_left[0]; // first cell of left array
+    if(row > len1 && (end_gap_p > gap_p)) {
+      d_free = ptr_left[0] + end_gap_p; // first cell of left array
       if(d_free > d[row*ncol + col_min]) { // ends-free gap is better
         d[row*ncol + col_min] = d_free;
         p[row*ncol + col_min] = 2;
@@ -139,8 +141,8 @@ char **nwalign_endsfree_vectorized2(char *s1, char *s2, int16_t match, int16_t m
       }
     }
     // Right column
-    if(row > len2) {
-      d_free = ptr_up[col_max-col_min]; // last cell of up array
+    if(row > len2 && (end_gap_p > gap_p)) {
+      d_free = ptr_up[col_max-col_min] + end_gap_p; // last cell of up array
       if(d_free > d[row*ncol + col_max]) { // ends-free gap is better
         d[row*ncol + col_max] = d_free;
         p[row*ncol + col_max] = 3;
@@ -557,7 +559,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
 }
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool test) {
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree, bool test) {
   char *seq1, *seq2;
   char **al;
 
@@ -570,8 +572,13 @@ Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int
   nt2int(seq2, seq2);
   
   if(test) {
-    al = nwalign_endsfree_vectorized2(seq1, seq2, match, mismatch, gap_p, (size_t) band);
+    if(endsfree) {
+      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, 0, (size_t) band);
+    } else {
+      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, gap_p, (size_t) band);
+    }
   } else {
+    if(!endsfree) Rprintf("Standard vectorized aligner is endsfree-only.\n");
     al = nwalign_endsfree_vectorized(seq1, seq2, match, mismatch, gap_p, (size_t) band);
   }
 

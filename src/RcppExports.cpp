@@ -150,8 +150,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_nwvec
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool test);
-RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP testSEXP) {
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree, bool test);
+RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP, SEXP testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -161,8 +161,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int16_t >::type mismatch(mismatchSEXP);
     Rcpp::traits::input_parameter< int16_t >::type gap_p(gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type band(bandSEXP);
+    Rcpp::traits::input_parameter< bool >::type endsfree(endsfreeSEXP);
     Rcpp::traits::input_parameter< bool >::type test(testSEXP);
-    __result = Rcpp::wrap(C_nwvec(s1, s2, match, mismatch, gap_p, band, test));
+    __result = Rcpp::wrap(C_nwvec(s1, s2, match, mismatch, gap_p, band, endsfree, test));
     return __result;
 END_RCPP
 }
