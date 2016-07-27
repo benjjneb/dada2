@@ -353,13 +353,6 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
   int16_t *diag_buf = (int16_t *) malloc(ncol * sizeof(int16_t));
   if (d == NULL || p == NULL || diag_buf == NULL)  Rcpp::stop("Memory allocation failed.");
   
-  for(row=0;row<nrow;row++) {
-    for(col=0;col<ncol;col++) {
-      d[row*ncol+col] = -9999;
-      p[row*ncol+col] = 0;
-    }
-  }
-  
   // Fill out starting point
   d[center] = 0;
   p[center] = 0; // Should never be queried
