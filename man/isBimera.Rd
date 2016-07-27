@@ -5,7 +5,7 @@
 \title{Determine if input sequence is a bimera of putative parent sequences.}
 \usage{
 isBimera(sq, parents, allowOneOff = TRUE, minOneOffParentDistance = 4,
-  maxShift = 16, test = FALSE)
+  maxShift = 16)
 }
 \arguments{
 \item{sq}{(Required). A \code{character(1)}.

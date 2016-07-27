@@ -38,8 +38,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_is_bimera
-bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift, bool test);
-RcppExport SEXP dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP, SEXP testSEXP) {
+bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift);
+RcppExport SEXP dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -50,8 +50,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
     Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type max_shift(max_shiftSEXP);
-    Rcpp::traits::input_parameter< bool >::type test(testSEXP);
-    __result = Rcpp::wrap(C_is_bimera(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift, test));
+    __result = Rcpp::wrap(C_is_bimera(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift));
     return __result;
 END_RCPP
 }

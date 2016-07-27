@@ -40,9 +40,9 @@
 #' sqs1 <- getSequences(derep1)
 #' isBimera(sqs1[[20]], sqs1[1:10])
 #' 
-isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, test=FALSE) {
+isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) {
   rval <- C_is_bimera(sq, parents, allowOneOff, minOneOffParentDistance, 
-              getDadaOpt("SCORE_MATRIX"), getDadaOpt("GAP_PENALTY"), maxShift, test)
+              getDadaOpt("SCORE_MATRIX"), getDadaOpt("GAP_PENALTY"), maxShift)
   return(rval)
 }
 
@@ -94,7 +94,7 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' isBimeraDenovo(dada1)
 #' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 #' 
-isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE, test=FALSE) {
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
   unqs <- getUniques(unqs)
   abunds <- unname(unqs)
   seqs <- names(unqs)
@@ -106,7 +106,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
     } else if (length(pars) == 1) {
       return(FALSE)
     } else {
-      isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift, test=test)
+      isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
     }
   }
   bims <- mapply(loopFun, seqs, abunds)
