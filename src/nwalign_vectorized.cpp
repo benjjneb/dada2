@@ -2,6 +2,7 @@
 #include "dada.h"
 using namespace Rcpp;
 
+// Precedence is up>left>diag
 void dploop_vec(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, int16_t *__restrict__ ptr_up, int16_t *__restrict__ d, int16_t *__restrict__ p, int16_t gap_p, size_t n) {
   int16_t left, diag, up, entry, pentry;
   size_t i = 0;
@@ -15,7 +16,34 @@ void dploop_vec(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, 
     pentry = up >= left ? 3 : 2;
     pentry = entry >= diag ? pentry : 1;
     entry = entry >= diag ? entry : diag;
+    
+    *d = entry; // Vectorizes if this points to another array
+    *p = pentry;
+    
+    ptr_left++;
+    ptr_diag++;
+    ptr_up++;
+    d++;
+    p++;
+    i++;
+  }
+}
 
+// Precedence is left>up>diag
+void dploop_vec_swap(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, int16_t *__restrict__ ptr_up, int16_t *__restrict__ d, int16_t *__restrict__ p, int16_t gap_p, size_t n) {
+  int16_t left, diag, up, entry, pentry;
+  size_t i = 0;
+  
+  while(i<n) {
+    left = *ptr_left + gap_p;
+    diag = *ptr_diag;
+    up = *ptr_up + gap_p;
+    
+    entry = left >= up ? left : up;
+    pentry = left >= up ? 2 : 3;
+    pentry = entry >= diag ? pentry : 1;
+    entry = entry >= diag ? entry : diag;
+    
     *d = entry; // Vectorizes if this points to another array
     *p = pentry;
     
@@ -138,7 +166,11 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
     ptr_left = &d[(row-1)*ncol + col_min-even];
     ptr_diag = &diag_buf[col_min];
     ptr_up = &d[(row-1)*ncol + col_min+1-even];
-    dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
+    if(swap) {
+      dploop_vec_swap(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
+    } else {
+      dploop_vec(ptr_left, ptr_diag, ptr_up, &d[row*ncol + col_min], &p[row*ncol + col_min], gap_p, col_max-col_min+1);
+    }
     
     // Offset to the boundary after top wedge (w/ prefilled boundary) is done
     if(row==(band<len1 ? band : len1)) { 
@@ -151,30 +183,35 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
     }
     
     // Recalculate ends-free cells for lower boundary
-    // Left column
-    if(recalc_left && (end_gap_p > gap_p)) { // past first row of lower tri
-      d_free = ptr_left[0] + end_gap_p; // first cell of left array
-      if(d_free > d[row*ncol + col_min]) { // ends-free gap is better
-        d[row*ncol + col_min] = d_free;
-        p[row*ncol + col_min] = 2;
-      } else if(d_free == d[row*ncol + col_min] && p[row*ncol + col_min] == 1) { // left gap takes precedence over diagonal move (for consistency)
-        p[row*ncol + col_min] = 2;
+    if(end_gap_p > gap_p) {
+      // Left column
+      if(recalc_left) { // past first row of lower tri
+        d_free = ptr_left[0] + end_gap_p; // first cell of left array
+        if(d_free > d[row*ncol + col_min]) { // ends-free gap is better
+          d[row*ncol + col_min] = d_free;
+          p[row*ncol + col_min] = 2;
+        } else if(!swap && d_free == d[row*ncol + col_min] && p[row*ncol + col_min] == 1) { // left gap takes precedence over diagonal move (for consistency)
+          p[row*ncol + col_min] = 2;
+        } else if(swap && d_free == d[row*ncol + col_min] && p[row*ncol + col_min] != 2) { // left-is-up, and takes precedence other moves
+          p[row*ncol + col_min] = 2;
+        }
       }
-    }
-    if(i_max == len1-1) { recalc_left = true; }
-    // Right column
-    if(recalc_right && (end_gap_p > gap_p)) {
-      d_free = ptr_up[col_max-col_min] + end_gap_p; // last cell of up array
-      if(d_free > d[row*ncol + col_max]) { // ends-free gap is better
-        d[row*ncol + col_max] = d_free;
-        p[row*ncol + col_max] = 3;
-      } else if(d_free == d[row*ncol + col_max] && p[row*ncol + col_max] != 3) { // up gap takes precedence over left or diagonal move (for consistency)
-        p[row*ncol + col_max] = 3;
+      if(i_max == len1-1) { recalc_left = true; }
+      // Right column
+      if(recalc_right) {
+        d_free = ptr_up[col_max-col_min] + end_gap_p; // last cell of up array
+        if(d_free > d[row*ncol + col_max]) { // ends-free gap is better
+          d[row*ncol + col_max] = d_free;
+          p[row*ncol + col_max] = 3;
+        } else if(!swap && d_free == d[row*ncol + col_max] && p[row*ncol + col_max] != 3) { // up gap takes precedence over left or diagonal move (for consistency)
+          p[row*ncol + col_max] = 3;
+        } else if(swap && d_free == d[row*ncol + col_max] && p[row*ncol + col_max] == 1) { // up-is-left, and takes precedence over diagonal
+          p[row*ncol + col_max] = 3;
+        }
       }
+      if((row+1)/2 + col_max - start_col == len2) { recalc_right = true; }
+      // j_max (1-index) = (row+1)/2 + col_max - start_col
     }
-    if((row+1)/2 + col_max - start_col == len2) { recalc_right = true; }
-    // j_max (1-index) = (row+1)/2 + col_max - start_col
-    
     // Update the indices
     if(row < band && row < len1) { // upper tri for seq1
       if(even) { col_min--; }
@@ -208,9 +245,10 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   }
 
   if(debug) {
-    Rprintf("D MATRIX:.....\n");
-    parr(d, len1+len2+1, ncol);
-    Rprintf("\n");
+//    Rprintf("D MATRIX:.....\n");
+//    parr(d, len1+len2+1, ncol);
+//    Rprintf("\n");
+    Rprintf("Score: %d\n", d[(len1+len2)*ncol + (2*start_col+len2-len1)/2]);
   }
 
   char *al0 = (char *) malloc((nrow+1) * sizeof(char));
