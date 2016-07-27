@@ -2,6 +2,8 @@
 #include "dada.h"
 using namespace Rcpp;
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+
 // Precedence is up>left>diag
 void dploop_vec(int16_t *__restrict__ ptr_left, int16_t *__restrict__ ptr_diag, int16_t *__restrict__ ptr_up, int16_t *__restrict__ d, int16_t *__restrict__ p, int16_t gap_p, size_t n) {
   int16_t left, diag, up, entry, pentry;
@@ -66,7 +68,7 @@ void parr(int16_t *arr, int nrow, int ncol) {
   }
 }
 
-char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band, bool debug) {
+char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
   size_t row, col, ncol, nrow, foo;
   size_t i,j;
   size_t len1, len2;
@@ -103,11 +105,13 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   int16_t *diag_buf = (int16_t *) malloc(ncol * sizeof(int16_t));
   if (d == NULL || p == NULL || diag_buf == NULL)  Rcpp::stop("Memory allocation failed.");
   
+  // For banding issues later on
+  int16_t fill_val = INT16_MIN - MIN(MIN(mismatch, gap_p), MIN(match, 0));
   for(row=0;row<nrow;row++) {
-    for(col=0;col<ncol;col++) {
-      d[row*ncol+col] = -9999;
-      p[row*ncol+col] = 0;
-    }
+    d[row*ncol] = fill_val;
+    d[row*ncol+1] = fill_val;
+    d[row*ncol+ncol-2] = fill_val;
+    d[row*ncol+ncol-1] = fill_val;
   }
 
   // Fill out starting point
@@ -244,12 +248,12 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
     even = 1 - even;
   }
 
-  if(debug) {
+//  if(debug) {
 //    Rprintf("D MATRIX:.....\n");
 //    parr(d, len1+len2+1, ncol);
 //    Rprintf("\n");
-    Rprintf("Score: %d\n", d[(len1+len2)*ncol + (2*start_col+len2-len1)/2]);
-  }
+//    Rprintf("Score: %d\n", d[(len1+len2)*ncol + (2*start_col+len2-len1)/2]);
+//  }
 
   char *al0 = (char *) malloc((nrow+1) * sizeof(char));
   char *al1 = (char *) malloc((nrow+1) * sizeof(char));
@@ -275,7 +279,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
         al1[len_al] = 6;
         break;
       default:
-        ///v Rprintf("ij=(%i,%i), rc=(%i,%i), p[][]=%i\n", i,j,i+j,center-(i-j), p[i+j][center-(i-j)]);
+        Rprintf("len1/2=(%i, %i), nrow,ncol=(%i,%i), ij=(%i,%i), rc=(%i,%i), d[][]=%i, p[][]=%i\n", len1, len2, nrow, ncol, i,j,i+j,(2*start_col+j-i)/2, d[(i+j)*ncol + (2*start_col+j-i)/2], p[(i+j)*ncol + (2*start_col+j-i)/2]);
         Rcpp::stop("N-W Align out of range.");
     }
     len_al++;
@@ -316,7 +320,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   return al;
 }
 
-char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool debug) {
+char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
   size_t row, col, ncol, nrow;
   size_t i,j;
   size_t len1 = strlen(s1);
@@ -566,11 +570,11 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
     row++;
   }
 
-  if(debug) {
-    Rprintf("D MATRIX:.....\n");
-    parr(d, len1+len2+1, ncol);
-    Rprintf("\n");
-  }
+//  if(debug) {
+//    Rprintf("D MATRIX:.....\n");
+//    parr(d, len1+len2+1, ncol);
+//    Rprintf("\n");
+//  }
   
   char *al0 = (char *) malloc((nrow+1) * sizeof(char));
   char *al1 = (char *) malloc((nrow+1) * sizeof(char));
@@ -631,7 +635,7 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
 }
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree, bool test, bool debug) {
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree, bool test) {
   char *seq1, *seq2;
   char **al;
 
@@ -645,13 +649,13 @@ Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int
   
   if(test) {
     if(endsfree) {
-      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, 0, (size_t) band, debug);
+      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, 0, (size_t) band);
     } else {
-      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, gap_p, (size_t) band, debug);
+      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, gap_p, (size_t) band);
     }
   } else {
     if(!endsfree) Rprintf("Standard vectorized aligner is endsfree-only.\n");
-    al = nwalign_endsfree_vectorized(seq1, seq2, match, mismatch, gap_p, (size_t) band, debug);
+    al = nwalign_endsfree_vectorized(seq1, seq2, match, mismatch, gap_p, (size_t) band);
   }
 
   int2nt(al[0], al[0]);

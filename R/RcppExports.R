@@ -9,8 +9,8 @@ dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kd
     .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, final_consensus, vectorized_alignment, homo_gap, multithread, verbose)
 }
 
-C_is_bimera <- function(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift) {
-    .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift)
+C_is_bimera <- function(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift, test) {
+    .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift, test)
 }
 
 C_nwalign <- function(s1, s2, score, gap_p, homo_gap_p, band, endsfree) {
@@ -68,8 +68,8 @@ C_matchRef <- function(seqs, ref, word_size, non_overlapping) {
     .Call('dada2_C_matchRef', PACKAGE = 'dada2', seqs, ref, word_size, non_overlapping)
 }
 
-C_nwvec <- function(s1, s2, match, mismatch, gap_p, band, endsfree, test, debug) {
-    .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band, endsfree, test, debug)
+C_nwvec <- function(s1, s2, match, mismatch, gap_p, band, endsfree, test) {
+    .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band, endsfree, test)
 }
 
 C_assign_taxonomy <- function(seqs, refs, ref_to_genus, genusmat, verbose) {

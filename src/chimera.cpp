@@ -12,7 +12,7 @@ int get_ham_endsfree(const char *seq1, const char *seq2, int len);
 // @param max_shift A \code{integer(1)} of the maximum alignment shift allowed.
 // 
 // [[Rcpp::export]]
-bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift) {
+bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift, bool test) {
   // For now only finding perfect bimeras
   int i, j, left, right, left_oo, right_oo, pos, len, max_len;
   // Make  c-style 2d score array
@@ -42,7 +42,12 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
   bool rval = false;
   for(i=0;i<pars.size() && rval==false;i++) {
     nt2int(seq2, pars[i].c_str());
-    al = nwalign_endsfree(seq1, seq2, c_score, gap_p, max_shift);  // Remember, alignments must be freed!
+    if(test) {
+  // char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
+      al = nwalign_vectorized2(seq1, seq2, (int16_t) c_score[0][0], (int16_t) c_score[0][1], (int16_t) gap_p, 0, max_shift);  // Remember, alignments must be freed!
+    } else {
+      al = nwalign_endsfree(seq1, seq2, c_score, gap_p, max_shift);  // Remember, alignments must be freed!
+    }
     len = strlen(al[0]);
     
     pos=0; left=0;

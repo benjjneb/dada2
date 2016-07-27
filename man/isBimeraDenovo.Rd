@@ -6,7 +6,7 @@
 \usage{
 isBimeraDenovo(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8,
   allowOneOff = TRUE, minOneOffParentDistance = 4, maxShift = 16,
-  verbose = FALSE)
+  verbose = FALSE, test = FALSE)
 }
 \arguments{
 \item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced
