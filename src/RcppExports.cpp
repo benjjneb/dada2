@@ -8,6 +8,23 @@
 
 using namespace Rcpp;
 
+// C_is_bimera
+bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift);
+RcppExport SEXP dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject __result;
+    Rcpp::RNGScope __rngScope;
+    Rcpp::traits::input_parameter< std::string >::type sq(sqSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< bool >::type allow_one_off(allow_one_offSEXP);
+    Rcpp::traits::input_parameter< int >::type min_one_off_par_dist(min_one_off_par_distSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
+    Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
+    Rcpp::traits::input_parameter< int >::type max_shift(max_shiftSEXP);
+    __result = Rcpp::wrap(C_is_bimera(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift));
+    return __result;
+END_RCPP
+}
 // C_nwalign
 Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int homo_gap_p, int band, bool endsfree);
 RcppExport SEXP dada2_C_nwalign(SEXP s1SEXP, SEXP s2SEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP homo_gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
@@ -34,23 +51,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
     Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
     __result = Rcpp::wrap(C_eval_pair(s1, s2));
-    return __result;
-END_RCPP
-}
-// C_is_bimera
-bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift);
-RcppExport SEXP dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject __result;
-    Rcpp::RNGScope __rngScope;
-    Rcpp::traits::input_parameter< std::string >::type sq(sqSEXP);
-    Rcpp::traits::input_parameter< std::vector<std::string> >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< bool >::type allow_one_off(allow_one_offSEXP);
-    Rcpp::traits::input_parameter< int >::type min_one_off_par_dist(min_one_off_par_distSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
-    Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
-    Rcpp::traits::input_parameter< int >::type max_shift(max_shiftSEXP);
-    __result = Rcpp::wrap(C_is_bimera(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift));
     return __result;
 END_RCPP
 }
@@ -121,8 +121,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_nwvec
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band);
-RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP) {
+Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree, bool test);
+RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP, SEXP testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -132,13 +132,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int16_t >::type mismatch(mismatchSEXP);
     Rcpp::traits::input_parameter< int16_t >::type gap_p(gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type band(bandSEXP);
-    __result = Rcpp::wrap(C_nwvec(s1, s2, match, mismatch, gap_p, band));
+    Rcpp::traits::input_parameter< bool >::type endsfree(endsfreeSEXP);
+    Rcpp::traits::input_parameter< bool >::type test(testSEXP);
+    __result = Rcpp::wrap(C_nwvec(s1, s2, match, mismatch, gap_p, band, endsfree, test));
     return __result;
 END_RCPP
 }
 // dada_uniques
-Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, bool use_quals, int qmax, bool final_consensus, bool vectorized_alignment, int homo_gap, bool verbose);
-RcppExport SEXP dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP qmaxSEXP, SEXP final_consensusSEXP, SEXP vectorized_alignmentSEXP, SEXP homo_gapSEXP, SEXP verboseSEXP) {
+Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, bool use_quals, bool final_consensus, bool vectorized_alignment, int homo_gap, bool multithread, bool verbose);
+RcppExport SEXP dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP final_consensusSEXP, SEXP vectorized_alignmentSEXP, SEXP homo_gapSEXP, SEXP multithreadSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -156,12 +158,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type min_fold(min_foldSEXP);
     Rcpp::traits::input_parameter< int >::type min_hamming(min_hammingSEXP);
     Rcpp::traits::input_parameter< bool >::type use_quals(use_qualsSEXP);
-    Rcpp::traits::input_parameter< int >::type qmax(qmaxSEXP);
     Rcpp::traits::input_parameter< bool >::type final_consensus(final_consensusSEXP);
     Rcpp::traits::input_parameter< bool >::type vectorized_alignment(vectorized_alignmentSEXP);
     Rcpp::traits::input_parameter< int >::type homo_gap(homo_gapSEXP);
+    Rcpp::traits::input_parameter< bool >::type multithread(multithreadSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    __result = Rcpp::wrap(dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, qmax, final_consensus, vectorized_alignment, homo_gap, verbose));
+    __result = Rcpp::wrap(dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, final_consensus, vectorized_alignment, homo_gap, multithread, verbose));
     return __result;
 END_RCPP
 }

@@ -62,6 +62,11 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
 #'   error rates, which are always estimated from pooled observations across samples.
 #'   
+#' @param multithread (Optional). Default is FALSE.
+#'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+#'  If an integer is provided, the number of threads to use is set by passing the argument on to
+#'  \code{\link{setThreadOptions}}.
+#'   
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
 #'  See \code{\link{setDadaOpt}} for a full list and description of these options. 
 #'
@@ -91,6 +96,9 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #' @seealso 
 #'  \code{\link{derepFastq}}, \code{\link{setDadaOpt}}
 #'
+#' @importFrom RcppParallel RcppParallelLibs
+#' @importFrom RcppParallel setThreadOptions
+#'
 #' @export
 #'
 #' @examples
@@ -104,7 +112,8 @@ dada <- function(derep,
                  err,
                  errorEstimationFunction = loessErrfun,
                  selfConsist = FALSE, 
-                 pool = FALSE, ...) {
+                 pool = FALSE,
+                 multithread = FALSE, ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
@@ -214,11 +223,13 @@ dada <- function(derep,
   
   # Validate alignment parameters
   if(opts$GAP_PENALTY>0) opts$GAP_PENALTY = -opts$GAP_PENALTY
-  if(is.null(opts$HOMOPOLYMER_GAP_PENALTY)) { # Don't use homopolymer gapping
-    opts$HOMOPOLYMER_GAP_PENALTY <- 99
-  } else { # Use homopolymer gapping
+  if(is.null(opts$HOMOPOLYMER_GAP_PENALTY)) { # Set gap penalties equal
+    opts$HOMOPOLYMER_GAP_PENALTY <- opts$GAP_PENALTY
+  }
+  if(opts$HOMOPOLYMER_GAP_PENALTY > 0) opts$HOMOPOLYMER_GAP_PENALTY = -opts$HOMOPOLYMER_GAP_PENALTY
+
+  if(opts$HOMOPOLYMER_GAP_PENALTY != opts$GAP_PENALTY) { # Use homopolymer gapping
     opts$VECTORIZED_ALIGNMENT <- FALSE # No homopolymer gapping in vectorized aligner
-    if(opts$HOMOPOLYMER_GAP_PENALTY > 0) opts$HOMOPOLYMER_GAP_PENALTY = -opts$HOMOPOLYMER_GAP_PENALTY
   }
   if(opts$VECTORIZED_ALIGNMENT) {
     if(length(unique(diag(opts$SCORE)))!=1 || 
@@ -232,6 +243,12 @@ dada <- function(derep,
     if(opts$BAND_SIZE == 0) opts$VECTORIZED_ALIGNMENT=FALSE
   }
   
+  # Check for numeric multithreading argument
+  if(is.numeric(multithread)) {
+    RcppParallel::setThreadOptions(numThreads = multithread)
+    multithread <- TRUE
+  }
+
   # Initialize
   cur <- NULL
   if(initializeErr) { nconsist <- 0 } else { nconsist <- 1 }
@@ -275,11 +292,11 @@ dada <- function(derep,
                           if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] },
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]],
-                          qmax,
                           FALSE,
 #                          opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
+                          multithread,
                           opts[["VERBOSE"]])
       
       # Augment the returns
@@ -294,7 +311,7 @@ dada <- function(derep,
       map[[i]] <- res$map
 #      exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
-      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, qmax)  # Assumes C sides is returning one col for each integer from 0 to qmax
+      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
     }
     # Accumulate the sub matrix
     cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient
@@ -387,11 +404,12 @@ dada <- function(derep,
       # Prune $denoised, $clustering, $sequence, $quality
       rval2[[i]]$denoised <- rval2[[i]]$denoised[keep]
       rval2[[i]]$clustering <- rval2[[i]]$clustering[keep,] # Leaves old (char of integer) rownames!
+      rownames(rval2[[i]]$clustering) <- as.character(newBi[as.integer(rownames(rval2[[i]]$clustering))])
       rval2[[i]]$sequence <- rval2[[i]]$sequence[keep]
       rval2[[i]]$quality <- rval2[[i]]$quality[keep,,drop=FALSE] # Not the qualities for this sample alone!
       # Prune birth_subs and remap its $clust column
       rval2[[i]]$birth_subs <- rval2[[i]]$birth_subs[keep[rval2[[i]]$birth_subs$clust],,drop=FALSE]
-      rval2[[i]]$birth_subs <- newBi[rval2[[i]]$birth_subs$clust]      
+      rval2[[i]]$birth_subs$clust <- newBi[rval2[[i]]$birth_subs$clust]      
       # Remap $map
       rval2[[i]]$map <- newBi[map[names(derep.in[[i]]$uniques)]]
       # Recalculate abundances (both $denoised and $clustering$abundance)
@@ -452,7 +470,7 @@ dada <- function(derep,
 #' SCORE_MATRIX: The score matrix for the Needleman-Wunsch alignment. This is a 4x4 matrix as no ambiguous nucleotides
 #'  are allowed. Default is nuc44: -4 for mismatches, +5 for matchces.
 #'  
-#' GAP_PENALTY: The cost of gaps in the Needlman-Wunsch alignment. Default is -8.
+#' GAP_PENALTY: The cost of gaps in the Needleman-Wunsch alignment. Default is -8.
 #'  
 #' HOMOPOLYMER_GAP_PENALTY: The cost of gaps in homopolymer regions (>=3 repeated bases). Default is NULL, which causes homopolymer
 #'  gaps to be treated as normal gaps.  
@@ -466,6 +484,9 @@ dada <- function(derep,
 #' MAX_CLUST: The maximum number of clusters. Once this many clusters have been created, the algorithm terminates regardless
 #'  of whether the statistical model suggests more sample sequences exist. If set to 0 this argument is ignored. Default
 #'  value is 0.
+#'  
+#' MAX_CONSIST: The maximum number of steps when selfConsist=TRUE. If convergence is not reached in MAX_CONSIST steps,
+#'  the algorithm will terminate with a warning message. Default value is 10.
 #'  
 #' VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
 #' 

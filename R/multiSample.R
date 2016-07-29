@@ -158,3 +158,76 @@ combineDereps2 <- function(dereps) {
   rval <- as(rval, "derep")
   rval
 }
+
+is.sequence.table <- function(tab) {
+  rval <- is.matrix(tab) && all(tab>=0) && 
+    !is.null(colnames(tab)) && !is.null(colnames(tab)) &&
+    all(sapply(colnames(tab), nchar)>0) &&
+    all(sapply(colnames(tab), C_isACGT)) &&
+    all(sapply(rownames(tab), nchar)>0)
+  rval
+}
+
+################################################################################
+#' Merge two or more sample-by-sequence observation matrices.
+#' 
+#' This function combines sequence tables together into one merged sequences table.
+#' 
+#' @param table1 (Required). Named integer matrix. Rownames correspond to samples
+#' and column names correspond to sequences. The output of \code{\link{makeSequenceTable}}.
+#' 
+#' @param table2 (Required). Named integer matrix. Rownames correspond to samples
+#' and column names correspond to sequences. The output of \code{\link{makeSequenceTable}}.
+#' 
+#' @param ... (Optional). Additional sequence tables.
+#' 
+#' @param orderBy (Optional). \code{character(1)}. Default "abundance".
+#' Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
+#' Valid values: "abundance", "nsamples", NULL.
+#' 
+#' @return Named integer matrix.
+#' A row for each sample, and a column for each unique sequence across all the samples.
+#' Note that the columns are named by the sequence which can make display unwieldy.
+#' 
+#' @seealso \code{\link{makeSequenceTable}}
+#' @export
+#' 
+#' @examples
+#' 
+#' \dontrun{
+#'   mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3)
+#' }
+#' 
+mergeSequenceTables <- function(table1, table2, ..., orderBy = "abundance") {
+  # Combine passed tables into a list
+  tables <- list(table1, table2)
+  tables <- c(tables, list(...))
+  # Validate tables
+  if(!(all(sapply(tables, is.sequence.table)))) {
+    stop("At least two valid sequence tables, and no invalid objects, are expected.")
+  }
+  sample.names <- rownames(tables[[1]])
+  for(i in seq(2, length(tables))) {
+    sample.names <- c(sample.names, rownames(tables[[i]]))
+  }
+  if(any(duplicated(sample.names))) {
+    stop("Duplicated sample names detected in the rownames.")
+  }
+  seqs <- unique(c(sapply(tables, colnames), recursive=TRUE))
+  # Make merged table
+  rval <- matrix(0L, nrow=length(sample.names), ncol=length(seqs))
+  rownames(rval) <- sample.names
+  colnames(rval) <- seqs
+  for(tab in tables) {
+    rval[rownames(tab), colnames(tab)] <- tab
+  }
+  # Order columns
+  if(!is.null(orderBy)) {
+    if(orderBy == "abundance") {
+      rval <- rval[,order(colSums(rval), decreasing=TRUE),drop=FALSE]
+    } else if(orderBy == "nsamples") {
+      rval <- rval[,order(colSums(rval>0), decreasing=TRUE),drop=FALSE]
+    }
+  }
+  rval
+}

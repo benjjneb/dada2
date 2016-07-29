@@ -4,7 +4,8 @@
 \alias{assignTaxonomy}
 \title{Classifies sequences against reference training dataset.}
 \usage{
-assignTaxonomy(seqs, refFasta, minBoot = 50, verbose = FALSE)
+assignTaxonomy(seqs, refFasta, minBoot = 50, taxLevels = c("Kingdom",
+  "Phylum", "Class", "Order", "Family", "Genus", "Species"), verbose = FALSE)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 
@@ -21,6 +22,10 @@ separated by a semicolon. Eg.
 
 \item{minBoot}{(Optional). Default 50. 
 The minimum bootstrap confidence for assigning a taxonomic level.}
+
+\item{taxLevels}{(Optional). Default is c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species").
+The taxonomic levels being assigned. Truncates if deeper levels not present in
+training fasta.}
 
 \item{verbose}{(Optional). Default FALSE.
 If TRUE, print status to standard output.}

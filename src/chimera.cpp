@@ -42,7 +42,8 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
   bool rval = false;
   for(i=0;i<pars.size() && rval==false;i++) {
     nt2int(seq2, pars[i].c_str());
-    al = nwalign_endsfree(seq1, seq2, c_score, gap_p, max_shift);  // Remember, alignments must be freed!
+    al = nwalign_vectorized2(seq1, seq2, (int16_t) c_score[0][0], (int16_t) c_score[0][1], (int16_t) gap_p, 0, max_shift);  // Remember, alignments must be freed!
+//    al = nwalign_endsfree(seq1, seq2, c_score, gap_p, max_shift);  // Remember, alignments must be freed!
     len = strlen(al[0]);
     
     pos=0; left=0;

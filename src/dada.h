@@ -6,11 +6,14 @@
 #include <string.h>
 #include <math.h>
 #include <Rcpp.h>
+#include <RcppParallel.h>
+#include <unordered_map>
+#include <unordered_set>
+#include <pthread.h>
 //#include <gsl/gsl_cdf.h>
 #include "strmap.h" // an ANSI C hash table
 
 #define TRACKING 0
-#define MAXMAXD 18
 #define ALIGN_SQUAWK 100000
 #define TESTING 0
 #define VERBOSE 0
@@ -26,10 +29,9 @@
 #define FALSE 0
 #define MAX_SHUFFLE 10
 #define QMIN 0
-//#define QMAX 40       // Now a dynamic variable
 #define QSTEP 1
 #define GAP_GLYPH 9999
-#define ALL_SHUFFLE_STEP 50
+#define GRAIN_SIZE 10
 
 
 /* -------------------------------------------
@@ -96,7 +98,7 @@ typedef struct {
   double birth_e; // the expected number of reads at birth
   Comparison birth_comp; // the Comparison object at birth
   std::vector<Comparison> comp;
-  std::map<unsigned int, unsigned int> comp_index;
+  std::unordered_map<unsigned int, unsigned int> comp_index;
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).
@@ -132,7 +134,9 @@ void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle2(B *b);
-void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, unsigned int qmax);
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
+//void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose);
+void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose);
 void b_consensus_update(B *b);
 //void b_e_update(B *b);
 void b_p_update(B *b);
@@ -156,6 +160,7 @@ char **nwalign(const char *s1, const char *s2, int score[4][4], int gap_p, int b
 char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap_p, int band);
 char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], int gap_p, int gap_homo_p, int band);
 char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band);
+char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band);
 char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmer, double kdist_cutoff, int band, bool vectorized_alignment);
 uint16_t *get_kmer(char *seq, int k);
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
@@ -167,12 +172,13 @@ void sub_free(Sub *sub);
 // methods implemented in pval.cpp
 double calc_pA(int reads, double E_reads);
 double get_pA(Raw *raw, Bi *bi);
-double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int qmax);
+double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int ncol);
+double compute_lambda_ts(Raw *raw, Sub *sub, unsigned int ncol, double *err_mat, bool use_quals);
 double get_self(char *seq, double err[4][4]);
 
 // methods implemented in error.cpp
 Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool has_quals);
-Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int qmax);
+Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool has_quals, int ncol);
 Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int seqlen);
 Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat, bool use_quals);
 Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals);

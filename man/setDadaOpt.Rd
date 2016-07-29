@@ -44,7 +44,7 @@ BAND_SIZE: When set, banded Needleman-Wunsch alignments are performed. Banding r
 SCORE_MATRIX: The score matrix for the Needleman-Wunsch alignment. This is a 4x4 matrix as no ambiguous nucleotides
  are allowed. Default is nuc44: -4 for mismatches, +5 for matchces.
  
-GAP_PENALTY: The cost of gaps in the Needlman-Wunsch alignment. Default is -8.
+GAP_PENALTY: The cost of gaps in the Needleman-Wunsch alignment. Default is -8.
  
 HOMOPOLYMER_GAP_PENALTY: The cost of gaps in homopolymer regions (>=3 repeated bases). Default is NULL, which causes homopolymer
  gaps to be treated as normal gaps.  
@@ -58,6 +58,9 @@ MIN_HAMMING: The minimum hamming-separation for sequences to form new clusters. 
 MAX_CLUST: The maximum number of clusters. Once this many clusters have been created, the algorithm terminates regardless
  of whether the statistical model suggests more sample sequences exist. If set to 0 this argument is ignored. Default
  value is 0.
+ 
+MAX_CONSIST: The maximum number of steps when selfConsist=TRUE. If convergence is not reached in MAX_CONSIST steps,
+ the algorithm will terminate with a warning message. Default value is 10.
  
 VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
 }
