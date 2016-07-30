@@ -298,7 +298,7 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
 }
 
 /***********************************************
- * SUPPLANTED BY RcppParallel IMPLEMETNATION
+ * SUPPLANTED BY RcppParallel IMPLEMENTATION
  ***********************************************
 
 typedef struct {
@@ -437,7 +437,7 @@ struct CompareParallel : public RcppParallel::Worker
                   unsigned int ncol, double *err_mat) 
     : b(b), i(i), output(output), use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), ncol(ncol), err_mat(err_mat) {}
   
-  // take the square root of the range of elements requested
+  // Perform sequence comparison
   void operator()(std::size_t begin, std::size_t end) {
     Raw *raw;
     Sub *sub;
