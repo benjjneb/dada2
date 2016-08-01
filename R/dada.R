@@ -243,10 +243,15 @@ dada <- function(derep,
     if(opts$BAND_SIZE == 0) opts$VECTORIZED_ALIGNMENT=FALSE
   }
   
-  # Check for numeric multithreading argument
-  if(is.numeric(multithread)) {
+  # Parse multithreading argument
+  if(is.logical(multithread)) {
+    if(multithread==TRUE) { RcppParallel::setThreadOptions(numThreads = "auto") }
+  } else if(is.numeric(multithread)) {
     RcppParallel::setThreadOptions(numThreads = multithread)
     multithread <- TRUE
+  } else {
+    warning("Invalid multithread parameter. Running as a single thread.")
+    multithread <- FALSE
   }
 
   # Initialize

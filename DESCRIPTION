@@ -8,8 +8,8 @@ Description: The dada2 package provides "OTU picking" functionality, but instead
     sequences and associated abundances after removing substitution and chimeric
     errors. Taxonomic classification is also available via a native implementation
     of the RDP classifier method.
-Version: 1.1.3
-Date: 2016-02-18
+Version: 1.1.4
+Date: 2016-07-30
 Maintainer: Benjamin Callahan <benjamin.j.callahan@gmail.com>
 Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan
     Holmes
@@ -18,9 +18,8 @@ LazyLoad: yes
 Depends: R (>= 3.2.0), Rcpp (>= 0.11.2)
 Imports: Biostrings (>= 2.32.1), ggplot2 (>= 1.0), data.table (>=
         1.9.4), reshape2 (>= 1.4.1), ShortRead (>= 1.24.0),
-        RcppParallel (>= 4.3.0)
-Suggests: testthat (>= 0.9.1), microbenchmark (>= 1.4.2), BiocStyle,
-        knitr, rmarkdown
+        RcppParallel (>= 4.3.0), parallel (>= 3.2.0)
+Suggests: testthat (>= 0.9.1), BiocStyle, knitr, rmarkdown
 LinkingTo: Rcpp, RcppParallel
 SystemRequirements: GNU make
 VignetteBuilder: knitr
@@ -34,4 +33,4 @@ Collate: 'RcppExports.R' 'allClasses.R' 'allPackage.R' 'chimeras.R'
         'taxonomy.R'
 RoxygenNote: 5.0.1
 NeedsCompilation: yes
-Packaged: 2016-07-29 22:49:45 UTC; benj
+Packaged: 2016-07-30 23:00:22 UTC; benj

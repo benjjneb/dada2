@@ -1,3 +1,10 @@
+CHANGES IN VERSION 1.1.4
+-----------------------
+
+NEW FEATURES
+
+    o Multithreaded chimera detection. The isBimeraDenovo(...) function is now multithreaded. This behavior is controlled by the multithread argument to the function, and is FALSE by default.
+
 CHANGES IN VERSION 1.1.3
 -----------------------
 
@@ -10,8 +17,7 @@ CHANGES IN VERSION 1.1.2
 
 NEW FEATURES
 
-    o Species-level taxonomic assignment. The new assignSpecies(...) function uses exact matching to assign sequences to the species level. Currently a valid species training
-fasta is only available for the RDP taxonomic database.
+    o Species-level taxonomic assignment. The new assignSpecies(...) function uses exact matching to assign sequences to the species level. Currently a valid species training fasta is only available for the RDP taxonomic database.
     
 CHANGES IN VERSION 1.1.1
 -----------------------

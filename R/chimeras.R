@@ -81,6 +81,11 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' @return \code{logical} of length the number of input unique sequences.
 #'  TRUE if sequence is a bimera of more abundant "parent" sequences. Otherwise FALSE.
 #'
+#' @param multithread (Optional). Default is FALSE.
+#'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+#'  If an integer is provided, the number of threads to use is set by passing the argument on to
+#'  \code{\link{mclapply}}.
+#'   
 #' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
 #'
 #' @seealso 
@@ -88,28 +93,51 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' 
 #' @export
 #' 
+#' @importFrom parallel mclapply
+#' @importFrom parallel detectCores
+#' 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' isBimeraDenovo(dada1)
 #' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 #' 
-isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift = 16, verbose=FALSE) {
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
   unqs <- getUniques(unqs)
   abunds <- unname(unqs)
   seqs <- names(unqs)
   
-  loopFun <- function(sq, abund) {
-    pars <- seqs[(abunds>(minFoldParentOverAbundance*abund) & abunds>minParentAbundance)]
-    if(length(pars) == 0) {
-      return(FALSE)
-    } else if (length(pars) == 1) {
+  # Parse multithreading argument
+  if(is.logical(multithread)) {
+    if(multithread==TRUE) { mc.cores <- getOption("mc.cores", detectCores()) }
+  } else if(is.numeric(multithread)) {
+    mc.cores <- multithread
+    multithread <- TRUE
+  } else {
+    warning("Invalid multithread parameter. Running as a single thread.")
+    multithread <- FALSE
+  }
+  
+  loopFun <- function(i, unqs) {
+    sq <- names(unqs)[[i]]
+    abund <- unqs[[i]]
+    pars <- names(unqs)[(unqs>(minFoldParentOverAbundance*abund) & unqs>minParentAbundance)]
+    if(length(pars) < 2) {
       return(FALSE)
     } else {
       isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
     }
   }
-  bims <- mapply(loopFun, seqs, abunds)
+  
+  if(multithread) {
+    mc.indices <- sample(seq_along(unqs), length(unqs)) # load balance
+    bims <- mclapply(mc.indices, loopFun, unqs=unqs, mc.cores=mc.cores)
+    bims <- bims[order(mc.indices)]
+  } else {
+    bims <- lapply(seq_along(unqs), loopFun, unqs=unqs)
+  }
+  bims <- unlist(bims)
+  names(bims) <- names(unqs)
   if(verbose) message("Identified ", sum(bims), " bimeras out of ", length(bims), " input sequences.")
   return(bims)
 }

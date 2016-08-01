@@ -6,7 +6,7 @@
 \usage{
 isBimeraDenovo(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8,
   allowOneOff = TRUE, minOneOffParentDistance = 4, maxShift = 16,
-  verbose = FALSE)
+  multithread = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced
@@ -30,6 +30,11 @@ no such screen when considering exact bimeras.}
 
 \item{maxShift}{(Optional). A \code{numeric(1)}. Default is 16.
 Maximum shift allowed when aligning sequences to potential "parents".}
+
+\item{multithread}{(Optional). Default is FALSE.
+If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+If an integer is provided, the number of threads to use is set by passing the argument on to
+\code{\link{mclapply}}.}
 
 \item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
 }
