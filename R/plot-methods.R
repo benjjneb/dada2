@@ -222,5 +222,6 @@ plotQualityProfile <- function(fl, n=1000000) {
     geom_line(data=statdf, aes(y=Q50), color="#FC8D62", size=0.25) +
     geom_line(data=statdf, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
     ylab("Quality Score") + xlab("Cycle") +
-    theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE)
+    theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) +
+    annotate("text", 1, min(df$Score), label = basename(fl), hjust=0, vjust=0)
 }
