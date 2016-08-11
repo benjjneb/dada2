@@ -24,6 +24,8 @@ If you wish to install the latest and greatest version, or to install to R 3.2, 
 
 **Start here:** The [DADA2 walkthrough on paired end Illumina Miseq data](tutorial.html) goes through a typical workflow in which raw amplicon sequence data is processed into the table of biological sequence variants present in each sample.
 
+The [DADA2 workflow on Big Data](bigdata.html) goes through workflow optimized to run on large datasets (100s of millions of reads).
+
 Short demonstrations of [assigning taxonomy](assign.html) and [assigning species](species.html) to sequences.
 
 &nbsp;
