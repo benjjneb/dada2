@@ -326,7 +326,11 @@ dada <- function(derep,
       if(is.null(errorEstimationFunction)) {
         err <- NULL
       } else {
-        err <- errorEstimationFunction(cur)
+        if(selfConsist) {
+          err <- errorEstimationFunction(cur)
+        } else {
+          suppressWarnings(err <- errorEstimationFunction(cur))
+        }
       }
     } else { # Not using quals, MLE estimate for each transition type
       err <- cur + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
