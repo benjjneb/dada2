@@ -9,6 +9,13 @@
 #' 
 #' @param object (Required). The object from which to extract the \code{\link{uniques-vector}}.
 #' 
+#' @param collapse (Optional). Default TRUE.
+#'  Should duplicate sequences detected in \code{object} be collapsed together, thereby
+#'   imposing uniqueness on non-unique input.
+#'  
+#' @param silence (Optional). Default FALSE.
+#'  Suppress reporting of the detection and merger of duplicated input sequences.
+#' 
 #' @return \code{integer}.
 #'  An integer vector named by unique sequence and valued by abundance.
 #' 
@@ -21,7 +28,7 @@
 #' getUniques(dada1)
 #' getUniques(dada1$clustering)
 #' 
-getUniques <- function(object) {
+getUniques <- function(object, collapse=TRUE, silence=FALSE) {
   if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
     unqs <- object
   } else if(class(object) == "dada") {  # dada return 
@@ -40,8 +47,12 @@ getUniques <- function(object) {
   }
   #### ENFORCE UNIQUENESS HERE!!!
   if(any(duplicated(names(unqs)))) {
-    unqs <- tapply(unqs, names(unqs), sum)
-    message("Duplicate sequences detected and merged.")
+    if(collapse) {
+      unqs <- tapply(unqs, names(unqs), sum)
+      if(!silence) message("Duplicate sequences detected and merged.")
+    } else if(!silence) {
+      message("Duplicate sequences detected.")
+    }
   }
   return(unqs)
 }
@@ -56,6 +67,13 @@ getUniques <- function(object) {
 #' 
 #' @param object (Required). The object from which to extract the sequences.
 #' 
+#' @param collapse (Optional). Default FALSE.
+#'  Should duplicate sequences detected in \code{object} be collapsed together, thereby
+#'   imposing uniqueness on non-unique input.
+#'  
+#' @param silence (Optional). Default TRUE.
+#'  Suppress reporting of the detection and merger of duplicated input sequences.
+#' 
 #' @return \code{character}. A character vector of the sequences.
 #' 
 #' @export
@@ -67,9 +85,16 @@ getUniques <- function(object) {
 #' getSequences(dada1)
 #' getSequences(dada1$clustering)
 #' 
-getSequences <- function(object) {
-  if(is(object, "character")) return(object)
-  return(names(getUniques(object)))
+getSequences <- function(object, collapse=FALSE, silence=TRUE) {
+  if(is(object, "character")) {
+    if(collapse) {
+      if(any(duplicated(object)) && !silence) message("Duplicate sequences detected and merged.")
+      return(unique(object))
+    } else {
+      return(object)
+    }
+  }
+  return(names(getUniques(object, collapse=collapse, silence=silence)))
 }
 
 getAbund <- function(object) {

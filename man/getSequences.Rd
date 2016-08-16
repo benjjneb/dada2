@@ -4,10 +4,17 @@
 \alias{getSequences}
 \title{Get vector of sequences from input object.}
 \usage{
-getSequences(object)
+getSequences(object, collapse = FALSE, silence = TRUE)
 }
 \arguments{
 \item{object}{(Required). The object from which to extract the sequences.}
+
+\item{collapse}{(Optional). Default FALSE.
+Should duplicate sequences detected in \code{object} be collapsed together, thereby
+ imposing uniqueness on non-unique input.}
+
+\item{silence}{(Optional). Default TRUE.
+Suppress reporting of the detection and merger of duplicated input sequences.}
 }
 \value{
 \code{character}. A character vector of the sequences.
