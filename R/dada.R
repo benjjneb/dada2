@@ -211,10 +211,10 @@ dada <- function(derep,
   } else {
     if(is.null(errorEstimationFunction)) { 
       if(selfConsist) {
-        warning("Did not provide an error function for selfConsist mode, using the default loessErrfun.")
+        warning("Did not provide errorEstimationFunction for selfConsist mode, using the default loessErrfun.")
         errorEstimationFunction <- loessErrfun
       } else {
-        message("No error function provided, no post-dada error estimates ($err_out) will be inferred.") 
+        message("Did not provide errorEstimationFunction, no post-dada error rates ($err_out) will be estimated.") 
       }
     } else {
       if(!is.function(errorEstimationFunction)) stop("Must provide a function for errorEstimationFunction.")

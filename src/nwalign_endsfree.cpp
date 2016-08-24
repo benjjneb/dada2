@@ -241,8 +241,8 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
   int diag, left, up;
   
   //find locations where s1 has homopolymer and put 1s in homo1
-  unsigned char *homo1 = (unsigned char *) malloc(len1*sizeof(unsigned char));
-  unsigned char *homo2 = (unsigned char *) malloc(len2*sizeof(unsigned char));
+  unsigned char *homo1 = (unsigned char *) malloc(len1*sizeof(unsigned char)); //E
+  unsigned char *homo2 = (unsigned char *) malloc(len2*sizeof(unsigned char)); //E
   if(homo1 == NULL || homo2 == NULL) Rcpp::stop("Memory allocation failed.");
   for (i=0,j=0;j<len1;j++) {
     if (j==len1-1 || s1[j]!=s1[j+1]) {
@@ -353,8 +353,8 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
     }
   }
   
-  char *al0 = (char *) malloc((len1+len2+1) * sizeof(char));
-  char *al1 = (char *) malloc((len1+len2+1) * sizeof(char));
+  char *al0 = (char *) malloc((len1+len2+1) * sizeof(char)); //E
+  char *al1 = (char *) malloc((len1+len2+1) * sizeof(char)); //E
   if(al0 == NULL || al1 == NULL) Rcpp::stop("Memory allocation failed.");
   
   // Trace back over p to form the alignment.
@@ -403,6 +403,8 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
   // Free allocated memory
   free(d);
   free(p);
+  free(homo1);
+  free(homo2);
   free(al0);
   free(al1);
   
