@@ -326,11 +326,11 @@ dada <- function(derep,
       if(is.null(errorEstimationFunction)) {
         err <- NULL
       } else {
-        if(selfConsist) {
-          err <- errorEstimationFunction(cur)
-        } else {
-          suppressWarnings(err <- errorEstimationFunction(cur))
-        }
+        err <- tryCatch(suppressWarnings(errorEstimationFunction(cur)),
+                error = function(cond) {
+                  message("Error rates could not be estimated.")
+                  return(NULL)
+        })
       }
     } else { # Not using quals, MLE estimate for each transition type
       err <- cur + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
@@ -362,7 +362,7 @@ dada <- function(derep,
   cat("\n")
   if(selfConsist) {
     if(nconsist >= opts$MAX_CONSIST) {
-      warning("dada: Self-consistency loop terminated before convergence.")
+      warning("Self-consistency loop terminated before convergence.")
     } else {
       cat("\nConvergence after ", nconsist, " rounds.\n")
     }

@@ -68,7 +68,7 @@ void parr(int16_t *arr, int nrow, int ncol) {
   }
 }
 
-char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
+char **nwalign_vectorized2(const char *s1, const char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
   size_t row, col, ncol, nrow, foo;
   size_t i,j;
   size_t len1, len2;
@@ -76,17 +76,18 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   size_t start_col, end_col;
   size_t col_min, col_max, even;
   size_t i_max, j_min;
-  int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_index, *ptr_d, *ptr_p;
+  int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_d, *ptr_p;
   bool swap = false;
   bool recalc_left = false, recalc_right = false;
+  const char *ptr_const_char;
   char *ptr_char;
 
   len1 = strlen(s1);
   len2 = strlen(s2);
   if(len1 > len2) { // Ensure s1 is the shorter sequences
-    ptr_char = s1;
+    ptr_const_char = s1;
     s1 = s2;
-    s2 = ptr_char;
+    s2 = ptr_const_char;
     swap = true;
     foo = len1;
     len1 = len2;
@@ -320,7 +321,7 @@ char **nwalign_vectorized2(char *s1, char *s2, int16_t match, int16_t mismatch, 
   return al;
 }
 
-char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
+char **nwalign_endsfree_vectorized(const char *s1, const char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int band) {
   size_t row, col, ncol, nrow;
   size_t i,j;
   size_t len1 = strlen(s1);
@@ -628,40 +629,26 @@ char **nwalign_endsfree_vectorized(char *s1, char *s2, int16_t match, int16_t mi
 }
 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwvec(std::string s1, std::string s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree, bool test) {
-  char *seq1, *seq2;
+Rcpp::CharacterVector C_nwvec(std::vector<std::string> s1, std::vector<std::string> s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree) {
   char **al;
-
-  seq1 = (char *) malloc(s1.size()+1); //E
-  seq2 = (char *) malloc(s2.size()+1); //E
-  if (seq1 == NULL || seq2 == NULL)  Rcpp::stop("Memory allocation failed.");
-  strcpy(seq1, s1.c_str());
-  strcpy(seq2, s2.c_str());
-  nt2int(seq1, seq1);
-  nt2int(seq2, seq2);
-  
-  if(test) {
-    if(endsfree) {
-      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, 0, (size_t) band);
-    } else {
-      al = nwalign_vectorized2(seq1, seq2, match, mismatch, gap_p, gap_p, (size_t) band);
-    }
-  } else {
-    if(!endsfree) Rprintf("Standard vectorized aligner is endsfree-only.\n");
-    al = nwalign_endsfree_vectorized(seq1, seq2, match, mismatch, gap_p, (size_t) band);
+  int i;
+  if(s1.size() != s2.size()) {
+    Rcpp::stop("Character vectors to be aligned must be of equal length.");
   }
-
-  int2nt(al[0], al[0]);
-  int2nt(al[1], al[1]);
-
-  Rcpp::CharacterVector rval;
-  rval.push_back(std::string(al[0]));
-  rval.push_back(std::string(al[1]));
+  Rcpp::CharacterVector rval(s1.size()*2);
   
-  free(seq1);
-  free(seq2);
-  free(al[0]);
-  free(al[1]);
-  free(al);
+  for(i=0;i<s1.size();i++) {
+    if(endsfree) {
+      al = nwalign_vectorized2(s1[i].c_str(), s2[i].c_str(), match, mismatch, gap_p, 0, (size_t) band);
+    } else {
+      al = nwalign_vectorized2(s1[i].c_str(), s2[i].c_str(), match, mismatch, gap_p, gap_p, (size_t) band);
+    }
+
+    rval[2*i] = std::string(al[0]);
+    rval[2*i+1] = std::string(al[1]);
+    free(al[0]);
+    free(al[1]);
+    free(al);
+  }
   return(rval);
 }
