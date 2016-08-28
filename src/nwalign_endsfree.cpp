@@ -74,7 +74,6 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
   } else if(vectorized_alignment) { // ASSUMES SCORE MATRIX REDUCES TO MATCH/MISMATCH
-//    al = nwalign_endsfree_vectorized(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, band);
     al = nwalign_vectorized2(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, 0, band);
   } else if(homo_gap_p != gap_p && homo_gap_p <= 0) {
     al = nwalign_endsfree_homo(raw1->seq, raw2->seq, score, gap_p, homo_gap_p, band);
@@ -189,12 +188,12 @@ char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap
       al1[len_al] = s2[--j];
       break;
     case 2:
-      al0[len_al] = 6;
+      al0[len_al] = '-';
       al1[len_al] = s2[--j];
       break;
     case 3:
       al0[len_al] = s1[--i];
-      al1[len_al] = 6;
+      al1[len_al] = '-';
       break;
     default:
       Rcpp::stop("N-W Align out of range.");
@@ -369,12 +368,12 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
       al1[len_al] = s2[--j];
       break;
     case 2:
-      al0[len_al] = 6;
+      al0[len_al] = '-';
       al1[len_al] = s2[--j];
       break;
     case 3:
       al0[len_al] = s1[--i];
-      al1[len_al] = 6;
+      al1[len_al] = '-';
       break;
     default:
       Rcpp::stop("N-W Align out of range.");
@@ -514,12 +513,12 @@ char **nwalign(const char *s1, const char *s2, int score[4][4], int gap_p, int b
       al1[len_al] = s2[--j];
       break;
     case 2:
-      al0[len_al] = 6;
+      al0[len_al] = '-';
       al1[len_al] = s2[--j];
       break;
     case 3:
       al0[len_al] = s1[--i];
-      al1[len_al] = 6;
+      al1[len_al] = '-';
       break;
     default:
       Rcpp::stop("N-W Align out of range.");

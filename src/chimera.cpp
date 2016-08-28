@@ -43,14 +43,13 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
   for(i=0;i<pars.size() && rval==false;i++) {
     nt2int(seq2, pars[i].c_str());
     al = nwalign_vectorized2(seq1, seq2, (int16_t) c_score[0][0], (int16_t) c_score[0][1], (int16_t) gap_p, 0, max_shift);  // Remember, alignments must be freed!
-//    al = nwalign_endsfree(seq1, seq2, c_score, gap_p, max_shift);  // Remember, alignments must be freed!
     len = strlen(al[0]);
     
     pos=0; left=0;
-    while(al[0][pos] == 6 && pos<len) {
+    while(al[0][pos] == '-' && pos<len) {
       pos++; // Scan in until query starts
     }
-    while(al[1][pos] == 6 && pos<max_shift) {
+    while(al[1][pos] == '-' && pos<max_shift) {
       pos++; left++; // Credit as ends-free coverage until parent starts
     }
     while(pos<len && al[0][pos] == al[1][pos]) {
@@ -60,17 +59,17 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
       // Step forward, and credit to one-off further matches (and this mismatch if not a gap)
       left_oo = left;
       pos++;
-      if(pos<len && al[0][pos] != 6) { left_oo++; }
+      if(pos<len && al[0][pos] != '-') { left_oo++; }
       while(pos<len && al[0][pos] == al[1][pos]) {
         pos++; left_oo++;
       }
     }
     
     pos=len-1; right=0;
-    while(al[0][pos] == 6 && pos >= 0) { 
+    while(al[0][pos] == '-' && pos >= 0) { 
       pos--;
     }
-    while(al[1][pos] == 6 && pos>+(len-max_shift)) {
+    while(al[1][pos] == '-' && pos>+(len-max_shift)) {
       pos--; right++;
     }
     while(pos>=0 && al[0][pos] == al[1][pos]) {
@@ -80,7 +79,7 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
       // Step forward, and credit to one-off further matches (and this mismatch if not a gap)
       right_oo = right;
       pos--;
-      if(pos>=0 && al[0][pos] != 6) { right_oo++; }
+      if(pos>=0 && al[0][pos] != '-') { right_oo++; }
       while(pos>=0 && al[0][pos] == al[1][pos]) {
         pos--; right_oo++;
       }
@@ -126,21 +125,21 @@ int get_ham_endsfree(const char *seq1, const char *seq2, int len) {
   bool gap1, gap2;
   // Find start of internal part of alignment
   i=0;
-  gap1 = (seq1[i]==6); 
-  gap2 = (seq2[i]==6);
+  gap1 = (seq1[i]=='-'); 
+  gap2 = (seq2[i]=='-');
   while(gap1 || gap2) {
     i++;
-    gap1 = (gap1 && (seq1[i]==6));
-    gap2 = (gap2 && (seq2[i]==6));
+    gap1 = (gap1 && (seq1[i]=='-'));
+    gap2 = (gap2 && (seq2[i]=='-'));
   }
   // Find end of internal part of alignment
   j=len-1;
-  gap1 = (seq1[j]==6); 
-  gap2 = (seq2[j]==6);
+  gap1 = (seq1[j]=='-'); 
+  gap2 = (seq2[j]=='-');
   while(gap1 || gap2) {
     j--;
-    gap1 = (gap1 && (seq1[j]==6));
-    gap2 = (gap2 && (seq2[j]==6));
+    gap1 = (gap1 && (seq1[j]=='-'));
+    gap2 = (gap2 && (seq2[j]=='-'));
   }
   // Calculate hamming distance over internal part
   ham=0;
