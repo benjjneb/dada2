@@ -107,6 +107,8 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
   unqs.int <- getUniques(unqs, silence=TRUE) # Internal, keep input unqs for proper return value when duplications
   abunds <- unname(unqs.int)
   seqs <- names(unqs.int)
+  seqs.input <- getSequences(unqs)
+  rm(unqs); gc(verbose=FALSE)
   
   # Parse multithreading argument
   if(is.logical(multithread)) {
@@ -118,8 +120,8 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
     warning("Invalid multithread parameter. Running as a single thread.")
     multithread <- FALSE
   }
-  
-  loopFun <- function(i, unqs.loop) {
+
+  loopFun <- function(i, unqs.loop, minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance, maxShift) {
     sq <- names(unqs.loop)[[i]]
     abund <- unqs.loop[[i]]
     pars <- names(unqs.loop)[(unqs.loop>(minFoldParentOverAbundance*abund) & unqs.loop>minParentAbundance)]
@@ -132,15 +134,21 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
   
   if(multithread) {
     mc.indices <- sample(seq_along(unqs.int), length(unqs.int)) # load balance
-    bims <- mclapply(mc.indices, loopFun, unqs.loop=unqs.int, mc.cores=mc.cores)
+    bims <- mclapply(mc.indices, loopFun, unqs.loop=unqs.int, 
+                     allowOneOff=allowOneOff, minFoldParentOverAbundance=minFoldParentOverAbundance,
+                     minParentAbundance=minParentAbundance,
+                     minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift,
+                     mc.cores=mc.cores)
     bims <- bims[order(mc.indices)]
   } else {
-    bims <- lapply(seq_along(unqs.int), loopFun, unqs.loop=unqs.int)
+    bims <- lapply(seq_along(unqs.int), loopFun, unqs.loop=unqs.int, 
+                   allowOneOff=allowOneOff, minFoldParentOverAbundance=minFoldParentOverAbundance,
+                   minParentAbundance=minParentAbundance,
+                   minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
   }
   bims <- unlist(bims)
-#  names(bims) <- names(unqs)
-  bims.out <- getSequences(unqs) %in% seqs[bims]
-  names(bims.out) <- getSequences(unqs)
+  bims.out <- seqs.input %in% seqs[bims]
+  names(bims.out) <- seqs.input
   if(verbose) message("Identified ", sum(bims.out), " bimeras out of ", length(bims.out), " input sequences.")
   return(bims.out)
 }
