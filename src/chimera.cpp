@@ -12,9 +12,9 @@ int get_ham_endsfree(const char *seq1, const char *seq2, int len);
 // @param max_shift A \code{integer(1)} of the maximum alignment shift allowed.
 // 
 // [[Rcpp::export]]
-bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift) {
+Rcpp::IntegerVector C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift) {
   // For now only finding perfect bimeras
-  int i, j, left, right, left_oo, right_oo, pos, len, max_len;
+  int i, j, left, right, left_oo, right_oo, pos, len, max_len, lpar, rpar;
   // Make  c-style 2d score array
   int c_score[4][4];
   for(i=0;i<4;i++) {
@@ -88,8 +88,8 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
     if((left+right) >= sq.size()) { // Toss id/pure-shift/internal-indel "parents"
       continue;
     }
-    if(left > max_left) { max_left=left; }
-    if(right > max_right) { max_right=right; }
+    if(left > max_left) { max_left=left; lpar=i; }
+    if(right > max_right) { max_right=right; rpar=i; }
     
     // Need to evaluate whether parents are allowed for one-off models
     if(allow_one_off && get_ham_endsfree(al[0], al[1], len) >= min_one_off_par_dist) {
@@ -115,7 +115,86 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
   
   free(seq1);
   free(seq2);
-  return(rval);
+  return(Rcpp::IntegerVector::create((int) rval, lpar, rpar));
+}
+
+// [[Rcpp::export]]
+Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_frac, int match, int mismatch, int gap_p, int max_shift) {
+  int i,j,k,nsam,nflag,sqlen,pos,len,left,right,max_left,max_right;
+  char **al;
+///  std::vector<std::string> pars;
+  Rcpp::LogicalVector rval(mat.ncol(), false);
+  Rcpp::IntegerVector flags(mat.ncol(), 0);
+  Rcpp::IntegerVector sams(mat.ncol(), 0);
+  Rcpp::IntegerVector temp;
+  std::vector<int> lefts(mat.ncol());
+  std::vector<int> rights(mat.ncol());
+  
+  for(j=0;j<mat.ncol();j++) {
+    nsam=0; nflag=0;
+    sqlen = seqs[j].size();
+    std::fill(lefts.begin(), lefts.end(), -1);
+    std::fill(rights.begin(),rights.end(),-1);
+    for(i=0;i<mat.nrow();i++) {
+      if(mat(i,j)<=0) { continue; }
+      nsam++;
+///      pars.clear();
+      for(k=0;k<mat.ncol();k++) {
+        if(mat(i,k)>mat(i,j) && mat(i,k)>=2 && lefts[k]<0) {
+          al = nwalign_vectorized2(seqs[j].c_str(), seqs[k].c_str(), (int16_t) match, (int16_t) mismatch, (int16_t) gap_p, 0, max_shift);  // Remember, alignments must be freed!
+          len = strlen(al[0]);
+          pos=0; left=0;
+          while(al[0][pos] == '-' && pos<len) {
+            pos++; // Scan in until query starts
+          }
+          while(al[1][pos] == '-' && pos<max_shift) {
+            pos++; left++; // Credit as ends-free coverage until parent starts
+          }
+          while(pos<len && al[0][pos] == al[1][pos]) {
+            pos++; left++; // Credit as covered until a mismatch
+          }
+          pos=len-1; right=0;
+          while(al[0][pos] == '-' && pos >= 0) { 
+            pos--;
+          }
+          while(al[1][pos] == '-' && pos>+(len-max_shift)) {
+            pos--; right++;
+          }
+          while(pos>=0 && al[0][pos] == al[1][pos]) {
+            pos--; right++;
+          }
+          if((left+right) < sqlen) {
+            lefts[k]=left;
+            rights[k]=right;
+          } else {  // Ignore id/pure-shift/internal-indel "parents"
+            lefts[k]=0;
+            rights[k]=0;
+          }
+          free(al[0]);
+          free(al[1]);
+          free(al);
+        } // if(mat(i,k)>mat(i,j) && mat(i,k)>=2 && lefts[k]<0)
+      } // for(k=0;k<mat.ncol();k++)
+      max_left=0; max_right=0;
+      for(k=0;k<mat.ncol();k++) {
+        if(mat(i,k)>mat(i,j) && mat(i,k)>=2) {
+          if(lefts[k] > max_left) { max_left=lefts[k]; }
+          if(rights[k] > max_right) { max_right=rights[k]; }
+        }
+      }
+      if((max_right+max_left)>=sqlen) {
+        nflag++;
+      }
+      
+///        temp = C_is_bimera(seqs[j], pars, false, 4, score, gap_p, max_shift);
+///        nflag += temp[0];
+
+    } // for(i=0;i<mat.nrow();i++)
+    if(nflag > nsam*min_frac) { rval[j]=true; }
+    flags[j] = nflag;
+    sams[j] = nsam;
+  } // for(j=0;j<mat.ncol();j++)
+  return(Rcpp::DataFrame::create(_["bim"]=rval,_["nflag"]=flags,_["nsam"]=sams));
 }
 
 // Internal function to get hamming distance between aligned seqs

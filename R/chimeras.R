@@ -126,7 +126,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
     abund <- unqs.loop[[i]]
     pars <- names(unqs.loop)[(unqs.loop>(minFoldParentOverAbundance*abund) & unqs.loop>minParentAbundance)]
     if(length(pars) < 2) {
-      return(FALSE)
+      return(c(0,0,0))
     } else {
       isBimera(sq, pars, allowOneOff=allowOneOff, minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
     }
@@ -146,11 +146,12 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
                    minParentAbundance=minParentAbundance,
                    minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
   }
-  bims <- unlist(bims)
-  bims.out <- seqs.input %in% seqs[bims]
-  names(bims.out) <- seqs.input
-  if(verbose) message("Identified ", sum(bims.out), " bimeras out of ", length(bims.out), " input sequences.")
-  return(bims.out)
+###!  bims <- unlist(bims)
+###!  bims.out <- seqs.input %in% seqs[bims]
+###!  names(bims.out) <- seqs.input
+###!  if(verbose) message("Identified ", sum(bims.out), " bimeras out of ", length(bims.out), " input sequences.")
+  ###!  return(bims.out)
+  return(bims)
 }
 
 ################################################################################
