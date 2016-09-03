@@ -38,8 +38,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_is_bimera
-Rcpp::IntegerVector C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, Rcpp::NumericMatrix score, int gap_p, int max_shift);
-RcppExport SEXP dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP scoreSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
+bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift);
+RcppExport SEXP dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -47,27 +47,29 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<std::string> >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< bool >::type allow_one_off(allow_one_offSEXP);
     Rcpp::traits::input_parameter< int >::type min_one_off_par_dist(min_one_off_par_distSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
+    Rcpp::traits::input_parameter< int >::type match(matchSEXP);
+    Rcpp::traits::input_parameter< int >::type mismatch(mismatchSEXP);
     Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type max_shift(max_shiftSEXP);
-    __result = Rcpp::wrap(C_is_bimera(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift));
+    __result = Rcpp::wrap(C_is_bimera(sq, pars, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift));
     return __result;
 END_RCPP
 }
 // C_table_bimera
-Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_frac, int match, int mismatch, int gap_p, int max_shift);
-RcppExport SEXP dada2_C_table_bimera(SEXP matSEXP, SEXP seqsSEXP, SEXP min_fracSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
+Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_frac, bool allow_one_off, int match, int mismatch, int gap_p, int max_shift);
+RcppExport SEXP dada2_C_table_bimera(SEXP matSEXP, SEXP seqsSEXP, SEXP min_fracSEXP, SEXP allow_one_offSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type mat(matSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
     Rcpp::traits::input_parameter< double >::type min_frac(min_fracSEXP);
+    Rcpp::traits::input_parameter< bool >::type allow_one_off(allow_one_offSEXP);
     Rcpp::traits::input_parameter< int >::type match(matchSEXP);
     Rcpp::traits::input_parameter< int >::type mismatch(mismatchSEXP);
     Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type max_shift(max_shiftSEXP);
-    __result = Rcpp::wrap(C_table_bimera(mat, seqs, min_frac, match, mismatch, gap_p, max_shift));
+    __result = Rcpp::wrap(C_table_bimera(mat, seqs, min_frac, allow_one_off, match, mismatch, gap_p, max_shift));
     return __result;
 END_RCPP
 }

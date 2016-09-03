@@ -9,12 +9,12 @@ dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kd
     .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, final_consensus, vectorized_alignment, homo_gap, multithread, verbose)
 }
 
-C_is_bimera <- function(sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift) {
-    .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, allow_one_off, min_one_off_par_dist, score, gap_p, max_shift)
+C_is_bimera <- function(sq, pars, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift) {
+    .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
 }
 
-C_table_bimera <- function(mat, seqs, min_frac, match, mismatch, gap_p, max_shift) {
-    .Call('dada2_C_table_bimera', PACKAGE = 'dada2', mat, seqs, min_frac, match, mismatch, gap_p, max_shift)
+C_table_bimera <- function(mat, seqs, min_frac, allow_one_off, match, mismatch, gap_p, max_shift) {
+    .Call('dada2_C_table_bimera', PACKAGE = 'dada2', mat, seqs, min_frac, allow_one_off, match, mismatch, gap_p, max_shift)
 }
 
 C_nwalign <- function(s1, s2, score, gap_p, homo_gap_p, band, endsfree) {
