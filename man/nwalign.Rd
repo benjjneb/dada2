@@ -4,17 +4,20 @@
 \alias{nwalign}
 \title{Needlman-Wunsch alignment.}
 \usage{
-nwalign(s1, s2, score = getDadaOpt("SCORE_MATRIX"),
-  gap = getDadaOpt("GAP_PENALTY"), homo_gap = NULL, band = -1,
-  endsfree = TRUE)
+nwalign(s1, s2, match = getDadaOpt("MATCH"),
+  mismatch = getDadaOpt("MISMATCH"), gap = getDadaOpt("GAP_PENALTY"),
+  homo_gap = NULL, band = -1, endsfree = TRUE)
 }
 \arguments{
 \item{s1}{(Required). \code{character(1)}. The first sequence to align. A/C/G/T only.}
 
 \item{s2}{(Required). \code{character(1)}. The second sequence to align. A/C/G/T only.}
 
-\item{score}{(Optional). A 4x4 numeric matrix. Default is getDadaOpt("SCORE_MATRIX").
-The match/mismatch used for the alignment.}
+\item{match}{(Optional). \code{numeric(1)}. Default is getDadaOpt("MATCH").
+The score of a match in the alignment.}
+
+\item{mismatch}{(Optional). \code{numeric(1)}. Default is getDadaOpt("MISMATCH").
+The score of a mismatch in the alignment.}
 
 \item{gap}{(Optional). \code{numeric(1)}. Default is getDadaOpt("GAP_PENALTY").
 The alignment gap penalty. Should be negative.}
@@ -23,11 +26,11 @@ The alignment gap penalty. Should be negative.}
 The alignment gap penalty within homopolymer regions. Should be negative.}
 
 \item{band}{(Optional). \code{numeric(1)}.  Default -1 (no banding).
-This Needleman-Wunsch alignment can be banded. This value specifies the radius of that band.
+The Needleman-Wunsch alignment can be banded. This value specifies the radius of that band.
 Set \code{band = -1} to turn off banding.}
 
 \item{endsfree}{(Optional). \code{logical(1)}. Default TRUE.
-Allow free gapping at the ends of sequences.}
+Allow unpenalized gaps at the ends of the alignment.}
 }
 \value{
 \code{character(2)}. The aligned sequences.

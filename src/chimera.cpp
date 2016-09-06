@@ -14,7 +14,7 @@ void get_lr(char **al, int &left, int &right, int &left_oo, int &right_oo, bool 
 // 
 // [[Rcpp::export]]
 bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift) {
-  int i, j, left, right, left_oo, right_oo, pos;
+  int i, left, right, left_oo, right_oo;
   char **al;
   int max_left=0, max_right=0;
   int oo_max_left=0, oo_max_right=0, oo_max_left_oo=0, oo_max_right_oo=0;
@@ -56,8 +56,8 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
 }
 
 // [[Rcpp::export]]
-Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_frac, bool allow_one_off, int match, int mismatch, int gap_p, int max_shift) {
-  int i,j,k,nsam,nflag,sqlen,left,right,left_oo,right_oo,max_left,max_right,ham;
+Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_frac, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift) {
+  int i,j,k,nsam,nflag,sqlen,left,right,left_oo,right_oo,max_left,max_right;
   int oo_max_left, oo_max_right, oo_max_left_oo, oo_max_right_oo;
   char **al;
   
@@ -77,7 +77,7 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
   std::vector<int> rights_oo(ncol);
   std::vector<bool> allowed(ncol);
   
-  for(j=0;j<ncol;j++) {
+  for(j=0;j<ncol;j++) { // Evaluate each sequence
     nsam=0; nflag=0;
     sqlen = seqs[j].size();
     std::fill(lefts.begin(), lefts.end(), -1);
@@ -87,19 +87,18 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
       std::fill(rights_oo.begin(),rights_oo.end(),-1);
       std::fill(allowed.begin(), allowed.end(), false); 
     }
-    for(i=0;i<nrow;i++) {
+    for(i=0;i<nrow;i++) { // Evaluate in each sample (row)
       if(vals[i+j*nrow]<=0) { continue; }
       nsam++;
       max_left=0; max_right=0;
       oo_max_left=0; oo_max_right=0; oo_max_left_oo=0; oo_max_right_oo=0;
-      for(k=0;k<ncol;k++) {
+      for(k=0;k<ncol;k++) { // Compare with all possible parents
         if(vals[i+k*nrow]>vals[i+j*nrow] && vals[i+k*nrow]>=2) {
-          if(lefts[k]<0) { // Alignment calcs not yet done
+          if(lefts[k]<0) { // Comparison not yet done to this potential parent
             al = nwalign_vectorized2(seqs[j].c_str(), seqs[k].c_str(), (int16_t) match, (int16_t) mismatch, (int16_t) gap_p, 0, max_shift);  // Remember, alignments must be freed!
             get_lr(al, left, right, left_oo, right_oo, allow_one_off, max_shift);
-            if(allow_one_off) {
-              ham=get_ham_endsfree(al[0], al[1]);
-              if(ham>=4) { allowed[k]=true; }
+            if(allow_one_off && get_ham_endsfree(al[0], al[1]) >= min_one_off_par_dist) {
+              allowed[k]=true;
             }
             
             if((left+right) < sqlen) {
@@ -121,6 +120,7 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
             free(al[1]);
             free(al);
           }
+          // Now compare to best parents yet found
           if(lefts[k] > max_left) { max_left=lefts[k]; }
           if(rights[k] > max_right) { max_right=rights[k]; }
           if(allow_one_off && allowed[k]) {
@@ -129,7 +129,7 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
             if(lefts_oo[k] > oo_max_left_oo) { oo_max_left_oo=lefts_oo[k]; }
             if(rights_oo[k] > oo_max_right_oo) { oo_max_right_oo=rights_oo[k]; }
           }
-        } // if(mat(i,k)>mat(i,j) && mat(i,k)>=2 && lefts[k]<0)
+        } // if(vals[i+k*nrow]>vals[i+j*nrow] && vals[i+k*nrow]>=2)
       } // for(k=0;k<mat.ncol();k++)
       
       // Flag if chimeric model exists
@@ -142,7 +142,7 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
       }
     } // for(i=0;i<mat.nrow();i++)
     
-    if(nflag > 0 && nflag >= (nsam-1)*min_frac) { rval[j]=true; }
+    if(nflag >= nsam || (nflag > 0 && nflag >= (nsam-1)*min_frac)) { rval[j]=true; }
     flags[j] = nflag;
     sams[j] = nsam;
   } // for(j=0;j<mat.ncol();j++)
