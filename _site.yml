@@ -2,31 +2,31 @@ name: "dada2"
 navbar:
   title: "dada2"
   left:
-    - text: "Home"
-      href: index.html
-    - text: "Download"
-      href: download.html
     - text: "Install"
       href: dada-installation.html
     - text: "Walkthrough"
       href: tutorial.html
+    - text: "Big Data"
+      href: bigdata.html
     - text: "Documentation"
       icon: fa-gear
       menu:
-        - text: "Manuscript"
-          href: http://dx.doi.org/10.1038/nmeth.3869
         - text: "Manual"
           href: https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf
         - text: "Taxonomy"
           href: assign.html
+        - text: "Species"
+          href: species.html
         - text: "Pooling"
           href: pool.html
         - text: "FAQ"
           href: faq.html
       href: https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf
-    - text: "More"
+    - text: "Evaluation"
       icon: fa-gear
       menu:
+        - text: "Manuscript"
+          href: http://dx.doi.org/10.1038/nmeth.3869
         - text: "Symposium Slides"
           href: SMBS_DADA2.pdf
         - text: "Benchmarking"
@@ -34,6 +34,8 @@ navbar:
         - text: "Manuscript code"
           href: https://purl.stanford.edu/mh194vj6733
   right:
+    - icon: ion-social-twitter
+      href: https://www.twitter.com/bejcal
     - icon: fa-question fa-lg
       href: https://github.com/benjjneb/dada2/issues
     - icon: fa-github fa-lg

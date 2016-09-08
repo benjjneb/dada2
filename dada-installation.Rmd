@@ -14,11 +14,21 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("dada2")
 ```
 
+Allow installation of any additional packages requested. You are ready to start using dada2!
+
 -----------------------------
 
 ## **Install from source**
 
-### 0. Install External Dependencies
+Source installation is available for R3.2 or later, and the latest and greatest features will first be available only through source installs of the development branch.
+
+### 0. Download
+
+* Current Release [(1.0)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.0.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.0.tar.gz).
+
+* Development Branch [(1.1)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
+
+### 1. Install External Dependencies
 
 The following instructions assume that you have installed R 
 and have installed 
@@ -37,7 +47,7 @@ biocLite(suppressUpdates = FALSE)
 biocLite("ShortRead", suppressUpdates = FALSE)
 ```
 
-### 1. Install using devtools
+### 2. Install using devtools
 
 The easiest method is to use the devtools package to install from github:
 
@@ -49,7 +59,7 @@ devtools::install_github("benjjneb/dada2")
 
 If that worked you're done (see step 4)! If it failed on missing dependencies, goto step 2.
 
-### 1a. Install manually from source
+### 2a. Install manually from source
 
 Alternatively, you can install from the source by hand. First [download the zipped package](download.html) and unzip it (or expand the tarball).
 
@@ -78,7 +88,7 @@ Check Package Version
 packageVersion("dada2")
 ```
 
-### 2. Troubleshoot Dependencies (Optional)
+### 3. Troubleshoot Dependencies (Optional)
 
 At this point, 
 there may be complaints about missing dependencies.
@@ -95,7 +105,7 @@ biocLite("missing_package_2")
 # ... and so on
 ```
 
-### 3. Re-attempt dada2 Installation
+### 4. Re-attempt dada2 Installation
 
 Install again, after dependencies have been installed.
 
@@ -115,7 +125,7 @@ install.packages("path/to/dada2",
 
 You should now be done, if installation was successful. If not, do not panic, and post a message to [the issue tracker](https://github.com/benjjneb/dada2/issues).
 
-### 4. Load Package, Explore Function Documentation
+### 5. Load Package, Explore Function Documentation
 
 ```{r load-dada2, message=FALSE}
 library("dada2")
@@ -129,4 +139,4 @@ help(package="dada2")
 ?dada
 ```
 
-You are ready to use DADA2!
+You are ready to use dada2!

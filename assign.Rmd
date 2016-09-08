@@ -1,8 +1,6 @@
 ---
-title: "Taxonomic assignment in R with dada2"
+title: "Taxonomic Assignment"
 ---
-
-## assignTaxonomy(...)
 
 --------------------------
 

@@ -1,5 +1,8 @@
 ---
 title: "Frequently Asked Questions"
+output:
+  html_document:
+    toc: true
 ---
 
 ## How can I demultiplex my fastq files?
@@ -12,12 +15,18 @@ You can also demultiplex using [QIIME](http://qiime.org/) by running `split_libr
 
 &nbsp;
 
-## Can I use dada2 with my 454 data?
+## Can I use dada2 with my 454 or Ion Torrent data?
 
 Yes. We recommend the following 454-specific parameters when using the `dada` function on 454 data for best results:
 
 ```S
 dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)
+```
+
+We recommend the following IT-specific parameters when filtering Ion Torrent data for best results:
+
+```S
+fastqFilter(..., trimLeft=15)
 ```
 
 &nbsp;
@@ -28,3 +37,36 @@ Do your reads overlap after the trimming and filtering you performed? In the tut
 
 Another possibility is that you have bad data. One quick way to test this is to simply look at the forward reads alone. If it's 16S data, does assignTaxonomy identify any of the, say, top 20 output sequences? If not, or if you are using non-16S data, try BLAST-ing the top output sequences against nt. Are they hitting what you expect? If not, you probably have a bad sequencing run on your hands.
 
+&nbsp;
+
+## Why are so many of my reads being removed as chimeras?
+
+It is common for chimeric sequences to be a majority (even large majority) of the total number of unique sequence variants inferred by the `dada(...)` algorithm, but they should not be a majority of the sequencing reads. That is, there may be many chimeras, but they are relatively low abundnace. 
+
+The most common reason that far too many reads are flagged as chimeric is that primer sequences were not removed prior to starting the dada2 workflow. The ambiguous nucleotides in universal primer sequences will be interpreted as real variation by the dada2 pipeline, and this interferes with the chimera algorithm. If you see over `25%` of your sequencing reads being flagged chimeric, remove the primers from your reads and restart the workflow with the clean data.
+
+&nbsp;
+
+## How can I remove primers/adapters/etc from my amplicon reads?
+
+We recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic) for this purpose, but there are many other options that work as well. You have to tell these programs what the primers you used were!
+
+&nbsp;
+
+## Can I use DADA2 if my reads don't overlap?
+
+Yes, although we strongly recommend using primers that allow your paired-end reads to overlap significantly.
+
+The `mergePairs(..., justConcatenate=TRUE)` option allows the paired reads to be joined without any overlap, but with 10Ns inserted in between the forward and reverse reads. The chimera removal and `assignTaxonomy` functions will handle such merged reads, although some other functions may fail (eg. `addSpecies`).
+
+## What if my forward and reverse reads aren't in matching order?
+
+This situation commonly arises when external filtering methods, like the QIIME demultiplexing script, are used and filter the forward and reverse reads independently. This can be remedied by using adding `matchIDs=TRUE` flag to the `fastqPairedFilter` function. For example, if no more filtering is required, the following will retain just those reads that match between the forward and reverse fastq files (assumes Illumina fastq headers):
+
+```S
+fastqPairedFilter(c("forwardReads.fastq", "reverseReads.fastq"),
+                  c("forwardMatch.fastq", "reverseMatch.fastq"),
+                  matchIDs=TRUE)
+```
+
+&nbsp;

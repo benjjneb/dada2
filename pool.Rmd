@@ -77,12 +77,12 @@ Let's start by processing our samples using the default sample-by-sample inferen
 microbenchmark(dd.sep <- dada(drps, err=dd[[1]]$err_out), times=1)
 ```
 
-Now we'll pool the samples for sample inference:
+Now we pool the samples for sample inference:
 ```{r}
 microbenchmark(dd.pool <- dada(drps, err=dd[[1]]$err_out, pool=TRUE), times=1)
 ```
 
-The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of the multithreading introduced in [version 1.1](https://github.com/benjjneb/dada2)) but sample-by-sample processing remains computationally tractable out to any study size (eg. 20 Hiseq runs).
+The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of the multithreading introduced in [version 1.1](https://github.com/benjjneb/dada2)) but sample-by-sample processing [remains computationally tractable out to any study size](bigdata.html) (eg. 20 Hiseq runs).
 
 We'll also take a quick look at the differences in output:
 ```{r}
@@ -95,7 +95,7 @@ st.pool <- removeBimeraDenovo(st)
 dim(st.sep); dim(st.pool)
 ```
 
-As expected, pooling detected a few more sequence variants, as sharing data across samples increases the power to detect rare variants.
+As expected, pooling detected a few more sequence variants, due to an increased power to detect rare variants.
 
 ```{r}
 sq.sep <- getSequences(st.sep)
@@ -108,8 +108,8 @@ sum(st.pool[,sq.pool %in% sq.sep])
 sum(st.pool[,!sq.pool %in% sq.sep])
 ```
 
-The large majority of sequences, and the vast majority of reads (>99% here) are commonly assigned between these methods. Either provides an accurate reconstruction our your samples communities. 
+The large majority of sequences, and the vast majority of reads (>99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities. 
 
-And coming soon, a hybrid method that leverages the strength of both (linear computation time, and shared information between samples!).
+*Coming soon, a hybrid method that leverages the strength of both (linear computation time, and shared information between samples).*
 
 

@@ -6,6 +6,16 @@ Here we walk through the DADA2 pipeline on a small multi-sample dataset. Our sta
 
 -----------------------
 
+# Starting point
+
+The following workflow assumes that the data you are starting with meets certain criteria:
+
+* Non-biological nucleotides have been removed (primers/adapters/barcodes...)
+* Samples are demultiplexed (split into individual per-sample fastqs)
+* If paired reads, the forward and reverse fastqs contain reads in matching order
+
+These criteria are often true, but not always. If one of these is not true for your data, you need to remedy that problem before beginning this workflow (see [the FAQ](faq.html) for some recommendations for common issues).
+
 # Getting ready
 
 First we load the necessary libraries. If you don't already have the dada2 package, see the [dada2 installation instructions](dada-installation.html). The ShortRead package is available from [Bioconductor](http://bioconductor.org/install/), and ggplot2 from CRAN or Bioconductor:
@@ -61,9 +71,9 @@ plotQualityProfile(fnRs[[1]])
 plotQualityProfile(fnRs[[2]])
 ```
 
-The reverse reads have significantly worse quality, especially towards the end of the reads, which is quite common in Illumina paired-end sequencing. This isn't too worrisome, DADA2 incorporates quality information into its error model so the algorithm is fairly robust to lower quality sequence, but trimming as the average qualities crash is still a good idea. Wwe will trim the first 10 nucleotides (as standard) and truncate at position 160 where the quality distribution crashes.
+The reverse reads have significantly worse quality, especially towards the end of the reads, which is quite common in Illumina paired-end sequencing. This isn't too worrisome, DADA2 incorporates quality information into its error model so the algorithm is fairly robust to lower quality sequence, but trimming as the average qualities crash is still a good idea. We will trim the first 10 nucleotides (as standard) and truncate at position 160 where the quality distribution crashes.
 
-**Important note on Trimming:** Your reads must overlap in order to merge them later on. The 2x250 V4 sequence data being analyzed here is almost completely overlapping, thus our trimming can be completely guided by the quality scores. However, if you are using a less-overlapping primer set, like V1-V2 or V3-V5, you must keep enough of each read to maintain the overlap between them (the more the better).
+**Important note on Trimming:** Your reads must overlap in order to merge them later on. The 2x250 V4 sequence data being analyzed here is almost completely overlapping, thus our trimming can be completely guided by the quality scores. However, if you are using a less-overlapping primer set, like V1-V2 or V3-V4, you must keep enough of each read to maintain the overlap between them (the more the better).
 
 ## Perform filtering and trimming
 
@@ -104,22 +114,22 @@ names(derepFs) <- sample.names
 names(derepRs) <- sample.names
 ```
 
-Inspect the derep-class object returned by derepFastq:
+Inspect the derep-class object returned by `derepFastq`:
 ```{r see-derep}
 derepFs[[1]]
 ```
 
-Dereplicated sequences are stored in the $uniques integer vector, which is named by the unique sequence and valued by the abundance of that sequence. Consensus quality scores are stored in the $quals matrix: rows correspond to unique sequences and columns to nucleotide position. The $map vector maps the reads into the $uniques vector, and is used later when we merge the forward and reverse reads.
+Dereplicated sequences are stored in the `$uniques` integer vector, which is named by the unique sequence and valued by the abundance of that sequence. Consensus quality scores are stored in the `$quals` matrix: rows correspond to unique sequences and columns to nucleotide position. The `$map` vector maps the reads into the `$uniques` vector, and is used later when we merge the forward and reverse reads.
 
 &nbsp;
 
 # Sample Inference
 
-We are now ready to apply DADA2's core sample inference algorithm to the dereplicated sequences. 
+We are now ready to apply the core sequence-variant inference algorithm to the dereplicated data. 
 
-First a key consideration: DADA2 depends on a parametric error model, and we do not know the error rates for this dataset. Fortunately, DADA2 can jointly infer the error-rate parameters and the composition of the sample, at the cost of additional computation time. This is done by implementing an EM-like algorithm in which the error rates and the sample are alternately estimated until convergence.
+First a key consideration: the DADA2 algorithm depends on a parametric error model, and we do not know the error rates for this dataset. Fortunately, DADA2 can jointly infer the error-rate parameters and the composition of the sample, at the cost of additional computation time. This is done by implementing an EM-like algorithm in which the error rates and the sample are alternately estimated until convergence.
 
-To perform this joint inference with `dada` we pass it the `selfConsist=TRUE` flag (if `selfConsist=FALSE` it simply uses the provided error rates). As in many optimization problems, the algorithm must begin with an initial guess. For this we tell the algorithm to use the maximum possible error rates in this data (the error rates if only the most abundant sequence is correct and all the rest are errors from it) as it is better to start with error rates that are too high than too low. This is indicated by setting `err=NULL` in the `dada` function call.
+To perform this joint inference with `dada` we pass it the `selfConsist=TRUE` flag (if `selfConsist=FALSE` it simply uses the provided error rates). As in many optimization problems, the algorithm must begin with an initial guess. For this we tell the algorithm to use the maximum possible error rates in this data (the error rates if only the most abundant sequence is correct and all the rest are errors) as it is better to start with error rates that are too high than too low. This is indicated by setting `err=NULL` in the `dada` function call.
 
 **Perform joint sample inference and error rate estimation** (takes a few minutes):
 ```{r dada}
@@ -176,13 +186,15 @@ dim(seqtab)
 table(nchar(colnames(seqtab)))
 ```
 
-The sequence table is a `matrix` with rows corresponding (and named by) the samples and columns corresponding to (and named by) the sequence variants. It is worth checking on the distribution of sequence lengths after merging. Here we see a narrow range of sequence lengths, as we expect. If some sequences are much longer or shorter than expected, it may be worth removing those sequences as they may be the result of non-specific priming.
+The sequence table is a matrix with rows corresponding (and named by) the samples and columns corresponding to (and named by) the sequence variants. It is worth checking on the distribution of sequence lengths after merging. Here we see a narrow range of sequence lengths, as we expect. 
+
+If some sequences are much longer or shorter than expected, it may be worth removing those sequences as they may be the result of non-specific priming (eg. `seqtab2 <- seqtab[,nchar(colnames(seqtab)) %in% seq(230,236)]). This is akin to "cutting a band" in-silico to get amplicons of the targeted length.
 
 &nbsp;
 
 # Remove chimeras
 
-The `dada()` method removes substitution and indel errors, but it does not remove chimeras. Fortunately, the accuracy of the sequences after the dada-denoising step makes identifying chimeras easier than it is when dealing with fuzzy OTUs. The dada2 method to do this is by identifying all sequences which can be exactly reconstructred as a bimera (two-parent chimera) from more abundant sequences. See the help file `?isBimeraDenovo` for more information.
+The `dada()` method removes substitution and indel errors, but it does not remove chimeras. Fortunately, the accuracy of the sequences after denoising makes identifying chimeras easier than it is when dealing with fuzzy OTUs. The dada2 method to do this is by identifying all sequences which can be exactly reconstructred as a bimera (two-parent chimera) from more abundant sequences. See the help file `?isBimeraDenovo` for more information.
 
 **Remove chimeric sequences**:
 ```{r chimeras, message=FALSE}
@@ -193,15 +205,15 @@ sum(seqtab.nochim)/sum(seqtab)
 
 The fraction of chimeras varies based on factors including experimental procedures and sample complexity, but can be substantial. Here chimeras make up about `r round(100*(ncol(seqtab)-ncol(seqtab.nochim))/ncol(seqtab))`\% of the inferred sequence variants, but those variants account for only about `r round(100*(sum(seqtab)-sum(seqtab.nochim))/sum(seqtab))`\% of the total sequence reads.
 
-This is the final product of the core DADA2 pipeline: a sequence table that contains the counts of each denoised sequence variant in each sample.
+This is the final product of the core DADA2 pipeline: a sequence table that contains the counts of each denoised sequence variant (SV) in each sample.
 
 &nbsp;
 
 # Assign taxonomy
 
-It is common at this point, especially in 16S or 18S amplicon sequencing, to classify denoised sequence variants taxonomically. The DADA2 package provides a native implementation of [the RDP's naive Bayesian classifier](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes a set of sequences and a training set of taxonomically classified sequences, and outputs the taxonomic assignments with at least `minBoot` bootstrap confidence. 
+It is common at this point, especially in 16S or 18S amplicon sequencing, to classify sequence variants taxonomically. The DADA2 package provides a native implementation of [the RDP's naive Bayesian classifier](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes a set of sequences and a training set of taxonomically classified sequences, and outputs the taxonomic assignments with at least `minBoot` bootstrap confidence. 
 
-Appropriately formatted training fastas for the RDP training set 14, the GreenGenes 13.8 release clustered at 97\% identity, and the Silva reference database are [available for download here](https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0). Download the `rdp\_train\_set\_14.fa.gz` file, and place it in the directory with the fastq files.
+Appropriately formatted training fastas for the RDP training set 14, the GreenGenes 13.8 release clustered at 97\% identity, and the Silva reference database are [available for download here](https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0). Download the `rdp_train_set_14.fa.gz` file, and place it in the directory with the fastq files.
 
 **Assign taxonomy:**
 ```{r taxify}
@@ -218,7 +230,7 @@ Unsurprisingly, the Bacteroidetes are well represented among the top taxa in the
 
 # Evaluate accuracy
 
-One of the provided samples was of a "mock community", in which 20 known strains were mixed together and amplicon-sequenced (the mock community is supposed to be 21 strains, but *P. acnes* was absent). The reference sequences corresponding to these strains were provided along with the fastq files in the downloaded zip archive. We dropped the Mock sample when making our sequence table, but we return to that sample and compare the sequence variants inferred by DADA2 to the expected composition of the community.
+One of the processed samples was a "mock community", in which 20 known strains were mixed together and amplicon-sequenced (the mock community is supposed to be 21 strains, but *P. acnes* was absent). The reference sequences corresponding to these strains were provided along with the fastq files in the downloaded zip archive. We dropped the Mock sample when making our sequence table, but we return to that sample and compare the sequence variants inferred by DADA2 to the expected composition of the community.
 
 **DADA2 accuracy on mock community**:
 ```{r accuracy}
@@ -230,9 +242,9 @@ match.ref <- sum(sapply(names(unqs.mock), function(x) any(grepl(x, as.character(
 cat("Of those,", sum(match.ref), "were exact matches to the expected reference sequences.\n")
 ```
 
-This mock community dataset contained **20** bacterial strains. DADA2 found **20** unique sequences all of which **exactly** match the reference genomes of the expected community members. The residual error rate after the DADA2 pipeline is **0\%**.
+This mock community dataset contained **20** bacterial strains. DADA2 found **20** unique sequences all of which **exactly** match the reference genomes of the expected community members. The residual error rate after the DADA2 pipeline for this sample is **0\%**.
 
-In comparison, when the Mothur pipeline is run on this same dataset, [it finds 35 OTUs in this Mock community sample](http://www.mothur.org/wiki/MiSeq_SOP#Assessing_error_rates). Not only is DADA2 inferring exact sequences (RSVs) instead of fuzzy 97\% OTUs, it is making fewer false positive inferences than the OTU construction methods!
+In comparison, when the Mothur pipeline is run on this same dataset, [it finds 35 OTUs in this Mock community sample](http://www.mothur.org/wiki/MiSeq_SOP#Assessing_error_rates). Not only is DADA2 inferring exact sequences (SVs) instead of fuzzy 97\% OTUs, it is making fewer false positive inferences than the OTU construction methods!
 
 **Here ends the DADA2 portion of the tutorial**.
 
