@@ -56,7 +56,7 @@ bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_o
 }
 
 // [[Rcpp::export]]
-Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_frac, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift) {
+Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_frac, int ignore_n, double min_fold, int min_abund, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift) {
   int i,j,k,nsam,nflag,sqlen,left,right,left_oo,right_oo,max_left,max_right;
   int oo_max_left, oo_max_right, oo_max_left_oo, oo_max_right_oo;
   char **al;
@@ -93,7 +93,7 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
       max_left=0; max_right=0;
       oo_max_left=0; oo_max_right=0; oo_max_left_oo=0; oo_max_right_oo=0;
       for(k=0;k<ncol;k++) { // Compare with all possible parents
-        if(vals[i+k*nrow]>vals[i+j*nrow] && vals[i+k*nrow]>=2) {
+        if(vals[i+k*nrow]>(min_fold*vals[i+j*nrow]) && vals[i+k*nrow]>=min_abund) {
           if(lefts[k]<0) { // Comparison not yet done to this potential parent
             al = nwalign_vectorized2(seqs[j].c_str(), seqs[k].c_str(), (int16_t) match, (int16_t) mismatch, (int16_t) gap_p, 0, max_shift);  // Remember, alignments must be freed!
             get_lr(al, left, right, left_oo, right_oo, allow_one_off, max_shift);
@@ -142,7 +142,7 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
       }
     } // for(i=0;i<mat.nrow();i++)
     
-    if(nflag >= nsam || (nflag > 0 && nflag >= (nsam-1)*min_frac)) { rval[j]=true; }
+    if(nflag >= nsam || (nflag > 0 && nflag >= (nsam-ignore_n)*min_frac)) { rval[j]=true; }
     flags[j] = nflag;
     sams[j] = nsam;
   } // for(j=0;j<mat.ncol();j++)

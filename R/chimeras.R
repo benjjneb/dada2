@@ -154,6 +154,87 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 }
 
 ################################################################################
+#' Identify bimeras in a sequence table.
+#' 
+#' This function implements a table-specific version of de novo bimera detection. In short,
+#' bimeric sequences are flagged on a sample-by-sample basis. Then, a vote is performed for
+#' each sequence across all samples in which it appeared. If the sequence is flagged in a
+#' sufficiently high fraction of samples, it is identified as a bimera. A logical vector is
+#' returned, with an entry for each sequence in the table indicating whether it was identified
+#' as bimeric by this consensus procedure.
+#' 
+#' @param seqtab (Required). A sequence table. That is, an integer matrix with colnames
+#'   corresponding to A/C/G/T sequences.
+#'  
+#' @param minSampleFraction (Optional). Default is 0.9.
+#'   The fraction of samples in which a sequence must be flagged as bimeric in order for it to
+#'   be classified as a bimera.
+#'   
+#' @param ignoreNNegatives (Optional). Default is 1.
+#'   The number of unflagged samples to ignore when evaluating whether the fraction of samples
+#'   in which a sequence was flagged as a bimera exceeds \code{minSampleFraction}. The purpose
+#'   of this parameter is to lower the threshold at which sequences found in few samples are
+#'   flagged as bimeras.
+#'   
+#' @param minFoldParentOverAbundance (Optional). Default is 1.
+#'   Only sequences greater than this-fold more abundant than a sequence can be its 
+#'   "parents". Evaluated on a per-sample basis.
+#'   
+#' @param minParentAbundance (Optional). Default is 2.
+#'   Only sequences at least this abundant can be "parents". Evaluated on a per-sample basis.
+#' 
+#' @param allowOneOff (Optional). Default is TRUE.
+#'   If TRUE, sequences that have one mismatch or indel to an exact bimera are also
+#'   flagged as bimeric.
+#' 
+#' @param minOneOffParentDistance (Optional). Default is 4.
+#'   Only sequences with at least this many mismatches to the potential bimeric sequence
+#'   considered as possible "parents" when flagging one-off bimeras. There is
+#'   no such screen when considering exact bimeras.
+#'   
+#' @param maxShift (Optional). Default is 16.
+#'   Maximum shift allowed when aligning sequences to potential "parents".
+#' 
+#' @param verbose (Optional). Default FALSE.
+#'   Print verbose text output. 
+#'
+#' @return \code{logical} of length equal to the number of sequences in the input table.
+#'  TRUE if sequence is identified as a bimera. Otherwise FALSE.
+#'
+#' @seealso 
+#'  \code{\link{isBimera}}, \code{\link{removeBimeraDenovo}}
+#' 
+#' @export
+#' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
+#' dd <- dada(list(derep1,derep2), err=NULL, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' seqtab <- makeSequenceTable(dd)
+#' isBimeraDenovoTable(seqtab)
+#' isBimeraDenovoTable(seqtab, allowOneOff=FALSE, minSampleFraction=0.5)
+#' 
+isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1, minParentAbundance = 2, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, verbose=FALSE) {
+  sqs <- colnames(seqtab)
+  if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs) && all(sapply(sqs, C_isACGT)))) {
+    stop("Input must be a valid sequence table.")
+  }
+  if(any(duplicated(sqs))) stop("Duplicate sequences detected in input.")
+  bimdf <- C_table_bimera(seqtab, sqs, minSampleFraction, ignoreNNegatives,
+                               minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,
+                               getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
+
+  is.bim <- function(nflag, nsam, minFrac, ignoreN) { 
+    nflag >= nsam || (nflag > 0 && nflag >= (nsam-ignoreN)*minFrac) 
+  }
+  bims.out <- mapply(is.bim, bimdf$nflag, bimdf$nsam, minFrac=minSampleFraction, ignoreN=ignoreNNegatives)
+  names(bims.out) <- sqs
+    
+  if(verbose) message("Identified ", sum(bims.out), " bimeras out of ", length(bims.out), " input sequences.")
+  return(bims.out)
+}
+
+################################################################################
 #' Remove bimeras from collections of unique sequences.
 #' 
 #' This function is a wrapper around \code{\link{isBimeraDenovo}}. Bimeras identified by
