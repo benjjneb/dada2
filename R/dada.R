@@ -5,6 +5,8 @@ assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
 assign("SCORE_MATRIX", matrix(c(5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L),
                               nrow=4, byrow=TRUE), envir = dada_opts)
+assign("MATCH", 5L, envir = dada_opts)
+assign("MISMATCH", -4L, envir = dada_opts)
 assign("GAP_PENALTY", -8L, envir = dada_opts)
 assign("BAND_SIZE", 16, envir = dada_opts)
 assign("VECTORIZED_ALIGNMENT", TRUE, envir = dada_opts)

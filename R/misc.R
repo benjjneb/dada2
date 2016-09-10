@@ -114,8 +114,11 @@ getNseq <- function(object) {
 #' 
 #' @param s2 (Required). \code{character(1)}. The second sequence to align. A/C/G/T only.
 #' 
-#' @param score (Optional). A 4x4 numeric matrix. Default is getDadaOpt("SCORE_MATRIX").
-#'  The match/mismatch used for the alignment.
+#' @param match (Optional). \code{numeric(1)}. Default is getDadaOpt("MATCH").
+#'  The score of a match in the alignment.
+#' 
+#' @param mismatch (Optional). \code{numeric(1)}. Default is getDadaOpt("MISMATCH").
+#'  The score of a mismatch in the alignment.
 #' 
 #' @param gap (Optional). \code{numeric(1)}. Default is getDadaOpt("GAP_PENALTY").
 #'  The alignment gap penalty. Should be negative.
@@ -124,11 +127,11 @@ getNseq <- function(object) {
 #'  The alignment gap penalty within homopolymer regions. Should be negative.
 #'  
 #' @param band (Optional). \code{numeric(1)}.  Default -1 (no banding).
-#'  This Needleman-Wunsch alignment can be banded. This value specifies the radius of that band.
+#'  The Needleman-Wunsch alignment can be banded. This value specifies the radius of that band.
 #'  Set \code{band = -1} to turn off banding.
 #'  
 #' @param endsfree (Optional). \code{logical(1)}. Default TRUE.
-#'  Allow free gapping at the ends of sequences.
+#'  Allow unpenalized gaps at the ends of the alignment.
 #'  
 #' @return \code{character(2)}. The aligned sequences.
 #' 
@@ -140,14 +143,15 @@ getNseq <- function(object) {
 #'  nwalign(sq1, sq2)
 #'  nwalign(sq1, sq2, band=16)
 #' 
-nwalign <- function(s1, s2, score=getDadaOpt("SCORE_MATRIX"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=-1, endsfree=TRUE) {
+nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISMATCH"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=-1, endsfree=TRUE) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
   if(!C_isACGT(s1) || !C_isACGT(s2)) {
     stop("Sequences must contain only A/C/G/T characters.")
   }
   if(is.null(homo_gap)) { homo_gap <- gap }
 
-  C_nwalign(s1, s2, score, gap, homo_gap, band, endsfree)
+  C_nwalign(s1, s2, match, mismatch, gap, homo_gap, band, endsfree)
+  # C_nwvec(s1, s2, match, mismatch, gap, homo_gap, band, endsfree)
 }
 
 ################################################################################
