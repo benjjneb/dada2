@@ -44,3 +44,53 @@ setMethod("show", "dada", function(object){
       object$opts$BAND_SIZE, ", USE_QUALS = ", object$opts$USE_QUALS, 
       sep="", fill=TRUE)
 })
+
+############################################################################
+#' Deactivate renaming of derep-class objects.
+#'
+#' @inheritParams base::`names<-`
+#' @return NULL.
+#' @rdname show-methods
+#' @include allClasses.R
+#' # examples
+setMethod("names<-", "derep", function(x, value){
+  warning("derep-class objects cannot be renamed.")
+  return(x)
+})
+
+############################################################################
+#' Deactivate renaming of dada-class objects.
+#'
+#' @inheritParams base::`names<-`
+#' @return NULL.
+#' @rdname show-methods
+#' @include allClasses.R
+#' # examples
+setMethod("names<-", "dada", function(x, value){
+  warning("dada-class objects cannot be renamed.")
+  return(x)
+})
+
+############################################################################
+#' Change concatenation to list construction.
+#'
+#' @inheritParams base::c
+#' @return list.
+#' @rdname show-methods
+#' @include allClasses.R
+#' # examples
+setMethod("c", signature("derep"), function(x,...){
+  list(x,...)
+})
+
+############################################################################
+#' Change concatenation to list construction.
+#'
+#' @inheritParams base::c
+#' @return list.
+#' @rdname show-methods
+#' @include allClasses.R
+#' # examples
+setMethod("c", signature("dada"), function(x,...){
+  list(x,...)
+})

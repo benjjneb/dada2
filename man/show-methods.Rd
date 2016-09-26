@@ -2,6 +2,10 @@
 % Please edit documentation in R/show-methods.R
 \docType{methods}
 \name{show,derep-method}
+\alias{c,dada-method}
+\alias{c,derep-method}
+\alias{names<-,dada,ANY-method}
+\alias{names<-,derep,ANY-method}
 \alias{show,dada-method}
 \alias{show,derep-method}
 \title{method extensions to show for dada2 objects.}
@@ -9,18 +13,53 @@
 \S4method{show}{derep}(object)
 
 \S4method{show}{dada}(object)
+
+\S4method{names}{derep,ANY}(x) <- value
+
+\S4method{names}{dada,ANY}(x) <- value
+
+\S4method{c}{derep}(x, ..., recursive = FALSE)
+
+\S4method{c}{dada}(x, ..., recursive = FALSE)
 }
 \arguments{
 \item{object}{Any R object}
+
+\item{x}{an \R object.}
+
+\item{value}{a character vector of up to the same length as \code{x}, or
+    \code{NULL}.}
+
+\item{...}{objects to be concatenated.}
+
+\item{recursive}{logical.  If \code{recursive = TRUE}, the function
+    recursively descends through lists (and pairlists) combining all
+    their elements into a vector.}
 }
 \value{
 NULL.
 
 NULL.
+
+NULL.
+
+NULL.
+
+list.
+
+list.
 }
 \description{
 See the general documentation of \code{\link[methods]{show}} method for
 expected behavior.
+
+Deactivate renaming of derep-class objects.
+
+Deactivate renaming of dada-class objects.
+
+Change concatenation to list construction.
+
+Change concatenation to list construction.
 }
 \examples{
 # examples
