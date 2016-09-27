@@ -1,8 +1,9 @@
 #'
 #' Classifies sequences against reference training dataset.
 #' 
-#' assignTaxonomy implements the RDP classifier algorithm in Wang 2007 with kmer size 8 and
-#'  100 bootstrap replicates.
+#' assignTaxonomy implements the RDP Naive Bayesian Classifier algorithm described in
+#' Wang et al. Applied and Environmental Microbiology 2007, with kmer size 8 and 100 bootstrap
+#' replicates.
 #' 
 #' @param seqs (Required). A character vector of the sequences to be assigned, or an object 
 #' coercible by \code{\link{getUniques}}.
@@ -14,7 +15,7 @@
 #' separated by a semicolon. Eg.
 #' 
 #'  >Kingom;Phylum;Class;Order;Family;Genus;   
-#'  ACGAATGTGAAGTAA......
+#'  ACGAATGTGAAGTAA......   
 #' 
 #' @param minBoot (Optional). Default 50. 
 #' The minimum bootstrap confidence for assigning a taxonomic level.

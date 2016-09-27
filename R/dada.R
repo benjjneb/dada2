@@ -5,6 +5,8 @@ assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
 assign("SCORE_MATRIX", matrix(c(5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L),
                               nrow=4, byrow=TRUE), envir = dada_opts)
+assign("MATCH", 5L, envir = dada_opts)
+assign("MISMATCH", -4L, envir = dada_opts)
 assign("GAP_PENALTY", -8L, envir = dada_opts)
 assign("BAND_SIZE", 16, envir = dada_opts)
 assign("VECTORIZED_ALIGNMENT", TRUE, envir = dada_opts)
@@ -211,10 +213,10 @@ dada <- function(derep,
   } else {
     if(is.null(errorEstimationFunction)) { 
       if(selfConsist) {
-        warning("Did not provide an error function for selfConsist mode, using the default loessErrfun.")
+        warning("Did not provide errorEstimationFunction for selfConsist mode, using the default loessErrfun.")
         errorEstimationFunction <- loessErrfun
       } else {
-        message("No error function provided, no post-dada error estimates ($err_out) will be inferred.") 
+        message("Did not provide errorEstimationFunction, no post-dada error rates ($err_out) will be estimated.") 
       }
     } else {
       if(!is.function(errorEstimationFunction)) stop("Must provide a function for errorEstimationFunction.")
@@ -326,7 +328,11 @@ dada <- function(derep,
       if(is.null(errorEstimationFunction)) {
         err <- NULL
       } else {
-        err <- errorEstimationFunction(cur)
+        err <- tryCatch(suppressWarnings(errorEstimationFunction(cur)),
+                error = function(cond) {
+                  message("Error rates could not be estimated.")
+                  return(NULL)
+        })
       }
     } else { # Not using quals, MLE estimate for each transition type
       err <- cur + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
@@ -358,7 +364,7 @@ dada <- function(derep,
   cat("\n")
   if(selfConsist) {
     if(nconsist >= opts$MAX_CONSIST) {
-      warning("dada: Self-consistency loop terminated before convergence.")
+      warning("Self-consistency loop terminated before convergence.")
     } else {
       cat("\nConvergence after ", nconsist, " rounds.\n")
     }

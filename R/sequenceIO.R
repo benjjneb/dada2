@@ -184,11 +184,11 @@ qtables2 <- function(x, qeff = FALSE) {
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' outfile <- tempfile(fileext=".fasta")
-#' uniquesToFasta(getUniques(derep1), outfile)
-#' uniquesToFasta(getUniques(derep1), outfile, ids=paste0("Sequence", seq(length(getUniques(derep1)))))
+#' uniquesToFasta(derep1, outfile)
+#' uniquesToFasta(derep1, outfile, ids=paste0("Sequence", seq(length(getSequences(derep1)))))
 #' 
 uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w", width=20000, ...) {
-  unqs <- getUniques(unqs)
+  unqs <- getUniques(unqs, collapse=FALSE)
   if(is.null(ids)) {
     ids <- paste0("sq", seq(1, length(unqs)), ";size=", unname(unqs), ";")
   }

@@ -38,8 +38,8 @@ Default output format is compatible with uchime.
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 outfile <- tempfile(fileext=".fasta")
-uniquesToFasta(getUniques(derep1), outfile)
-uniquesToFasta(getUniques(derep1), outfile, ids=paste0("Sequence", seq(length(getUniques(derep1)))))
+uniquesToFasta(derep1, outfile)
+uniquesToFasta(derep1, outfile, ids=paste0("Sequence", seq(length(getSequences(derep1)))))
 
 }
 

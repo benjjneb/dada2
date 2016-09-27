@@ -74,7 +74,6 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
   } else if(vectorized_alignment) { // ASSUMES SCORE MATRIX REDUCES TO MATCH/MISMATCH
-//    al = nwalign_endsfree_vectorized(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, band);
     al = nwalign_vectorized2(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, 0, band);
   } else if(homo_gap_p != gap_p && homo_gap_p <= 0) {
     al = nwalign_endsfree_homo(raw1->seq, raw2->seq, score, gap_p, homo_gap_p, band);
@@ -189,12 +188,12 @@ char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap
       al1[len_al] = s2[--j];
       break;
     case 2:
-      al0[len_al] = 6;
+      al0[len_al] = '-';
       al1[len_al] = s2[--j];
       break;
     case 3:
       al0[len_al] = s1[--i];
-      al1[len_al] = 6;
+      al1[len_al] = '-';
       break;
     default:
       Rcpp::stop("N-W Align out of range.");
@@ -241,8 +240,8 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
   int diag, left, up;
   
   //find locations where s1 has homopolymer and put 1s in homo1
-  unsigned char *homo1 = (unsigned char *) malloc(len1*sizeof(unsigned char));
-  unsigned char *homo2 = (unsigned char *) malloc(len2*sizeof(unsigned char));
+  unsigned char *homo1 = (unsigned char *) malloc(len1*sizeof(unsigned char)); //E
+  unsigned char *homo2 = (unsigned char *) malloc(len2*sizeof(unsigned char)); //E
   if(homo1 == NULL || homo2 == NULL) Rcpp::stop("Memory allocation failed.");
   for (i=0,j=0;j<len1;j++) {
     if (j==len1-1 || s1[j]!=s1[j+1]) {
@@ -353,8 +352,8 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
     }
   }
   
-  char *al0 = (char *) malloc((len1+len2+1) * sizeof(char));
-  char *al1 = (char *) malloc((len1+len2+1) * sizeof(char));
+  char *al0 = (char *) malloc((len1+len2+1) * sizeof(char)); //E
+  char *al1 = (char *) malloc((len1+len2+1) * sizeof(char)); //E
   if(al0 == NULL || al1 == NULL) Rcpp::stop("Memory allocation failed.");
   
   // Trace back over p to form the alignment.
@@ -369,12 +368,12 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
       al1[len_al] = s2[--j];
       break;
     case 2:
-      al0[len_al] = 6;
+      al0[len_al] = '-';
       al1[len_al] = s2[--j];
       break;
     case 3:
       al0[len_al] = s1[--i];
-      al1[len_al] = 6;
+      al1[len_al] = '-';
       break;
     default:
       Rcpp::stop("N-W Align out of range.");
@@ -403,6 +402,8 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
   // Free allocated memory
   free(d);
   free(p);
+  free(homo1);
+  free(homo2);
   free(al0);
   free(al1);
   
@@ -512,12 +513,12 @@ char **nwalign(const char *s1, const char *s2, int score[4][4], int gap_p, int b
       al1[len_al] = s2[--j];
       break;
     case 2:
-      al0[len_al] = 6;
+      al0[len_al] = '-';
       al1[len_al] = s2[--j];
       break;
     case 3:
       al0[len_al] = s1[--i];
-      al1[len_al] = 6;
+      al1[len_al] = '-';
       break;
     default:
       Rcpp::stop("N-W Align out of range.");

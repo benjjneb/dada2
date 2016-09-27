@@ -42,7 +42,7 @@
 #' 
 isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) {
   rval <- C_is_bimera(sq, parents, allowOneOff, minOneOffParentDistance, 
-              getDadaOpt("SCORE_MATRIX"), getDadaOpt("GAP_PENALTY"), maxShift)
+              getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
   return(rval)
 }
 
@@ -103,9 +103,12 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 #' 
 isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
-  unqs <- getUniques(unqs)
-  abunds <- unname(unqs)
-  seqs <- names(unqs)
+  if(any(duplicated(getSequences(unqs)))) message("Duplicate sequences detected.")
+  unqs.int <- getUniques(unqs, silence=TRUE) # Internal, keep input unqs for proper return value when duplications
+  abunds <- unname(unqs.int)
+  seqs <- names(unqs.int)
+  seqs.input <- getSequences(unqs)
+  rm(unqs); gc(verbose=FALSE)
   
   # Parse multithreading argument
   if(is.logical(multithread)) {
@@ -117,11 +120,11 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
     warning("Invalid multithread parameter. Running as a single thread.")
     multithread <- FALSE
   }
-  
-  loopFun <- function(i, unqs) {
-    sq <- names(unqs)[[i]]
-    abund <- unqs[[i]]
-    pars <- names(unqs)[(unqs>(minFoldParentOverAbundance*abund) & unqs>minParentAbundance)]
+
+  loopFun <- function(i, unqs.loop, minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance, maxShift) {
+    sq <- names(unqs.loop)[[i]]
+    abund <- unqs.loop[[i]]
+    pars <- names(unqs.loop)[(unqs.loop>(minFoldParentOverAbundance*abund) & unqs.loop>minParentAbundance)]
     if(length(pars) < 2) {
       return(FALSE)
     } else {
@@ -130,16 +133,105 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
   }
   
   if(multithread) {
-    mc.indices <- sample(seq_along(unqs), length(unqs)) # load balance
-    bims <- mclapply(mc.indices, loopFun, unqs=unqs, mc.cores=mc.cores)
+    mc.indices <- sample(seq_along(unqs.int), length(unqs.int)) # load balance
+    bims <- mclapply(mc.indices, loopFun, unqs.loop=unqs.int, 
+                     allowOneOff=allowOneOff, minFoldParentOverAbundance=minFoldParentOverAbundance,
+                     minParentAbundance=minParentAbundance,
+                     minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift,
+                     mc.cores=mc.cores)
     bims <- bims[order(mc.indices)]
   } else {
-    bims <- lapply(seq_along(unqs), loopFun, unqs=unqs)
+    bims <- lapply(seq_along(unqs.int), loopFun, unqs.loop=unqs.int, 
+                   allowOneOff=allowOneOff, minFoldParentOverAbundance=minFoldParentOverAbundance,
+                   minParentAbundance=minParentAbundance,
+                   minOneOffParentDistance=minOneOffParentDistance, maxShift=maxShift)
   }
   bims <- unlist(bims)
-  names(bims) <- names(unqs)
-  if(verbose) message("Identified ", sum(bims), " bimeras out of ", length(bims), " input sequences.")
-  return(bims)
+  bims.out <- seqs.input %in% seqs[bims]
+  names(bims.out) <- seqs.input
+  if(verbose) message("Identified ", sum(bims.out), " bimeras out of ", length(bims.out), " input sequences.")
+  return(bims.out)
+}
+
+################################################################################
+#' Identify bimeras in a sequence table.
+#' 
+#' This function implements a table-specific version of de novo bimera detection. In short,
+#' bimeric sequences are flagged on a sample-by-sample basis. Then, a vote is performed for
+#' each sequence across all samples in which it appeared. If the sequence is flagged in a
+#' sufficiently high fraction of samples, it is identified as a bimera. A logical vector is
+#' returned, with an entry for each sequence in the table indicating whether it was identified
+#' as bimeric by this consensus procedure.
+#' 
+#' @param seqtab (Required). A sequence table. That is, an integer matrix with colnames
+#'   corresponding to A/C/G/T sequences.
+#'  
+#' @param minSampleFraction (Optional). Default is 0.9.
+#'   The fraction of samples in which a sequence must be flagged as bimeric in order for it to
+#'   be classified as a bimera.
+#'   
+#' @param ignoreNNegatives (Optional). Default is 1.
+#'   The number of unflagged samples to ignore when evaluating whether the fraction of samples
+#'   in which a sequence was flagged as a bimera exceeds \code{minSampleFraction}. The purpose
+#'   of this parameter is to lower the threshold at which sequences found in few samples are
+#'   flagged as bimeras.
+#'   
+#' @param minFoldParentOverAbundance (Optional). Default is 1.
+#'   Only sequences greater than this-fold more abundant than a sequence can be its 
+#'   "parents". Evaluated on a per-sample basis.
+#'   
+#' @param minParentAbundance (Optional). Default is 2.
+#'   Only sequences at least this abundant can be "parents". Evaluated on a per-sample basis.
+#' 
+#' @param allowOneOff (Optional). Default is TRUE.
+#'   If TRUE, sequences that have one mismatch or indel to an exact bimera are also
+#'   flagged as bimeric.
+#' 
+#' @param minOneOffParentDistance (Optional). Default is 4.
+#'   Only sequences with at least this many mismatches to the potential bimeric sequence
+#'   considered as possible "parents" when flagging one-off bimeras. There is
+#'   no such screen when considering exact bimeras.
+#'   
+#' @param maxShift (Optional). Default is 16.
+#'   Maximum shift allowed when aligning sequences to potential "parents".
+#' 
+#' @param verbose (Optional). Default FALSE.
+#'   Print verbose text output. 
+#'
+#' @return \code{logical} of length equal to the number of sequences in the input table.
+#'  TRUE if sequence is identified as a bimera. Otherwise FALSE.
+#'
+#' @seealso 
+#'  \code{\link{isBimera}}, \code{\link{removeBimeraDenovo}}
+#' 
+#' @export
+#' 
+#' @examples
+#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
+#' dd <- dada(list(derep1,derep2), err=NULL, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' seqtab <- makeSequenceTable(dd)
+#' isBimeraDenovoTable(seqtab)
+#' isBimeraDenovoTable(seqtab, allowOneOff=FALSE, minSampleFraction=0.5)
+#' 
+isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1, minParentAbundance = 2, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, verbose=FALSE) {
+  sqs <- colnames(seqtab)
+  if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs) && all(sapply(sqs, C_isACGT)))) {
+    stop("Input must be a valid sequence table.")
+  }
+  if(any(duplicated(sqs))) stop("Duplicate sequences detected in input.")
+  bimdf <- C_table_bimera(seqtab, sqs, minSampleFraction, ignoreNNegatives,
+                               minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,
+                               getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
+
+  is.bim <- function(nflag, nsam, minFrac, ignoreN) { 
+    nflag >= nsam || (nflag > 0 && nflag >= (nsam-ignoreN)*minFrac) 
+  }
+  bims.out <- mapply(is.bim, bimdf$nflag, bimdf$nsam, minFrac=minSampleFraction, ignoreN=ignoreNNegatives)
+  names(bims.out) <- sqs
+    
+  if(verbose) message("Identified ", sum(bims.out), " bimeras out of ", length(bims.out), " input sequences.")
+  return(bims.out)
 }
 
 ################################################################################
@@ -176,26 +268,25 @@ removeBimeraDenovo <- function(unqs, ..., verbose=FALSE) {
   for(i in seq_along(unqs)) {
     bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
     # The following code is adapted from getUniques
-    object <- unqs[[i]]
-    if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
-      outs[[i]] <- object[!bim]
-    } else if(class(object) == "dada") {  # dada return 
-      outs[[i]] <- object$denoised[!bim]
-    } else if(class(object) == "derep") {
-      outs[[i]] <- object$uniques[!bim]
-    } else if(is.data.frame(object) && all(c("sequence", "abundance") %in% colnames(object))) {
-      outs[[i]] <- object[!bim,]
-    } else if(class(object) == "matrix" && !any(is.na(colnames(object)))) { # Tabled sequences
-      outs[[i]] <- object[,!bim,drop=FALSE]
+    if(is.integer(unqs[[i]]) && length(names(unqs[[i]])) != 0 && !any(is.na(names(unqs[[i]])))) { # Named integer vector already
+      outs[[i]] <- unqs[[i]][!bim]
+    } else if(class(unqs[[i]]) == "dada") {  # dada return 
+      outs[[i]] <- unqs[[i]]$denoised[!bim]
+    } else if(class(unqs[[i]]) == "derep") {
+      outs[[i]] <- unqs[[i]]$uniques[!bim]
+    } else if(is.data.frame(unqs[[i]]) && all(c("sequence", "abundance") %in% colnames(unqs[[i]]))) {
+      outs[[i]] <- unqs[[i]][!bim,]
+    } else if(class(unqs[[i]]) == "matrix" && !any(is.na(colnames(unqs[[i]])))) { # Tabled sequences
+      outs[[i]] <- unqs[[i]][,!bim,drop=FALSE]
     } else {
       stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
     }
   }
   names(outs) <- names(unqs)
   if(length(outs) == 1) {
-    outs <- outs[[1]]
+    return(outs[[1]])
   }
-  outs
+  return(outs)
 }
 
 ################################################################################
@@ -231,9 +322,9 @@ removeBimeraDenovo <- function(unqs, ..., verbose=FALSE) {
 #' isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
 #' 
 isShiftDenovo <- function(unqs, minOverlap = 20, flagSubseqs=FALSE, verbose=FALSE) {
-  unqs <- getUniques(unqs)
-  abunds <- unname(unqs)
-  seqs <- names(unqs)
+  unqs.int <- getUniques(unqs, silence=TRUE) # Internal, keep input unqs for proper return value when duplications
+  abunds <- unname(unqs.int)
+  seqs <- names(unqs.int)
   
   loopFun <- function(sq, abund) {
     pars <- seqs[abunds>abund]
@@ -245,7 +336,10 @@ isShiftDenovo <- function(unqs, minOverlap = 20, flagSubseqs=FALSE, verbose=FALS
     }
   }
   shifts <- mapply(loopFun, seqs, abunds)
-  return(shifts)
+  
+  shifts.out <- getSequences(unqs) %in% seqs[shifts]
+  names(shifts.out) <- getSequences(unqs)
+  return(shifts.out)
 }
 
 

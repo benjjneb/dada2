@@ -37,8 +37,9 @@ A character matrix of assigned taxonomies exceeding the minBoot level of
   that level at the minBoot threshhold.
 }
 \description{
-assignTaxonomy implements the RDP classifier algorithm in Wang 2007 with kmer size 8 and
- 100 bootstrap replicates.
+assignTaxonomy implements the RDP Naive Bayesian Classifier algorithm described in
+Wang et al. Applied and Environmental Microbiology 2007, with kmer size 8 and 100 bootstrap
+replicates.
 }
 \examples{
 \dontrun{

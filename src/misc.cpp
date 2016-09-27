@@ -56,7 +56,7 @@ void nt2int(char *oseq, const char *iseq) {
       *oseq = 5;
       break;
     case '-':
-      *oseq = 6;
+      *oseq = '-';
       break;
     default:
       Rprintf("invalid character in input:%c.\n",*iseq);
@@ -87,7 +87,7 @@ void int2nt(char *oseq, const char *iseq) {
     case 5:
       *oseq = 'N';
       break;
-    case 6:
+    case '-':
       *oseq = '-';
       break;
     default:

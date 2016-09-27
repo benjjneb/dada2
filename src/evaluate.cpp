@@ -15,7 +15,7 @@ using namespace Rcpp;
 // @return A \code{character(2)}. The aligned strings.
 // 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMatrix score, int gap_p, int homo_gap_p, int band, bool endsfree) {
+Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, int match, int mismatch, int gap_p, int homo_gap_p, int band, bool endsfree) {
   int i, j;
   char **al;
   // Make integer-ized c-style sequence strings
@@ -28,7 +28,8 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, Rcpp::NumericMat
   int c_score[4][4];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
-      c_score[i][j] = (int) score(i,j);
+      if(i==j) { c_score[i][j] = match; }
+      else { c_score[i][j] = mismatch; }
     }
   }
   // Perform alignment and convert back to ACGT

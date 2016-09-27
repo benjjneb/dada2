@@ -4,10 +4,17 @@
 \alias{getUniques}
 \title{Get the uniques-vector from the input object.}
 \usage{
-getUniques(object)
+getUniques(object, collapse = TRUE, silence = FALSE)
 }
 \arguments{
 \item{object}{(Required). The object from which to extract the \code{\link{uniques-vector}}.}
+
+\item{collapse}{(Optional). Default TRUE.
+Should duplicate sequences detected in \code{object} be collapsed together, thereby
+ imposing uniqueness on non-unique input.}
+
+\item{silence}{(Optional). Default FALSE.
+Suppress reporting of the detection and merger of duplicated input sequences.}
 }
 \value{
 \code{integer}.

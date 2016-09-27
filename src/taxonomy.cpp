@@ -20,14 +20,13 @@ int tax_kmer(const char *seq, unsigned int k) {
     } else {
       kmer = -1;
       break;
-//      Rcpp::stop("Unexpected nucleotide.");
     }
     kmer = 4*kmer + nti;
   }
   return(kmer);
 }
 
-void tax_kvec(const char *seq, unsigned int k, unsigned char *kvec) {  // Assumes a clean seq (just A/C/G/T)
+void tax_kvec(const char *seq, unsigned int k, unsigned char *kvec) {
   unsigned int i;
   unsigned int len = strlen(seq);
   int kmer = 0;
@@ -44,15 +43,20 @@ void tax_kvec(const char *seq, unsigned int k, unsigned char *kvec) {  // Assume
   }
 }
 
-void tax_karray(const char *seq, unsigned int k, int *karray) {
-  unsigned int i;
+unsigned int tax_karray(const char *seq, unsigned int k, int *karray) {
+  unsigned int i, j;
   int kmer;
   unsigned int len = strlen(seq);
   
-  for(i=0;i<len-k;i++) {
+  for(i=0,j=0;i<len-k;i++) {
     kmer = tax_kmer(&seq[i], k);
-    karray[i] = kmer;
+    // Ensure a valid kmer index
+    if(kmer>=0) {
+      karray[j] = kmer;
+      j++;
+    }
   }
+  return(j);
 }
 
 int get_best_genus(int *karray, unsigned int arraylen, unsigned int n_kmers, unsigned int *genus_kmers, unsigned int ngenus, double *kmer_prior, double *genus_num_plus1) {
@@ -180,8 +184,8 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   // Rprintf("Classify the sequences.\n");
   for(j=0;j<nseq;j++) {
     seqlen = seqs[j].size();
-    arraylen = seqlen-k;
-    tax_karray(seqs[j].c_str(), k, karray);
+    arraylen = tax_karray(seqs[j].c_str(), k, karray);
+    if(arraylen<40) { Rcpp::stop("Sequences must have at least 40 valid kmers to classify."); }
     
     // Find best hit
     max_g = get_best_genus(karray, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);

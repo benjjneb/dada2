@@ -1,3 +1,25 @@
+CHANGES IN VERSION 1.1.6
+-----------------------
+
+NEW FEATURES
+
+    o isBimeraDenovoTable is a new function for detecting chimeras on multi-sample sequence tables. It first identifies bimeras on a per-sample basis, and then uses a consensus approach to identify bimeric sequences. This improves the specificity of bimera classification for datasets with many samples.
+    
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The filenames is now included in the plotQualityProfile plot.
+
+BUG FIXES
+
+    o assignTaxonomy now works for sequences containg Ns.
+
+    o Bimera detection now correctly handles non-unique sequences in the input.
+
+    o Fixed a memory leak when using the HOMOPOLYMER_GAP_PENALTY option.
+
+    o Warnings and errors during error estimation from small samples in the dada(…) function are now handled appropriately.
+
+
 CHANGES IN VERSION 1.1.4
 -----------------------
 
