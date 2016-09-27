@@ -25,8 +25,8 @@ setMethod("show", "derep", function(object){
   if( length(object$quals) > 0 & inherits(object$quals, "matrix")){
     cat("$quals: Quality matrix dimension: ", dim(object$quals), fill = TRUE)
     quals <- as.vector(object$quals)
-    cat("  Consensus quality scores: min=", min(quals), ", median=", median(quals),
-        ", max=", max(quals), sep="", fill=TRUE)
+    cat("  Consensus quality scores: min=", min(quals, na.rm=TRUE), ", median=", median(quals, na.rm=TRUE),
+        ", max=", max(quals, na.rm=TRUE), sep="", fill=TRUE)
   }
   if( length(object$map) > 0 ){
     cat("$map: Map from reads to unique sequences: ", object$map[1L:5L], "...", fill = TRUE)

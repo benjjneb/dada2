@@ -199,3 +199,24 @@ uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w", width=20000, ...) {
              width = width,
              ...)
 }
+
+######## DEREPFASTA DEREPFASTA DEREPFASTA ################
+#' 
+#' @importFrom Biostrings readDNAStringSet
+#' @importFrom Biostrings writeXStringSet
+#' 
+derepFasta <- function(fls, ...){
+  if(!is.character(fls)) {
+    stop("Filenames must be provided in character format.")
+  }
+  fastqs <- character(length(fls))
+  for(i in seq_along(fls)) {
+    fastq <- tempfile()
+    fl <- fls[[i]]
+    foo <- readDNAStringSet(fl)
+    writeXStringSet(foo, fastq, format="fastq")
+    fastqs[[i]] <- fastq
+  }
+  
+  derepFastq(fastqs, ...)
+}
