@@ -26,7 +26,7 @@
 #'   
 #' @param maxShift (Optional). A \code{numeric(1)}. Default is 16.
 #'   Maximum shift allowed when aligning sequences to potential "parents".
-#' 
+#'   
 #' @return \code{logical(1)}.
 #'  TRUE if sq is a bimera of two of the parents. Otherwise FALSE.
 #'
@@ -237,15 +237,23 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 ################################################################################
 #' Remove bimeras from collections of unique sequences.
 #' 
-#' This function is a wrapper around \code{\link{isBimeraDenovo}}. Bimeras identified by
-#' \link{isBimeraDenovo} are removed, and a bimera-free collection of unique sequences is returned.
+#' This function is a wrapper around \code{\link{isBimeraDenovo}} and \code{\link{isBimeraDenovoTable}}.
+#'  Sequence variants identified as bimeric are removed, and a bimera-free collection of unique sequences
+#'  is returned.
 #' 
 #' @param unqs (Required). A \code{\link{uniques-vector}} or any object that can be coerced
 #'  into one with \code{\link{getUniques}}. A list of such objects can also be provided.
 #'   
-#' @param ... (Optional). Arguments to be passed to \code{\link{isBimeraDenovo}}.
+#' @param tableMethod (Optional). Default is "pooled".
+#'   If "pooled": The samples in the sequence table are all pooled together for chimera
+#'      identification (\code{\link{isBimeraDenovo}}).
+#'   If "consensus": The samples in a sequence table are independently checked for chimeras,
+#'      and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).
+#' 
+#' @param ... (Optional). Arguments to be passed to \code{\link{isBimeraDenovo}} or \code{\link{isBimeraDenovoTable}}.
 #'   
-#' @param verbose (Optional). \code{logical(1)} indicating verbose text output. Default FALSE.
+#' @param verbose (Optional). Default FALSE. 
+#'  Print verbose text output.
 #'
 #' @return A uniques vector, or an object of matching class if a data.frame or sequence table is provided.
 #'  A list of such objects is returned if a list of input unqs was provided.
@@ -260,23 +268,33 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' out.nobim <- removeBimeraDenovo(dada1)
 #' out.nobim <- removeBimeraDenovo(dada1$clustering, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 #' 
-removeBimeraDenovo <- function(unqs, ..., verbose=FALSE) {
+removeBimeraDenovo <- function(unqs, tableMethod = "pooled", ..., verbose=FALSE) {
   if(class(unqs)!="list") {
     unqs <- list(unqs)
   }
   outs <- list()
   for(i in seq_along(unqs)) {
-    bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
     # The following code is adapted from getUniques
     if(is.integer(unqs[[i]]) && length(names(unqs[[i]])) != 0 && !any(is.na(names(unqs[[i]])))) { # Named integer vector already
+      bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]][!bim]
     } else if(class(unqs[[i]]) == "dada") {  # dada return 
+      bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]]$denoised[!bim]
     } else if(class(unqs[[i]]) == "derep") {
+      bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]]$uniques[!bim]
     } else if(is.data.frame(unqs[[i]]) && all(c("sequence", "abundance") %in% colnames(unqs[[i]]))) {
+      bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]][!bim,]
     } else if(class(unqs[[i]]) == "matrix" && !any(is.na(colnames(unqs[[i]])))) { # Tabled sequences
+      if(tableMethod == "pooled") {
+        bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
+      } else if(tableMethod == "consensus") {
+        bim <- isBimeraDenovoTable(unqs[[i]], ..., verbose=TRUE)
+      } else {
+        stop("Valid values for tableMethod: 'pooled', 'consensus'")
+      }
       outs[[i]] <- unqs[[i]][,!bim,drop=FALSE]
     } else {
       stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
