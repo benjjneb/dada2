@@ -133,6 +133,9 @@ getNseq <- function(object) {
 #' @param endsfree (Optional). \code{logical(1)}. Default TRUE.
 #'  Allow unpenalized gaps at the ends of the alignment.
 #'  
+#' @param vec (Optional). \code{logical(1)}. Default FALSE.
+#'  Use DADA2's vectorized aligner instead of standard DP matrix. Not intended for long sequences (>1kb).
+#'  
 #' @return \code{character(2)}. The aligned sequences.
 #' 
 #' @export
@@ -143,15 +146,15 @@ getNseq <- function(object) {
 #'  nwalign(sq1, sq2)
 #'  nwalign(sq1, sq2, band=16)
 #' 
-nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISMATCH"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=-1, endsfree=TRUE) {
+nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISMATCH"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=-1, endsfree=TRUE, vec=FALSE) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
   if(!C_isACGT(s1) || !C_isACGT(s2)) {
     stop("Sequences must contain only A/C/G/T characters.")
   }
   if(is.null(homo_gap)) { homo_gap <- gap }
 
-  C_nwalign(s1, s2, match, mismatch, gap, homo_gap, band, endsfree)
-  # C_nwvec(s1, s2, match, mismatch, gap, homo_gap, band, endsfree)
+  if(vec) C_nwvec(s1, s2, match, mismatch, gap, band, endsfree)
+  else C_nwalign(s1, s2, match, mismatch, gap, homo_gap, band, endsfree)
 }
 
 ################################################################################
