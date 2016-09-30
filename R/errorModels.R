@@ -112,7 +112,7 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 #  sequence required to call the inferred sequence a false positive.
 #
 # @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
-#  The p-value threshhold below which a base is assigned as "bad".
+#  The p-value threshold below which a base is assigned as "bad".
 #  The p-value is calculated by the number of repeated occurences of a particular
 #    base position individually driving the formation of a new cluster. Bad bases
 #    drive many new "1-away" clustes.
