@@ -115,7 +115,7 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 #  The p-value threshold below which a base is assigned as "bad".
 #  The p-value is calculated by the number of repeated occurences of a particular
 #    base position individually driving the formation of a new cluster. Bad bases
-#    drive many new "1-away" clustes.
+#    drive many new "1-away" clusters.
 #  The null hypothesis being tested is that real differences are distributed
 #    uniformly along the sequence. This is not true, biological differences are
 #    non-uniform, so this pvalue threshhold should be set conservatively.
