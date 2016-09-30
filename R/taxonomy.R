@@ -30,7 +30,7 @@
 #' @return A character matrix of assigned taxonomies exceeding the minBoot level of
 #'   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
 #'   taxonomic levels. NA indicates that the sequence was not consistently classified at
-#'   that level at the minBoot threshhold.
+#'   that level at the minBoot threshold.
 #'
 #' @export
 #'
