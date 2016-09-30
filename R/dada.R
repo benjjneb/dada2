@@ -479,7 +479,7 @@ dada <- function(derep,
 #'  turns off banding (i.e. full Needleman-Wunsch).
 #'
 #' SCORE_MATRIX: The score matrix for the Needleman-Wunsch alignment. This is a 4x4 matrix as no ambiguous nucleotides
-#'  are allowed. Default is nuc44: -4 for mismatches, +5 for matchces.
+#'  are allowed. Default is nuc44: -4 for mismatches, +5 for matches.
 #'
 #' GAP_PENALTY: The cost of gaps in the Needleman-Wunsch alignment. Default is -8.
 #'
