@@ -199,7 +199,7 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
 #' @param taxtab (Required). A taxonomic table, the output of \code{\link{assignTaxonomy}}.
 #'
 #' @param refFasta (Required). The path to the reference fasta file, or an
-#' R connection. Can be compresssed.
+#' R connection. Can be compressed.
 #' This reference fasta file should be formatted so that the id lines correspond to the
 #' genus-species binomial of the associated sequence:
 #'
