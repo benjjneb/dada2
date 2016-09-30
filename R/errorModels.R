@@ -118,7 +118,7 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 #    drive many new "1-away" clusters.
 #  The null hypothesis being tested is that real differences are distributed
 #    uniformly along the sequence. This is not true, biological differences are
-#    non-uniform, so this pvalue threshhold should be set conservatively.
+#    non-uniform, so this pvalue threshold should be set conservatively.
 #
 # @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
 #  The minimum times a single base position must drive the formation of a new cluster
