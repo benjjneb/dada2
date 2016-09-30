@@ -2,7 +2,7 @@
 title: "Introduction to dada2"
 author: "Benjamin Callahan"
 date: "`r date()`"
-output: 
+output:
   BiocStyle::html_document
 vignette: >
   %\VignetteIndexEntry{Introduction to dada2}
@@ -68,8 +68,8 @@ After inspecting the quality profiles, it is clear that the reverse read quality
 
 Filtering is an important step when dealing with sequence data, as low-quality sequences can contain unexpected and misleading errors. Trimming is also usually advised, as Illumina sequencing quality tends to drop off at the end of reads, and the initial nucleotides can also be problematic due to calibration issues:
 ```{r filter}
-fastqPairedFilter(c(fnF1, fnR1), fout=c(filtF1, filtR1), 
-                  trimLeft=10, truncLen=c(240, 200), 
+fastqPairedFilter(c(fnF1, fnR1), fout=c(filtF1, filtR1),
+                  trimLeft=10, truncLen=c(240, 200),
                   maxN=0, maxEE=2,
                   compress=TRUE, verbose=TRUE)
 ```
@@ -112,11 +112,11 @@ We've inferred the sample sequences in the forward and reverse reads independent
 merger1 <- mergePairs(dadaF1, derepF1, dadaR1, derepR1, verbose=TRUE)
 ```
 
-The `mergePairs(...)` function returns a `data.frame` corresponding to each successfully merged unique sequence. The `$forward` and `$reverse` columns record which forward and reverse sequence contributed to that merged sequence. Thus, the second command removes all merged sequences which are made up of a chimeric forward or reverse sequence. At the end we have a data.frame of merged, error-free, non-chimeric sample sequences! 
+The `mergePairs(...)` function returns a `data.frame` corresponding to each successfully merged unique sequence. The `$forward` and `$reverse` columns record which forward and reverse sequence contributed to that merged sequence. Thus, the second command removes all merged sequences which are made up of a chimeric forward or reverse sequence. At the end we have a data.frame of merged, error-free, non-chimeric sample sequences!
 
 # Remove chimeras <a id="sec:chimeras"></a>
 
-The `dada(...)` algorithm models and removes substitution errors, but chimeras are another importance source of spurious sequences in amplicon sequencing. Chimeras are formed during PCR amplification, when one sequence is incompletely amplified, and in the next amplication step is completed by copying a different sequence. The result is a sequencing read which is half one sample sequence, and half the other.
+The `dada(...)` algorithm models and removes substitution errors, but chimeras are another importance source of spurious sequences in amplicon sequencing. Chimeras are formed during PCR amplification. When one sequence is incompletely amplified, the incomplete amplicon primes the next amplification step, yielding a spurious amplicon. The result is a sequence read which is half one sample sequence and half the other.
 
 We identify those sequence using the `isBimeraDenovo(...)` function in the dada2 pipeline:
 ```{r bimeras}
