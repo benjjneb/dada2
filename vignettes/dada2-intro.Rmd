@@ -116,7 +116,7 @@ The `mergePairs(...)` function returns a `data.frame` corresponding to each succ
 
 # Remove chimeras <a id="sec:chimeras"></a>
 
-The `dada(...)` algorithm models and removes substitution errors, but chimeras are another importance source of spurious sequences in amplicon sequencing. Chimeras are formed during PCR amplification. When one sequence is incompletely amplified, the incomplete amplicon primes the next amplification step, yielding a spurious amplicon. The result is a sequence read which is half one sample sequence and half the other.
+The `dada(...)` algorithm models and removes substitution errors, but chimeras are another importance source of spurious sequences in amplicon sequencing. Chimeras are formed during PCR amplification. When one sequence is incompletely amplified, the incomplete amplicon primes the next amplification step, yielding a spurious amplicon. The result is a sequence read which is half of one sample sequence and half another.
 
 We identify those sequence using the `isBimeraDenovo(...)` function in the dada2 pipeline:
 ```{r bimeras}
