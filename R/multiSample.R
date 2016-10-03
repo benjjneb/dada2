@@ -1,7 +1,7 @@
 ################################################################################
 #' Construct a sample-by-sequence observation matrix.
 #' 
-#' This function contructs a sequence table (analogous to an OTU table) from
+#' This function constructs a sequence table (analogous to an OTU table) from
 #' the provided list of samples.
 #' 
 #' @param samples (Required). A \code{list} of the samples to include in the sequence table. 

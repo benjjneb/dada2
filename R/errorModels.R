@@ -1,7 +1,7 @@
 #' Use a loess fit to estimate error rates from transition counts.
 #' 
 #' This function accepts a matrix of observed transitions, with each transition
-#' correponding to a row (eg. row 2 = A->C) and each column to a quality score
+#' corresponding to a row (eg. row 2 = A->C) and each column to a quality score
 #' (eg. col 31 = Q30). It returns a matrix of estimated error
 #' rates of the same shape. Error rates are estimates by a \code{\link{loess}} fit
 #' of the observed rates of each transition as a function of the quality score.
@@ -112,13 +112,13 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 #  sequence required to call the inferred sequence a false positive.
 #   
 # @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
-#  The p-value threshhold below which a base is assigned as "bad".
-#  The p-value is calculated by the number of repeated occurences of a particular
+#  The p-value threshold below which a base is assigned as "bad".
+#  The p-value is calculated by the number of repeated occurrences of a particular
 #    base position individually driving the formation of a new cluster. Bad bases 
-#    drive many new "1-away" clustes.
+#    drive many new "1-away" clusters.
 #  The null hypothesis being tested is that real differences are distributed
 #    uniformly along the sequence. This is not true, biological differences are
-#    non-uniform, so this pvalue threshhold should be set conservatively.
+#    non-uniform, so this pvalue threshold should be set conservatively.
 # 
 # @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
 #  The minimum times a single base position must drive the formation of a new cluster
@@ -157,13 +157,13 @@ isBadBaseFP <- function(clust, birth_subs, minFraction = 0.51, omegaB = 1e-10, m
 # @param birth_subs (Required). The $birth_subs data frame from the dada() output.
 # 
 # @param omegaB (Optional). A \code{numeric(1)}. Default is 1e-10.
-#  The p-value threshhold below which a base is assigned as "bad".
-#  The p-value is calculated by the number of repeated occurences of a particular
+#  The p-value threshold below which a base is assigned as "bad".
+#  The p-value is calculated by the number of repeated occurrences of a particular
 #    base position individually driving the formation of a new cluster. Bad bases 
-#    drive many new "1-away" clustes.
+#    drive many new "1-away" clusters.
 #  The null hypothesis being tested is that real differences are distributed
 #    uniformly along the sequence. This is not true, biological differences are
-#    non-uniform, so this pvalue threshhold should be set conservatively.
+#    non-uniform, so this pvalue threshold should be set conservatively.
 # 
 # @param minOccurence (Optional). A \code{numeric(1)}. Default is 4.
 #  The minimum times a single base position must drive the formation of a new cluster
@@ -272,4 +272,3 @@ NULL
 #'  
 #' @name errExtremeR
 NULL
-
