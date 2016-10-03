@@ -1,0 +1,52 @@
+---
+title: "Taxonomic reference data"
+---
+
+The `assignTaxonomy` and `assignSpecies` functions require appropriately formatted fasta files describing the set of taxonomically assigned sequences to use as a training dataset. We provide appropriately formatted versions of several popular taxonomic databases, and describe the dada2-specific format for those who wish to use a custom database.
+
+## DADA2-formatted reference databases
+
+We maintain reference fastas for the three most common 16S databases: Silva, GreenGenes and RDP. Formatted versions of other databases can be contributed, and shared here if referencable by doi (eg. Zenodo). 
+
+Please note that the files provided here are just derivative reformattings of these taxonomic databases. If using these files for taxonomic assignment, the source database should be cited.
+
+--------------------------
+
+**Maintained:**
+
+* **[GreenGenes version 13.8](http://dx.doi.org/10.5281/zenodo.158955)**.
+
+* **[RDP version 14](http://dx.doi.org/10.5281/zenodo.158955)**.
+
+* **[Silva version 123](http://dx.doi.org/10.5281/zenodo.158958)** ([Silva dual-license](https://www.arb-silva.de/silva-license-information/)).
+
+**Contributed**:
+
+* [HitDB version 1](http://doi.org/10.5281/zenodo.159205) (Human InTestinal 16S rRNA).
+
+--------------------------
+
+Note that currently species-assignment training fastas are only available for the Silva and RDP databases. In addition to thanking the folks at RDP, Silva and GreenGenes for making these datasets available, we also want to thank Pat Schloss and the [mothur](http://www.mothur.org) team for making cleaner versions of the Silva and RDP training set available. To be specific, we created the dada2-compatible training fastas from [the mothur-compatible Silva.nr_v123 files](http://www.mothur.org/wiki/Silva_reference_files) ([described here](http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/), and [license here](https://www.arb-silva.de/silva-license-information/)), the [mothur-compatible 16S rRNA reference (RDP)](http://mothur.org/wiki/RDP_reference_files) ([described here](http://blog.mothur.org/2015/05/27/RDP-v14-reference_files/)), and [the GreenGenes 13.8 OTUs clustered at 97\%](ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/).
+
+
+## Formatting custom databases
+
+Custom databases can be used as well, provided they can be converted to the dada2-compatible training fasta format.
+
+The `assignTaxonomy(...)` function expects the training data to be provided in the form of a fasta file (or compressed fasta file) in which the taxonomy corresponding to each sequence is encoded in the id line in the following fashion (the second sequence is not assigned down to level 6):
+
+```
+>Level1;Level2;Level3;Level4;Level5;Level6;
+ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC
+>Level1;Level2;Level3;Level4;Level5;
+CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC
+```
+
+The `assignSpecies(...)` function also expects the training data to be provided in the form of a fasta file (or compressed fasta file), with the id line formatted as follows:
+
+```
+>ID Genus species
+ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC
+>ID Genus species
+CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC
+```

@@ -26,7 +26,7 @@ If you wish to install the latest and greatest version, or to install to R 3.2, 
 
 The [DADA2 workflow on Big Data](bigdata.html) goes through workflow optimized to run on large datasets (100s of millions of reads).
 
-Short demonstrations of [assigning taxonomy](assign.html) and [assigning species](species.html) to sequences.
+Short demonstrations of [assigning taxonomy](assign.html) and [assigning species](assign.html) to sequences.
 
 &nbsp;
 
