@@ -275,30 +275,17 @@ $(document).ready(function () {
 <p>If assignment down to the species level is desired, <code>assignSpecies(...)</code> uses exact string matching against a reference database to assign Genus-species binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if sufficiently unambiguous.</p>
 <p>These two functions can be combined to produce taxonomic assignments from Kingdom down to Species with the <code>addSpecies(...)</code> convenience function.</p>
 <p><strong><span style="color:red">The species assignment portion of this workflow requires <a href="https://github.com/benjjneb/dada2">version 1.1.2 or later of the dada2 package</a>:</span></strong></p>
+<div id="getting-started" class="section level2">
+<h2>Getting started</h2>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
 <pre><code>## [1] '1.1.6'</code></pre>
-<p>We’ll go through a short example to demonstrate the method in action, but first we consider the issue of the reference dataset.</p>
-<p> </p>
-<div id="taxonomic-training-datasets" class="section level2">
-<h2>Taxonomic training datasets</h2>
-<p>Gzip-ed versions of <a href="training.html">dada2-formatted training fastas</a> for several common taxonomic databases <a href="training.html">are available</a>.</p>
-<p>Custom databases can be used as well, provided they can be converted to the dada2-compatible training fasta format.</p>
-<p>The <code>assignTaxonomy(...)</code> function expects the training data to be provided in the form of a fasta file (or compressed fasta file) in which the taxonomy corresponding to each sequence is encoded in the id line in the following fashion (the second sequence is not assigned down to level 6):</p>
-<pre><code>&gt;Level1;Level2;Level3;Level4;Level5;Level6;
-ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC
-&gt;Level1;Level2;Level3;Level4;Level5;
-CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC</code></pre>
-<p>The <code>assignSpecies(...)</code> function also expects the training data to be provided in the form of a fasta file (or compressed fasta file), with the id line formatted as follows:</p>
-<pre><code>&gt;ID Genus species
-ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC
-&gt;ID Genus species
-CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC</code></pre>
-<p><em>In order to follow along with the examples below, <a href="training.html">download</a> the <code>rdp_train_set_14.fa.gz</code> and <code>rdp_species_assignment_14.fa.gz</code> files to an appropriate location on your local machine.</em></p>
+<p>Both <code>assignTaxonomy</code> and <code>assignSpecies</code> depend on training datasets of taxonomically assigned sequences. Appropriately <a href="training.html">formatted datasets for several popular reference databases</a> are available.</p>
+<p>In order to follow along with the examples below, <a href="training.html">download</a> the <code>rdp_train_set_14.fa.gz</code> and <code>rdp_species_assignment_14.fa.gz</code> files to an appropriate location on your local machine.</p>
 <p> </p>
 </div>
-<div id="taxonomic-assignment-in-action" class="section level2">
-<h2>Taxonomic assignment in action</h2>
-<p>For now we will consider a simple example in which we want to classify a handful of 16S sequences from the v4 region against the RDP training set. Our sequences of interest:</p>
+<div id="taxonomic-assignment" class="section level2">
+<h2>Taxonomic assignment</h2>
+<p>Here we classify a handful of 16S sequences from the v4 region against the RDP training set. Our sequences of interest:</p>
 <pre class="r"><code>seqs &lt;- c(
 &quot;ACGGAGGGTCCGAGCGTTAATCGGAATTACTGGGCGTAAAGCGTGCGCAGGCGGTTTGTTAAGCGAGATGTGAAAGCCCCGGGCTCAACCTGGGAATTGCATTTCGAACTGGCGAACTAGAGTCTTGTAGAGGGGGGTAGAATTCCAGGTGTAGCGGTGAAATGCGTAGAGATCTGGAGGA&quot;,
 &quot;ACAGAGGTCTCAAGCGTTGTTCGGAATCACTGGGCGTAAAGCGTGCGTAGGCTGTTTCGTAAGTCGTGTGTGAAAGGCGCGGGCTCAACCCGCGGACGGCACATGATACTGCGAGACTAGAGTAATGGAGGGGGAACCGGAATTCTCGGTGTAGCAGTGAAATGCGTAGATATCGAGAGGA&quot;,
@@ -310,7 +297,7 @@ CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATT
 &quot;ACGGAGGGTGCAAGCGTTAATCGGAATGACTGGGCGTAAAGCGCACGCAGGCGGTCTGTTAAGTTGGATGTGAAATCCCCGGGCTTAACCTGGGAACTGCATTCAAAACTGACAGGCTAGAGTCTCGTAGAGGGGGGTAGAATTCCAGGTGTAGCGGTGAAATGCGTAGAGATCTGGAGGA&quot;,
 &quot;ACCGACGGCCCGAGTGGTGGCCACTCTTATTGGGCCTAAAGCGTCCGTAGCCGGTCCAGTAAGTCCCTGTTTAAATCCTGCGGCTTAACCGCAGGACTGGCAGGGATACTGCTGGACTTGGGACCGGGAGAGGACAAGGGTACTTCAGGGGTAGCGGTGAAATGTGTTGATCCTTGAAGGA&quot;,
 &quot;ACGTAGGTCCCGAACGTTGCGCGAAATTACTGGGCGTAAAGGGTCCGTAGGCGGTCTGGTAAGTGGAAGGTGAAAGCCCACGGCTCAACCGTGGAATTGCCTTCCAAACTGCTGGACTTGAGGGCGGAAGAGGTCGGCGGAATTCCCGGTGTAGCGGTGAAATGCGTAGATATCGGGAGGA&quot;)</code></pre>
-<p>We now run the <code>assignTaxonomy(...)</code> function against the RDP training set. <em>To run the following on your local machine, modify the filename in the second argument to point to where the <code>rdp_train_set_14.fa.gz</code> file sits on your computer.</em></p>
+<p>We run the <code>assignTaxonomy(...)</code> function with the RDP as the reference dataset. <em>To run the following on your local machine, modify the filename in the second argument to point to where the <code>rdp_train_set_14.fa.gz</code> file sits on your computer.</em></p>
 <pre class="r"><code>set.seed(100) # Initialize random number generator for reproducibility
 taxa &lt;- assignTaxonomy(seqs, &quot;rdp_train_set_14.fa.gz&quot;)
 unname(taxa)</code></pre>
@@ -337,7 +324,7 @@ unname(taxa)</code></pre>
 ##  [9,] &quot;Methanococcales&quot;    &quot;Methanococcaceae&quot;    &quot;Methanococcus&quot;       
 ## [10,] &quot;Aquificales&quot;        &quot;Hydrogenothermaceae&quot; &quot;Persephonella&quot;</code></pre>
 <p>The return value of <code>assignTaxonomy(...)</code> is a character matrix, with each row corresponding to an input sequence, and each column corresponding to a taxonomic level. For the RDP training set, the levels are Kingdom, Phylum, Class, Order, Family, Genus, and we see that each sequence has been classified all the way to genus.</p>
-<p>There is one important parameter to consider when running <code>assignTaxonomy(...)</code>: <code>minBoot</code> sets the minimum bootstrapping confidence required to return a taxonomic classification. The orginal paper recommended a threshhold of 50 for sequences of 250nts or less (as these are) but a threshhold of 80 generally. Let’s see what happens when we classify at that higher threshhold:</p>
+<p>An important parameter to consider when running <code>assignTaxonomy(...)</code> is <code>minBoot</code>, which sets the minimum bootstrapping support required to return a taxonomic classification. The orginal paper recommended a threshold of 50 for sequences of 250nts or less (as these are) but a threshold of 80 generally. Let’s see what happens when we classify at that higher threshold:</p>
 <pre class="r"><code>set.seed(100) # Initialize random number generator for reproducibility
 taxa.80 &lt;- assignTaxonomy(seqs, &quot;rdp_train_set_14.fa.gz&quot;, minBoot=80)
 unname(taxa.80)</code></pre>
@@ -363,7 +350,7 @@ unname(taxa.80)</code></pre>
 ##  [8,] &quot;Enterobacteriales&quot;  &quot;Enterobacteriaceae&quot;  &quot;Dickeya&quot;             
 ##  [9,] &quot;Methanococcales&quot;    &quot;Methanococcaceae&quot;    &quot;Methanococcus&quot;       
 ## [10,] &quot;Aquificales&quot;        &quot;Hydrogenothermaceae&quot; &quot;Persephonella&quot;</code></pre>
-<p>At this more stringent threshhold, sequence 5 and 7 are not classified at the genus level, but instead an NA is returned, indicating that less than <code>minBoot=80</code> of the 100 bootstraps returned the same genus for those sequences.</p>
+<p>At this more stringent threshold, sequence 5 and 7 are not classified at the genus level. Instead an NA is returned, indicating that less than <code>minBoot=80</code> of the 100 bootstraps returned the same genus for those sequences.</p>
 </div>
 <div id="species-assignment" class="section level2">
 <h2>Species assignment</h2>
