@@ -77,6 +77,7 @@
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' @importFrom Biostrings end
+#' @importFrom methods as
 #' 
 #' @examples
 #' testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
@@ -262,6 +263,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' @importFrom Biostrings end
+#' @importFrom methods as
 #' 
 #' @examples
 #'
@@ -462,6 +464,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
 #' @importFrom ShortRead srFilter
 #' @importFrom ShortRead SRFilterResult
 #' @importFrom Biostrings quality
+#' @importFrom methods as
 minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
 {
   srFilter(function(x) {
@@ -472,6 +475,7 @@ minQFilter <- function (minQ = 0L, .name = "MinQFilter")
 #' @importFrom Biostrings quality
 #' @importFrom ShortRead SRFilterResult
 #' @importFrom ShortRead srFilter
+#' @importFrom methods as
 maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter") 
 {
   srFilter(function(x) {
@@ -516,6 +520,7 @@ minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
 #' @export
 #' 
 #' @importFrom ShortRead readFasta
+#' @importFrom methods as
 #' 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

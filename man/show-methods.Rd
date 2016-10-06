@@ -53,6 +53,9 @@ list.
 See the general documentation of \code{\link[methods]{show}} method for
 expected behavior.
 
+See the general documentation of \code{\link[methods]{show}} method for
+expected behavior.
+
 Deactivate renaming of derep-class objects.
 
 Deactivate renaming of dada-class objects.
@@ -61,10 +64,9 @@ Change concatenation to list construction.
 
 Change concatenation to list construction.
 }
-\examples{
-# examples
-}
 \seealso{
+\code{\link[methods]{show}}
+
 \code{\link[methods]{show}}
 }
 

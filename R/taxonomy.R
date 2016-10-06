@@ -153,6 +153,7 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead sread
 #' @importFrom ShortRead id
+#' @importFrom methods as
 #' 
 #' @examples
 #' \dontrun{

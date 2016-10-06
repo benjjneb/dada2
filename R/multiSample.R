@@ -123,6 +123,8 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
 }
 
 # Combines a list of derep-class objects into one single derep object
+#' @importFrom methods as
+#' @keywords internal
 combineDereps2 <- function(dereps) {
   if(class(dereps) == "derep") dereps <- list(dereps)
   if(!all(sapply(dereps, function(x) class(x)=="derep"))) stop("Requires derep-class objects.")

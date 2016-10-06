@@ -76,6 +76,8 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #' 
 #' @return \code{character}. A character vector of the sequences.
 #' 
+#' @importFrom methods is
+#' 
 #' @export
 #' 
 #' @examples
@@ -211,6 +213,7 @@ hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
 #' @importFrom Biostrings DNAString
 #' @importFrom Biostrings DNAStringSet
 #' @importFrom Biostrings reverseComplement
+#' @importFrom methods as
 rc <- function(sqs) {
   if(length(sqs) < 1) {
     return(character(0))
@@ -229,6 +232,8 @@ pfasta <- function(seqs, ids=seq(length(seqs))) {
   cat(paste(">", ids, "\n", seqs, sep="", collapse="\n"))
 }
 
+#' @importFrom methods is
+#' @keywords internal
 is.list.of <- function(x, ctype) {
   if(!is.list(x)) return(FALSE)
   else return(all(sapply(x, is, ctype)))

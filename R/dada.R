@@ -100,6 +100,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'
 #' @importFrom RcppParallel RcppParallelLibs
 #' @importFrom RcppParallel setThreadOptions
+#' @importFrom methods as
 #'
 #' @export
 #'

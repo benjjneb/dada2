@@ -79,6 +79,9 @@ loessErrfun <- function(trans) {
 #'  
 #' @export
 #' 
+#' @importFrom stats loess
+#' @importFrom stats predict
+#' 
 #' @examples
 #'  tperr2 <- inflateErr(tperr1, 2)
 #'  tperr3.all <- inflateErr(tperr1, 3, inflateSelfTransitions=TRUE)
@@ -175,6 +178,8 @@ isBadBaseFP <- function(clust, birth_subs, minFraction = 0.51, omegaB = 1e-10, m
 #
 # @seealso \code{\link{isBadBaseFP}}
 #
+#' @importFrom stats ppois
+#' @keywords internal
 getBadBases <- function(clust, birth_subs, omegaB = 1e-20, minOccurence = 4, verbose=FALSE) {
   oos <- which(clust$birth_ham == 1)
   oopos <- birth_subs[birth_subs$clust %in% oos,]

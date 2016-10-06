@@ -62,7 +62,9 @@
 #' 
 #' @seealso \code{\link{derepFastq}}, \code{\link{dada}}, \code{\link{fastqPairedFilter}}
 #' @export
-#' 
+#'
+#' @importFrom methods is
+#'  
 #' @examples
 #' derepF = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' derepR = derepFastq(system.file("extdata", "sam1R.fastq.gz", package="dada2"))

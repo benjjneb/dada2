@@ -108,6 +108,7 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
 #'  See \code{\link{ggsave}} for additional options.
 #'  
 #' @importFrom reshape2 melt
+#' @importFrom methods is
 #' @import ggplot2
 #' 
 #' @export
