@@ -2,6 +2,7 @@
 *.Rproj
 *.Rproj.user
 *.Rhistory
+.Rapp.history
 
 ## Cpp files to ignore
 # Compiled Object files
@@ -42,4 +43,3 @@ inst/extdata/artificial_noupdate.fasta
 inst/extdata/artificial_updating.fasta
 
 .RData
-
