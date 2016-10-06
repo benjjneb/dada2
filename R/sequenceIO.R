@@ -26,6 +26,7 @@
 #' @export
 #' @importFrom ShortRead FastqStreamer
 #' @importFrom ShortRead yield
+#' @importFrom methods as
 #'
 #' @examples 
 #' # Test that chunk-size, `n`, does not affect the result.
@@ -121,6 +122,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
 #' @importFrom ShortRead srsort
 #' @importFrom ShortRead srrank
 #' @importFrom ShortRead sread
+#' @importFrom methods as
 #' 
 #' @keywords internal
 #' 
@@ -198,4 +200,36 @@ uniquesToFasta <- function(unqs, fout, ids=NULL, mode="w", width=20000, ...) {
              mode = mode, 
              width = width,
              ...)
+}
+
+######## DEREPFASTA DEREPFASTA DEREPFASTA ################
+#' derepFasta creates a derep-class object from a fasta file, by
+#' creating a corresponding fastq file with a uniform quality score
+#' and calling derepFastq.
+#' 
+#' @param fls (Required). \code{character}.
+#'  The file path(s) to the fasta or gzipped fasta file(s).
+#' 
+#' @param ... (Optional).
+#'  Additional arguments passed on to \code{\link{derepFastq}}
+#' 
+#' @importFrom Biostrings readDNAStringSet
+#' @importFrom Biostrings writeXStringSet
+#' 
+#' @keywords internal
+#' 
+derepFasta <- function(fls, ...){
+  if(!is.character(fls)) {
+    stop("Filenames must be provided in character format.")
+  }
+  fastqs <- character(length(fls))
+  for(i in seq_along(fls)) {
+    fastq <- tempfile()
+    fl <- fls[[i]]
+    foo <- readDNAStringSet(fl)
+    writeXStringSet(foo, fastq, format="fastq")
+    fastqs[[i]] <- fastq
+  }
+  
+  derepFastq(fastqs, ...)
 }

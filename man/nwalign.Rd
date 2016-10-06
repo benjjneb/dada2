@@ -6,7 +6,7 @@
 \usage{
 nwalign(s1, s2, match = getDadaOpt("MATCH"),
   mismatch = getDadaOpt("MISMATCH"), gap = getDadaOpt("GAP_PENALTY"),
-  homo_gap = NULL, band = -1, endsfree = TRUE)
+  homo_gap = NULL, band = -1, endsfree = TRUE, vec = FALSE)
 }
 \arguments{
 \item{s1}{(Required). \code{character(1)}. The first sequence to align. A/C/G/T only.}
@@ -31,6 +31,9 @@ Set \code{band = -1} to turn off banding.}
 
 \item{endsfree}{(Optional). \code{logical(1)}. Default TRUE.
 Allow unpenalized gaps at the ends of the alignment.}
+
+\item{vec}{(Optional). \code{logical(1)}. Default FALSE.
+Use DADA2's vectorized aligner instead of standard DP matrix. Not intended for long sequences (>1kb).}
 }
 \value{
 \code{character(2)}. The aligned sequences.

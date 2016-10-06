@@ -21,7 +21,7 @@ A row for each sample, and a column for each unique sequence across all the samp
 Note that the columns are named by the sequence which can make display a little unwieldy.
 }
 \description{
-This function contructs a sequence table (analogous to an OTU table) from
+This function constructs a sequence table (analogous to an OTU table) from
 the provided list of samples.
 }
 \examples{

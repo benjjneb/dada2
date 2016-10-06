@@ -4,23 +4,31 @@
 \alias{removeBimeraDenovo}
 \title{Remove bimeras from collections of unique sequences.}
 \usage{
-removeBimeraDenovo(unqs, ..., verbose = FALSE)
+removeBimeraDenovo(unqs, tableMethod = "pooled", ..., verbose = FALSE)
 }
 \arguments{
 \item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced
 into one with \code{\link{getUniques}}. A list of such objects can also be provided.}
 
-\item{...}{(Optional). Arguments to be passed to \code{\link{isBimeraDenovo}}.}
+\item{tableMethod}{(Optional). Default is "pooled".
+If "pooled": The samples in the sequence table are all pooled together for chimera
+   identification (\code{\link{isBimeraDenovo}}).
+If "consensus": The samples in a sequence table are independently checked for chimeras,
+   and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).}
 
-\item{verbose}{(Optional). \code{logical(1)} indicating verbose text output. Default FALSE.}
+\item{...}{(Optional). Arguments to be passed to \code{\link{isBimeraDenovo}} or \code{\link{isBimeraDenovoTable}}.}
+
+\item{verbose}{(Optional). Default FALSE. 
+Print verbose text output.}
 }
 \value{
 A uniques vector, or an object of matching class if a data.frame or sequence table is provided.
  A list of such objects is returned if a list of input unqs was provided.
 }
 \description{
-This function is a wrapper around \code{\link{isBimeraDenovo}}. Bimeras identified by
-\link{isBimeraDenovo} are removed, and a bimera-free collection of unique sequences is returned.
+This function is a wrapper around \code{\link{isBimeraDenovo}} and \code{\link{isBimeraDenovoTable}}.
+ Sequence variants identified as bimeric are removed, and a bimera-free collection of unique sequences
+ is returned.
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

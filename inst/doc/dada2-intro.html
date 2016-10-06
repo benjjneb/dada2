@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function() {
 <div id="header">
 <h1 class="title">Introduction to dada2</h1>
 <h4 class="author"><em>Benjamin Callahan</em></h4>
-<h4 class="date"><em>Fri Sep 9 20:03:20 2016</em></h4>
+<h4 class="date"><em>Thu Oct 6 13:58:33 2016</em></h4>
 </div>
 
 <h1>Contents</h1>
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function() {
 <h1><span class="header-section-number">4</span> Filter and Trim <a id="sec:filter"></a></h1>
 <p>We’ll start by getting the filenames of our example paired-end fastq files. Usually you will define these filenames directly, or read them out of a directory, but for this tutorial we’re using files included with the package, which we can identify via a particular function call:</p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] '1.1.6'</code></pre>
+<pre><code>## [1] '1.1.7'</code></pre>
 <pre class="r"><code>fnF1 &lt;- system.file(&quot;extdata&quot;, &quot;sam1F.fastq.gz&quot;, package=&quot;dada2&quot;)
 fnR1 &lt;- system.file(&quot;extdata&quot;, &quot;sam1R.fastq.gz&quot;, package=&quot;dada2&quot;)
 
@@ -128,10 +128,10 @@ filtR1 &lt;- tempfile(fileext=&quot;.fastq.gz&quot;)</code></pre>
 <h1><span class="header-section-number">5</span> Dereplicate <a id="sec:derep"></a></h1>
 <p>The next thing we want to do is “dereplicate” the filtered fastq files. During dereplication, we condense the data by collapsing together all reads that encode the same sequence, which significantly reduces later computation times:</p>
 <pre class="r"><code>derepF1 &lt;- derepFastq(filtF1, verbose=TRUE)</code></pre>
-<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpHr1edG/filebb5573781fe9.fastq.gz</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpcdOviY/file13f591c7c289b.fastq.gz</code></pre>
 <pre><code>## Encountered 332 unique sequences from 890 total sequences read.</code></pre>
 <pre class="r"><code>derepR1 &lt;- derepFastq(filtR1, verbose=TRUE)</code></pre>
-<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpHr1edG/filebb5553773538.fastq.gz</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpcdOviY/file13f591b4de6b9.fastq.gz</code></pre>
 <pre><code>## Encountered 485 unique sequences from 890 total sequences read.</code></pre>
 <p>Dereplication is a common step in almost all modern sample-inference (or OTU-picking) pipelines, but a unique feature of <code>derepFastq</code> is that it maintains a summary of the quality information for each dereplicated sequence in <code>$quals</code>.</p>
 </div>
@@ -169,7 +169,7 @@ filtR1 &lt;- tempfile(fileext=&quot;.fastq.gz&quot;)</code></pre>
 </div>
 <div id="remove-chimeras" class="section level1">
 <h1><span class="header-section-number">8</span> Remove chimeras <a id="sec:chimeras"></a></h1>
-<p>The <code>dada(...)</code> algorithm models and removes substitution errors, but chimeras are another importance source of spurious sequences in amplicon sequencing. Chimeras are formed during PCR amplification, when one sequence is incompletely amplified, and in the next amplication step is completed by copying a different sequence. The result is a sequencing read which is half one sample sequence, and half the other.</p>
+<p>The <code>dada(...)</code> algorithm models and removes substitution errors, but chimeras are another importance source of spurious sequences in amplicon sequencing. Chimeras are formed during PCR amplification. When one sequence is incompletely amplified, the incomplete amplicon primes the next amplification step, yielding a spurious amplicon. The result is a sequence read which is half of one sample sequence and half another.</p>
 <p>We identify those sequence using the <code>isBimeraDenovo(...)</code> function in the dada2 pipeline:</p>
 <pre class="r"><code>bim1 &lt;- isBimeraDenovo(merger1, verbose=TRUE)</code></pre>
 <pre><code>## Identified 0 bimeras out of 7 input sequences.</code></pre>
@@ -189,10 +189,10 @@ fastqPairedFilter(c(fnF2, fnR2), fout=c(filtF2, filtR2), maxN=0, trimLeft=10, tr
 <pre><code>## Read in 1500 paired-sequences, output 858 filtered paired-sequences.</code></pre>
 <pre class="r"><code># Dereplicate
 derepF2 &lt;- derepFastq(filtF2, verbose=TRUE)</code></pre>
-<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpHr1edG/filebb5524e7371b.fastq.gz</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpcdOviY/file13f59706d9f12.fastq.gz</code></pre>
 <pre><code>## Encountered 305 unique sequences from 858 total sequences read.</code></pre>
 <pre class="r"><code>derepR2 &lt;- derepFastq(filtR2, verbose=TRUE)</code></pre>
-<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpHr1edG/filebb5547d2e08a.fastq.gz</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: /var/folders/95/v2vj9x4s5fqclldqlh1v57v40000gn/T//RtmpcdOviY/file13f592ce69068.fastq.gz</code></pre>
 <pre><code>## Encountered 448 unique sequences from 858 total sequences read.</code></pre>
 <pre class="r"><code># Infer sample composition
 dadaF2 &lt;- dada(derepF2, err=inflateErr(tperr1,3), selfConsist=TRUE)</code></pre>

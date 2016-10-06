@@ -76,7 +76,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'   
 #' @details
 #' 
-#' Briefly, \code{dada} implements a statiscal test for the notion that a specific sequence was seen too many times
+#' Briefly, \code{dada} implements a statistical test for the notion that a specific sequence was seen too many times
 #'  to have been caused by amplicon errors from currently inferred sample sequences. Overly-abundant
 #'  sequences are used as the seeds of new clusters of sequencing reads, and the final set of clusters
 #'  is taken to represent the denoised composition of the sample. A more detailed explanation of the algorithm
@@ -100,6 +100,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'
 #' @importFrom RcppParallel RcppParallelLibs
 #' @importFrom RcppParallel setThreadOptions
+#' @importFrom methods as
 #'
 #' @export
 #'
@@ -479,7 +480,7 @@ dada <- function(derep,
 #'  turns off banding (i.e. full Needleman-Wunsch).
 #' 
 #' SCORE_MATRIX: The score matrix for the Needleman-Wunsch alignment. This is a 4x4 matrix as no ambiguous nucleotides
-#'  are allowed. Default is nuc44: -4 for mismatches, +5 for matchces.
+#'  are allowed. Default is nuc44: -4 for mismatches, +5 for matches.
 #'  
 #' GAP_PENALTY: The cost of gaps in the Needleman-Wunsch alignment. Default is -8.
 #'  

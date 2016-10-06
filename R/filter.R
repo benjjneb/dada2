@@ -9,9 +9,9 @@
 #' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). It adds the ability to remove
 #' contaminating phiX sequences as part of the filtering process.
 #' 
-#' @param fn (Required). The path to the input fastq file, or an R connection to that file.
+#' @param fn (Required). The path to the input fastq file.
 #'   
-#' @param fout (Required). The path to the output file, or an R connection to that file.
+#' @param fout (Required). The path to the output file.
 #'  Note that by default (\code{compress=TRUE}) the output fastq file is gzipped.
 #' 
 #' @param truncQ (Optional). Default 2.
@@ -77,6 +77,7 @@
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' @importFrom Biostrings end
+#' @importFrom methods as
 #' 
 #' @examples
 #' testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
@@ -88,6 +89,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
   start <- max(1, trimLeft + 1)
   end <- truncLen
   if(end < start) { end = NA }
+  
+  if(fn == fout) { stop("The output and input files must be different.") }
   
   ## iterating over an entire file using fastq streaming
   f <- FastqStreamer(fn, n = n)
@@ -260,6 +263,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' @importFrom Biostrings end
+#' @importFrom methods as
 #' 
 #' @examples
 #'
@@ -275,6 +279,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   # Warning: This assumes that forward/reverse reads are in the same order unless matchIDs=TRUE
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
+
+  if(any(duplicated(c(fn, fout)))) { stop("The output and input file names must be different.") }
   
   for(var in c("maxN", "truncQ", "truncLen", "trimLeft", "minQ", "maxEE", "rm.phix")) {
     if(length(get(var)) == 1) { # Double the 1 value to be the same for F and R
@@ -458,6 +464,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
 #' @importFrom ShortRead srFilter
 #' @importFrom ShortRead SRFilterResult
 #' @importFrom Biostrings quality
+#' @importFrom methods as
 minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
 {
   srFilter(function(x) {
@@ -468,6 +475,7 @@ minQFilter <- function (minQ = 0L, .name = "MinQFilter")
 #' @importFrom Biostrings quality
 #' @importFrom ShortRead SRFilterResult
 #' @importFrom ShortRead srFilter
+#' @importFrom methods as
 maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter") 
 {
   srFilter(function(x) {
@@ -512,6 +520,7 @@ minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
 #' @export
 #' 
 #' @importFrom ShortRead readFasta
+#' @importFrom methods as
 #' 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
