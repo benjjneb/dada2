@@ -12,7 +12,7 @@ assignTaxonomy(seqs, refFasta, minBoot = 50, taxLevels = c("Kingdom",
 coercible by \code{\link{getUniques}}.}
 
 \item{refFasta}{(Required). The path to the reference fasta file, or an 
-R connection Can be compresssed.
+R connection Can be compressed.
 This reference fasta file should be formatted so that the id lines correspond to the
 taxonomy (or classification) of the associated sequence, and each taxonomic level is 
 separated by a semicolon. Eg.
@@ -34,7 +34,7 @@ If TRUE, print status to standard output.}
 A character matrix of assigned taxonomies exceeding the minBoot level of
   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
   taxonomic levels. NA indicates that the sequence was not consistently classified at
-  that level at the minBoot threshhold.
+  that level at the minBoot threshold.
 }
 \description{
 assignTaxonomy implements the RDP Naive Bayesian Classifier algorithm described in

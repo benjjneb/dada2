@@ -229,6 +229,7 @@ isMatch <- function(al, minOverlap, verbose=FALSE) {
 #' @importFrom data.table setkey
 #' @importFrom data.table setnames
 #' @importFrom data.table uniqueN
+#' @importFrom data.table key
 #' 
 #' @examples
 #' exFileF = system.file("extdata", "sam1F.fastq.gz", package="dada2")
@@ -282,7 +283,8 @@ dada_to_seq_table = function(dadaRes, derep, sr,
   clusteringdt <- clusteringdt[, c("seq", "n0", includeCol), with = FALSE]
   setkey(clusteringdt, seq)
   setkey(dt, seq)
-  if(uniqueN(clusteringdt) != uniqueN(dt)){
+#  if(uniqueN(clusteringdt) != uniqueN(dt)){
+  if(uniqueN(clusteringdt, by=key(clusteringdt)) != uniqueN(dt,by=key(dt))){
     stop("Problem matching denoised genotypes to $clustering metadata")
   }
   dt2 = clusteringdt[dt]
@@ -542,7 +544,8 @@ mergePairsByID = function(dadaF, derepF, srF,
   # (still long form, nrow == nreads)
   iddt[, abundance := .N, by = list(seqF, seqR)]
   # Unique Pair iddt
-  upiddt = unique(iddt)
+#  upiddt = unique(iddt)
+  upiddt = unique(iddt, by=key(iddt))
   setkey(upiddt, seqF, seqR)
   if(verbose){
     message(nrow(iddt), " paired reads, corresponding to ",
@@ -580,7 +583,8 @@ mergePairsByID = function(dadaF, derepF, srF,
   if( !is.null(includeCol) ){
     iddtProp = iddt[, c("seqF", "seqR", includeCol), with = FALSE]
     setkey(iddtProp, seqF, seqR)
-    iddtProp <- unique(iddtProp)
+#    iddtProp <- unique(iddtProp)
+    iddtProp <- unique(iddtProp, by=key(iddtProp))
     setkey(upiddt, seqF, seqR)
     upiddt <- iddtProp[upiddt]
   }

@@ -1,3 +1,16 @@
+CHANGES IN VERSION 1.1.7
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The isBimeraDenovoTable method is now available through the convenience interface removeBimeraDenovo(..., tableMethod="consensus").
+
+    o The vectorized Needleman-Wunsch algorithm is now available through nwalign(..., vec=TRUE). This aligner is very fast for short sequences, but performs no overflow checking so use on longer sequences (2kb+) with care.
+
+BUG FIXES
+
+    o It is now more difficult to mess up the internal structure of dada-class and derep-class objects.
+
 CHANGES IN VERSION 1.1.6
 -----------------------
 
