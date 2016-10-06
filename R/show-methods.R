@@ -8,7 +8,6 @@
 #' 
 #' @inheritParams methods::show
 #' @return NULL.
-#' @export
 #' @importFrom stats median
 #' @rdname show-methods
 #' @include allClasses.R
@@ -42,7 +41,6 @@ setMethod("show", "derep", function(object){
 #' 
 #' @inheritParams methods::show
 #' @return NULL.
-#' @export
 #' @rdname show-methods
 #' @include allClasses.R
 #' # @examples
