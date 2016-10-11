@@ -311,7 +311,7 @@ uniquesToFasta(clust.1688[unexp.1688,], "unexpected_1688.fa")
 # BLAST against nt on NCBI website
 ```
 
-Every one of the `r sum(unexp.1688)` sequences from the `r length(unique(genus.1688[unexp.1688]))` unexpected taxonomies is an exact (100\% coverage and 100\% identity) BLAST hit to nt. While unexpected, these are not false positives, they are correctly identified contaminantss.
+Every one of the `r sum(unexp.1688)` sequences from the `r length(unique(genus.1688[unexp.1688]))` unexpected taxonomies is an exact (100\% coverage and 100\% identity) BLAST hit to nt. While unexpected, these are not false positives, they are correctly identified contaminants.
 
 ```{r}
 getF <- function(exp, genus) {
@@ -453,7 +453,7 @@ uniquesToFasta(clust.1685.noSNV, "denoised.1685.noSNV.fasta")
 # BLAST against nt on NCBI website
 ```
 
-This is what we expect, the 18 expected strains and handful of contaminants. Note that the 39 variants output by DADA2 here includes every expected strain, include rare variants present at frequences <0.001\%, and the sequences from unexpected genera almost all exactly match nt.  
+This is what we expect, the 18 expected strains and handful of contaminants. Note that the 39 variants output by DADA2 here includes every expected strain, include rare variants present at frequencies <0.001\%, and the sequences from unexpected genera almost all exactly match nt.  
 
 # Summary of Results
 
