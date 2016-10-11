@@ -96,7 +96,7 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
       # Convert boots to integer matrix
       boots.out <- matrix(boots, nrow=length(seqs), ncol=td)
       rownames(boots.out) <- seqs
-      colnames(boots.out) <- taxLevels[1:ncol(tax.out)]
+      colnames(boots.out) <- taxLevels[1:ncol(boots.out)]
       list(tax.out, boots.out)
   } else {
     tax.out
