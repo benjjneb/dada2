@@ -46,7 +46,7 @@
 #' 
 assignTaxonomy <- function(seqs, refFasta, minBoot=50,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                           verbose=FALSE) {
+                           verbose=FALSE, outputBootstraps=FALSE) {
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
@@ -66,6 +66,7 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
   }
   # Create the integer maps from reference to type ("genus") and for each tax level
   genus.unq <- unique(tax)
+  genus.unq
   ref.to.genus <- match(tax, genus.unq)
   tax.mat <- matrix(unlist(strsplit(genus.unq, ";")), ncol=td, byrow=TRUE)
   tax.df <- as.data.frame(tax.mat)
@@ -91,7 +92,16 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
   rownames(tax.out) <- seqs
   colnames(tax.out) <- taxLevels[1:ncol(tax.out)]
   tax.out[tax.out=="_DADA2_UNSPECIFIED"] <- NA_character_
-  tax.out
+  if(outputBootstraps){
+      # Convert boots to integer matrix
+      boots.out <- matrix(boots, nrow=length(seqs), ncol=td)
+      rownames(boots.out) <- seqs
+      colnames(boots.out) <- taxLevels[1:ncol(tax.out)]
+      list(tax.out, boots.out)
+  } else {
+    tax.out
+  }
+
 }
 
 # Helper function for assignSpecies
