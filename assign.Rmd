@@ -55,7 +55,7 @@ unname(taxa)
 
 The return value of `assignTaxonomy(...)` is a character matrix, with each row corresponding to an input sequence, and each column corresponding to a taxonomic level. For the RDP training set, the levels are Kingdom, Phylum, Class, Order, Family, Genus, and we see that each sequence has been classified all the way to genus.
 
-An important parameter to consider when running `assignTaxonomy(...)` is `minBoot`, which sets the minimum bootstrapping support required to return a taxonomic classification. The orginal paper recommended a threshold of 50 for sequences of 250nts or less (as these are) but a threshold of 80 generally. Let's see what happens when we classify at that higher threshold:
+An important parameter to consider when running `assignTaxonomy(...)` is `minBoot`, which sets the minimum bootstrapping support required to return a taxonomic classification. The original paper recommended a threshold of 50 for sequences of 250nts or less (as these are) but a threshold of 80 generally. Let's see what happens when we classify at that higher threshold:
 ```{r}
 set.seed(100) # Initialize random number generator for reproducibility
 taxa.80 <- assignTaxonomy(seqs, "rdp_train_set_14.fa.gz", minBoot=80)
