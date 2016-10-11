@@ -66,7 +66,6 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
   }
   # Create the integer maps from reference to type ("genus") and for each tax level
   genus.unq <- unique(tax)
-  genus.unq
   ref.to.genus <- match(tax, genus.unq)
   tax.mat <- matrix(unlist(strsplit(genus.unq, ";")), ncol=td, byrow=TRUE)
   tax.df <- as.data.frame(tax.mat)
