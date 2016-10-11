@@ -41,7 +41,7 @@ Another possibility is that you have bad data. One quick way to test this is to 
 
 ## Why are so many of my reads being removed as chimeras?
 
-It is common for chimeric sequences to be a majority (even large majority) of the total number of unique sequence variants inferred by the `dada(...)` algorithm, but they should not be a majority of the sequencing reads. That is, there may be many chimeras, but they are relatively low abundnace. 
+It is common for chimeric sequences to be a majority (even large majority) of the total number of unique sequence variants inferred by the `dada(...)` algorithm, but they should not be a majority of the sequencing reads. That is, there may be many chimeras, but they are relatively low abundance. 
 
 The most common reason that far too many reads are flagged as chimeric is that primer sequences were not removed prior to starting the dada2 workflow. The ambiguous nucleotides in universal primer sequences will be interpreted as real variation by the dada2 pipeline, and this interferes with the chimera algorithm. If you see over `25%` of your sequencing reads being flagged chimeric, remove the primers from your reads and restart the workflow with the clean data.
 
