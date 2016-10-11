@@ -26,11 +26,17 @@
 #'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
+#'   
+#' @param outputBootstraps (Optional). Default FALSE.
+#'  If TRUE, bootstrap values will be retained in an integer matrix.
 #' 
 #' @return A character matrix of assigned taxonomies exceeding the minBoot level of
 #'   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
 #'   taxonomic levels. NA indicates that the sequence was not consistently classified at
 #'   that level at the minBoot threshhold. 
+#'   
+#'   If outputBootstraps is TRUE, a list containing the assigned taxomies character matrix and an integer matrix
+#'   of bootstrap values. 
 #' 
 #' @export
 #' 
