@@ -161,7 +161,7 @@ The black line (the estimated rates) seem to be fitting the observed rates well,
 
 # Merge paired reads
 
-The error rate can be further reduced by merging these overlapping reads together. Note that in the DADA2 pipeline merging is perfomed **after** denoising the forward read and the reverse reads. The core function here is `mergePairs`, which depends on the forward and reverse reads being in matching order at the time they were dereplicated.
+The error rate can be further reduced by merging these overlapping reads together. Note that in the DADA2 pipeline merging is performed **after** denoising the forward read and the reverse reads. The core function here is `mergePairs`, which depends on the forward and reverse reads being in matching order at the time they were dereplicated.
 
 **Merge the denoised forward and reverse reads**:
 ```{r merge, message=FALSE}
@@ -194,7 +194,7 @@ If some sequences are much longer or shorter than expected, it may be worth remo
 
 # Remove chimeras
 
-The `dada()` method removes substitution and indel errors, but it does not remove chimeras. Fortunately, the accuracy of the sequences after denoising makes identifying chimeras easier than it is when dealing with fuzzy OTUs. The dada2 method to do this is by identifying all sequences which can be exactly reconstructred as a bimera (two-parent chimera) from more abundant sequences. See the help file `?isBimeraDenovo` for more information.
+The `dada()` method removes substitution and indel errors, but it does not remove chimeras. Fortunately, the accuracy of the sequences after denoising makes identifying chimeras easier than it is when dealing with fuzzy OTUs. The dada2 method to do this is by identifying all sequences which can be exactly reconstructed as a bimera (two-parent chimera) from more abundant sequences. See the help file `?isBimeraDenovo` for more information.
 
 **Remove chimeric sequences**:
 ```{r chimeras, message=FALSE}

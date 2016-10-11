@@ -68,7 +68,7 @@ Second, it is generally not necessary to estimate error rates across an entire s
 
 # Pooling for sample inference
 
-De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won't be the same. DADA2 resolves sequences exactly, and because exact sequences are consistent labels samples can be processed independenlty (and this is the default behavior).
+De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won't be the same. DADA2 resolves sequences exactly, and because exact sequences are consistent labels samples can be processed independently (and this is the default behavior).
 
 Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were seen just once or twice in one sample but many times across samples. Pooled sample inference is also supported by calling `dada(..., pool=TRUE)`.
 
@@ -111,5 +111,3 @@ sum(st.pool[,!sq.pool %in% sq.sep])
 The large majority of sequences, and the vast majority of reads (>99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities. 
 
 *Coming soon, a hybrid method that leverages the strength of both (linear computation time, and shared information between samples).*
-
-
