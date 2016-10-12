@@ -24,19 +24,21 @@
 #' The taxonomic levels being assigned. Truncates if deeper levels not present in
 #' training fasta.
 #'   
+#' @param outputBootstraps (Optional). Default FALSE.
+#'  If TRUE, bootstrap values will be retained in an integer matrix. A named list containing the assigned taxonomies (named "taxa") 
+#'  and the bootstrap values (named "boot") will be returned. Minimum bootstrap confidence filtering still takes place,
+#'  to see full taxonomy set minBoot=0
+#'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
 #'   
-#' @param outputBootstraps (Optional). Default FALSE.
-#'  If TRUE, bootstrap values will be retained in an integer matrix.
-#' 
 #' @return A character matrix of assigned taxonomies exceeding the minBoot level of
 #'   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
 #'   taxonomic levels. NA indicates that the sequence was not consistently classified at
 #'   that level at the minBoot threshhold. 
 #'   
-#'   If outputBootstraps is TRUE, a list containing the assigned taxomies character matrix and an integer matrix
-#'   of bootstrap values. 
+#'   If outputBootstraps is TRUE, a named list containing the assigned taxonomies (named "taxa") 
+#'   and the bootstrap values (named "boot") will be returned.
 #' 
 #' @export
 #' 
@@ -52,7 +54,7 @@
 #' 
 assignTaxonomy <- function(seqs, refFasta, minBoot=50,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                           verbose=FALSE, outputBootstraps=FALSE) {
+                           outputBootstraps=FALSE, verbose=FALSE) {
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
@@ -102,7 +104,7 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
       boots.out <- matrix(boots, nrow=length(seqs), ncol=td)
       rownames(boots.out) <- seqs
       colnames(boots.out) <- taxLevels[1:ncol(boots.out)]
-      list(tax.out, boots.out)
+      list(tax=tax.out, boot=boots.out)
   } else {
     tax.out
   }
