@@ -9,6 +9,8 @@ Exact sample inference from Illumina amplicon data. Resolves real variants diffe
 
 [DADA2: High resolution sample inference from Illumina amplicon data. Nature Methods, 2016.](http://dx.doi.org/10.1038/nmeth.3869) [(Open Access link.)](http://rdcu.be/ipGh)
 
+[Bioconductor workflow for microbiome data analysis: from raw reads to community analyses. F1000 Research, 2016.](https://f1000research.com/articles/5-1492)
+
 ### Installation
 
 The dada2 package binaries are available through Bioconductor:

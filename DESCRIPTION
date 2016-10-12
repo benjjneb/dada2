@@ -8,8 +8,8 @@ Description: The dada2 package infers exact sequence variants (SVs) from amplico
     and their sample-wise abundances after removing substitution and chimera
     errors. Taxonomic classification is available via a native implementation
     of the RDP naive Bayesian classifier.
-Version: 1.1.7
-Date: 2016-08-07
+Version: 1.1.8
+Date: 2016-10-12
 Maintainer: Benjamin Callahan <benjamin.j.callahan@gmail.com>
 Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan
     Holmes
@@ -34,4 +34,4 @@ Collate: 'RcppExports.R' 'allClasses.R' 'allPackage.R' 'chimeras.R'
         'taxonomy.R'
 RoxygenNote: 5.0.1
 NeedsCompilation: yes
-Packaged: 2016-10-06 20:59:04 UTC; benj
+Packaged: 2016-10-12 20:57:14 UTC; benj
