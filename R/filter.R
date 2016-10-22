@@ -86,9 +86,10 @@
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
 fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, compress = TRUE, verbose = FALSE, ...){
-  start <- max(1, trimLeft + 1)
+  start <- max(1, trimLeft + 1, na.rm=TRUE)
   end <- truncLen
   if(end < start) { end = NA }
+  end <- end - start + 1
   
   if(fn == fout) { stop("The output and input files must be different.") }
   
@@ -104,13 +105,16 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
       stop("Failed to overwrite file:", fout)
     }
   }
-
+  
   first=TRUE
   inseqs = 0
   outseqs = 0
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
     
+    # Trim left
+    fq <- fq[width(fq) >= start]
+    fq <- narrow(fq, start = start, end = NA)
     # Trim on truncQ 
     # Convert numeric quality score to the corresponding ascii character
     if(is.numeric(truncQ)) {
@@ -119,16 +123,15 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
       if(length(ind) != 1) stop("Encoding for this truncQ value not found.")
       truncQ <- names(enc)[[ind]]
     }
-    fq <- trimTails(fq, 1, truncQ)
-    
+    if(length(fq) > 0) fq <- trimTails(fq, 1, truncQ)
     # Filter any with less than required length
     if(!is.na(end)) { fq <- fq[width(fq) >= end] }
-    # Trim left and truncate to truncLen
-    fq <- narrow(fq, start = start, end = end)
+    # Truncate to truncLen
+    fq <- narrow(fq, start = 1, end = end)
     
     # Filter based on minQ and Ns and maxEE
     keep <- rep(TRUE, length(fq))
-    keep <- keep & minQFilter(minQ)(fq)
+    suppressWarnings(keep <- keep & minQFilter(minQ)(fq))
     keep <- keep & nFilter(maxN)(fq)
     if(maxEE < Inf) keep <- keep & maxEEFilter(maxEE)(fq)
     fq <- fq[keep]
@@ -149,13 +152,15 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
     }
   }
   
-  if(outseqs==0) { file.remove(fout) }
-  
   if(verbose) {
     message("Read in ", inseqs, ", output ", outseqs, " filtered sequences.")
   }
+  
+  if(outseqs==0) {
+    message(paste("The filter removed all reads:", fout, "not written."))
+    file.remove(fout)
+  }
 }
-
 #' Filters and trims paired forward and reverse fastq files.
 #' 
 #' fastqPairedFilter takes in two input fastq file (can be compressed), filters them based on several
@@ -279,7 +284,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   # Warning: This assumes that forward/reverse reads are in the same order unless matchIDs=TRUE
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
-
+  
   if(any(duplicated(c(fn, fout)))) { stop("The output and input file names must be different.") }
   
   for(var in c("maxN", "truncQ", "truncLen", "trimLeft", "minQ", "maxEE", "rm.phix")) {
@@ -290,14 +295,16 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       stop(paste("Input variable", var, "must be length 1 or 2 (Forward, Reverse)."))
     }
   }
-
-  startF <- max(1, trimLeft[[1]] + 1)
-  startR <- max(1, trimLeft[[2]] + 1)
-
+  
+  startF <- max(1, trimLeft[[1]] + 1, na.rm=TRUE)
+  startR <- max(1, trimLeft[[2]] + 1, na.rm=TRUE)
+  
   endF <- truncLen[[1]]
   if(endF < startF) { endF = NA }
+  endF <- endF - startF + 1
   endR <- truncLen[[2]]
   if(endR < startR) { endR = NA }
+  endR <- endR - startR + 1
   
   ## iterating over forward and reverse files using fastq streaming
   fF <- FastqStreamer(fn[[1]], n = n)
@@ -384,6 +391,12 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       fqR <- fqR[idsR %in% idsF]
     }
     
+    # Trim left
+    keep <- (width(fqF) >= startF & width(fqR) >= startR)
+    fqF <- fqF[keep]
+    fqF <- narrow(fqF, start = startF, end = NA)
+    fqR <- fqR[keep]
+    fqR <- narrow(fqR, start = startR, end = NA)
     # Trim on truncQ
     # Convert numeric quality score to the corresponding ascii character
     if(is.numeric(truncQ)) {
@@ -394,10 +407,14 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       if(!(length(indF) == 1 && length(indR) == 1)) stop("Encoding for this truncQ value not found.")
       truncQ <- c(names(encF)[[indF]], names(encR)[[indR]])
     }
-    rngF <- trimTails(fqF, 1, truncQ[[1]], ranges=TRUE)
-    fqF <- narrow(fqF, 1, end(rngF)) # have to do it this way to avoid dropping the zero lengths
-    rngR <- trimTails(fqR, 1, truncQ[[2]], ranges=TRUE)
-    fqR <- narrow(fqR, 1, end(rngR)) # have to do it this way to avoid dropping the zero lengths
+    if(length(fqF) > 0) {
+      rngF <- trimTails(fqF, 1, truncQ[[1]], ranges=TRUE)
+      fqF <- narrow(fqF, 1, end(rngF)) # have to do it this way to avoid dropping the zero lengths
+    }
+    if(length(fqR) > 0) {
+      rngR <- trimTails(fqR, 1, truncQ[[2]], ranges=TRUE)
+      fqR <- narrow(fqR, 1, end(rngR)) # have to do it this way to avoid dropping the zero lengths
+    }
     # And now filter any with length zero in F or R
     # May want to roll this into the next length cull step...
     keep <- (width(fqF) > 0 & width(fqR) > 0)
@@ -410,21 +427,21 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     if(!is.na(endR)) { keep <- keep & (width(fqR) >= endR) }
     fqF <- fqF[keep]
     fqR <- fqR[keep]
-    # Trim left and truncate to truncLen
-    fqF <- narrow(fqF, start = startF, end = endF)
-    fqR <- narrow(fqR, start = startR, end = endR)
+    # Truncate to truncLen
+    fqF <- narrow(fqF, start = 1, end = endF)
+    fqR <- narrow(fqR, start = 1, end = endR)
     
     # Filter based on minQ and Ns and maxEE
     keep <- rep(TRUE, length(fqF))
-    keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF)
+    suppressWarnings(keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF))
     if(maxEE[[1]] < Inf) keep <- keep & maxEEFilter(maxEE[[1]])(fqF)
-    keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqR)
+    suppressWarnings(keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqR))
     if(maxEE[[2]] < Inf) keep <- keep & maxEEFilter(maxEE[[2]])(fqR)
     fqF <- fqF[keep]
     fqR <- fqR[keep]
     
     if(length(fqF) != length(fqR)) stop("Filtering caused mismatch between forward and reverse sequence lists: ", length(fqF), ", ", length(fqR), ".")
-
+    
     # Remove phiX
     if(rm.phix[[1]] && rm.phix[[2]]) {
       is.phi <- isPhiX(as(sread(fqF), "character"), ...)
@@ -452,12 +469,16 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   }
   
   if(outseqs==0) {
-    file.remove(fout[[1]])
-    file.remove(fout[[2]])
   }
   
   if(verbose) {
     message("Read in ", inseqs, " paired-sequences, output ", outseqs, " filtered paired-sequences.")
+  }
+  
+  if(outseqs==0) {
+    message(paste("The filter removed all reads:", fout[[1]], "and", fout[[2]], "not written."))
+    file.remove(fout[[1]])
+    file.remove(fout[[2]])
   }
 }
 
