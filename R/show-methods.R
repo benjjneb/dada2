@@ -8,10 +8,9 @@
 #' 
 #' @inheritParams methods::show
 #' @return NULL.
-#' @export
+#' @importFrom stats median
 #' @rdname show-methods
 #' @include allClasses.R
-#' @examples
 #' # examples
 setMethod("show", "derep", function(object){
   cat("derep-class: R object describing dereplicated sequencing reads", fill=TRUE)
@@ -33,8 +32,18 @@ setMethod("show", "derep", function(object){
   }
 })
 ############################################################################
-#' @rdname show-methods
+#' method extensions to show for dada2 objects.
+#'
+#' See the general documentation of \code{\link[methods]{show}} method for
+#' expected behavior. 
+#'
+#' @seealso \code{\link[methods]{show}}
+#' 
+#' @inheritParams methods::show
 #' @return NULL.
+#' @rdname show-methods
+#' @include allClasses.R
+#' # @examples
 setMethod("show", "dada", function(object){
   cat("dada-class: object describing DADA2 denoising results", fill=TRUE)
   if( length(object$denoised) > 0 && length(object$map) > 0 ) {

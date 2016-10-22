@@ -18,7 +18,7 @@ A numeric matrix with 16 rows and the same number of columns as trans.
 }
 \description{
 This function accepts a matrix of observed transitions, with each transition
-correponding to a row (eg. row 2 = A->C) and each column to a quality score
+corresponding to a row (eg. row 2 = A->C) and each column to a quality score
 (eg. col 31 = Q30). It returns a matrix of estimated error
 rates of the same shape. Error rates are estimates by a \code{\link{loess}} fit
 of the observed rates of each transition as a function of the quality score.

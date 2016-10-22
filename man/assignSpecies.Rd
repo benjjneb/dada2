@@ -11,7 +11,7 @@ assignSpecies(seqs, refFasta, allowMultiple = FALSE, verbose = FALSE)
 coercible by \code{\link{getUniques}}.}
 
 \item{refFasta}{(Required). The path to the reference fasta file, or an 
-R connection. Can be compresssed.
+R connection. Can be compressed.
 This reference fasta file should be formatted so that the id lines correspond to the
 genus-species of the associated sequence:
   

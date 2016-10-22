@@ -9,7 +9,7 @@
 #' coercible by \code{\link{getUniques}}.
 #'   
 #' @param refFasta (Required). The path to the reference fasta file, or an 
-#' R connection Can be compresssed.
+#' R connection Can be compressed.
 #' This reference fasta file should be formatted so that the id lines correspond to the
 #' taxonomy (or classification) of the associated sequence, and each taxonomic level is 
 #' separated by a semicolon. Eg.
@@ -35,7 +35,7 @@
 #' @return A character matrix of assigned taxonomies exceeding the minBoot level of
 #'   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
 #'   taxonomic levels. NA indicates that the sequence was not consistently classified at
-#'   that level at the minBoot threshhold. 
+#'   that level at the minBoot threshhold.
 #'   
 #'   If outputBootstraps is TRUE, a named list containing the assigned taxonomies (named "taxa") 
 #'   and the bootstrap values (named "boot") will be returned.
@@ -145,7 +145,7 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' coercible by \code{\link{getUniques}}.
 #'   
 #' @param refFasta (Required). The path to the reference fasta file, or an 
-#' R connection. Can be compresssed.
+#' R connection. Can be compressed.
 #' This reference fasta file should be formatted so that the id lines correspond to the
 #' genus-species of the associated sequence:
 #'   
@@ -170,6 +170,7 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead sread
 #' @importFrom ShortRead id
+#' @importFrom methods as
 #' 
 #' @examples
 #' \dontrun{
@@ -216,7 +217,7 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
 #' @param taxtab (Required). A taxonomic table, the output of \code{\link{assignTaxonomy}}.
 #'   
 #' @param refFasta (Required). The path to the reference fasta file, or an 
-#' R connection. Can be compresssed.
+#' R connection. Can be compressed.
 #' This reference fasta file should be formatted so that the id lines correspond to the
 #' genus-species binomial of the associated sequence:
 #'   

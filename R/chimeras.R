@@ -195,6 +195,9 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 #' @param maxShift (Optional). Default is 16.
 #'   Maximum shift allowed when aligning sequences to potential "parents".
 #' 
+#' @param multithread (Optional). Default is FALSE.
+#'  If TRUE, multithreading is enabled. NOT YET IMPLEMENTED.
+#'   
 #' @param verbose (Optional). Default FALSE.
 #'   Print verbose text output. 
 #'
@@ -214,11 +217,12 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 #' isBimeraDenovoTable(seqtab)
 #' isBimeraDenovoTable(seqtab, allowOneOff=FALSE, minSampleFraction=0.5)
 #' 
-isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1, minParentAbundance = 2, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, verbose=FALSE) {
+isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1, minParentAbundance = 2, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
   sqs <- colnames(seqtab)
   if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs) && all(sapply(sqs, C_isACGT)))) {
     stop("Input must be a valid sequence table.")
   }
+  if(multithread) message("Multithreading not yet implemented for consensus chimera detection.")
   if(any(duplicated(sqs))) stop("Duplicate sequences detected in input.")
   bimdf <- C_table_bimera(seqtab, sqs, minSampleFraction, ignoreNNegatives,
                                minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,

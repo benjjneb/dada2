@@ -65,7 +65,7 @@ If dada is run in selfConsist=TRUE mode, the algorithm will infer both the sampl
  the parameters of its error model from the data.
 }
 \details{
-Briefly, \code{dada} implements a statiscal test for the notion that a specific sequence was seen too many times
+Briefly, \code{dada} implements a statistical test for the notion that a specific sequence was seen too many times
  to have been caused by amplicon errors from currently inferred sample sequences. Overly-abundant
  sequences are used as the seeds of new clusters of sequencing reads, and the final set of clusters
  is taken to represent the denoised composition of the sample. A more detailed explanation of the algorithm

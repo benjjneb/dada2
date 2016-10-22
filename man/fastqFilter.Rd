@@ -9,9 +9,9 @@ fastqFilter(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0,
   verbose = FALSE, ...)
 }
 \arguments{
-\item{fn}{(Required). The path to the input fastq file, or an R connection to that file.}
+\item{fn}{(Required). The path to the input fastq file.}
 
-\item{fout}{(Required). The path to the output file, or an R connection to that file.
+\item{fout}{(Required). The path to the output file.
 Note that by default (\code{compress=TRUE}) the output fastq file is gzipped.}
 
 \item{truncQ}{(Optional). Default 2.

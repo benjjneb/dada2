@@ -76,7 +76,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'   
 #' @details
 #' 
-#' Briefly, \code{dada} implements a statiscal test for the notion that a specific sequence was seen too many times
+#' Briefly, \code{dada} implements a statistical test for the notion that a specific sequence was seen too many times
 #'  to have been caused by amplicon errors from currently inferred sample sequences. Overly-abundant
 #'  sequences are used as the seeds of new clusters of sequencing reads, and the final set of clusters
 #'  is taken to represent the denoised composition of the sample. A more detailed explanation of the algorithm
@@ -100,6 +100,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'
 #' @importFrom RcppParallel RcppParallelLibs
 #' @importFrom RcppParallel setThreadOptions
+#' @importFrom methods as
 #'
 #' @export
 #'
@@ -169,7 +170,7 @@ dada <- function(derep,
   qmax <- ceiling(qmax) # Only getting averages from derep$quals
   if(qmax > 45) {
     if(qmax > 62) {
-      stop("drep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) 
+      stop("derep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) 
     }
     warning("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.")
   }
@@ -289,14 +290,22 @@ dada <- function(derep,
           cat("   selfConsist step", nconsist, "\n")
         }
       }
+      # Initialize error matrix if necessary
+      if(initializeErr) {
+        if(opts$USE_QUALS) {
+          err <- matrix(1, nrow=16, ncol=max(41,qmax+1))
+        } else {
+          err <- matrix(1, nrow=16, ncol=1)
+        }
+      }
       res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), 
-                          if(initializeErr) { matrix(1, nrow=16, ncol=max(41,qmax+1)) } else { err },
+                          err, ###!
                           qi, 
                           opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
                           opts[["OMEGA_A"]], 
-                          if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] },
+                          if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] }, ###!
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]],
                           FALSE,
@@ -479,7 +488,7 @@ dada <- function(derep,
 #'  turns off banding (i.e. full Needleman-Wunsch).
 #' 
 #' SCORE_MATRIX: The score matrix for the Needleman-Wunsch alignment. This is a 4x4 matrix as no ambiguous nucleotides
-#'  are allowed. Default is nuc44: -4 for mismatches, +5 for matchces.
+#'  are allowed. Default is nuc44: -4 for mismatches, +5 for matches.
 #'  
 #' GAP_PENALTY: The cost of gaps in the Needleman-Wunsch alignment. Default is -8.
 #'  

@@ -1,7 +1,7 @@
 ################################################################################
 #' Construct a sample-by-sequence observation matrix.
 #' 
-#' This function contructs a sequence table (analogous to an OTU table) from
+#' This function constructs a sequence table (analogous to an OTU table) from
 #' the provided list of samples.
 #' 
 #' @param samples (Required). A \code{list} of the samples to include in the sequence table. 
@@ -123,6 +123,8 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
 }
 
 # Combines a list of derep-class objects into one single derep object
+#' @importFrom methods as
+#' @keywords internal
 combineDereps2 <- function(dereps) {
   if(class(dereps) == "derep") dereps <- list(dereps)
   if(!all(sapply(dereps, function(x) class(x)=="derep"))) stop("Requires derep-class objects.")
