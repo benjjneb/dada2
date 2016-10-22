@@ -20,17 +20,25 @@
 #' @param minBoot (Optional). Default 50. 
 #' The minimum bootstrap confidence for assigning a taxonomic level.
 #'   
+#' @param outputBootstraps (Optional). Default FALSE.
+#'  If TRUE, bootstrap values will be retained in an integer matrix. A named list containing the assigned taxonomies (named "taxa") 
+#'  and the bootstrap values (named "boot") will be returned. Minimum bootstrap confidence filtering still takes place,
+#'  to see full taxonomy set minBoot=0
+#'   
 #' @param taxLevels (Optional). Default is c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species").
 #' The taxonomic levels being assigned. Truncates if deeper levels not present in
 #' training fasta.
 #'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
-#' 
+#'   
 #' @return A character matrix of assigned taxonomies exceeding the minBoot level of
 #'   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
 #'   taxonomic levels. NA indicates that the sequence was not consistently classified at
-#'   that level at the minBoot threshold. 
+#'   that level at the minBoot threshhold.
+#'   
+#'   If outputBootstraps is TRUE, a named list containing the assigned taxonomies (named "taxa") 
+#'   and the bootstrap values (named "boot") will be returned.
 #' 
 #' @export
 #' 
@@ -44,7 +52,7 @@
 #'  taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
 #' }
 #' 
-assignTaxonomy <- function(seqs, refFasta, minBoot=50,
+assignTaxonomy <- function(seqs, refFasta, minBoot=50, outputBootstraps=FALSE,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
                            verbose=FALSE) {
   # Get character vector of sequences
@@ -91,7 +99,16 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
   rownames(tax.out) <- seqs
   colnames(tax.out) <- taxLevels[1:ncol(tax.out)]
   tax.out[tax.out=="_DADA2_UNSPECIFIED"] <- NA_character_
-  tax.out
+  if(outputBootstraps){
+      # Convert boots to integer matrix
+      boots.out <- matrix(boots, nrow=length(seqs), ncol=td)
+      rownames(boots.out) <- seqs
+      colnames(boots.out) <- taxLevels[1:ncol(boots.out)]
+      list(tax=tax.out, boot=boots.out)
+  } else {
+    tax.out
+  }
+
 }
 
 # Helper function for assignSpecies
