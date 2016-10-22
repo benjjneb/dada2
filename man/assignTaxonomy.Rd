@@ -4,8 +4,9 @@
 \alias{assignTaxonomy}
 \title{Classifies sequences against reference training dataset.}
 \usage{
-assignTaxonomy(seqs, refFasta, minBoot = 50, taxLevels = c("Kingdom",
-  "Phylum", "Class", "Order", "Family", "Genus", "Species"), verbose = FALSE)
+assignTaxonomy(seqs, refFasta, minBoot = 50, outputBootstraps = FALSE,
+  taxLevels = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
+  "Species"), verbose = FALSE)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 
@@ -23,6 +24,11 @@ separated by a semicolon. Eg.
 \item{minBoot}{(Optional). Default 50. 
 The minimum bootstrap confidence for assigning a taxonomic level.}
 
+\item{outputBootstraps}{(Optional). Default FALSE.
+If TRUE, bootstrap values will be retained in an integer matrix. A named list containing the assigned taxonomies (named "taxa") 
+and the bootstrap values (named "boot") will be returned. Minimum bootstrap confidence filtering still takes place,
+to see full taxonomy set minBoot=0}
+
 \item{taxLevels}{(Optional). Default is c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species").
 The taxonomic levels being assigned. Truncates if deeper levels not present in
 training fasta.}
@@ -34,7 +40,10 @@ If TRUE, print status to standard output.}
 A character matrix of assigned taxonomies exceeding the minBoot level of
   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
   taxonomic levels. NA indicates that the sequence was not consistently classified at
-  that level at the minBoot threshold.
+  that level at the minBoot threshhold.
+  
+  If outputBootstraps is TRUE, a named list containing the assigned taxonomies (named "taxa") 
+  and the bootstrap values (named "boot") will be returned.
 }
 \description{
 assignTaxonomy implements the RDP Naive Bayesian Classifier algorithm described in

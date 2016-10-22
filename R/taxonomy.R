@@ -20,14 +20,14 @@
 #' @param minBoot (Optional). Default 50. 
 #' The minimum bootstrap confidence for assigning a taxonomic level.
 #'   
-#' @param taxLevels (Optional). Default is c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species").
-#' The taxonomic levels being assigned. Truncates if deeper levels not present in
-#' training fasta.
-#'   
 #' @param outputBootstraps (Optional). Default FALSE.
 #'  If TRUE, bootstrap values will be retained in an integer matrix. A named list containing the assigned taxonomies (named "taxa") 
 #'  and the bootstrap values (named "boot") will be returned. Minimum bootstrap confidence filtering still takes place,
 #'  to see full taxonomy set minBoot=0
+#'   
+#' @param taxLevels (Optional). Default is c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species").
+#' The taxonomic levels being assigned. Truncates if deeper levels not present in
+#' training fasta.
 #'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
@@ -52,9 +52,9 @@
 #'  taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
 #' }
 #' 
-assignTaxonomy <- function(seqs, refFasta, minBoot=50,
+assignTaxonomy <- function(seqs, refFasta, minBoot=50, outputBootstraps=FALSE,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                           outputBootstraps=FALSE, verbose=FALSE) {
+                           verbose=FALSE) {
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
