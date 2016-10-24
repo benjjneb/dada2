@@ -25,6 +25,8 @@ Separable sample processing allows DADA2's running time to scale linearly in the
 
 The workflow below expects demultiplexed, per-sample, gzipped fastq files for the forward reads of a Hiseq run to be in the directory `path` (defined below). The string parsing below expects filenames of the following format: `samplename_XXX.fastq.gz`, but other formats simply require modification to the filename parsing portions of these scripts.
 
+**<span style="color:red">A version of this workflow [for paired end data](bigdata_paired.html) is also available.**
+
 ## Filtering
 
 I typically process large datasets in two stages: Filtering and then Sample Inference. This makes sense because filtering is inherently a linear-time process with low memory requirements, and because it is often useful to filter a couple times with modified parameters to find the best choices for different sequencing runs. These two steps are presented as two self-contained chunks, which can be individually submitted as jobs on a server/cloud environment.
@@ -115,7 +117,7 @@ There are too many factors that influence running time to give an answer that wi
 
 **Hardware:** A [general compute node](http://sherlock.stanford.edu/mediawiki/index.php/Main_Page) with 16 cores and 64GB of memory.
 
-**Running times:** Filtering takes 2-3 hours (and is run on 2 cores and 16GB of memory). The sample inference workflow (16 cores, 64GB) takes from 2-16 hours, with running times increasing with lower run quality and higher diversity samples. Paired-end sequencing takes twice as long, as sample inference is run independently on the forward and reverse reads before merging (see [tutorial](tutorial.html)).
+**Running times:** Filtering takes 2-3 hours (and is run on 2 cores and 16GB of memory). The sample inference workflow (16 cores, 64GB) takes from 2-16 hours, with running times increasing with lower run quality and higher diversity samples. Paired-end sequencing takes twice as long, as sample inference is run independently on the forward and reverse reads before merging (see [tutorial](tutorial.html) and the [paired-end version of the big data workflow](bigdata_paired.html)).
 
 One scaling issue to be aware of: Because the running time of the core sample inference method scales quadratically with the depth of individual samples, but linearly in the number of samples, running times will be longer when fewer samples are multiplexed. Very roughly, if your 150M Hiseq reads are split across 150 samples instead of 750, the running time will be about 5x higher.
 
