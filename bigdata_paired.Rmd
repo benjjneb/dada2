@@ -21,10 +21,8 @@ Please consider the filtering parameters, one set of parameters is not optimal f
 ```{r filter, eval=FALSE}
 library(dada2); packageVersion("dada2")
 # File parsing
-###! pathF <- "/path/to/FWD" # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
-###! pathR <- "/path/to/REV" # CHANGE ME, ...
-pathF <- "~/Desktop/ptest/FWD" ###!
-pathR <- "~/Desktop/ptest/REV" ###!
+pathF <- "/path/to/FWD" # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
+pathR <- "/path/to/REV" # CHANGE ME, ...
 filtpathF <- file.path(pathF, "filtered") # Filtered forward files go into the pathF/filtered/ subdirectory
 filtpathR <- file.path(pathR, "filtered") # ...
 fastqFs <- sort(list.files(pathF, pattern="fastq"))
@@ -37,10 +35,8 @@ for(i in seq_along(fastqFs)) {
   fqF <- fastqFs[[i]]; fqR <- fastqRs[[i]]
   fastqPairedFilter(c(file.path(pathF,fqF), file.path(pathR, fqR)),
               c(file.path(filtpathF, fqF), file.path(filtpathR, fqR)),
-              trimLeft=c(10, 10), truncLen=c(240,160), ###!
-              maxN=0, maxEE=2, truncQ=2, ###!
-###!              trimLeft=10, truncLen=c(240,200),
-###!              maxEE=2, truncQ=11, maxN=0,
+              trimLeft=10, truncLen=c(240,200),
+              maxEE=2, truncQ=11, maxN=0,
               compress=TRUE, verbose=TRUE)
 }
 ```
@@ -53,8 +49,8 @@ The `NSAM.LEARN` parameter below should be large enough that the total number of
 ```{r inference, eval=FALSE}
 library(dada2); packageVersion("dada2")
 # File parsing
-###! filtpathF <- "/path/to/FWD/filtered" # CHANGE ME to the directory containing your filtered forward fastq files
-###! filtpathR <- "/path/to/FWD/filtered" # CHANGE ME ...
+filtpathF <- "/path/to/FWD/filtered" # CHANGE ME to the directory containing your filtered forward fastq files
+filtpathR <- "/path/to/FWD/filtered" # CHANGE ME ...
 filtFs <- list.files(filtpathF, full.names = TRUE)
 filtRs <- list.files(filtpathR, full.names = TRUE)
 sample.names <- sapply(strsplit(basename(filtFs), "_"), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
@@ -64,7 +60,7 @@ names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 set.seed(100)
 # Learn forward error rates
-NSAM.LEARN <- 20 # Choose enough samples to have at least 1M reads ###!
+NSAM.LEARN <- 25 # Choose enough samples to have at least 1M reads
 drp.learnF <- derepFastq(sample(filtFs, NSAM.LEARN))
 dd.learnF <- dada(drp.learnF, err=NULL, selfConsist=TRUE, multithread=TRUE)
 errF <- dd.learnF[[1]]$err_out
