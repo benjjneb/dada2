@@ -281,10 +281,8 @@ $(document).ready(function () {
 <p><strong>Filtering script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # File parsing
-###! pathF &lt;- &quot;/path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
-###! pathR &lt;- &quot;/path/to/REV&quot; # CHANGE ME, ...
-pathF &lt;- &quot;~/Desktop/ptest/FWD&quot; ###!
-pathR &lt;- &quot;~/Desktop/ptest/REV&quot; ###!
+pathF &lt;- &quot;/path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
+pathR &lt;- &quot;/path/to/REV&quot; # CHANGE ME, ...
 filtpathF &lt;- file.path(pathF, &quot;filtered&quot;) # Filtered forward files go into the pathF/filtered/ subdirectory
 filtpathR &lt;- file.path(pathR, &quot;filtered&quot;) # ...
 fastqFs &lt;- sort(list.files(pathF, pattern=&quot;fastq&quot;))
@@ -297,10 +295,8 @@ for(i in seq_along(fastqFs)) {
   fqF &lt;- fastqFs[[i]]; fqR &lt;- fastqRs[[i]]
   fastqPairedFilter(c(file.path(pathF,fqF), file.path(pathR, fqR)),
               c(file.path(filtpathF, fqF), file.path(filtpathR, fqR)),
-              trimLeft=c(10, 10), truncLen=c(240,160), ###!
-              maxN=0, maxEE=2, truncQ=2, ###!
-###!              trimLeft=10, truncLen=c(240,200),
-###!              maxEE=2, truncQ=11, maxN=0,
+              trimLeft=10, truncLen=c(240,200),
+              maxEE=2, truncQ=11, maxN=0,
               compress=TRUE, verbose=TRUE)
 }</code></pre>
 </div>
@@ -310,8 +306,8 @@ for(i in seq_along(fastqFs)) {
 <p><strong>Sample inference script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # File parsing
-###! filtpathF &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered forward fastq files
-###! filtpathR &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME ...
+filtpathF &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered forward fastq files
+filtpathR &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME ...
 filtFs &lt;- list.files(filtpathF, full.names = TRUE)
 filtRs &lt;- list.files(filtpathR, full.names = TRUE)
 sample.names &lt;- sapply(strsplit(basename(filtFs), &quot;_&quot;), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
@@ -321,7 +317,7 @@ names(filtFs) &lt;- sample.names
 names(filtRs) &lt;- sample.names
 set.seed(100)
 # Learn forward error rates
-NSAM.LEARN &lt;- 20 # Choose enough samples to have at least 1M reads ###!
+NSAM.LEARN &lt;- 25 # Choose enough samples to have at least 1M reads
 drp.learnF &lt;- derepFastq(sample(filtFs, NSAM.LEARN))
 dd.learnF &lt;- dada(drp.learnF, err=NULL, selfConsist=TRUE, multithread=TRUE)
 errF &lt;- dd.learnF[[1]]$err_out
