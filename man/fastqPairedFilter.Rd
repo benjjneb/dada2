@@ -80,7 +80,8 @@ Whether to output status messages.}
 \item{...}{(Optional). Arguments passed on to \code{\link{isPhiX}}.}
 }
 \value{
-NULL.
+\code{integer(2)}.
+ The number of reads read in, and the number of reads that passed the filter and were output.
 }
 \description{
 fastqPairedFilter takes in two input fastq file (can be compressed), filters them based on several

@@ -54,7 +54,8 @@
 #' 
 #' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}}.
 #' 
-#' @return NULL.
+#' @return \code{integer(2)}.
+#'  The number of reads read in, and the number of reads that passed the filter and were output.
 #' 
 #' @seealso 
 #'  \code{\link{fastqPairedFilter}}
@@ -160,6 +161,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
     message(paste("The filter removed all reads:", fout, "not written."))
     file.remove(fout)
   }
+  
+  return(invisible(c(reads.in=inseqs, reads.out=outseqs)))
 }
 #' Filters and trims paired forward and reverse fastq files.
 #' 
@@ -243,7 +246,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN =
 #' 
 #' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}}.
 #' 
-#' @return NULL.
+#' @return \code{integer(2)}.
+#'  The number of reads read in, and the number of reads that passed the filter and were output.
 #' 
 #' @seealso 
 #' \code{\link{fastqFilter}}
@@ -480,6 +484,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     file.remove(fout[[1]])
     file.remove(fout[[2]])
   }
+  
+  return(invisible(c(reads.in=inseqs, reads.out=outseqs)))
 }
 
 #' @importFrom ShortRead srFilter
@@ -533,7 +539,7 @@ minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
 #' If TRUE, only non-overlapping matching words are counted.
 #' 
 #' @return \code{logical(1)}.
-#'  TRUE if sequence was fount to match the phiX genome.
+#'  TRUE if sequence matched the phiX genome.
 #'
 #' @seealso 
 #'  \code{\link{fastqFilter}}, \code{\link{fastqPairedFilter}}
@@ -550,6 +556,7 @@ minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
 #' isPhiX(sqs1, wordSize=20,  minMatches=1)
 #' 
 isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE) {
+  seqs <- getSequences(seqs)
   sq.phix <- as(sread(readFasta(system.file("extdata", "phix_genome.fa", package="dada2"))), "character")
   rc.phix <- rc(sq.phix)
   hits <- C_matchRef(seqs, sq.phix, wordSize, nonOverlapping)

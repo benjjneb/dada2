@@ -2,7 +2,7 @@
 % Please edit documentation in R/misc.R
 \name{nwalign}
 \alias{nwalign}
-\title{Needlman-Wunsch alignment.}
+\title{Needleman-Wunsch alignment.}
 \usage{
 nwalign(s1, s2, match = getDadaOpt("MATCH"),
   mismatch = getDadaOpt("MISMATCH"), gap = getDadaOpt("GAP_PENALTY"),

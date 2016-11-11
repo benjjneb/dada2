@@ -108,7 +108,7 @@ getNseq <- function(object) {
 }
 
 ################################################################################
-#' Needlman-Wunsch alignment.
+#' Needleman-Wunsch alignment.
 #' 
 #' This function performs a Needleman-Wunsch alignment between two sequences.
 #' 
@@ -185,13 +185,13 @@ nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISM
 nwhamming <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   out <- C_eval_pair(al[1], al[2])
-  return(out["mismatch"]+out["indel"])
-})
+  return(unname(out["mismatch"]+out["indel"]))
+}, USE.NAMES=FALSE)
 
 nweval <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   C_eval_pair(al[1], al[2])
-})
+}, USE.NAMES=FALSE)
 
 nwextract <- function(query, ref, ...) {
   al <- nwalign(query, ref, ...)
@@ -207,8 +207,6 @@ strdiff <- function(s1, s2) {
   dd <- which(xx != yy)
   data.frame(pos=dd,nt0=xx[dd],nt1=yy[dd])
 }
-
-hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
 
 #' @importFrom Biostrings DNAString
 #' @importFrom Biostrings DNAStringSet
