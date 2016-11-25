@@ -227,6 +227,7 @@ checkConvergence <- function(dadaO) {
 }
 
 pfasta <- function(seqs, ids=seq(length(seqs))) {
+  seqs <- getSequences(seqs, collapse=FALSE)
   cat(paste(">", ids, "\n", seqs, sep="", collapse="\n"))
 }
 
