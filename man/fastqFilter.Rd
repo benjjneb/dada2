@@ -4,9 +4,9 @@
 \alias{fastqFilter}
 \title{Filter and trim a fastq file.}
 \usage{
-fastqFilter(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0,
-  minQ = 0, maxEE = Inf, rm.phix = FALSE, n = 1e+06, compress = TRUE,
-  verbose = FALSE, ...)
+fastqFilter(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf,
+  trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = FALSE,
+  n = 1e+06, compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). The path to the input fastq file.}
@@ -22,6 +22,9 @@ The default value of 2 is a special quality score indicating the end of good qua
 \item{truncLen}{(Optional). Default 0 (no truncation).
 Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
 Note that \code{\link{dada}} currently requires all sequences to be the same length.}
+
+\item{maxLen}{(Optional). Default Inf (no maximum).
+Remove reads with length greater than maxLen.}
 
 \item{trimLeft}{(Optional). Default 0.
 The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
