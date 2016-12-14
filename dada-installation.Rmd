@@ -6,7 +6,7 @@ title: "DADA2 Installation"
 
 ## **Install binaries from Bioconductor**
 
-Binary installation is available through the Bioconductor package repository. Currently, **binary installation is only supported for the current release version of dada2, and only on  R 3.3 and later**.
+Binary installation is available through the Bioconductor package repository. Currently, **binary installation is only supported for the current release version of dada2, and only on  R 3.3.1 and later**.
 
 ```S
 ## try http:// if https:// URLs are not supported
@@ -16,6 +16,8 @@ biocLite("dada2")
 
 Allow installation of any additional packages requested. You are ready to start using dada2!
 
+*If the above installed version 1.0.3 of dada2, you must first update your Bioconductor installation to version 3.4: `biocLite("BiocUpgrade")` then `biocLite()`*
+
 -----------------------------
 
 ## **Install from source**
@@ -24,9 +26,9 @@ Source installation is available for R3.2 or later, and the latest and greatest 
 
 ### 0. Download
 
-* Current Release [(1.0)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.0.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.0.tar.gz).
+* Current Release [(1.2)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.2.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.2.tar.gz).
 
-* Development Branch [(1.1)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
+* Development Branch [(1.3)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
 
 ### 1. Install External Dependencies
 

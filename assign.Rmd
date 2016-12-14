@@ -14,7 +14,7 @@ If assignment down to the species level is desired, `assignSpecies(...)` uses ex
 
 These two functions can be combined to produce taxonomic assignments from Kingdom down to Species with the `addSpecies(...)` convenience function.
 
-**<span style="color:red">The species assignment portion of this workflow requires [version 1.1.2 or later of the dada2 package](https://github.com/benjjneb/dada2):</span>**
+*The species assignment portion of this workflow was introduces in release 1.2 of the dada2 package*
 
 ## Getting started
 
@@ -89,4 +89,4 @@ tt.plus <- addSpecies(tt, "Training/silva_species_assignment_v123.fa.gz", verbos
 unname(tt.plus)
 ```
 
-For human microbiome data and V4 sequencing, we typically see a bit under half of the abundant RSVs assigned unambiguously to species-level, and a bit under 2/3rds assigned ambiguously (ie. allowing multiple species assignment). This fraction drops off in less sampled environments and for rare RSVs.
+For human microbiome data and V4 sequencing, we typically see a bit under half of the abundant ribosomal sequence variants (RSVs) assigned unambiguously to species-level, and a bit under 2/3rds assigned ambiguously (ie. allowing multiple species assignment). This fraction drops off in less sampled environments and for rare RSVs.

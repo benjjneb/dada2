@@ -7,7 +7,7 @@ output: html_document
 
 As the size of datasets grows the computational tractability of bioinformatics tools face new challenges. In the amplicon sequencing context the Hiseq platform is seeing increasing uptake, especially with the advent of 250nt Hiseq chemistry. A Hiseq lane typically contains 100M+ reads, and multiplexed samples on a Hiseq lane are typically sequenced to a depth of 100k+ reads.
 
-The DADA2 pipeline capably handles data at this scale with relatively modest time and memory requirements. However, certain adjustments to the [introductory workflow](tutorial.html) make a substantial difference in computational costs. Here we present such a workflow, optimized to reduce computational time and control memory requirements. *Note that this workflow benefits significantly from the multithreading that was introduced in [version 1.1](https://github.com/benjjneb/dada2).*
+The DADA2 pipeline capably handles data at this scale with relatively modest time and memory requirements. However, certain adjustments to the [introductory workflow](tutorial.html) make a substantial difference in computational costs. Here we present such a workflow, optimized to reduce computational time and control memory requirements. *Note that this workflow benefits significantly from the multithreading that was introduced in the 1.2 release.*
 
 --------------------------
 

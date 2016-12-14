@@ -8,7 +8,7 @@ title: "The DADA2 R package"
 
 ## Installation
 
-Binaries for the current release version of DADA2 (1.0) are available from Bioconductor (note that you must have R 3.3 to install from Bioconductor!):
+Binaries for the current release version of DADA2 (1.2) are available from Bioconductor (note that you must have R 3.3.1 or newer, and [Biocondcutor version 3.4](https://www.bioconductor.org/install/), to install the current release from Bioconductor):
 
 ```S
 ## try http:// if https:// URLs are not supported
@@ -16,15 +16,15 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("dada2")
 ```
 
-If you wish to install the latest and greatest version, or to install to R 3.2, see our [from-source installation instructions](dada-installation.html).
+If you wish to install the latest and greatest development version, or to install to R 3.2, see our [from-source installation instructions](dada-installation.html).
 
 &nbsp;
 
 ## Tutorials
 
-**Start here:** The [DADA2 walkthrough on paired end Illumina Miseq data](tutorial.html) goes through a typical workflow in which raw amplicon sequence data is processed into the table of biological sequence variants present in each sample.
+**Start here:** The [DADA2 tutorial](tutorial.html) goes through a typical workflow for paired end Illumina Miseq data: raw amplicon sequence data is processed into the table of biological sequence variants (SVs) present in each sample.
 
-The [DADA2 workflow on Big Data](bigdata.html) goes through workflow optimized to run on large datasets (100s of millions of reads).
+The [DADA2 Workflow on Big Data](bigdata.html) goes through workflow optimized to run on large datasets (10s of millions to billions of reads).
 
 Short demonstrations of [assigning taxonomy](assign.html) and [assigning species](assign.html) to sequences.
 
@@ -32,17 +32,19 @@ Short demonstrations of [assigning taxonomy](assign.html) and [assigning species
 
 ## Benchmarking
 
-Our [manuscript](http://dx.doi.org/10.1038/nmeth.3869) compares the accuracy of DADA2 and other methods on several mock community datasets. Further [benchmarking of DADA2 against the methods evaluated in the recent QIIME benchmarking paper](SotA.html) is also available.
+Our [manuscript](http://dx.doi.org/10.1038/nmeth.3869) compares the accuracy of DADA2 and other methods on several mock community datasets. Further [benchmarking of DADA2 against the methods evaluated in a recent QIIME1 benchmarking paper](SotA.html) is also available. And sometimes a picture says a thousand word:
+
+![](dada2_accuracy.jpg)
 
 &nbsp;
 
 ## Advantages
 
-* DADA2 infers exact sample sequences from Illumina amplicon data. Even if sequence variants differ by 1 or 2 nucleotides, DADA2 will resolve them.
+* DADA2 infers exact sequence variants from Illumina amplicon data. Even if sequence variants differ by 1 or 2 nucleotides, DADA2 resolves them.
   
-* DADA2 reports fewer false sequences than other methods report false OTUs.
+* DADA2 reports fewer false sequence variants than other methods report false OTUs.
 
-* The computational costs of DADA2 can scale linearly with the number of samples, and DADA2's memory requirements can remain essentially flat.
+* The computational costs of DADA2 scale linearly with the number of samples, and DADA2's memory requirements can remain essentially flat.
 
 * DADA2 is open source software, licensed under the [LGPL version 3](http://www.gnu.org/licenses/lgpl-3.0.en.html).
 
