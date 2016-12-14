@@ -28,7 +28,7 @@ Imports:
     methods (>= 3.2.0)
 Suggests:
     testthat (>= 0.9.1),
-    BiocStyle (>= 2.3.12),
+    BiocStyle,
     knitr,
     rmarkdown
 LinkingTo:

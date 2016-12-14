@@ -3,7 +3,7 @@ title: "Introduction to dada2"
 author: "Benjamin Callahan"
 date: "`r date()`"
 output: 
-  BiocStyle::html_document
+  BiocStyle::html_document2
 vignette: >
   %\VignetteIndexEntry{Introduction to dada2}
   %\VignetteEngine{knitr::rmarkdown}
