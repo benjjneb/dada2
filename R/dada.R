@@ -30,15 +30,16 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #' @param derep (Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
 #'  A list of such objects can be provided, in which case each will be denoised with a shared error model.
 #'  
-#' @param err (Required). 16xN numeric matrix. Each entry must be between 0 and 1.
-#' 
-#'  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
-#'  
-#'  Rows correspond to the 16 possible transitions (t_ij) indexed such that 1:A->A, 2:A->C, ..., 16:T->T
+#' @param err (Required). 16xN numeric matrix, or an object coercible by \code{\link{getErrors}} 
+#'  such as the output of the \code{\link{learnErrors}} function.
 #'    
-#'  Columns correspond to quality scores. Typically there are 41 columns for the quality scores 0-40.
+#'  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
+#'  Rows correspond to the 16 possible transitions (t_ij) indexed such that 1:A->A, 2:A->C, ..., 16:T->T
+#'  Columns correspond to quality scores. Each entry must be between 0 and 1.
+#'    
+#'  Typically there are 41 columns for the quality scores 0-40.
 #'  However, if USE_QUALS=FALSE, the matrix must have only one column.
-#'  
+#'    
 #'  If selfConsist = TRUE, \code{err} can be set to NULL and an initial error matrix will be estimated from the data
 #'  by assuming that all reads are errors away from one true sequence.
 #'    
@@ -184,15 +185,10 @@ dada <- function(derep,
   
   # Validate err matrix
   initializeErr <- FALSE
-  if(class(err) == "dada") { err <- err$err_out }
   if(is.null(err) && selfConsist) {
     initializeErr <- TRUE
   } else {
-    if(!is.numeric(err)) stop("Error matrix must be numeric.")
-    if(!(nrow(err)==16)) stop("Error matrix must have 16 rows (A2A, A2C, ...).")
-    if(!all(err>=0)) stop("All error matrix entries must be >= 0.")
-    if(!all(err<=1)) stop("All error matrix entries must be <=1.")
-    if(any(err==0)) warning("Zero in error matrix.")
+    err <- getErrors(err, enforce=TRUE)
     if(ncol(err) < qmax+1) { # qmax = 0 if USE_QUALS = FALSE
       message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
   Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err), ").
@@ -240,7 +236,7 @@ dada <- function(derep,
       opts$VECTORIZED_ALIGNMENT=FALSE
     }
     if(opts$BAND_SIZE > 0 && opts$BAND_SIZE<8) {
-      message("Warning: The vectorized aligner is slower for very small band sizes.")
+      message("The vectorized aligner is slower for very small band sizes.")
     }
     if(opts$BAND_SIZE == 0) opts$VECTORIZED_ALIGNMENT=FALSE
   }

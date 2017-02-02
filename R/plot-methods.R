@@ -70,15 +70,16 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
   return(p1)
 }
 
-#' Plot observed error rates after denoising.
+#' Plot observed and estimated error rates.
 #' 
 #' This function plots the observed frequency of each transition
 #' (eg. A->C) as a function of the associated quality score. It also plots the final
 #' estimated error rates (if they exist). The initial input rates and the expected error
 #' rates under the nominal definition of quality scores can also be shown.
 #' 
-#' @param dq (Required). A \code{\link{dada-class}} object, or a list of such objects
-#'  that were pooled to estimate a common set of error rates.
+#' @param dq (Required). An object from which error rates can be extracted. Valid inputs are
+#'  coercible by \code{\link{getErrors}}. This includes the output of the \code{\link{dada}}
+#'  and \code{\link{learnErrorrs}} functions.
 #' 
 #' @param nti (Optional). Default c("A","C","G","T"). 
 #'  Some combination of the 4 DNA nucleotides.
@@ -107,6 +108,9 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
 #'  or can be stored and further modified.
 #'  See \code{\link{ggsave}} for additional options.
 #'  
+#' @seealso 
+#'  \code{\link{learnErrors}}, \code{\link{getErrors}}
+#'
 #' @importFrom reshape2 melt
 #' @importFrom methods is
 #' @import ggplot2
@@ -126,45 +130,57 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
     stop("nti and ntj must be nucleotide(s): A/C/G/T.")
   }
   
-  if(is.list.of(dq, "dada")) {
-    if(!all(sapply(dq, function(x) identical(x$err_out, dq[[1]]$err_out)))) {
-      stop("If list of dada-class objects provided, all must have the same output error rates.")
+  dq <- getErrors(dq, detailed=TRUE, enforce=FALSE)
+  
+  if(!is.null(dq$trans)) {
+    if(ncol(dq$trans) <= 1) {
+      stop("plotErrors only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
     }
-    trans <- Reduce("+", lapply(dq, function(x) x$trans))
-    dq <- dq[[1]]
-    dq$trans <- trans
+    transdf = melt(dq$trans, factorsAsStrings=TRUE)
+    colnames(transdf) <- c("Transition", "Qual", "count")
+  } else if(!is.null(dq$err_out)) {
+    if(ncol(dq$err_out) <= 1) {
+      stop("plotErrors only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
+    }
+    transdf = melt(dq$err_out, factorsAsStrings=TRUE)
+    colnames(transdf) <- c("Transition", "Qual", "est")
+  } else {
+    stop("Non-null observed and/or estimated error rates (dq$trans or dq$err_out) must be provided.")
   }
-  
-  if(!is(dq, "dada")) {
-    stop("plotErrors requires a dada-class object or list of such objects.")
-  }
-  if(ncol(dq$trans) <= 1) {
-    stop("plotErrors only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
-  }
-  
-  transdf = melt(dq$trans, factorsAsStrings=TRUE)
-  colnames(transdf) <- c("Transition", "Qual", "count")
   transdf$from <- substr(transdf$Transition, 1, 1)
   transdf$to <- substr(transdf$Transition, 3, 3)
-  tot.count <- tapply(transdf$count, list(transdf$from, transdf$Qual), sum)
-  transdf$tot <- mapply(function(x,y) tot.count[x,y], transdf$from, as.character(transdf$Qual))
-  transdf$Observed <- transdf$count/transdf$tot
+  
+  if(!is.null(dq$trans)) {
+    tot.count <- tapply(transdf$count, list(transdf$from, transdf$Qual), sum)
+    transdf$tot <- mapply(function(x,y) tot.count[x,y], transdf$from, as.character(transdf$Qual))
+    transdf$Observed <- transdf$count/transdf$tot
+  } else {
+    transdf$Observed <- NA
+    obs <- FALSE
+  }
   if(!is.null(dq$err_out)) {
     transdf$Estimated <- mapply(function(x,y) dq$err_out[x,y], transdf$Transition, as.character(transdf$Qual))
   } else {
     transdf$Estimated <- NA
+    err_out <- FALSE
   }
-  # If selfConsist, then err_in is a list. Use the first err_in, the initial error rates provided.
-  ei <- dq$err_in; if(is.list(ei)) ei <- ei[[1]]
-  transdf$Input <- mapply(function(x,y) ei[x,y], transdf$Transition, as.character(transdf$Qual))
+  if(!is.null(dq$err_in)) {
+    # If selfConsist, then err_in is a list. Use the first err_in, the initial error rates provided.
+    ei <- dq$err_in; if(is.list(ei)) ei <- ei[[1]]
+    transdf$Input <- mapply(function(x,y) ei[x,y], transdf$Transition, as.character(transdf$Qual))
+  } else {
+    transdf$Input <- NA
+    err_in <- FALSE
+  }
   transdf$Nominal <- (1/3)*10^-(transdf$Qual/10)
   transdf$Nominal[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")] <- 1 - 10^-(transdf$Qual[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")]/10)
   
-  p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual, y=log10(Observed)))
-  if(obs) p <- p + geom_point(na.rm=TRUE)
-  if(err_out && !is.null(dq$err_out))  p <- p + geom_line(aes(y=log10(Estimated)))
-  if(err_in)   p <- p + geom_line(aes(y=log10(Input)), linetype="dashed")
-  if(nominalQ) p <- p + geom_line(aes(y=log10(Nominal)), color="red")
+  p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual))
+  if(obs) p <- p + geom_point(aes(y=Observed), na.rm=TRUE)
+  if(err_out)  p <- p + geom_line(aes(y=Estimated))
+  if(err_in)   p <- p + geom_line(aes(y=Input), linetype="dashed")
+  if(nominalQ) p <- p + geom_line(aes(y=Nominal), color="red")
+  p <- p + scale_y_log10()
   p <- p + facet_wrap(~Transition, nrow=length(nti))
   p <- p + xlab("Consensus quality score") + ylab("Error frequency (log10)")
   p
