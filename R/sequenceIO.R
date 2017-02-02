@@ -101,7 +101,11 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
     derepO <- as(derepO, "derep")
     rval[[i]] <- derepO
   }
-  if(length(rval) == 1) rval <- rval[[1]]
+  if(length(rval) == 1) {
+    rval <- rval[[1]]
+  } else {
+    names(rval) <- basename(fls)
+  }
   return(rval)
 }
 ###

@@ -186,7 +186,6 @@ dada <- function(derep,
   initializeErr <- FALSE
   if(class(err) == "dada") { err <- err$err_out }
   if(is.null(err) && selfConsist) {
-    message("Initial error matrix unspecified. Error rates will be initialized to the maximum possible estimate from this data.")
     initializeErr <- TRUE
   } else {
     if(!is.numeric(err)) stop("Error matrix must be numeric.")

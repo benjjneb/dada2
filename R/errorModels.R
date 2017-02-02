@@ -62,6 +62,108 @@ loessErrfun <- function(trans) {
   return(err)
 }
 
+#' Learns the error rates from an input list or vector of file names.
+#' 
+#' Error rates are learned by calling dada(..., err=NULL, selfConsist=TRUE).
+#'   
+#' @param fls (Required). \code{character}.
+#'  The file path(s) to the fastq or fastq.gz file(s).
+#'  Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
+#' 
+#' @param nreads (Optional). Default 1e6.
+#'  The minimum number of reads to use for error rate learning. Samples are read into memory
+#'  until at least this number of reads has been reached, or all provided samples have been
+#'  read in.
+#' 
+#' @param multithread (Optional). Default is FALSE.
+#'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+#'  If an integer is provided, the number of threads to use is set by passing the argument on to
+#'  \code{\link{setThreadOptions}}.
+#'   
+#' @param randomize (Optional). Default FALSE.
+#'  If FALSE, samples are read in order, starting with the first provided.
+#'  If TRUE, samples are picked at random from those provided.
+#'  
+#' @return An error rate matrix.
+#'  
+#' @export
+#' 
+#' @examples
+#'  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#'  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
+#'  err <- learnErrorRates(c(fl1, fl2))
+#'  err <- learnErrorRates(c(fl1, fl2), nreads=50000, randomize=TRUE)
+#' 
+learnErrors <- function(fls, nreads=1e6, multithread=FALSE, randomize=FALSE) {
+  NREADS <- 0
+  drps <- vector("list", length(fls))
+  if(randomize) { sample(fls) }
+  for(i in seq_along(fls)) {
+    drps[[i]] <- derepFastq(fls[[i]])
+    NREADS <- NREADS + sum(drps[[i]]$uniques)
+    if(NREADS > nreads) { break }
+  }
+  drps <- drps[1:i]
+  # Run dada in self-consist mode on those samples
+  dds <- dada(drps, err=NULL, selfConsist=TRUE, multithread=multithread)
+  return(getErrors(dds))
+}
+
+###! getErrors (internal) to be used in dada, learnErrors, inflateErr, plotErrors
+###! Make it get the whole list of things needed in plotErrors, and then use as required
+###! in other functions.
+#' Extract already computed error rates from an input object.
+#' 
+#' @param obj (Required). An R object with error rates.
+#'  Supported objects: dada, list of dada, numeric matrix.
+#' 
+#' @param detailed (Optional). Default FALSE.
+#'  If FALSE, an error rate matrix corresponding to err_out is returned.
+#'  If TRUE, a named list with $err_out, $err_in and $trans. $err_in and $trans can be NULL.
+#'  
+#' @return An error rate matrix.
+#'  Or, if detailed=TRUE, a named list with err_out, err_in and trans. err_in and trans can be NULL.
+#'  
+#' @importFrom methods is
+#' 
+#' @internal
+#' 
+#' @examples
+#'  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#'  drp <- derepFastq(fl1)
+#'  dd <- dada(drp, err=NULL, selfConsist=TRUE)
+#'  err <- getErrors(dd)
+#' 
+getErrors <- function(obj, detailed=FALSE) {
+  rval <- list(err_out=NULL, err_in=NULL, trans=NULL)
+  if(is(obj, "matrix") && is.numeric(obj)) {
+    rval$err_out <- obj
+  } else if(is(obj, "dada")) {
+    rval$err_out <- obj$err_out
+    rval$err_in <- obj$err_in
+    rval$trans <- obj$trans
+  } else if(is.list.of(obj, "dada")) {
+    if(!all(sapply(obj, function(x) identical(x$err_out, obj[[1]]$err_out)))) {
+      stop("If list of dada-class objects provided, all must have the same output error rates.")
+    }
+    rval$err_out <- obj[[1]]$err_out
+    rval$err_in <- obj[[1]]$err_in
+    rval$trans <- Reduce("+", lapply(obj, function(x) x$trans))
+  }
+  
+  if(!is.numeric(rval$err_out)) stop("Error matrix must be numeric.")
+  if(!(nrow(rval$err_out)==16)) stop("Error matrix must have 16 rows (A2A, A2C, ...).")
+  if(!all(rval$err_out>=0)) stop("All error matrix entries must be >= 0.")
+  if(!all(rval$err_out<=1)) stop("All error matrix entries must be <=1.")
+  if(any(rval$err_out==0)) warning("Zero in error matrix.")
+  
+  if(detailed) {
+    return(rval)
+  } else {
+    return(rval$err_out)
+  }
+}
+
 #' Inflates an error rate matrix by a specified factor, while accounting for saturation.
 #' 
 #' Error rates are "inflated" by the specified factor, while appropriately saturating so that rates
