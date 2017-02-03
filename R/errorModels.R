@@ -113,7 +113,7 @@ loessErrfun <- function(trans) {
 learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, randomize=FALSE) {
   NREADS <- 0
   drps <- vector("list", length(fls))
-  if(randomize) { sample(fls) }
+  if(randomize) { fls <- sample(fls) }
   for(i in seq_along(fls)) {
     drps[[i]] <- derepFastq(fls[[i]])
     NREADS <- NREADS + sum(drps[[i]]$uniques)
