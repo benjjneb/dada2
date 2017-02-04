@@ -10,7 +10,7 @@ plotErrors(dq, nti = c("A", "C", "G", "T"), ntj = c("A", "C", "G", "T"),
 \arguments{
 \item{dq}{(Required). An object from which error rates can be extracted. Valid inputs are
 coercible by \code{\link{getErrors}}. This includes the output of the \code{\link{dada}}
-and \code{\link{learnErrorrs}} functions.}
+and \code{\link{learnErrors}} functions.}
 
 \item{nti}{(Optional). Default c("A","C","G","T"). 
 Some combination of the 4 DNA nucleotides.}

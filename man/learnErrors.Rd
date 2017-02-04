@@ -5,7 +5,7 @@
 \title{Learns the error rates from an input list or vector of file names.}
 \usage{
 learnErrors(fls, nreads = 1e+06, errorEstimationFunction = loessErrfun,
-  multithread = FALSE, randomize = FALSE, verbose = TRUE)
+  multithread = FALSE, randomize = FALSE)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
@@ -48,8 +48,8 @@ Error rates are learned by alternating between sample inference and error rate e
 \examples{
  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
- err <- learnErrorRates(c(fl1, fl2))
- err <- learnErrorRates(c(fl1, fl2), nreads=50000, randomize=TRUE)
+ err <- learnErrors(c(fl1, fl2))
+ err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
 
 }
 \seealso{

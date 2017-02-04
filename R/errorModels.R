@@ -107,10 +107,10 @@ loessErrfun <- function(trans) {
 #' @examples
 #'  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
 #'  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
-#'  err <- learnErrorRates(c(fl1, fl2))
-#'  err <- learnErrorRates(c(fl1, fl2), nreads=50000, randomize=TRUE)
+#'  err <- learnErrors(c(fl1, fl2))
+#'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
 #' 
-learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, randomize=FALSE, verbose=TRUE) {
+learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, randomize=FALSE) {
   NREADS <- 0
   drps <- vector("list", length(fls))
   if(randomize) { fls <- sample(fls) }
