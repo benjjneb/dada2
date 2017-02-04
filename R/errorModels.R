@@ -94,9 +94,6 @@ loessErrfun <- function(trans) {
 #'  If FALSE, samples are read in the provided order until enough reads are obtained.
 #'  If TRUE, samples are picked at random from those provided.
 #'  
-#' @param verbose (Optional). Default FALSE.
-#'  If TRUE, print the number of reads used.
-#'
 #' @return A named list with three entries:
 #'  $err_out: A numeric matrix with the learned error rates.
 #'  $err_in: The initialization error rates (unimportant).
@@ -122,11 +119,10 @@ learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, 
     NREADS <- NREADS + sum(drps[[i]]$uniques)
     if(NREADS > nreads) { break }
   }
-  if (NREADS < nreads) { cat("Total reads less than nreads\n")}
-  if (verbose) { cat("Total reads used: ", NREADS, "\n") }
   drps <- drps[1:i]
   # Run dada in self-consist mode on those samples
   dds <- dada(drps, err=NULL, selfConsist=TRUE, multithread=multithread)
+  cat("Total reads used: ", NREADS, "\n")
   return(getErrors(dds, detailed=TRUE))
 }
 

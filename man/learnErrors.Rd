@@ -5,7 +5,7 @@
 \title{Learns the error rates from an input list or vector of file names.}
 \usage{
 learnErrors(fls, nreads = 1e+06, errorEstimationFunction = loessErrfun,
-  multithread = FALSE, randomize = FALSE)
+  multithread = FALSE, randomize = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
