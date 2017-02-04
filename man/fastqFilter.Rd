@@ -88,4 +88,3 @@ fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TR
  
  \code{\link[ShortRead]{trimTails}}
 }
-

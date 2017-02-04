@@ -28,4 +28,3 @@ dada1 <- dada(derep1, err = inflateErr(tperr1, 2), selfConsist = TRUE)
 plotComplementarySubstitutions(dada1)
 
 }
-

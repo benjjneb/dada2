@@ -13,4 +13,3 @@ function coerces a variety of input objects into the uniques-vector format, incl
 \seealso{
 \code{\link{getUniques}}
 }
-

@@ -10,4 +10,3 @@
 A dataset containing the error matrix estimated by DADA2 from the forward reads of the
 Illumina Miseq 2x250 sequenced Extreme mock community (see manuscript).
 }
-

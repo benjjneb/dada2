@@ -42,4 +42,3 @@ uniquesToFasta(derep1, outfile)
 uniquesToFasta(derep1, outfile, ids=paste0("Sequence", seq(length(getSequences(derep1)))))
 
 }
-

@@ -83,4 +83,3 @@ mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 \seealso{
 \code{\link{derepFastq}}, \code{\link{dada}}, \code{\link{fastqPairedFilter}}
 }
-

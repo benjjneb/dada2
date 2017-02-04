@@ -12,4 +12,3 @@ This function creates the dada2 assignSpecies fasta file for the RDP
 from the rdp_Bacteria_unaligned.fa file.
 }
 \keyword{internal}
-

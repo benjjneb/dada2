@@ -11,17 +11,18 @@ dada(derep, err, errorEstimationFunction = loessErrfun, selfConsist = FALSE,
 \item{derep}{(Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
 A list of such objects can be provided, in which case each will be denoised with a shared error model.}
 
-\item{err}{(Required). 16xN numeric matrix. Each entry must be between 0 and 1.
-
- The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
- 
- Rows correspond to the 16 possible transitions (t_ij) indexed such that 1:A->A, 2:A->C, ..., 16:T->T
-   
- Columns correspond to quality scores. Typically there are 41 columns for the quality scores 0-40.
- However, if USE_QUALS=FALSE, the matrix must have only one column.
- 
- If selfConsist = TRUE, \code{err} can be set to NULL and an initial error matrix will be estimated from the data
- by assuming that all reads are errors away from one true sequence.}
+\item{err}{(Required). 16xN numeric matrix, or an object coercible by \code{\link{getErrors}} 
+such as the output of the \code{\link{learnErrors}} function.
+  
+The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
+Rows correspond to the 16 possible transitions (t_ij) indexed such that 1:A->A, 2:A->C, ..., 16:T->T
+Columns correspond to quality scores. Each entry must be between 0 and 1.
+  
+Typically there are 41 columns for the quality scores 0-40.
+However, if USE_QUALS=FALSE, the matrix must have only one column.
+  
+If selfConsist = TRUE, \code{err} can be set to NULL and an initial error matrix will be estimated from the data
+by assuming that all reads are errors away from one true sequence.}
 
 \item{errorEstimationFunction}{(Optional). Function. Default \code{\link{loessErrfun}}.
 
@@ -72,7 +73,7 @@ Briefly, \code{dada} implements a statistical test for the notion that a specifi
  is found in two publications:
 
 \itemize{ 
- \item{Callahan BJ, McMurdie PJ, Rosen MJ, Han AW, Johnson AJ, Holmes SP (2015). DADA2: High resolution sample inference from amplicon data. bioRxiv, 024034.}
+ \item{Callahan BJ, McMurdie PJ, Rosen MJ, Han AW, Johnson AJ, Holmes SP (2016). DADA2: High resolution sample inference from Illumina amplicon data. Nature Methods, 13(7), 581-3.}
  \item{Rosen MJ, Callahan BJ, Fisher DS, Holmes SP (2012). Denoising PCR-amplified metagenome data. BMC bioinformatics, 13(1), 283.}
 }
  
@@ -95,4 +96,3 @@ dada(derep1, err=inflateErr(tperr1,3), BAND_SIZE=32, OMEGA_A=1e-20)
 \seealso{
 \code{\link{derepFastq}}, \code{\link{setDadaOpt}}
 }
-

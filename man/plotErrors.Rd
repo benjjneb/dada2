@@ -2,14 +2,15 @@
 % Please edit documentation in R/plot-methods.R
 \name{plotErrors}
 \alias{plotErrors}
-\title{Plot observed error rates after denoising.}
+\title{Plot observed and estimated error rates.}
 \usage{
 plotErrors(dq, nti = c("A", "C", "G", "T"), ntj = c("A", "C", "G", "T"),
   obs = TRUE, err_out = TRUE, err_in = FALSE, nominalQ = FALSE)
 }
 \arguments{
-\item{dq}{(Required). A \code{\link{dada-class}} object, or a list of such objects
-that were pooled to estimate a common set of error rates.}
+\item{dq}{(Required). An object from which error rates can be extracted. Valid inputs are
+coercible by \code{\link{getErrors}}. This includes the output of the \code{\link{dada}}
+and \code{\link{learnErrorrs}} functions.}
 
 \item{nti}{(Optional). Default c("A","C","G","T"). 
 Some combination of the 4 DNA nucleotides.}
@@ -53,4 +54,6 @@ plotErrors(dada1, "A", "C")
 plotErrors(dada1, nti="A", ntj=c("A","C","G","T"), err_in=TRUE, nominalQ=TRUE)
 
 }
-
+\seealso{
+\code{\link{learnErrors}}, \code{\link{getErrors}}
+}

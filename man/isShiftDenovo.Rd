@@ -38,4 +38,3 @@ isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
 \seealso{
 \code{\link{isBimera}}
 }
-

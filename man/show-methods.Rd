@@ -2,12 +2,12 @@
 % Please edit documentation in R/show-methods.R
 \docType{methods}
 \name{show,derep-method}
-\alias{c,dada-method}
-\alias{c,derep-method}
-\alias{names<-,dada,ANY-method}
-\alias{names<-,derep,ANY-method}
-\alias{show,dada-method}
 \alias{show,derep-method}
+\alias{show,dada-method}
+\alias{names<-,derep,ANY-method}
+\alias{names<-,dada,ANY-method}
+\alias{c,derep-method}
+\alias{c,dada-method}
 \title{method extensions to show for dada2 objects.}
 \usage{
 \S4method{show}{derep}(object)
@@ -69,4 +69,3 @@ Change concatenation to list construction.
 
 \code{\link[methods]{show}}
 }
-

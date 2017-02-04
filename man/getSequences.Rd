@@ -33,4 +33,3 @@ getSequences(dada1)
 getSequences(dada1$clustering)
 
 }
-

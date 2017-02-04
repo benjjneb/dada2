@@ -38,4 +38,3 @@ isPhiX(sqs1, wordSize=20,  minMatches=1)
 \seealso{
 \code{\link{fastqFilter}}, \code{\link{fastqPairedFilter}}
 }
-

@@ -61,4 +61,3 @@ dada2:::dada_to_seq_table(dadaF, derepF, srF)
 
 }
 \keyword{internal}
-

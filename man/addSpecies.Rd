@@ -49,4 +49,3 @@ classification are consistent are included in the return table.
 \seealso{
 \code{\link{assignTaxonomy}}, \code{\link{assignSpecies}}
 }
-

@@ -27,4 +27,3 @@ cannot exceed 1. The formula is:
  tperr3.all <- inflateErr(tperr1, 3, inflateSelfTransitions=TRUE)
 
 }
-

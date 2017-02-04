@@ -37,4 +37,3 @@ This function combines sequence tables together into one merged sequences table.
 \seealso{
 \code{\link{makeSequenceTable}}
 }
-

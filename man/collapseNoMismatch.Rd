@@ -40,4 +40,3 @@ collapseNoMismatch(seqtab)
 \seealso{
 \code{\link{makeSequenceTable}}
 }
-

@@ -40,4 +40,3 @@ out.nobim <- removeBimeraDenovo(dada1$clustering, minFoldParentOverAbundance = 2
 \seealso{
 \code{\link{isBimeraDenovo}}
 }
-

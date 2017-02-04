@@ -33,4 +33,3 @@ the dashed orange lines are the 25th and 75th quantiles.
 plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 
 }
-

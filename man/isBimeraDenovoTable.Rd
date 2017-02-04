@@ -72,4 +72,3 @@ isBimeraDenovoTable(seqtab, allowOneOff=FALSE, minSampleFraction=0.5)
 \seealso{
 \code{\link{isBimera}}, \code{\link{removeBimeraDenovo}}
 }
-

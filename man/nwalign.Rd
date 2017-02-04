@@ -48,4 +48,3 @@ This function performs a Needleman-Wunsch alignment between two sequences.
  nwalign(sq1, sq2, band=16)
 
 }
-

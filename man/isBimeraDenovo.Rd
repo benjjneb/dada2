@@ -60,4 +60,3 @@ isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE
 \seealso{
 \code{\link{isBimera}}, \code{\link{removeBimeraDenovo}}
 }
-

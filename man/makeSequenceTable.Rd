@@ -35,4 +35,3 @@ makeSequenceTable(list(sample1=dada1, sample2=dada2))
 \seealso{
 \code{\link{dada}}, \code{\link{getUniques}}
 }
-

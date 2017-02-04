@@ -116,4 +116,3 @@ fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft
 
 \code{\link[ShortRead]{trimTails}}
 }
-

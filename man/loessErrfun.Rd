@@ -30,4 +30,3 @@ dada1 <- dada(derep1, err=tperr1)
 err.new <- loessErrfun(dada1$trans)
 
 }
-
