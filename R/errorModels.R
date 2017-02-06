@@ -104,14 +104,14 @@ loessErrfun <- function(trans) {
 #' @export
 #' 
 #' @seealso 
-#'  \code{\link{plotErrors}}, \code{\link{loessErrfun}}, \code{\link{dada}}
+#'  \code{\link{derepFastq}}, \code{\link{plotErrors}}, \code{\link{loessErrfun}}, \code{\link{dada}}
 #'
 #' @examples
 #'  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
 #'  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
 #'  err <- learnErrors(c(fl1, fl2))
 #'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
-#'    
+#'  # Using a list derep-class objects
 #'  derepFs <- lapply(filtFs, derepFastq)
 #'  errF <- learnErrors(derepFs, multithread=TRUE, randomize=TRUE)
 #' 
