@@ -29,6 +29,11 @@
 #' The taxonomic levels being assigned. Truncates if deeper levels not present in
 #' training fasta.
 #'   
+#' @param multithread (Optional). Default is FALSE.
+#'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+#'  If an integer is provided, the number of threads to use is set by passing the argument on to
+#'  \code{\link{setThreadOptions}}.
+#'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
 #'   
@@ -54,7 +59,7 @@
 #' 
 assignTaxonomy <- function(seqs, refFasta, minBoot=50, outputBootstraps=FALSE,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                           verbose=FALSE) {
+                           multithread=FALSE, verbose=FALSE) {
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
@@ -82,8 +87,22 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, outputBootstraps=FALSE,
     tax.df[,i] <- as.integer(tax.df[,i])
   }
   tax.mat.int <- as.matrix(tax.df)
-  # Assign  
-  assignment <- C_assign_taxonomy(seqs, refs, ref.to.genus, tax.mat.int, verbose)
+  # Assign
+  # Parse multithreading argument
+  if(is.logical(multithread)) {
+    if(multithread==TRUE) { RcppParallel::setThreadOptions(numThreads = "auto") }
+  } else if(is.numeric(multithread)) {
+    RcppParallel::setThreadOptions(numThreads = multithread)
+    multithread <- TRUE
+  } else {
+    warning("Invalid multithread parameter. Running as a single thread.")
+    multithread <- FALSE
+  }
+  if(multithread) {
+    assignment <- C_assign_taxonomy2(seqs, refs, ref.to.genus, tax.mat.int, verbose)
+  } else {
+    assignment <- C_assign_taxonomy(seqs, refs, ref.to.genus, tax.mat.int, verbose)
+  }
   # Parse results and return tax consistent with minBoot
   bestHit <- genus.unq[assignment$tax]
   boots <- assignment$boot

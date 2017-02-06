@@ -6,7 +6,7 @@
 \usage{
 assignTaxonomy(seqs, refFasta, minBoot = 50, outputBootstraps = FALSE,
   taxLevels = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-  "Species"), verbose = FALSE)
+  "Species"), multithread = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 
@@ -32,6 +32,11 @@ to see full taxonomy set minBoot=0}
 \item{taxLevels}{(Optional). Default is c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species").
 The taxonomic levels being assigned. Truncates if deeper levels not present in
 training fasta.}
+
+\item{multithread}{(Optional). Default is FALSE.
+If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+If an integer is provided, the number of threads to use is set by passing the argument on to
+\code{\link{setThreadOptions}}.}
 
 \item{verbose}{(Optional). Default FALSE.
 If TRUE, print status to standard output.}

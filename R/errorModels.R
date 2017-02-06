@@ -203,9 +203,6 @@ getErrors <- function(obj, detailed=FALSE, enforce=TRUE) {
 #'  
 #' @export
 #' 
-#' @importFrom stats loess
-#' @importFrom stats predict
-#' 
 #' @examples
 #'  tperr2 <- inflateErr(tperr1, 2)
 #'  tperr3.all <- inflateErr(tperr1, 3, inflateSelfTransitions=TRUE)
