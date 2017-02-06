@@ -113,7 +113,7 @@ loessErrfun <- function(trans) {
 #'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
 #'  # Using a list of derep-class objects
 #'  dereps <- derepFastq(c(fl1, fl2))
-#'  errF <- learnErrors(derepFs, multithread=TRUE, randomize=TRUE)
+#'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE)
 #' 
 learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, randomize=FALSE) {
   NREADS <- 0
