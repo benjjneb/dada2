@@ -62,7 +62,7 @@ loessErrfun <- function(trans) {
   return(err)
 }
 
-#' Learns the error rates from an input list or vector of file names.
+#' Learns the error rates from an input list, or vector, of file names or a list of \code{\link{derep-class}} objects.
 #' 
 #' Error rates are learned by alternating between sample inference and error rate estimation 
 #'  until convergence. Sample inferences is performed by the \code{\link{dada}} function.
@@ -70,14 +70,14 @@ loessErrfun <- function(trans) {
 #'  The output of this function serves as input to the dada function call as the \code{err} parameter.
 #'   
 #' @param fls (Required). \code{character}.
-#'  The file path(s) to the fastq or fastq.gz file(s).
-#'  Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
-#' 
+#'  The file path(s) to the fastq, fastq.gz file(s), or any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
+#'  A list of derep-class ojects can also be provided. 
+#'  
 #' @param nreads (Optional). Default 1e6.
 #'  The minimum number of reads to use for error rate learning. Samples are read into memory
 #'  until at least this number of reads has been reached, or all provided samples have been
 #'  read in.
-#' 
+#'  
 #' @param errorEstimationFunction (Optional). Function. Default \code{\link{loessErrfun}}.
 #' 
 #'  If USE_QUALS = TRUE, \code{errorEstimationFunction} is computed on the matrix of observed transitions
@@ -99,6 +99,8 @@ loessErrfun <- function(trans) {
 #'  $err_in: The initialization error rates (unimportant).
 #'  $trans: A feature table of observed transitions for each type (eg. A->C) and quality score.
 #'  
+#' @importFrom methods is
+#' 
 #' @export
 #' 
 #' @seealso 
@@ -109,13 +111,20 @@ loessErrfun <- function(trans) {
 #'  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
 #'  err <- learnErrors(c(fl1, fl2))
 #'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
+#'    
+#'  derepFs <- lapply(filtFs, derepFastq)
+#'  errF <- learnErrors(derepFs, multithread=TRUE, randomize=TRUE)
 #' 
 learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, randomize=FALSE) {
   NREADS <- 0
   drps <- vector("list", length(fls))
   if(randomize) { fls <- sample(fls) }
   for(i in seq_along(fls)) {
-    drps[[i]] <- derepFastq(fls[[i]])
+    if (is.list.of(fls, "derep")){
+        drps[[i]] <- fls[[i]]
+    } else {
+        drps[[i]] <- derepFastq(fls[[i]])
+    }
     NREADS <- NREADS + sum(drps[[i]]$uniques)
     if(NREADS > nreads) { break }
   }
