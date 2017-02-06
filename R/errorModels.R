@@ -111,8 +111,8 @@ loessErrfun <- function(trans) {
 #'  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
 #'  err <- learnErrors(c(fl1, fl2))
 #'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
-#'  # Using a list derep-class objects
-#'  derepFs <- lapply(filtFs, derepFastq)
+#'  # Using a list of derep-class objects
+#'  dereps <- derepFastq(c(fl1, fl2))
 #'  errF <- learnErrors(derepFs, multithread=TRUE, randomize=TRUE)
 #' 
 learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, randomize=FALSE) {
