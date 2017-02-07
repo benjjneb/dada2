@@ -216,6 +216,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   free(genus_num_plus1);
   free(genus_kmers);
   free(kmer_prior);
+  free(ref_kv);
   free(karray);
   
   return(Rcpp::List::create(_["tax"]=rval, _["boot"]=rboot, _["boot_tax"]=rboot_tax));
@@ -237,9 +238,10 @@ struct AssignParallel : public RcppParallel::Worker
   int *C_rval;
   
   // parameters
-  unsigned int k, max_arraylen;
+  unsigned int k;
   size_t n_kmers;
   size_t ngenus, nlevel;
+  unsigned int max_arraylen;
   
   // initialize with source and destination
   AssignParallel(std::vector<std::string> seqs, double *genus_num_plus1, unsigned int *genus_kmers, double *kmer_prior,
@@ -251,7 +253,7 @@ struct AssignParallel : public RcppParallel::Worker
 
   // Rprintf("Classify the sequences.\n");
   void operator()(std::size_t begin, std::size_t end) {
-    size_t i, j, seqlen;
+    size_t i, seqlen;
     unsigned int boot, booti, boot_match, arraylen;
     int max_g, boot_g;
     int karray[9999];
@@ -313,7 +315,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   }
   
   // Rprintf("Count seqs in each genus (M_g).\n");
-  double *genus_num_plus1 = (double *) calloc(ngenus, sizeof(double));
+  double *genus_num_plus1 = (double *) calloc(ngenus, sizeof(double)); //E
   if(genus_num_plus1 == NULL) Rcpp::stop("Memory allocation failed.");  
   for(i=0;i<nref;i++) {
     genus_num_plus1[ref_to_genus[i]]++;
@@ -322,13 +324,13 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
     genus_num_plus1[g]++;
   }
   
-  unsigned int *genus_kmers = (unsigned int *) calloc((ngenus * n_kmers), sizeof(unsigned int));
+  unsigned int *genus_kmers = (unsigned int *) calloc((ngenus * n_kmers), sizeof(unsigned int)); //E
   if(genus_kmers == NULL) Rcpp::stop("Memory allocation failed.");
   unsigned int *genus_kv;
-  double *kmer_prior = (double *) calloc(n_kmers, sizeof(double));
+  double *kmer_prior = (double *) calloc(n_kmers, sizeof(double)); //E
   if(kmer_prior == NULL) Rcpp::stop("Memory allocation failed.");
   
-  unsigned char *ref_kv = (unsigned char *) malloc(n_kmers * sizeof(unsigned char));
+  unsigned char *ref_kv = (unsigned char *) malloc(n_kmers * sizeof(unsigned char)); //E
   if(ref_kv == NULL) Rcpp::stop("Memory allocation failed.");
   for(i=0;i<nref;i++) {
     // Calculate kmer-vector of this reference sequences
@@ -360,29 +362,29 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   }
   
   // Rprintf("Allocate kmer array to be used by the seqs.");
-  int *karray = (int *) malloc(max_arraylen * sizeof(int));
+  int *karray = (int *) malloc(max_arraylen * sizeof(int)); //E
   if(karray == NULL) Rcpp::stop("Memory allocation failed.");
   
-  // Allocate return values, plus thread-safe C versions
-  int *C_rval = (int *) malloc(nseq * sizeof(int));
-  Rcpp::IntegerVector rval(nseq);
-  Rcpp::NumericVector unifs; ///! Generate these all at once before calling threaded assignment
+  // Rprintf("Generate random numbers for bootstrapping.");
+  Rcpp::NumericVector unifs;
   unifs = Rcpp::runif(nseq*100*(max_arraylen/8));
-  double *C_unifs = (double *) malloc(unifs.size() * sizeof(double));
+  double *C_unifs = (double *) malloc(unifs.size() * sizeof(double)); //E
   for(i=0;i<unifs.size();i++) { C_unifs[i] = unifs(i); }
+  
+  // Allocate return values, plus thread-safe C versions of source data
+  Rcpp::IntegerVector rval(nseq);
+  int *C_rval = (int *) malloc(nseq * sizeof(int)); //E
   Rcpp::IntegerMatrix rboot(nseq, nlevel);
-  int *C_rboot = (int *) malloc(nseq * nlevel * sizeof(int));
+  int *C_rboot = (int *) calloc(nseq * nlevel, sizeof(int)); //E
   Rcpp::IntegerMatrix rboot_tax(nseq, 100);
-  int *C_rboot_tax = (int *) malloc(nseq * 100 * sizeof(int));
-  int *C_genusmat = (int *) malloc(ngenus * nlevel * sizeof(int));
+  int *C_rboot_tax = (int *) malloc(nseq * 100 * sizeof(int)); //E
+  int *C_genusmat = (int *) malloc(ngenus * nlevel * sizeof(int)); //E
+  if(C_rval == NULL || C_rboot == NULL || C_rboot_tax == NULL || C_genusmat == NULL) Rcpp::stop("Memory allocation failed.");
   for(i=0;i<ngenus;i++) {
     for(j=0;j<nlevel;j++) {
       C_genusmat[i*nlevel + j] = genusmat(i,j);
     }
   }
-  
-  int max_g, boot_g;
-  unsigned int boot, booti, boot_match, arraylen;
   
   AssignParallel assignParallel(seqs, genus_num_plus1, genus_kmers, kmer_prior, C_genusmat, C_unifs, C_rboot, C_rboot_tax, C_rval, k, n_kmers, ngenus, nlevel, max_arraylen);
   RcppParallel::parallelFor(0, nseq, assignParallel, 1); // GRAIN_SIZE=1
@@ -406,9 +408,11 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   free(C_rboot_tax);
   free(C_unifs);
   free(C_rval);
+  free(C_genusmat);
   free(genus_num_plus1);
   free(genus_kmers);
   free(kmer_prior);
+  free(ref_kv);
   free(karray);
   
   return(Rcpp::List::create(_["tax"]=rval, _["boot"]=rboot, _["boot_tax"]=rboot_tax));
