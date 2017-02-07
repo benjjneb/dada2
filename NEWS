@@ -1,3 +1,27 @@
+CHANGES IN VERSION 1.3.2
+-----------------------
+
+NEW FEATURES
+
+    o learnErrors is a new method for learning error rates from a targeted number of reads. This wraps pre-existing functionality -- dada(..., selfConsist=TRUE) -- in a much easier to use form.
+    
+    o assignTaxonomy is multithreaded (multithread=TRUE) and will individually test reverse-complemented sequences and use them to classify if they better match the reference (tryRC=TRUE).
+
+CHANGES IN VERSION 1.3.1
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The xxxFilter methods now (invisibily) return the number of reads that went in and that passed the filter.
+
+    o fastqFilter now has a maxLen parameter, primarily for filtering/trimming 454 data.
+
+BUG FIXES
+
+    o trimLeft is now enforced before any filtering is performed.
+
+    o Rscript invocations should now work without requiring an initial library(methods) call.
+
 CHANGES IN VERSION 1.1.7
 -----------------------
 
