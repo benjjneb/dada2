@@ -2,15 +2,15 @@
 % Please edit documentation in R/errorModels.R
 \name{learnErrors}
 \alias{learnErrors}
-\title{Learns the error rates from an input list or vector of file names.}
+\title{Learns the error rates from an input list, or vector, of file names or a list of \code{\link{derep-class}} objects.}
 \usage{
 learnErrors(fls, nreads = 1e+06, errorEstimationFunction = loessErrfun,
   multithread = FALSE, randomize = FALSE)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
-The file path(s) to the fastq or fastq.gz file(s).
-Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.}
+The file path(s) to the fastq, fastq.gz file(s), or any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
+A list of derep-class ojects can also be provided.}
 
 \item{nreads}{(Optional). Default 1e6.
 The minimum number of reads to use for error rate learning. Samples are read into memory
@@ -50,8 +50,11 @@ Error rates are learned by alternating between sample inference and error rate e
  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
  err <- learnErrors(c(fl1, fl2))
  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
+ # Using a list of derep-class objects
+ dereps <- derepFastq(c(fl1, fl2))
+ err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE)
 
 }
 \seealso{
-\code{\link{plotErrors}}, \code{\link{loessErrfun}}, \code{\link{dada}}
+\code{\link{derepFastq}}, \code{\link{plotErrors}}, \code{\link{loessErrfun}}, \code{\link{dada}}
 }

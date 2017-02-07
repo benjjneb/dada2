@@ -76,12 +76,12 @@ dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kd
     .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, final_consensus, vectorized_alignment, homo_gap, multithread, verbose)
 }
 
-C_assign_taxonomy <- function(seqs, refs, ref_to_genus, genusmat, verbose) {
-    .Call('dada2_C_assign_taxonomy', PACKAGE = 'dada2', seqs, refs, ref_to_genus, genusmat, verbose)
+C_assign_taxonomy <- function(seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose) {
+    .Call('dada2_C_assign_taxonomy', PACKAGE = 'dada2', seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose)
 }
 
-C_assign_taxonomy2 <- function(seqs, refs, ref_to_genus, genusmat, verbose) {
-    .Call('dada2_C_assign_taxonomy2', PACKAGE = 'dada2', seqs, refs, ref_to_genus, genusmat, verbose)
+C_assign_taxonomy2 <- function(seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose) {
+    .Call('dada2_C_assign_taxonomy2', PACKAGE = 'dada2', seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose)
 }
 
 # Register entry points for exported C++ functions

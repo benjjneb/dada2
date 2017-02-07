@@ -4,9 +4,10 @@
 \alias{assignTaxonomy}
 \title{Classifies sequences against reference training dataset.}
 \usage{
-assignTaxonomy(seqs, refFasta, minBoot = 50, outputBootstraps = FALSE,
-  taxLevels = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus",
-  "Species"), multithread = FALSE, verbose = FALSE)
+assignTaxonomy(seqs, refFasta, minBoot = 50, tryRC = FALSE,
+  outputBootstraps = FALSE, taxLevels = c("Kingdom", "Phylum", "Class",
+  "Order", "Family", "Genus", "Species"), multithread = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 
@@ -23,6 +24,10 @@ separated by a semicolon. Eg.
 
 \item{minBoot}{(Optional). Default 50. 
 The minimum bootstrap confidence for assigning a taxonomic level.}
+
+\item{tryRC}{(Optional). Default FALSE. 
+If TRUE, the reverse-complement of each sequences will be used for classification if it is a better match to the reference
+sequences than the forward sequence.}
 
 \item{outputBootstraps}{(Optional). Default FALSE.
 If TRUE, bootstrap values will be retained in an integer matrix. A named list containing the assigned taxonomies (named "taxa") 

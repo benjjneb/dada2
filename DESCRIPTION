@@ -27,7 +27,6 @@ Imports:
     RcppParallel (>= 4.3.0),
     parallel (>= 3.2.0)
 Suggests:
-    testthat (>= 0.9.1),
     BiocStyle,
     knitr,
     rmarkdown

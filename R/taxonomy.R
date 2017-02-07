@@ -20,6 +20,10 @@
 #' @param minBoot (Optional). Default 50. 
 #' The minimum bootstrap confidence for assigning a taxonomic level.
 #'   
+#' @param tryRC (Optional). Default FALSE. 
+#' If TRUE, the reverse-complement of each sequences will be used for classification if it is a better match to the reference
+#' sequences than the forward sequence.
+#'   
 #' @param outputBootstraps (Optional). Default FALSE.
 #'  If TRUE, bootstrap values will be retained in an integer matrix. A named list containing the assigned taxonomies (named "taxa") 
 #'  and the bootstrap values (named "boot") will be returned. Minimum bootstrap confidence filtering still takes place,
@@ -57,7 +61,7 @@
 #'  taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
 #' }
 #' 
-assignTaxonomy <- function(seqs, refFasta, minBoot=50, outputBootstraps=FALSE,
+assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootstraps=FALSE,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
                            multithread=FALSE, verbose=FALSE) {
   # Get character vector of sequences
@@ -99,9 +103,9 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, outputBootstraps=FALSE,
     multithread <- FALSE
   }
   if(multithread) {
-    assignment <- C_assign_taxonomy2(seqs, refs, ref.to.genus, tax.mat.int, verbose)
+    assignment <- C_assign_taxonomy2(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose)
   } else {
-    assignment <- C_assign_taxonomy(seqs, refs, ref.to.genus, tax.mat.int, verbose)
+    assignment <- C_assign_taxonomy(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose)
   }
   # Parse results and return tax consistent with minBoot
   bestHit <- genus.unq[assignment$tax]
