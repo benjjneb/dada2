@@ -38,16 +38,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   if(nraw == 0) {
     Rcpp::stop("Zero input sequences.");
   }
-  // Check sequence lengths ///ITS
-//  seqlen = seqs[0].length();
-//  for(index=1;index<nraw;index++) {
-//    if(seqs[index].length() != seqlen) {
-//      Rcpp::stop("All input sequences must be the same length.");
-//    }
-//  }
-//  if(seqlen >= SEQLEN) {   // Need one extra byte for the string termination character
-//    Rcpp::stop("Input sequences exceed the maximum allowed string length.");
-//  }
   maxlen=0;
   for(index=0;index<nraw;index++) {
     if(seqs[index].length() > maxlen) { maxlen = seqs[index].length(); }
@@ -120,10 +110,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     }
   }
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
-///  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(); ///t CRASHING
   Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, err.ncol());
-  ///  Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, seqlen); ///ITS
-  Rcpp::NumericMatrix mat_quals(0); ///ITS
+  Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, maxlen);
   //  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err, use_quals);
   Rcpp::DataFrame df_birth_subs = b_make_birth_subs_df(bb, birth_subs, has_quals);
 
@@ -163,7 +151,6 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
   // Everyone gets aligned within the initial cluster, no KMER screen
   if(multithread) { b_compare_parallel(bb, 0, FALSE, 1.0, errMat, verbose); }
   else { b_compare(bb, 0, FALSE, 1.0, errMat, verbose); }
-    //  b_compare_threaded(bb, 0, FALSE, 1.0, errMat, nthreads, verbose); // Everyone gets aligned within the initial cluster, no KMER screen
   b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
@@ -172,7 +159,6 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
     if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
     if(multithread) { b_compare_parallel(bb, newi, use_kmers, kdist_cutoff, errMat, verbose); }
     else { b_compare(bb, newi, use_kmers, kdist_cutoff, errMat, verbose); }
-    //    b_compare_threaded(bb, newi, use_kmers, kdist_cutoff, errMat, nthreads, verbose);
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {
@@ -185,7 +171,6 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
     Rcpp::checkUserInterrupt();
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, verbose)) )
   
-//  if(final_consensus) { b_make_consensus(bb); }
   if(verbose) Rprintf("\nALIGN: %i aligns, %i shrouded (%i raw).\n", bb->nalign, bb->nshroud, bb->nraw);
   
   return bb;
