@@ -119,10 +119,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, minLen=20, maxLen=In
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
     
-    # Enforce minlen/maxLen
-    if(is.finite(maxLen)) {
-      fq <- fq[width(fq) >= minLen & width(fq) <= maxLen]
-    }
+    # Enforce maxLen
+    if(is.finite(maxLen)) { fq <- fq[width(fq) <= maxLen] }
     # Trim left
     fq <- fq[width(fq) >= start]
     fq <- narrow(fq, start = start, end = NA)
@@ -136,6 +134,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, minLen=20, maxLen=In
     }
     if(length(fq) > 0) fq <- trimTails(fq, 1, truncQ)
     # Filter any with less than required length
+    fq <- fq[width(fq) >= (minLen-start+1)] # minLen filters on original length, after quality truncation
     if(!is.na(end)) { fq <- fq[width(fq) >= end] }
     # Truncate to truncLen
     fq <- narrow(fq, start = 1, end = end)
