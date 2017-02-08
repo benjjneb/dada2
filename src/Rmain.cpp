@@ -27,7 +27,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
                         bool multithread,
                         bool verbose) {
 
-  unsigned int i, j, r, index, pos, seqlen, nraw;
+  unsigned int i, j, r, index, pos, nraw, maxlen;
   
   /********** INPUT VALIDATION *********/
   // Check lengths of seqs and abundances vectors
@@ -38,23 +38,28 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   if(nraw == 0) {
     Rcpp::stop("Zero input sequences.");
   }
-  // Check sequence lengths
-  seqlen = seqs[0].length();
-  for(index=1;index<nraw;index++) {
-    if(seqs[index].length() != seqlen) {
-      Rcpp::stop("All input sequences must be the same length.");
-    }
+  // Check sequence lengths ///ITS
+//  seqlen = seqs[0].length();
+//  for(index=1;index<nraw;index++) {
+//    if(seqs[index].length() != seqlen) {
+//      Rcpp::stop("All input sequences must be the same length.");
+//    }
+//  }
+//  if(seqlen >= SEQLEN) {   // Need one extra byte for the string termination character
+//    Rcpp::stop("Input sequences exceed the maximum allowed string length.");
+//  }
+  maxlen=0;
+  for(index=0;index<nraw;index++) {
+    if(seqs[index].length() > maxlen) { maxlen = seqs[index].length(); }
   }
-  if(seqlen >= SEQLEN) {   // Need one extra byte for the string termination character
-    Rcpp::stop("Input sequences exceed the maximum allowed string length.");
-  }
+  if(maxlen >= SEQLEN) { Rcpp::stop("Input sequences exceed the maximum allowed string length."); }
   
   // Check for presence of quality scores and their lengths
   bool has_quals = false;
   if(quals.nrow() > 0) { // Each sequence is a COLUMN, each row is a POSITION
     has_quals = true;
-    if(quals.nrow() != seqlen) {
-      Rcpp::stop("Sequence lengths and quality lengths must be the same.");
+    if(quals.nrow() != maxlen) {
+      Rcpp::stop("Sequence must have associated qualities for each nucleotide position.");
     }
   }
   // Copy score matrix into a C style array
@@ -82,7 +87,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     strcpy(seq, seqs[index].c_str());
     nt2int(seq, seq);
     if(has_quals) {
-      for(pos=0;pos<seqlen;pos++) {
+      for(pos=0;pos<seqs[index].length();pos++) {
         qual[pos] = quals(pos, index);
       }
       raws[index] = raw_new(seq, qual, abundances[index]);
@@ -117,7 +122,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
 ///  Rcpp::DataFrame df_clustering = Rcpp::DataFrame::create(); ///t CRASHING
   Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, err.ncol());
-  Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, seqlen);
+  ///  Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, seqlen); ///ITS
+  Rcpp::NumericMatrix mat_quals(0); ///ITS
   //  Rcpp::DataFrame df_expected = b_make_positional_substitution_df(bb, subs, seqlen, err, use_quals);
   Rcpp::DataFrame df_birth_subs = b_make_birth_subs_df(bb, birth_subs, has_quals);
 
