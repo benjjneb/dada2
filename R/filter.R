@@ -23,6 +23,9 @@
 #'  Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
 #'  Note that \code{\link{dada}} currently requires all sequences to be the same length.
 #'  
+#' @param minLen (Optional). Default 20.
+#'  Remove reads with length less than minLen.  
+#'  
 #' @param maxLen (Optional). Default Inf (no maximum).
 #'  Remove reads with length greater than maxLen.  
 #'  
@@ -89,7 +92,7 @@
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, compress = TRUE, verbose = FALSE, ...){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, minLen=20, maxLen=Inf, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, compress = TRUE, verbose = FALSE, ...){
   start <- max(1, trimLeft + 1, na.rm=TRUE)
   end <- truncLen
   if(end < start) { end = NA }
@@ -116,9 +119,9 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, trimLeft
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
     
-    # Enforce maxLen
+    # Enforce minlen/maxLen
     if(is.finite(maxLen)) {
-      fq <- fq[width(fq) <= maxLen]
+      fq <- fq[width(fq) >= minLen & width(fq) <= maxLen]
     }
     # Trim left
     fq <- fq[width(fq) >= start]
