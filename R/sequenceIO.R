@@ -241,3 +241,19 @@ derepFasta <- function(fls, ...){
   
   derepFastq(fastqs, ...)
 }
+
+##########
+#' Read a FASTA file into a named uppercase character vector.
+#' 
+#' A wrapper for readFasta in the ShortRead package.
+#' 
+#' @param fl (Required). The path to the fasta file.
+#' 
+#' @importFrom ShortRead readFasta
+#' 
+getFasta <- function(fl) {
+  sr <- readFasta(fl)
+  seqs <- toupper(as(sread(sr), "character"))
+  names(seqs) <- as(id(sr), "character")
+  seqs
+}
