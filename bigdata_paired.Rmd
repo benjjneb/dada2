@@ -9,7 +9,7 @@ output: html_document
 
 ## Starting point
 
-The workflow below expects demultiplexed, per-sample, gzipped fastq files for the forward reads of a Hiseq run to be in the directory `pathF` (defined below), and the corresponding reverse read files to be in a different directory `pathR`. The string parsing below expects forward and reverse filenames of the following format: `samplename_XXX.fastq.gz`, but other formats simply require modification to the filename parsing portions of these scripts.
+The workflow below expects demultiplexed, per-sample, gzipped fastq files for the primer-free forward reads of a Hiseq run to be in the directory `pathF` (defined below), and the corresponding primer-free reverse read files to be in a different directory `pathR`. The string parsing below expects forward and reverse filenames of the following format: `samplename_XXX.fastq.gz`, but other formats simply require modification to the filename parsing portions of these scripts.
 
 **NOTE: The filename parsing in this workflow expects the paired forward and reverse fastq files to have the same `samplename_` prefix.**
 
@@ -35,8 +35,8 @@ for(i in seq_along(fastqFs)) {
   fqF <- fastqFs[[i]]; fqR <- fastqRs[[i]]
   fastqPairedFilter(c(file.path(pathF,fqF), file.path(pathR, fqR)),
               c(file.path(filtpathF, fqF), file.path(filtpathR, fqR)),
-              trimLeft=10, truncLen=c(240,200),
-              maxEE=2, truncQ=11, maxN=0,
+              truncLen=c(240,200),
+              maxEE=2, truncQ=11, maxN=0, rm.phix=TRUE,
               compress=TRUE, verbose=TRUE)
 }
 ```

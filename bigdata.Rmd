@@ -23,7 +23,7 @@ Separable sample processing allows DADA2's running time to scale linearly in the
 
 ## Starting point
 
-The workflow below expects demultiplexed, per-sample, gzipped fastq files for the forward reads of a Hiseq run to be in the directory `path` (defined below). The string parsing below expects filenames of the following format: `samplename_XXX.fastq.gz`, but other formats simply require modification to the filename parsing portions of these scripts.
+The workflow below expects demultiplexed, per-sample, gzipped fastq files for the primer-free forward reads of a Hiseq run to be in the directory `path` (defined below). The string parsing below expects filenames of the following format: `samplename_XXX.fastq.gz`, but other formats simply require modification to the filename parsing portions of these scripts.
 
 **<span style="color:red">A version of this workflow [for paired end data](bigdata_paired.html) is also available.**
 
@@ -45,12 +45,12 @@ for(i in seq_along(fastqs)) {
   fastq <- fastqs[[i]]
   fastqFilter(file.path(path,fastq), file.path(filtpath, fastq),
               trimLeft=10, truncLen=240,
-              maxEE=1, truncQ=11, maxN=0,
+              maxEE=1, truncQ=11, maxN=0, rm.phix=TRUE,
               compress=TRUE, verbose=TRUE)
 }
 ```
 
-A brief aside: **If there is only one part of any amplicon bioinformatics workflow on which you spend time considering the parameters, it should be filtering!** The above parameters work well for good quality 250nt Hiseq data, but they are not set in stone, and should be changed if they don't work for your data. We generally recommend `trimLeft=10` for all Illumina data, and `maxN=0` is required for later processing, but all the other parameters can be changed. If too few reads are passing the filter, raise `maxEE` and/or reduce `truncQ`. If quality drops sharply at the end of your reads, reduce `truncLen`. If your reads are very good quality and you want to cut down computation time reduce `maxEE`.
+A brief aside: **If there is only one part of any amplicon bioinformatics workflow on which you spend time considering the parameters, it should be filtering!** The above parameters work well for good quality 250nt Hiseq data, but they are not set in stone, and should be changed if they don't work for your data. `maxN=0` is required for later processing, but all the other parameters can be changed. If too few reads are passing the filter, raise `maxEE` and/or reduce `truncQ`. If quality drops sharply at the end of your reads, reduce `truncLen`. If your reads are very good quality and you want to cut down computation time reduce `maxEE`.
 
 ## Sample Inference
 

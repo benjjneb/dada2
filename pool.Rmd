@@ -17,7 +17,7 @@ library(microbenchmark); packageVersion("microbenchmark")
 We'll be working with the same data used in [the tutorial](tutorial.html), so grab that data if you don't have it already and then set your working directory to its location:
 
 ```{r path}
-path <- "~/Desktop/MoMiSOP/MiSeq_SOP/" # CHANGE ME to the directory containing the fastq files after unzipping.
+path <- "~/MiSeq_SOP" # CHANGE ME to the directory containing the fastq files after unzipping.
 fns <- list.files(path)
 fnFs <- fns[grepl("_R1_001.fastq$", fns)]
 sample.names <- sapply(strsplit(fnFs, "_"), `[`, 1)
@@ -27,15 +27,15 @@ We'll trim and filter just the forward reads for simplicity:
 ```{r}
 filtFs <- paste0(sample.names, "_filtered.fq.gz")
 for(i in seq_along(fnFs)) {
-  fastqFilter(paste0(path, fnFs[[i]]), paste0(path, filtFs[[i]]),
-              maxEE=2, trimLeft=10, truncLen=240, truncQ=2)
+  fastqFilter(file.path(path, fnFs[[i]]), file.path(path, filtFs[[i]]),
+              maxEE=2, truncLen=240, truncQ=2, rm.phix=TRUE)
 }
 ```
 
 Dereplicate and name our samples:
 
 ```{r derep}
-drps <- derepFastq(paste0(path,filtFs))
+drps <- derepFastq(file.path(path,filtFs))
 names(drps) <- sample.names
 ```
 
@@ -46,7 +46,7 @@ names(drps) <- sample.names
 The first type of pooling we'll consider is pooling samples for error rate estimation. This is the default functionality of the `dada(...)` function when passed a list of samples, but for comparison purposes we'll first look at what happens if we estimate error rates using just one sample alone:
 
 ```{r estimate-1}
-dd1 <- dada(drps[[1]], err=NULL, selfConsist=TRUE)
+dd1 <- dada(drps[[1]], err=NULL, selfConsist=TRUE, multithread=TRUE)
 plotErrors(dd1, nominalQ=TRUE)
 ```
 
@@ -54,7 +54,7 @@ The two things to look for in the output of `plotErrors` are that the observed e
 
 Now let's pool our samples while estimating error rates:
 ```{r estimate-pool}
-dd <- dada(drps, err=NULL, selfConsist=TRUE)
+dd <- dada(drps, err=NULL, selfConsist=TRUE, multithread=TRUE)
 plotErrors(dd, nominalQ=TRUE)
 ```
 
@@ -87,10 +87,10 @@ The pooled sample inference took longer, about twice as long in this case, but t
 We'll also take a quick look at the differences in output:
 ```{r}
 st <- makeSequenceTable(dd.sep)
-st.sep <- removeBimeraDenovo(st)
+st.sep <- removeBimeraDenovo(st, multithread=TRUE)
 
 st <- makeSequenceTable(dd.pool)
-st.pool <- removeBimeraDenovo(st)
+st.pool <- removeBimeraDenovo(st, multithread=TRUE)
 
 dim(st.sep); dim(st.pool)
 ```
@@ -109,5 +109,3 @@ sum(st.pool[,!sq.pool %in% sq.sep])
 ```
 
 The large majority of sequences, and the vast majority of reads (>99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities. 
-
-*Coming soon, a hybrid method that leverages the strength of both (linear computation time, and shared information between samples).*

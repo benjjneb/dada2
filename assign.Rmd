@@ -4,7 +4,7 @@ title: "Taxonomic Assignment"
 
 --------------------------
 
-The primary goal of the dada2 package is to infer the exact sequence variants in amplicon sequenced samples and their associated abundances. However, a common companion step, especially when sequencing taxonomic marker genes such as 16S or 18S rRNA, is to assign taxonomy to the inferred sequence variants (or OTUs) by comparing them to a reference database of sequences with known taxonomy.
+The primary goal of the dada2 package is to infer the exact sequence variants in amplicon sequenced samples and their associated abundances. However, a common companion step, especially when sequencing taxonomic markers such as 16S or 18S rRNA gene or the ITS region in fungi, is to assign taxonomy to the inferred sequence variants (or OTUs) by comparing them to a reference database of sequences with known taxonomy.
 
 The dada2 package provides two taxonomic assignment methods.
 

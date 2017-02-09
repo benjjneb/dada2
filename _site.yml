@@ -1,4 +1,5 @@
 name: "dada2"
+output_dir: .
 navbar:
   title: "dada2"
   left:
@@ -12,7 +13,7 @@ navbar:
       icon: fa-gear
       menu:
         - text: "Manual"
-          href: https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf
+          href: https://www.bioconductor.org/packages/3.4/bioc/manuals/dada2/man/dada2.pdf
         - text: "Taxonomy"
           href: assign.html
         - text: "Species"
@@ -21,7 +22,7 @@ navbar:
           href: pool.html
         - text: "FAQ"
           href: faq.html
-      href: https://www.bioconductor.org/packages/3.3/bioc/manuals/dada2/man/dada2.pdf
+      href: https://www.bioconductor.org/packages/3.4/bioc/manuals/dada2/man/dada2.pdf
     - text: "Evaluation"
       icon: fa-gear
       menu:
