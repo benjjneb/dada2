@@ -91,9 +91,9 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
   // Now fix the ones where subs occurred
   for(s=0;s<sub->nsubs;s++) {
     pos0 = sub->pos[s];
-    if(pos0 < 0 || pos0 >= len1) { Rcpp::stop("CL: Bad pos0."); }
+    if(pos0 < 0 || pos0 >= sub->len0) { Rcpp::stop("CL: Bad pos0: %i (len0=%i).", pos0, sub->len0); }
     pos1 = sub->map[sub->pos[s]];
-    if(pos1 < 0 || pos1 >= len1) { Rcpp::stop("CL: Bad pos1."); }
+    if(pos1 < 0 || pos1 >= len1) { Rcpp::stop("CL: Bad pos1: %i (len1=%i).", pos1, len1); }
     
     nti0 = ((int) sub->nt0[s]) - 1;
     nti1 = ((int) sub->nt1[s]) - 1;
@@ -147,7 +147,7 @@ double compute_lambda_ts(Raw *raw, Sub *sub, unsigned int ncol, double *err_mat,
   // Now fix the ones where subs occurred
   for(s=0;s<sub->nsubs;s++) {
     pos0 = sub->pos[s];
-    if(pos0 < 0 || pos0 >= len1) { Rcpp::stop("CL: Bad pos0: %i (len1=%i).", pos0, len1); }
+    if(pos0 < 0 || pos0 >= sub->len0) { Rcpp::stop("CL: Bad pos0: %i (len0=%i).", pos0, sub->len0); }
     pos1 = sub->map[sub->pos[s]];
     if(pos1 < 0 || pos1 >= len1) { Rcpp::stop("CL: Bad pos1: %i (len1=%i).", pos1, len1); }
     
