@@ -21,13 +21,12 @@
 #'  
 #' @param truncLen (Optional). Default 0 (no truncation).
 #'  Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
-#'  Note that \code{\link{dada}} currently requires all sequences to be the same length.
-#'  
-#' @param minLen (Optional). Default 20.
-#'  Remove reads with length less than minLen.  
 #'  
 #' @param maxLen (Optional). Default Inf (no maximum).
-#'  Remove reads with length greater than maxLen.  
+#'  Remove reads with length greater than maxLen. maxLen is enforced on the raw reads.   
+#'  
+#' @param minLen (Optional). Default 20.
+#'  Remove reads with length less than minLen. minLen is enforced after all other trimming and truncation.   
 #'  
 #' @param trimLeft (Optional). Default 0.
 #'  The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
@@ -92,7 +91,7 @@
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, minLen=20, maxLen=Inf, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, compress = TRUE, verbose = FALSE, ...){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, compress = TRUE, verbose = FALSE, ...){
   start <- max(1, trimLeft + 1, na.rm=TRUE)
   end <- truncLen
   if(end < start) { end = NA }
@@ -119,10 +118,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, minLen=20, maxLen=In
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
     
-    # Enforce minlen/maxLen
-    if(is.finite(maxLen)) {
-      fq <- fq[width(fq) >= minLen & width(fq) <= maxLen]
-    }
+    # Enforce maxLen
+    if(is.finite(maxLen)) { fq <- fq[width(fq) <= maxLen] }
     # Trim left
     fq <- fq[width(fq) >= start]
     fq <- narrow(fq, start = start, end = NA)
@@ -139,6 +136,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, minLen=20, maxLen=In
     if(!is.na(end)) { fq <- fq[width(fq) >= end] }
     # Truncate to truncLen
     fq <- narrow(fq, start = 1, end = end)
+    # Enforce minLen
+    fq <- fq[width(fq) >= minLen]
     
     # Filter based on minQ and Ns and maxEE
     keep <- rep(TRUE, length(fq))
@@ -204,7 +203,12 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, minLen=20, maxLen=In
 #'  
 #' @param truncLen (Optional). Default 0 (no truncation).
 #'  Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
-#'  Note that \code{\link{dada}} currently requires all sequences to be the same length.
+#'  
+#' @param maxLen (Optional). Default Inf (no maximum).
+#'  Remove reads with length greater than maxLen. maxLen is enforced on the raw reads.   
+#'  
+#' @param minLen (Optional). Default 20.
+#'  Remove reads with length less than minLen. minLen is enforced after all other trimming and truncation.   
 #'  
 #' @param trimLeft (Optional). Default 0.
 #'  The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
@@ -294,14 +298,14 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, minLen=20, maxLen=In
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
 #'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE, ...){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE, ...){
   # Warning: This assumes that forward/reverse reads are in the same order unless matchIDs=TRUE
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
   
   if(any(duplicated(c(fn, fout)))) { stop("The output and input file names must be different.") }
   
-  for(var in c("maxN", "truncQ", "truncLen", "trimLeft", "minQ", "maxEE", "rm.phix")) {
+  for(var in c("maxN", "truncQ", "truncLen", "maxLen", "minLen", "trimLeft", "minQ", "maxEE", "rm.phix")) {
     if(length(get(var)) == 1) { # Double the 1 value to be the same for F and R
       assign(var, c(get(var), get(var)))
     }
@@ -405,6 +409,12 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       fqR <- fqR[idsR %in% idsF]
     }
     
+    # Enforce maxLen
+    if(is.finite(maxLen[[1]]) || is.finite(maxLen[[2]])) {
+      keep <- width(fqF) <= maxLen[[1]] & width(fqR) <= maxLen[[2]]
+      fqF <- fqF[keep]
+      fqR <- fqR[keep]
+    }
     # Trim left
     keep <- (width(fqF) >= startF & width(fqR) >= startR)
     fqF <- fqF[keep]
@@ -444,7 +454,11 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     # Truncate to truncLen
     fqF <- narrow(fqF, start = 1, end = endF)
     fqR <- narrow(fqR, start = 1, end = endR)
-    
+    # Enforce minLen
+    keep <- width(fqF) >= minLen[[1]] & width(fqR) >= minLen[[2]]
+    fqF <- fqF[keep]
+    fqR <- fqR[keep]
+
     # Filter based on minQ and Ns and maxEE
     keep <- rep(TRUE, length(fqF))
     suppressWarnings(keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF))

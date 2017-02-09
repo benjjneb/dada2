@@ -150,13 +150,15 @@ getNseq <- function(object) {
 #' 
 nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISMATCH"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=-1, endsfree=TRUE, vec=FALSE) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
-  if(!C_isACGT(s1) || !C_isACGT(s2)) {
-    stop("Sequences must contain only A/C/G/T characters.")
+  if(vec) {
+    return(C_nwvec(s1, s2, match, mismatch, gap, band, endsfree))
+  } else {
+    if(!C_isACGT(s1) || !C_isACGT(s2)) {
+      stop("Sequences must contain only A/C/G/T characters.")
+    }
+    if(is.null(homo_gap)) { homo_gap <- gap }
+    return(C_nwalign(s1, s2, match, mismatch, gap, homo_gap, band, endsfree))
   }
-  if(is.null(homo_gap)) { homo_gap <- gap }
-
-  if(vec) C_nwvec(s1, s2, match, mismatch, gap, band, endsfree)
-  else C_nwalign(s1, s2, match, mismatch, gap, homo_gap, band, endsfree)
 }
 
 ################################################################################

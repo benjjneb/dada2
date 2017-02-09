@@ -36,9 +36,7 @@
 #' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
 derepFastq <- function(fls, n = 1e6, verbose = FALSE){
-  if(!is.character(fls)) {
-    stop("Filenames must be provided as in character format.")
-  }
+  if(!is.character(fls)) { stop("Filenames must be provided in character format.") }
   rval <- list()
   for(i in seq_along(fls)) {
     fl <- fls[[i]]
@@ -49,7 +47,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
     f <- FastqStreamer(fl, n = n)
     suppressWarnings(fq <- yield(f))
     
-    out <- qtables2(fq, FALSE)
+    out <- qtables2(fq, FALSE) ###ITS
     
     derepCounts <- out$uniques
     derepQuals <- out$cum_quals
@@ -62,13 +60,19 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
         message(".", appendLF = FALSE)
       }
       out <- qtables2(fq, FALSE)
+      # Augment quality matrices with NAs as needed to match ncol
+      if(ncol(out$cum_quals) > ncol(derepQuals)) {
+        derepQuals <- cbind(derepQuals, matrix(NA, nrow=nrow(derepQuals), ncol=(ncol(out$cum_quals)-ncol(derepQuals))))
+      } else if(ncol(out$cum_quals) < ncol(derepQuals)) {
+        out$cum_quals <- cbind(out$cum_quals, matrix(NA, nrow=nrow(out$cum_quals), ncol=(ncol(derepQuals)-ncol(out$cum_quals))))
+      }
       # identify sequences already present in `derepCounts`
       alreadySeen <- names(out$uniques) %in% names(derepCounts)
       # Sum these values, if any
       if(any(alreadySeen)){
         sqnms = names(out$uniques)[alreadySeen]
-        derepCounts[sqnms] <- derepCounts[sqnms] + out$uniques[sqnms]
-        derepQuals[sqnms,] <- derepQuals[sqnms,] + out$cum_quals[sqnms,]
+        derepCounts[sqnms] <- derepCounts[sqnms] + out$uniques[sqnms] ###ITS
+        derepQuals[sqnms,] <- derepQuals[sqnms,] + out$cum_quals[sqnms,] ###ITS
       }
       # Concatenate the remainder to `derepCounts`, if any
       if(!all(alreadySeen)){
@@ -80,7 +84,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
       derepMap <- c(derepMap, new2old[out$map])
     }
     derepQuals <- derepQuals/derepCounts # Average
-  ###  if(qeff) derepQuals <- -10*log10(derepQuals)  # Convert back to effective Q value
+    ###  if(qeff) derepQuals <- -10*log10(derepQuals)  # Convert back to effective Q value
     # Sort by decreasing abundance
     ord <- order(derepCounts, decreasing=TRUE)
     derepCounts <- derepCounts[ord]
@@ -95,7 +99,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
     }
     close(f)
     if(sum(tabulate(nchar(names(derepCounts)))>0) > 1) {
-      warning("Not all sequences were the same length. dada(...) requires same length input sequences. See truncLen parameter in ?fastqFilter or ?fastqPairedFilter.")
+      cat("Not all sequences were the same length.\n")
     }
     derepO <- list(uniques=derepCounts, quals=derepQuals, map=derepMap)
     derepO <- as(derepO, "derep")
@@ -236,4 +240,20 @@ derepFasta <- function(fls, ...){
   }
   
   derepFastq(fastqs, ...)
+}
+
+##########
+#' Read a FASTA file into a named uppercase character vector.
+#' 
+#' A wrapper for readFasta in the ShortRead package.
+#' 
+#' @param fl (Required). The path to the fasta file.
+#' 
+#' @importFrom ShortRead readFasta
+#' 
+getFasta <- function(fl) {
+  sr <- readFasta(fl)
+  seqs <- toupper(as(sread(sr), "character"))
+  names(seqs) <- as(id(sr), "character")
+  seqs
 }

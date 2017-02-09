@@ -201,15 +201,16 @@ Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int
 
 // Calculate the average positional qualities for each cluster/partition/Bi
 // Return position (rows) by Bi (columns) matrix.
-Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int seqlen) {
-  unsigned int i, r, pos0, pos1, raw_reads;
-  std::vector<unsigned int> nreads(seqlen);
+Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_quals, unsigned int maxlen) {
+  unsigned int i, r, pos0, pos1, raw_reads, seqlen;
+  std::vector<unsigned int> nreads(maxlen);
   Sub *sub;
   Raw *raw;
-  Rcpp::NumericMatrix Rquals(seqlen, b->nclust);
+  Rcpp::NumericMatrix Rquals(maxlen, b->nclust);
   
   if(has_quals) {
     for(i=0;i<b->nclust;i++) {
+      seqlen = b->bi[i]->center->length;
       for(pos0=0;pos0<seqlen;pos0++) { nreads[pos0] = 0; }
       for(r=0;r<b->bi[i]->nraw;r++) {
         raw = b->bi[i]->raw[r];
@@ -227,6 +228,7 @@ Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_qua
         }
       } // for(pos0=0;pos0<len1;pos0++)
       for(pos0=0;pos0<seqlen;pos0++) { Rquals(pos0,i) = Rquals(pos0,i)/nreads[pos0]; }
+      for(pos0=seqlen;pos0<maxlen;pos0++) { Rquals(pos0,i) = NA_REAL; }
     }
   }
   

@@ -144,9 +144,6 @@ dada <- function(derep,
     if(!(all(C_isACGT(names(derep[[i]]$uniques))))) {
       stop("Invalid derep$uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
-    if(sum(tabulate(nchar(names(derep[[i]]$uniques)))>0) > 1) {
-      stop("Invalid derep$uniques vector. All sequences must be the same length.")
-    }
   }
 
   # Validate quals matrix(es)
@@ -156,18 +153,20 @@ dada <- function(derep,
       if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) {
         stop("derep$quals matrices must have one row for each derep$unique sequence.")
       }
-      if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) {
+      if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) { ###ITS
         stop("derep$quals matrices must have as many columns as the length of the derep$unique sequences.")
       }
-      if(any(is.na(derep[[i]]$quals))) {
-        stop("NAs in derep$quals matrix. Check that all input sequences were the same length.")
+      if(any(sapply(seq(nrow(derep[[i]]$quals)), 
+                    function(row) any(is.na(derep[[i]]$quals[row,1:nchar(names(derep[[i]]$uniques)[[row]])]))))) { ###ITS
+        stop("NAs in derep$quals matrix. Check that all input sequences had valid associated qualities assigned.")
       }
-      if(min(derep[[i]]$quals) < 0) {
+      if(min(derep[[i]]$quals, na.rm=TRUE) < 0) {
         stop("Invalid derep$quals matrix. Quality values must be positive integers.")
       }
-      qmax <- max(qmax, max(derep[[i]]$quals))
+      qmax <- max(qmax, max(derep[[i]]$quals, na.rm=TRUE))
     }
   }
+
   qmax <- ceiling(qmax) # Only getting averages from derep$quals
   if(qmax > 45) {
     if(qmax > 62) {
@@ -304,7 +303,6 @@ dada <- function(derep,
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]],
                           FALSE,
-#                          opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
                           multithread,
@@ -312,8 +310,7 @@ dada <- function(derep,
       
       # Augment the returns
       res$clustering$sequence <- as.character(res$clustering$sequence)
-      # ... nothing here for now
-      
+
       # List the returns
       clustering[[i]] <- res$clustering
       clusterquals[[i]] <- t(res$clusterquals) # make sequences rows and positions columns
@@ -394,7 +391,7 @@ dada <- function(derep,
     } else {
       rval2[[i]]$err_in <- errs[[1]]
     }
-    rval2[[i]]$err_out <- err           # maybe better as _final? Just the last one
+    rval2[[i]]$err_out <- err
     
     # Store the call and the options that were used in the return object
     rval2[[i]]$opts <- opts
