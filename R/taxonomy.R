@@ -3,7 +3,8 @@
 #' 
 #' assignTaxonomy implements the RDP Naive Bayesian Classifier algorithm described in
 #' Wang et al. Applied and Environmental Microbiology 2007, with kmer size 8 and 100 bootstrap
-#' replicates.
+#' replicates. Properly formatted reference files for several popular taxonomic databases
+#' are available \url{http://benjjneb.github.io/dada2/training.html}
 #' 
 #' @param seqs (Required). A character vector of the sequences to be assigned, or an object 
 #' coercible by \code{\link{getUniques}}.
@@ -71,6 +72,16 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootst
   refs <- as.character(sread(refsr))
   tax <- as.character(id(refsr))
   tax <- sapply(tax, function(x) gsub("^\\s+|\\s+$", "", x)) # Remove leading/trailing whitespace
+  # Sniff and parse UNITE fasta format
+  UNITE <- FALSE
+  if(all(grepl("FU\\|re[pf]s", tax[1:10]))) {
+    UNITE <- TRUE
+    cat("UNITE fungal taxonomic reference detected.\n")
+    tax <- sapply(strsplit(tax, "\\|"), `[`, 5)
+    tax <- gsub("[pcofg]__unidentified;", "_DADA2_UNSPECIFIED;", tax)
+    tax <- gsub(";s__(\\w+)_", ";s__", tax)
+    tax <- gsub(";s__sp$", ";_DADA2_UNSPECIFIED", tax)
+  }
   # Parse the taxonomies from the id string
   tax.depth <- sapply(strsplit(tax, ";"), length)
   td <- max(tax.depth)

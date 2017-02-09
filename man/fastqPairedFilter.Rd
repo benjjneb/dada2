@@ -5,8 +5,9 @@
 \title{Filters and trims paired forward and reverse fastq files.}
 \usage{
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
-  truncLen = c(0, 0), trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf,
-  Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\\\s",
+  truncLen = c(0, 0), maxLen = c(Inf, Inf), minLen = c(20, 20),
+  trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf, Inf),
+  rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\\\s",
   id.field = NULL, n = 1e+06, compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
@@ -30,8 +31,13 @@ The default value of 2 is a special quality score indicating the end of good qua
   sequence in Illumina 1.8+.}
 
 \item{truncLen}{(Optional). Default 0 (no truncation).
-Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
-Note that \code{\link{dada}} currently requires all sequences to be the same length.}
+Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.}
+
+\item{maxLen}{(Optional). Default Inf (no maximum).
+Remove reads with length greater than maxLen. maxLen is enforced on the raw reads.}
+
+\item{minLen}{(Optional). Default 20.
+Remove reads with length less than minLen. minLen is enforced after all other trimming and truncation.}
 
 \item{trimLeft}{(Optional). Default 0.
 The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
