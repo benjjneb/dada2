@@ -27,7 +27,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
                         bool multithread,
                         bool verbose) {
 
-  unsigned int i, j, r, index, pos, nraw, maxlen;
+  unsigned int i, j, r, index, pos, nraw, maxlen, minlen;
   
   /********** INPUT VALIDATION *********/
   // Check lengths of seqs and abundances vectors
@@ -39,10 +39,13 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     Rcpp::stop("Zero input sequences.");
   }
   maxlen=0;
+  minlen=SEQLEN;
   for(index=0;index<nraw;index++) {
     if(seqs[index].length() > maxlen) { maxlen = seqs[index].length(); }
+    if(seqs[index].length() < minlen) { minlen = seqs[index].length(); }
   }
   if(maxlen >= SEQLEN) { Rcpp::stop("Input sequences exceed the maximum allowed string length."); }
+  if(minlen <= KMER_SIZE) { Rcpp::stop("Input sequences must all be longer than the kmer-size (%i).", KMER_SIZE); }
   
   // Check for presence of quality scores and their lengths
   bool has_quals = false;
