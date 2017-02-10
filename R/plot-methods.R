@@ -217,9 +217,15 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' 
 # This code is adapted from ShortRead:::.plotCycleQuality
 #
-plotQualityProfile <- function(fl, n=1000000, readcounts=FALSE) {
+plotQualityProfile <- function(fl, n=1000000) {
   srqa <- qa(fl, n=n)
   df <- srqa[["perCycle"]]$quality
+  rc <- srqa[["readCounts"]]$read
+  if (rc >= n){
+    rclabel <- paste("Readcounts >= ", n)
+  } else {
+    rclabel <- paste("Readcounts: ", rc)
+  }
   # Calculate summary statistics at each position
   means <- rowsum(df$Score*df$Count, df$Cycle)/rowsum(df$Count, df$Cycle)
   get_quant <- function(xx, yy, q) { xx[which(cumsum(yy)/sum(yy) >=q)][[1]] }
@@ -233,7 +239,7 @@ plotQualityProfile <- function(fl, n=1000000, readcounts=FALSE) {
                        Mean=means, 
                        Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s))
   # Create plot
-  qplot <- ggplot(data=df, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
+  ggplot(data=df, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
     scale_fill_gradient(low="#F5F5F5", high="black") + 
     geom_line(data=statdf, aes(y=Mean), color="#66C2A5") +
     geom_line(data=statdf, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
@@ -241,16 +247,6 @@ plotQualityProfile <- function(fl, n=1000000, readcounts=FALSE) {
     geom_line(data=statdf, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
     ylab("Quality Score") + xlab("Cycle") +
     theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) +
-    annotate("text", 1, min(df$Score), label = basename(fl), hjust=0, vjust=0)
-  # Add reaadcounts
-  if (readcounts){
-    rc <- srqa[["readCounts"]]$read
-    if (rc >= n){
-      rclabel <- paste("Readcounts >= ", n)
-    } else {
-      rclabel <- paste("Readcounts: ", rc)
-    }
-    qplot <- qplot + annotate("text", 1, min(df$Score), label = rclabel, hjust=0, vjust=2)
-  }
-  qplot
+    annotate("text", 1, min(df$Score), label = basename(fl), hjust=0, vjust=0) +
+    annotate("text", 1, min(df$Score), label = rclabel, hjust=0, vjust=2)
 }
