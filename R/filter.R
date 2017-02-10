@@ -1,13 +1,9 @@
 #' Filter and trim a fastq file.
 #' 
 #' fastqFilter takes an input fastq file (can be compressed), filters it based on several
-#' user-definable criteria, and outputs those reads which pass the filter and their associated
-#' qualities to a new fastq file (also can be compressed). Several functions in the \code{ShortRead}
+#' user-definable criteria, and outputs those reads which pass the filter
+#' to a new fastq file (also can be compressed). Several functions in the \code{ShortRead}
 #' package are leveraged to do this filtering.
-#' 
-#' \code{fastqFilter} replicates most of the functionality of the fastq_filter command in usearch
-#' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). It adds the ability to remove
-#' contaminating phiX sequences as part of the filtering process.
 #' 
 #' @param fn (Required). The path to the input fastq file.
 #'   
@@ -52,7 +48,9 @@
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
 #'
 #' @param OMP (Optional). Default TRUE.
-#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}.
+#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
+#'  calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).
+#' 
 #' 
 #' @param compress (Optional). Default TRUE.
 #'  Whether the output fastq file should be gzip compressed.
@@ -67,11 +65,7 @@
 #' 
 #' @seealso 
 #'  \code{\link{fastqPairedFilter}}
-#' 
 #'  \code{\link[ShortRead]{FastqStreamer}}
-#'  
-#'  \code{\link[ShortRead]{srFilter}}
-#'  
 #'  \code{\link[ShortRead]{trimTails}}
 #' 
 #' @importFrom ShortRead FastqStreamer
@@ -185,24 +179,19 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 }
 #' Filters and trims paired forward and reverse fastq files.
 #' 
-#' fastqPairedFilter takes in two input fastq file (can be compressed), filters them based on several
-#' user-definable criteria, and outputs those reads which pass the filter in both directions along
-#' with their associated qualities to two new fastq file (also can be compressed). Several functions
+#' fastqPairedFilter filters pairs of input fastq files (can be compressed) based on several
+#' user-definable criteria, and outputs those read pairs which pass the filter in *both* directions
+#' to two new fastq file (also can be compressed). Several functions
 #' in the \code{ShortRead} package are leveraged to do this filtering. The filtered forward/reverse reads
 #' remain identically ordered.
-#' 
-#' fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
-#' (http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but only pairs of reads that both
-#' pass the filter are retained. An added function is the option to remove
-#' contaminating phiX sequences as part of the filtering process.
 #' 
 #' @param fn (Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.
 #'   
 #' @param fout (Required). A \code{character(2)} naming the paths to the (forward,reverse) output files.
 #'  Note that by default (\code{compress=TRUE}) the output fastq files are gzipped.
 #' 
-#' \strong{FILTERING AND TRIMMING ARGUMENTS} that follow can be provided as length 1 or length 2 vectors. 
-#' If a length 1 vector is provided, the same parameter value is used for the forward and reverse sequence files.
+#' \strong{FILTERING AND TRIMMING ARGUMENTS}   
+#' If a length 1 vector is provided, the same parameter value is used for the forward and reverse reads.
 #' If a length 2 vector is provided, the first value is used for the forward reads, and the second 
 #'   for the reverse reads.
 #' 
@@ -239,9 +228,11 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
 #'
-#' \strong{ID MATCHING ARGUMENTS} that follow enforce matching between the sequence identification
-#'  strings in the forward and reverse reads. The function can automatically detect and match ID fields in 
-#'  Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393
+#' \strong{ID MATCHING ARGUMENTS}   
+#'  The following optional arguments enforce matching between the sequence identification
+#'  strings in the forward and reverse reads, and can automatically detect and match ID fields in 
+#'  Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393. ID matching is not required
+#'  when using standard Illumina output fastq files.
 #' 
 #' @param matchIDs (Optional). Default FALSE.
 #'  Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
@@ -262,6 +253,10 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
 #'  
+#' @param OMP (Optional). Default TRUE.
+#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
+#'  calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).
+#' 
 #' @param compress (Optional). Default TRUE.
 #'  Whether the output fastq files should be gzip compressed.
 #' 
@@ -275,11 +270,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' 
 #' @seealso 
 #' \code{\link{fastqFilter}}
-#' 
 #' \code{\link[ShortRead]{FastqStreamer}}
-#' 
-#' \code{\link[ShortRead]{srFilter}}
-#' 
 #' \code{\link[ShortRead]{trimTails}}
 #' 
 #' @export
@@ -308,7 +299,12 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
 #'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, compress = TRUE, verbose = FALSE, ...){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+  if(!OMP) {
+    ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
+    on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
+  }
+  
   # Warning: This assumes that forward/reverse reads are in the same order unless matchIDs=TRUE
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
@@ -433,9 +429,9 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     fqR <- narrow(fqR, start = startR, end = NA)
     # Trim on truncQ
     # Convert numeric quality score to the corresponding ascii character
+    encF <- encoding(quality(fqF))
+    encR <- encoding(quality(fqR))
     if(is.numeric(truncQ)) {
-      encF <- encoding(quality(fqF))
-      encR <- encoding(quality(fqR))
       indF <- which(encF==truncQ[[1]])
       indR <- which(encR==truncQ[[2]])
       if(!(length(indF) == 1 && length(indR) == 1)) stop("Encoding for this truncQ value not found.")
@@ -449,6 +445,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       rngR <- trimTails(fqR, 1, truncQ[[2]], ranges=TRUE)
       fqR <- narrow(fqR, 1, end(rngR)) # have to do it this way to avoid dropping the zero lengths
     }
+    truncQ <- c(enc[truncQ[1]], enc[truncQ[2]]) # convert back to integer
     # And now filter any with length zero in F or R
     # May want to roll this into the next length cull step...
     keep <- (width(fqF) > 0 & width(fqR) > 0)
@@ -470,13 +467,17 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     fqR <- fqR[keep]
 
     # Filter based on minQ and Ns and maxEE
+    suppressWarnings(keep <- nFilter(maxN[[1]])(fqF) & nFilter(maxN[[2]])(fqR))
+    fqF <- fqF[keep]; fqR <- fqR[keep]
     keep <- rep(TRUE, length(fqF))
-    suppressWarnings(keep <- keep & minQFilter(minQ[[1]])(fqF) & nFilter(maxN[[1]])(fqF))
-    if(maxEE[[1]] < Inf) keep <- keep & maxEEFilter(maxEE[[1]])(fqF)
-    suppressWarnings(keep <- keep & minQFilter(minQ[[2]])(fqR) & nFilter(maxN[[2]])(fqR))
-    if(maxEE[[2]] < Inf) keep <- keep & maxEEFilter(maxEE[[2]])(fqR)
-    fqF <- fqF[keep]
-    fqR <- fqR[keep]
+    qmat <- as(quality(fqF), "matrix")
+    if(minQ[[1]] > truncQ[[1]]) suppressWarnings(keep <- keep & (apply(qmat, 1, min)>minQ[[1]]))
+    if(maxEE[[1]] < Inf) keep <- keep & C_matrixEE(qmat) <= maxEE[[1]]
+    qmat <- as(quality(fqR), "matrix")
+    if(minQ[[2]] > truncQ[[2]]) suppressWarnings(keep <- keep & (apply(qmat, 1, min)>minQ[[2]]))
+    if(maxEE[[2]] < Inf) keep <- keep & C_matrixEE(qmat) <= maxEE[[2]]
+    fqF <- fqF[keep]; fqR <- fqR[keep]
+    rm(qmat)
     
     if(length(fqF) != length(fqR)) stop("Filtering caused mismatch between forward and reverse sequence lists: ", length(fqF), ", ", length(fqR), ".")
     
@@ -530,26 +531,6 @@ minQFilter <- function (minQ = 0L, .name = "MinQFilter")
 {
   srFilter(function(x) {
     apply(as(quality(x), "matrix"), 1, function(qs) min(qs, na.rm=TRUE) >= minQ)
-  }, name = .name)
-}
-
-#' @importFrom Biostrings quality
-#' @importFrom ShortRead SRFilterResult
-#' @importFrom ShortRead srFilter
-#' @importFrom methods as
-maxEEFilter <- function (maxEE = Inf, .name = "MaxEEFilter") 
-{
-  srFilter(function(x) {
-    apply(as(quality(x), "matrix"), 1, function(qs) sum(10^(-qs[!is.na(qs)]/10.0)) <= maxEE)
-  }, name = .name)
-}
-
-#' @importFrom Biostrings width
-#' @importFrom ShortRead SRFilterResult
-#' @importFrom ShortRead srFilter
-minLenFilter <- function(minLen = 0L, .name = "MinLenFilter"){
-  srFilter(function(x) {
-    width(x) >= minLen
   }, name = .name)
 }
 

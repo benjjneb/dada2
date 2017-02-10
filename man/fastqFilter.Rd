@@ -6,7 +6,8 @@
 \usage{
 fastqFilter(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf,
   minLen = 20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf,
-  rm.phix = FALSE, n = 1e+06, compress = TRUE, verbose = FALSE, ...)
+  rm.phix = FALSE, n = 1e+06, OMP = TRUE, compress = TRUE,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). The path to the input fastq file.}
@@ -51,6 +52,10 @@ If TRUE, discard reads that match against the phiX genome, as determined by
 This controls the peak memory requirement so that very large fastq files are supported. 
 Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.}
 
+\item{OMP}{(Optional). Default TRUE.
+Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
+calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).}
+
 \item{compress}{(Optional). Default TRUE.
 Whether the output fastq file should be gzip compressed.}
 
@@ -65,14 +70,9 @@ Whether to output status messages.}
 }
 \description{
 fastqFilter takes an input fastq file (can be compressed), filters it based on several
-user-definable criteria, and outputs those reads which pass the filter and their associated
-qualities to a new fastq file (also can be compressed). Several functions in the \code{ShortRead}
+user-definable criteria, and outputs those reads which pass the filter
+to a new fastq file (also can be compressed). Several functions in the \code{ShortRead}
 package are leveraged to do this filtering.
-}
-\details{
-\code{fastqFilter} replicates most of the functionality of the fastq_filter command in usearch
-(http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). It adds the ability to remove
-contaminating phiX sequences as part of the filtering process.
 }
 \examples{
 testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
@@ -83,10 +83,6 @@ fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TR
 }
 \seealso{
 \code{\link{fastqPairedFilter}}
-
  \code{\link[ShortRead]{FastqStreamer}}
- 
- \code{\link[ShortRead]{srFilter}}
- 
  \code{\link[ShortRead]{trimTails}}
 }
