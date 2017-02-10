@@ -218,7 +218,7 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 # This code is adapted from ShortRead:::.plotCycleQuality
 #
 plotQualityProfile <- function(fl, n=1000000, readcounts=FALSE) {
-  srqa <- ShortRead::qa(fl, n=n)
+  srqa <- qa(fl, n=n)
   df <- srqa[["perCycle"]]$quality
   # Calculate summary statistics at each position
   means <- rowsum(df$Score*df$Count, df$Cycle)/rowsum(df$Count, df$Cycle)
