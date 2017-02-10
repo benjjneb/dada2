@@ -5,7 +5,7 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 Rcpp::IntegerVector C_matchRef(std::vector<std::string> seqs, std::string ref,
-                             unsigned int word_size, bool non_overlapping) {
+                               unsigned int word_size, bool non_overlapping) {
   int i,j;
   std::unordered_set<std::string> phash; ///!
   Rcpp::IntegerVector rval(seqs.size());
@@ -27,6 +27,23 @@ Rcpp::IntegerVector C_matchRef(std::vector<std::string> seqs, std::string ref,
         if(non_overlapping) { j+=word_size; }
       }
     }
+  }
+  return(rval);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector C_matrixEE(Rcpp::IntegerMatrix inp) {
+  int i,j;
+  double ee;
+  Rcpp::NumericVector rval(inp.nrow());
+
+  for(i=0;i<inp.nrow();i++) {
+    ee=0.0;
+    for(j=0;j<inp.ncol();j++) {
+      if(inp(i,j) == NA_INTEGER) { break; }
+      ee += pow(10.0, -inp(i,j)/10.0);
+    }
+    rval(i) = ee;
   }
   return(rval);
 }

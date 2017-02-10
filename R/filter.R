@@ -51,6 +51,9 @@
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
 #'
+#' @param OMP (Optional). Default TRUE.
+#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}.
+#' 
 #' @param compress (Optional). Default TRUE.
 #'  Whether the output fastq file should be gzip compressed.
 #' 
@@ -71,8 +74,6 @@
 #'  
 #'  \code{\link[ShortRead]{trimTails}}
 #' 
-#' @export
-#' 
 #' @importFrom ShortRead FastqStreamer
 #' @importFrom ShortRead yield
 #' @importFrom ShortRead writeFastq
@@ -91,7 +92,12 @@
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, compress = TRUE, verbose = FALSE, ...){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+  if(!OMP) {
+    ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
+    on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
+  }
+  
   start <- max(1, trimLeft + 1, na.rm=TRUE)
   end <- truncLen
   if(end < start) { end = NA }
@@ -125,13 +131,14 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
     fq <- narrow(fq, start = start, end = NA)
     # Trim on truncQ 
     # Convert numeric quality score to the corresponding ascii character
+    enc <- encoding(quality(fq))
     if(is.numeric(truncQ)) {
-      enc <- encoding(quality(fq))
       ind <- which(enc==truncQ)
       if(length(ind) != 1) stop("Encoding for this truncQ value not found.")
       truncQ <- names(enc)[[ind]]
     }
     if(length(fq) > 0) fq <- trimTails(fq, 1, truncQ)
+    truncQ <- enc[truncQ] # Convert back to integer
     # Filter any with less than required length
     if(!is.na(end)) { fq <- fq[width(fq) >= end] }
     # Truncate to truncLen
@@ -140,10 +147,13 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
     fq <- fq[width(fq) >= minLen]
     
     # Filter based on minQ and Ns and maxEE
+    fq <- fq[nFilter(maxN)(fq)]
     keep <- rep(TRUE, length(fq))
-    suppressWarnings(keep <- keep & minQFilter(minQ)(fq))
-    keep <- keep & nFilter(maxN)(fq)
-    if(maxEE < Inf) keep <- keep & maxEEFilter(maxEE)(fq)
+    qq <- as(quality(fq), "matrix")
+    if(minQ > truncQ) keep <- keep & (apply(qq, 1, min)>minQ) # Prob a faster trimTails trick
+    if(maxEE < Inf) {
+      keep <- keep & C_matrixEE(qq) <= maxEE
+    }
     fq <- fq[keep]
     
     # Remove phiX
