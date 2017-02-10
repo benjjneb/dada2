@@ -18,6 +18,7 @@ fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
  Note that by default (\code{compress=TRUE}) the output fastq files are gzipped.
 
 \strong{FILTERING AND TRIMMING ARGUMENTS}   
+
 If a length 1 vector is provided, the same parameter value is used for the forward and reverse reads.
 If a length 2 vector is provided, the first value is used for the forward reads, and the second 
   for the reverse reads.}
@@ -56,6 +57,7 @@ Expected errors are calculated from the nominal definition of the quality score:
  \code{\link{isPhiX}}.
 
 \strong{ID MATCHING ARGUMENTS}   
+
  The following optional arguments enforce matching between the sequence identification
  strings in the forward and reverse reads, and can automatically detect and match ID fields in 
  Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393. ID matching is not required
@@ -98,7 +100,7 @@ Whether to output status messages.}
 }
 \description{
 fastqPairedFilter filters pairs of input fastq files (can be compressed) based on several
-user-definable criteria, and outputs those read pairs which pass the filter in *both* directions
+user-definable criteria, and outputs those read pairs which pass the filter in \strong{both} directions
 to two new fastq file (also can be compressed). Several functions
 in the \code{ShortRead} package are leveraged to do this filtering. The filtered forward/reverse reads
 remain identically ordered.

@@ -180,7 +180,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' Filters and trims paired forward and reverse fastq files.
 #' 
 #' fastqPairedFilter filters pairs of input fastq files (can be compressed) based on several
-#' user-definable criteria, and outputs those read pairs which pass the filter in *both* directions
+#' user-definable criteria, and outputs those read pairs which pass the filter in \strong{both} directions
 #' to two new fastq file (also can be compressed). Several functions
 #' in the \code{ShortRead} package are leveraged to do this filtering. The filtered forward/reverse reads
 #' remain identically ordered.
@@ -191,6 +191,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #'  Note that by default (\code{compress=TRUE}) the output fastq files are gzipped.
 #' 
 #' \strong{FILTERING AND TRIMMING ARGUMENTS}   
+#' 
 #' If a length 1 vector is provided, the same parameter value is used for the forward and reverse reads.
 #' If a length 2 vector is provided, the first value is used for the forward reads, and the second 
 #'   for the reverse reads.
@@ -229,6 +230,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #'  \code{\link{isPhiX}}.
 #'
 #' \strong{ID MATCHING ARGUMENTS}   
+#' 
 #'  The following optional arguments enforce matching between the sequence identification
 #'  strings in the forward and reverse reads, and can automatically detect and match ID fields in 
 #'  Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393. ID matching is not required
@@ -445,7 +447,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       rngR <- trimTails(fqR, 1, truncQ[[2]], ranges=TRUE)
       fqR <- narrow(fqR, 1, end(rngR)) # have to do it this way to avoid dropping the zero lengths
     }
-    truncQ <- c(enc[truncQ[1]], enc[truncQ[2]]) # convert back to integer
+    truncQ <- c(encF[truncQ[1]], encR[truncQ[2]]) # convert back to integer
     # And now filter any with length zero in F or R
     # May want to roll this into the next length cull step...
     keep <- (width(fqF) > 0 & width(fqR) > 0)
