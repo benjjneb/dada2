@@ -225,3 +225,4 @@ void get_lr(char **al, int &left, int &right, int &left_oo, int &right_oo, bool 
     }
   }
 }
+

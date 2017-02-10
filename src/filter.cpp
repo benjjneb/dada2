@@ -47,3 +47,5 @@ Rcpp::NumericVector C_matrixEE(Rcpp::IntegerMatrix inp) {
   }
   return(rval);
 }
+
+
