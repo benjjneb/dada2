@@ -1,3 +1,164 @@
+#' Filter and trim fastq file(s).
+#' 
+#' filterAndTrim filters and trims the reads within fastq file(s) (can be compressed)
+#' based on several user-definable criteria, and outputs fastq file(s)
+#' (compressed by default) containing the trimmed reads which passed the filters. Corresponding
+#' fastq file(s) for forward and reverse read pairs can be input, in which case filtering
+#' is performed on the forward and reverse reads independently, and those read-pairs which both
+#' pass the filtering are output.
+#' 
+#' \strong{INPUT/OUTPUT ARGUMENTS ---------}   
+#' 
+#' Both single-read and paired-read data is supported. Note that by default output fastq files are gzip compressed.
+#' 
+#' @param fwd (Required). The path(s) to the input fastq file(s).
+#'   
+#' @param outF (Required). 
+#'  The path(s) to the output fastq file(s) corresponding to the \code{fwd} input.
+#'  Can also provide a directory, which if not existing will be created (how to differentiate between dir/file in len1 case?).
+#'  ######!!!!!!!!!!
+#' 
+#' @param rev (Optional). Default NULL.
+#'  The path(s) to the input reverse fastq file(s) from paired-end sequence data corresponding to those
+#'  provided to the \code{fwd} argument. If NULL, the \code{fwd} files are processed as single-reads.
+#' 
+#' @param outR (Optional). Default NULL, but required if \code{rev} is provided.
+#'  The path(s) to the output fastq file(s) corresponding to the \code{rev} input.
+#'  Can also provide a directory, which if not existing will be created (how to differentiate between dir/file in len1 case?).
+#' 
+#' @param compress (Optional). Default TRUE.
+#'  If TRUE, the output fastq file(s) are gzipped.
+#' 
+#' \strong{FILTERING AND TRIMMING PARAMETERS ---------}   
+#' 
+#' \strong{Note:} When filtering paired reads...
+#' If a length 1 vector is provided, the same parameter value is used for the forward and reverse reads.
+#' If a length 2 vector is provided, the first value is used for the forward reads, and the second 
+#'   for the reverse reads.
+#' 
+#' @param truncQ (Optional). Default 2.
+#'  Truncate reads at the first instance of a quality score less than or equal to \code{truncQ}.
+#'  
+#' @param truncLen (Optional). Default 0 (no truncation).
+#'  Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
+#'  
+#' @param trimLeft (Optional). Default 0.
+#'  The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
+#'  \code{trimLeft} are provided, filtered reads will have length \code{truncLen-trimLeft}.
+#'  
+#' @param maxLen (Optional). Default Inf (no maximum).
+#'  Remove reads with length greater than maxLen. maxLen is enforced \strong{before} trimming and truncation.   
+#'  
+#' @param minLen (Optional). Default 20.
+#'  Remove reads with length less than minLen. minLen is enforced \strong{after} trimming and truncation.   
+#'  
+#' @param maxN (Optional). Default 0.
+#'  After truncation, sequences with more than \code{maxN} Ns will be discarded. 
+#'  Note that \code{\link{dada}} does not allow Ns.
+#'  
+#' @param minQ (Optional). Default 0.
+#'  After truncation, reads contain a quality score less than \code{minQ} will be discarded.
+#'
+#' @param maxEE (Optional). Default \code{Inf} (no EE filtering).
+#'  After truncation, reads with higher than \code{maxEE} "expected errors" will be discarded.
+#'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
+#'  
+#' @param rm.phix (Optional). Default FALSE.
+#'  If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.
+#'
+#' \strong{ID MATCHING ARGUMENTS ---------}   
+#' 
+#'  The following optional arguments control the enforcment of matching between sequence identification
+#'  strings in paired forward and reverse reads. ID fields in Illumina format, 
+#'  e.g: EAS139:136:FC706VJ:2:2104:15343:197393 
+#'  can be automatically detected and matched. ID matching is not required
+#'  when forward and reverse files already contain reads in matched order, as is the case for unmodified
+#'  Illumina fastq files.
+#' 
+#' @param matchIDs (Optional). Default FALSE.
+#'  Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
+#'    If TRUE, only paired reads that share id fields (see below) are output.
+#'    If FALSE, no read ID checking is done.
+#'  Note: \code{matchIDs=FALSE} essentially assumes matching order between forward and reverse reads. If that
+#'    matched order is not present future processing steps may break (in particular \code{\link{mergePairs}}).
+#'
+#' @param id.sep (Optional). Default "\\s" (white-space).
+#'  The separator between fields in the id-line of the input fastq files. Passed to the \code{\link{strsplit}}.
+#' 
+#' @param id.field (Optional). Default NULL (automatic detection).
+#'  The field of the id-line containing the sequence identifier.
+#'  If NULL (the default) and matchIDs is TRUE, the function attempts to automatically detect
+#'    the sequence identifier field under the assumption of Illumina formatted output.
+#'
+#' \strong{COMPUTATIONAL ARGUMENTS ---------}   
+#' 
+#'  The following optional arguments control the use of computational resources. 
+#'
+#' @param multithread (Optional). Default is FALSE.
+#'  If TRUE, input files are filtered in parallel via \code{\link[parallel]{mclapply}}.
+#'  If an integer is provided, it is passed to the \code{mc.cores} argument of \code{\link[parallel]{mclapply}}.
+#'   
+#' @param n (Optional). Default \code{1e6}.
+#' The number of records (reads) to read in and filter at any one time. 
+#' This controls the peak memory requirement so that very large fastq files are supported. 
+#' See \code{\link{FastqStreamer}} for details.
+#'
+#' @param OMP (Optional). Default TRUE.
+#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set to FALSE if
+#'  calling this function within a parallelized chunk of code.
+#'  If \code{multithread=TRUE}, this argument will be coerced to FALSE.
+#' 
+#' @param verbose (Optional). Default FALSE.
+#'  Whether to output status messages.  
+#' 
+#' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}}.
+#' 
+#' @return \code{integer(2)}.
+#'  The number of input reads, and the number of output reads that passed the filter.
+#' 
+#' @seealso 
+#'  \code{\link{fastqPairedFilter}}
+#'  \code{\link[ShortRead]{FastqStreamer}}
+#'  \code{\link[ShortRead]{trimTails}}
+#' 
+#' @importFrom ShortRead FastqStreamer
+#' @importFrom ShortRead yield
+#' @importFrom ShortRead writeFastq
+#' @importFrom ShortRead trimTails
+#' @importFrom ShortRead nFilter
+#' @importFrom ShortRead encoding
+#' @importFrom Biostrings quality
+#' @importFrom Biostrings narrow
+#' @importFrom Biostrings width
+#' @importFrom Biostrings end
+#' @importFrom parallel mclapply
+#' @importFrom parallel detectCores
+#' @importFrom methods as
+#' 
+#' @examples
+#' testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' filtFastq <- tempfile(fileext=".fastq.gz")
+#' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
+#' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
+#' 
+filterAndTrim <- function(fwd, outF, rev=NULL, outR=NULL, compress=TRUE,
+                        truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE,
+                        multithread=FALSE, n = 1e6, OMP=TRUE, verbose = FALSE, ...){
+  # TESTING, FORWARD ONLY FOR NOW
+  if(multithread) {
+    OMP <- FALSE
+    ncores <- detectCores()
+    if(is.numeric(multithread)) ncores <- multithread
+    if(is.na(ncores)) ncores <- 1
+  } else {
+    ncores <- 1
+  }
+  
+  rval <- mcmapply(fastqFilter, fwd, outF, truncQ=truncQ, truncLen=truncLen, maxLen=maxLen, minLen=minLen, 
+                   maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, n=n, OMP=OMP, verbose=verbose, mc.cores=ncores)
+  
+  return(invisible(rval))
+}
 #' Filter and trim a fastq file.
 #' 
 #' fastqFilter takes an input fastq file (can be compressed), filters it based on several
