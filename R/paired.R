@@ -137,7 +137,7 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatc
     }
     # Sort output by abundance and name
     ups <- ups[order(ups$abundance, decreasing=TRUE),]
-    rownames(ups) <- paste0("s", ups$forward, "_", ups$reverse)
+    rownames(ups) <- NULL
     if(verbose) {
       message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
     }

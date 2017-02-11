@@ -182,6 +182,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                                      verbose=verbose),
                      mc.cores=ncores, mc.silent=FALSE)
   }
+  colnames(rval) <- basename(fwd)
   return(invisible(t(rval)))
 }
 #' Filter and trim a fastq file.

@@ -108,7 +108,11 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
   if(length(rval) == 1) {
     rval <- rval[[1]]
   } else {
-    names(rval) <- basename(fls)
+    if(is.null(names(fls))) {
+      names(rval) <- basename(fls)
+    } else {
+      names(rval) <- names(fls)
+    }
   }
   return(rval)
 }
