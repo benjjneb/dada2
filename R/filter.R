@@ -1,28 +1,30 @@
 #' Filter and trim fastq file(s).
 #' 
-#' filterAndTrim filters and trims the reads within fastq file(s) (can be compressed)
+#' Filters and trims an input fastq file(s) (can be compressed)
 #' based on several user-definable criteria, and outputs fastq file(s)
-#' (compressed by default) containing the trimmed reads which passed the filters. Corresponding
-#' fastq file(s) for forward and reverse read pairs can be input, in which case filtering
-#' is performed on the forward and reverse reads independently, and those read-pairs which both
-#' pass the filtering are output.
+#' (compressed by default) containing those trimmed reads which passed the filters. Corresponding
+#' forward and reverse fastq file(s) can be provided as input, in which case filtering
+#' is performed on the forward and reverse reads independently, and both reads must pass for
+#' the read pair to be output.
 #' 
-#' \strong{INPUT/OUTPUT ARGUMENTS ---------}   
+#' \code{filterAndTrim} is a convenience interface for the \code{\link{fastqFilter}}
+#' and \code{\link{fastqPairedFilter}} filtering functions, that handles multithreading.
+#' Note that error messages and tracking are not handled gracefully when using the multithreading
+#' functionality. If errors arise, it is recommended to re-run without multithreading to
+#' troubleshoot the issue.
 #' 
-#' Both single-read and paired-read data is supported. Note that by default output fastq files are gzip compressed.
-#' 
-#' @param fwd (Required). The path(s) to the input fastq file(s).
+#' @param fwd (Required). \code{character}.
+#' The path(s) to the input fastq file(s).
 #'   
-#' @param outF (Required). 
-#'  The path(s) to the output fastq file(s) corresponding to the \code{fwd} input.
-#'  Can also provide a directory, which if not existing will be created (how to differentiate between dir/file in len1 case?).
-#'  ######!!!!!!!!!!
-#' 
+#' @param filt (Required). \code{character}.
+#'  The path(s) to the output filtered file(s) corresponding to the \code{fwd} input files.
+#'  If containing directory does not exist, it will be created.
+#'   
 #' @param rev (Optional). Default NULL.
 #'  The path(s) to the input reverse fastq file(s) from paired-end sequence data corresponding to those
 #'  provided to the \code{fwd} argument. If NULL, the \code{fwd} files are processed as single-reads.
 #' 
-#' @param outR (Optional). Default NULL, but required if \code{rev} is provided.
+#' @param filt.rev (Optional). Default NULL, but required if \code{rev} is provided.
 #'  The path(s) to the output fastq file(s) corresponding to the \code{rev} input.
 #'  Can also provide a directory, which if not existing will be created (how to differentiate between dir/file in len1 case?).
 #' 
@@ -66,15 +68,6 @@
 #' @param rm.phix (Optional). Default FALSE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.
 #'
-#' \strong{ID MATCHING ARGUMENTS ---------}   
-#' 
-#'  The following optional arguments control the enforcment of matching between sequence identification
-#'  strings in paired forward and reverse reads. ID fields in Illumina format, 
-#'  e.g: EAS139:136:FC706VJ:2:2104:15343:197393 
-#'  can be automatically detected and matched. ID matching is not required
-#'  when forward and reverse files already contain reads in matched order, as is the case for unmodified
-#'  Illumina fastq files.
-#' 
 #' @param matchIDs (Optional). Default FALSE.
 #'  Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
 #'    If TRUE, only paired reads that share id fields (see below) are output.
@@ -90,15 +83,14 @@
 #'  If NULL (the default) and matchIDs is TRUE, the function attempts to automatically detect
 #'    the sequence identifier field under the assumption of Illumina formatted output.
 #'
-#' \strong{COMPUTATIONAL ARGUMENTS ---------}   
-#' 
-#'  The following optional arguments control the use of computational resources. 
-#'
 #' @param multithread (Optional). Default is FALSE.
 #'  If TRUE, input files are filtered in parallel via \code{\link[parallel]{mclapply}}.
 #'  If an integer is provided, it is passed to the \code{mc.cores} argument of \code{\link[parallel]{mclapply}}.
+#'  Note that the parallelization here is by forking, and each process is loading another fastq file into
+#'  memory. If memory is an issue, execute in a clean environment and reduce the chunk size \code{n} and/or
+#'  the number of threads.
 #'   
-#' @param n (Optional). Default \code{1e6}.
+#' @param n (Optional). Default \code{1e5}.
 #' The number of records (reads) to read in and filter at any one time. 
 #' This controls the peak memory requirement so that very large fastq files are supported. 
 #' See \code{\link{FastqStreamer}} for details.
@@ -111,40 +103,61 @@
 #' @param verbose (Optional). Default FALSE.
 #'  Whether to output status messages.  
 #' 
-#' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}}.
-#' 
-#' @return \code{integer(2)}.
-#'  The number of input reads, and the number of output reads that passed the filter.
+#' @return Integer matrix. Returned invisibly (i.e. only if assigned to something).
+#'  Rows correspond to the input files, columns record the reads.in and reads.out after filtering.
 #' 
 #' @seealso 
+#'  \code{\link{fastqFilter}}
 #'  \code{\link{fastqPairedFilter}}
 #'  \code{\link[ShortRead]{FastqStreamer}}
-#'  \code{\link[ShortRead]{trimTails}}
 #' 
-#' @importFrom ShortRead FastqStreamer
-#' @importFrom ShortRead yield
-#' @importFrom ShortRead writeFastq
-#' @importFrom ShortRead trimTails
-#' @importFrom ShortRead nFilter
-#' @importFrom ShortRead encoding
-#' @importFrom Biostrings quality
-#' @importFrom Biostrings narrow
-#' @importFrom Biostrings width
-#' @importFrom Biostrings end
-#' @importFrom parallel mclapply
+#' @importFrom parallel mcmapply
 #' @importFrom parallel detectCores
 #' @importFrom methods as
 #' 
-#' @examples
-#' testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
-#' filtFastq <- tempfile(fileext=".fastq.gz")
-#' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
-#' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
+#' @export
 #' 
-filterAndTrim <- function(fwd, outF, rev=NULL, outR=NULL, compress=TRUE,
+#' @examples
+#' testFastqs = c(system.file("extdata", "sam1F.fastq.gz", package="dada2"), system.file("extdata", "sam2F.fastq.gz", package="dada2"))
+#' filtFastqs <- c(tempfile(fileext=".fastq.gz"), tempfile(fileext=".fastq.gz"))
+#' filterAndTrim(testFastqs, filtFastqs, maxN=0, maxEE=2, verbose=TRUE)
+#' filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=TRUE)
+#' 
+filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                         truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE,
-                        multithread=FALSE, n = 1e6, OMP=TRUE, verbose = FALSE, ...){
-  # TESTING, FORWARD ONLY FOR NOW
+                        matchIDs=FALSE, id.sep="\\s", id.field=NULL,
+                        multithread=FALSE, n = 1e5, OMP=TRUE, verbose = FALSE) {
+  PAIRED <- FALSE
+  if(length(fwd) != length(filt)) stop("Every input file must have a corresponding output file.")
+  odirs <- unique(dirname(filt))
+  for(odir in odirs) {
+    if(!dir.exists(odir)) { 
+      message("Creating output directory:", odir)
+      dir.create(odir, recursive=TRUE, mode="0777")
+    }
+  }
+  fwd <- normalizePath(fwd, mustWork=TRUE)
+  filt <- suppressWarnings(normalizePath(filt, mustWork=FALSE)) ###F MUST PROPAGATE TO REVERSE
+  if(any(duplicated(filt))) stop("All output files must be distinct.")
+  if(any(filt %in% fwd)) stop("Output files must be distinct from the input files.")
+  if(!is.null(rev)) {
+    PAIRED <- TRUE
+    if(is.null(filt.rev)) stop("Output files for the reverse reads are required.")
+    rev <- suppressWarnings(normalizePath(rev))
+    filt.rev <- suppressWarnings(normalizePath(filt.rev))
+    if(length(rev) != length(fwd)) stop("Paired forward and reverse input files must correspond.")
+    if(length(rev) != length(filt.rev)) stop("Every input file (rev) must have a corresponding output file (filt.rev).")
+    if(any(duplicated(c(filt, filt.rev)))) stop("All output files must be distinct.")
+    if(any(c(filt,filt.rev) %in% c(fwd, rev))) stop("Output files must be distinct from the input files.")
+    odirs <- unique(dirname(filt.rev))
+    for(odir in odirs) {
+      if(!dir.exists(odir)) { 
+        message("Creating output directory:", odir)
+        dir.create(odir, recursive=TRUE, mode="0777") 
+      }
+    }
+  }
+  # Parse multithreading
   if(multithread) {
     OMP <- FALSE
     ncores <- detectCores()
@@ -153,11 +166,23 @@ filterAndTrim <- function(fwd, outF, rev=NULL, outR=NULL, compress=TRUE,
   } else {
     ncores <- 1
   }
-  
-  rval <- mcmapply(fastqFilter, fwd, outF, truncQ=truncQ, truncLen=truncLen, maxLen=maxLen, minLen=minLen, 
-                   maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, n=n, OMP=OMP, verbose=verbose, mc.cores=ncores)
-  
-  return(invisible(rval))
+  # Filter and Trim
+  if(PAIRED) {
+    rval <- mcmapply(fastqPairedFilter, 
+                     mapply(c, fwd, rev, SIMPLIFY=FALSE), mapply(c, filt, filt.rev, SIMPLIFY=FALSE), 
+                     MoreArgs = list(truncQ=truncQ, truncLen=truncLen, maxLen=maxLen, minLen=minLen,
+                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, matchIDs=matchIDs,
+                                     id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, verbose=verbose),
+                     mc.cores=ncores, mc.silent=FALSE)
+  } else {
+    rval <- mcmapply(fastqFilter, 
+                     fwd, filt, 
+                     MoreArgs = list(truncQ=truncQ, truncLen=truncLen, maxLen=maxLen, minLen=minLen, 
+                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, n=n, OMP=OMP,
+                                     verbose=verbose),
+                     mc.cores=ncores, mc.silent=FALSE)
+  }
+  return(invisible(t(rval)))
 }
 #' Filter and trim a fastq file.
 #' 
@@ -228,6 +253,8 @@ filterAndTrim <- function(fwd, outF, rev=NULL, outR=NULL, compress=TRUE,
 #'  \code{\link{fastqPairedFilter}}
 #'  \code{\link[ShortRead]{FastqStreamer}}
 #'  \code{\link[ShortRead]{trimTails}}
+#' 
+#' @export
 #' 
 #' @importFrom ShortRead FastqStreamer
 #' @importFrom ShortRead yield
@@ -467,7 +494,6 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
   }
-  
   # Warning: This assumes that forward/reverse reads are in the same order unless matchIDs=TRUE
   if(!is.character(fn) || length(fn) != 2) stop("Two paired input file names required.")
   if(!is.character(fout) || length(fout) != 2) stop("Two paired output file names required.")
