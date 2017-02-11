@@ -124,7 +124,7 @@ troubleshoot the issue.
 testFastqs = c(system.file("extdata", "sam1F.fastq.gz", package="dada2"), system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 filtFastqs <- c(tempfile(fileext=".fastq.gz"), tempfile(fileext=".fastq.gz"))
 filterAndTrim(testFastqs, filtFastqs, maxN=0, maxEE=2, verbose=TRUE)
-filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=TRUE)
+filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=2)
 
 }
 \seealso{
