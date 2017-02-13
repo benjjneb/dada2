@@ -6,9 +6,9 @@
 \usage{
 filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL, compress = TRUE,
   truncQ = 2, truncLen = 0, trimLeft = 0, maxLen = Inf, minLen = 20,
-  maxN = 0, minQ = 0, maxEE = Inf, rm.phix = FALSE, matchIDs = FALSE,
-  id.sep = "\\\\s", id.field = NULL, multithread = FALSE, n = 1e+05,
-  OMP = TRUE, verbose = FALSE)
+  maxN = 0, minQ = 0, maxEE = Inf, rm.phix = FALSE, primer.fwd = NULL,
+  matchIDs = FALSE, id.sep = "\\\\s", id.field = NULL,
+  multithread = FALSE, n = 1e+05, OMP = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{fwd}{(Required). \code{character}.
@@ -65,6 +65,13 @@ Expected errors are calculated from the nominal definition of the quality score:
 
 \item{rm.phix}{(Optional). Default FALSE.
 If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.}
+
+\item{primer.fwd}{(Optional). Default NULL.
+A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
+compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
+not an exact match, the read is filtered out.
+For paired reads, the reverse read is also interrogated, and if the primer is detected on the reverse read,
+the forward/reverse reads are swapped.}
 
 \item{matchIDs}{(Optional). Default FALSE.
 Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.

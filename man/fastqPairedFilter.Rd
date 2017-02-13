@@ -7,9 +7,9 @@
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), maxLen = c(Inf, Inf), minLen = c(20, 20),
   trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf, Inf),
-  rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\\\s",
-  id.field = NULL, n = 1e+06, OMP = TRUE, compress = TRUE,
-  verbose = FALSE, ...)
+  rm.phix = c(FALSE, FALSE), matchIDs = FALSE, primer.fwd = NULL,
+  id.sep = "\\\\s", id.field = NULL, n = 1e+06, OMP = TRUE,
+  compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.}
@@ -53,15 +53,8 @@ After truncation, reads with higher than maxEE "expected errors" will be discard
 Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
 
 \item{rm.phix}{(Optional). Default FALSE.
- If TRUE, discard reads that match against the phiX genome, as determined by 
- \code{\link{isPhiX}}.
-
-\strong{ID MATCHING ARGUMENTS}   
-
- The following optional arguments enforce matching between the sequence identification
- strings in the forward and reverse reads, and can automatically detect and match ID fields in 
- Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393. ID matching is not required
- when using standard Illumina output fastq files.}
+If TRUE, discard reads that match against the phiX genome, as determined by 
+\code{\link{isPhiX}}.}
 
 \item{matchIDs}{(Optional). Default FALSE.
 Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
@@ -69,6 +62,19 @@ Whether to enforce matching between the id-line sequence identifiers of the forw
   If FALSE, no read ID checking is done.
 Note: \code{matchIDs=FALSE} essentially assumes matching order between forward and reverse reads. If that
   matched order is not present future processing steps may break (in particular \code{\link{mergePairs}}).}
+
+\item{primer.fwd}{(Optional). Default NULL.
+ A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
+ compared to the first len(primer.fwd) nucleotides at the start of the forward and reverse reads. If there is
+ not an exact match, the paired read is filtered out. If detected on the reverse read, the fwd/rev reads
+ are swapped.
+
+\strong{ID MATCHING ARGUMENTS}   
+
+ The following optional arguments enforce matching between the sequence identification
+ strings in the forward and reverse reads, and can automatically detect and match ID fields in 
+ Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393. ID matching is not required
+ when using standard Illumina output fastq files.}
 
 \item{id.sep}{(Optional). Default "\\s" (white-space).
 The separator between fields in the id-line of the input fastq files. Passed to the \code{\link{strsplit}}.}
