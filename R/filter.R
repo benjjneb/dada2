@@ -68,6 +68,13 @@
 #' @param rm.phix (Optional). Default FALSE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.
 #'
+#' @param primer.fwd (Optional). Default NULL.
+#'  A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
+#'  compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
+#'  not an exact match, the read is filtered out.
+#'  For paired reads, the reverse read is also interrogated, and if the primer is detected on the reverse read,
+#'  the forward/reverse reads are swapped.
+#'
 #' @param matchIDs (Optional). Default FALSE.
 #'  Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
 #'    If TRUE, only paired reads that share id fields (see below) are output.
@@ -124,7 +131,7 @@
 #' filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=2)
 #' 
 filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
-                        truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE,
+                        truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, primer.fwd=NULL,
                         matchIDs=FALSE, id.sep="\\s", id.field=NULL,
                         multithread=FALSE, n = 1e5, OMP=TRUE, verbose = FALSE) {
   PAIRED <- FALSE
@@ -170,17 +177,17 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
   if(PAIRED) {
     rval <- mcmapply(fastqPairedFilter, 
                      mapply(c, fwd, rev, SIMPLIFY=FALSE), mapply(c, filt, filt.rev, SIMPLIFY=FALSE), 
-                     MoreArgs = list(truncQ=truncQ, truncLen=truncLen, maxLen=maxLen, minLen=minLen,
-                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, matchIDs=matchIDs,
-                                     id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, verbose=verbose),
-                     mc.cores=ncores, mc.silent=FALSE)
+                     MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, maxLen=maxLen, minLen=minLen,
+                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, primer.fwd=primer.fwd,
+                                     matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, verbose=verbose),
+                     mc.cores=ncores, mc.silent=TRUE)
   } else {
     rval <- mcmapply(fastqFilter, 
                      fwd, filt, 
-                     MoreArgs = list(truncQ=truncQ, truncLen=truncLen, maxLen=maxLen, minLen=minLen, 
-                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, n=n, OMP=OMP,
-                                     verbose=verbose),
-                     mc.cores=ncores, mc.silent=FALSE)
+                     MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, maxLen=maxLen, minLen=minLen, 
+                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, primer.fwd=primer.fwd,
+                                     n=n, OMP=OMP, verbose=verbose),
+                     mc.cores=ncores, mc.silent=TRUE)
   }
   colnames(rval) <- basename(fwd)
   return(invisible(t(rval)))
@@ -230,6 +237,11 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
 #'
+#' @param primer.fwd (Optional). Default NULL.
+#'  A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
+#'  compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
+#'  not an exact match, the read is filtered out.
+#'
 #' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
@@ -275,7 +287,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, primer.fwd=NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -307,6 +319,11 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
     
+    # Enforce primer.fwd
+    if(!is.null(primer.fwd)) {
+      barlen <- nchar(primer.fwd)
+      fq <- fq[narrow(sread(fq),1,barlen) == primer.fwd]
+    }
     # Enforce maxLen
     if(is.finite(maxLen)) { fq <- fq[width(fq) <= maxLen] }
     # Trim left
@@ -417,6 +434,12 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' @param rm.phix (Optional). Default FALSE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
+#'  
+#' @param primer.fwd (Optional). Default NULL.
+#'  A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
+#'  compared to the first len(primer.fwd) nucleotides at the start of the forward and reverse reads. If there is
+#'  not an exact match, the paired read is filtered out. If detected on the reverse read, the fwd/rev reads
+#'  are swapped.
 #'
 #' \strong{ID MATCHING ARGUMENTS}   
 #' 
@@ -490,7 +513,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
 #'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, primer.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -605,6 +628,20 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       fqR <- fqR[idsR %in% idsF]
     }
     
+    # Enforce primer.fwd
+    if(!is.null(primer.fwd)) {
+      barlen <- nchar(primer.fwd)
+      keepF <- narrow(sread(fqF),1,barlen) == primer.fwd
+      keepR <- (narrow(sread(fqR),1,barlen) == primer.fwd) & !keepF
+      fq <- ShortReadQ(sread=c(sread(fqF[keepF]), sread(fqR[keepR])), 
+                       quality=c(quality(quality(fqF[keepF])), quality(quality(fqR[keepR]))), 
+                       id=c(id(fqF[keepF]), id(fqR[keepR])))
+      fqR <- ShortReadQ(sread=c(sread(fqR[keepF]), sread(fqF[keepR])), 
+                       quality=c(quality(quality(fqR[keepF])), quality(quality(fqF[keepR]))), 
+                       id=c(id(fqR[keepF]), id(fqF[keepR])))
+      fqF <- fq
+      rm(fq)
+    }
     # Enforce maxLen
     if(is.finite(maxLen[[1]]) || is.finite(maxLen[[2]])) {
       keep <- width(fqF) <= maxLen[[1]] & width(fqR) <= maxLen[[2]]

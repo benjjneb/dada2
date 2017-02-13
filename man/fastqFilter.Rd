@@ -6,8 +6,8 @@
 \usage{
 fastqFilter(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf,
   minLen = 20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf,
-  rm.phix = FALSE, n = 1e+06, OMP = TRUE, compress = TRUE,
-  verbose = FALSE, ...)
+  rm.phix = FALSE, primer.fwd = NULL, n = 1e+06, OMP = TRUE,
+  compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). The path to the input fastq file.}
@@ -47,6 +47,11 @@ Expected errors are calculated from the nominal definition of the quality score:
 \item{rm.phix}{(Optional). Default FALSE.
 If TRUE, discard reads that match against the phiX genome, as determined by 
 \code{\link{isPhiX}}.}
+
+\item{primer.fwd}{(Optional). Default NULL.
+A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
+compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
+not an exact match, the read is filtered out.}
 
 \item{n}{(Optional). The number of records (reads) to read in and filter at any one time. 
 This controls the peak memory requirement so that very large fastq files are supported. 
