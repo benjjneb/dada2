@@ -612,8 +612,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       if(casava == "Old") { # Drop the index number/pair identifier (i.e. 1=F, 2=R)
         idsF <- sapply(strsplit(idsF, "#"), `[`, 1)
       }
-      lastF <- max(which(idsF %in% idsR))
-      lastR <- max(which(idsR %in% idsF))
+      lastF <- max(c(0,which(idsF %in% idsR)))
+      lastR <- max(c(0,which(idsR %in% idsF)))
       if(lastF < length(fqF)) {
         remainderF <- fqF[(lastF+1):length(fqF)]
       } else {
