@@ -108,15 +108,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_pair_consensus
-Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefer);
-RcppExport SEXP dada2_C_pair_consensus(SEXP s1SEXP, SEXP s2SEXP, SEXP preferSEXP) {
+Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefer, bool trim_overhang);
+RcppExport SEXP dada2_C_pair_consensus(SEXP s1SEXP, SEXP s2SEXP, SEXP preferSEXP, SEXP trim_overhangSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
     Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
     Rcpp::traits::input_parameter< int >::type prefer(preferSEXP);
-    rcpp_result_gen = Rcpp::wrap(C_pair_consensus(s1, s2, prefer));
+    Rcpp::traits::input_parameter< bool >::type trim_overhang(trim_overhangSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_pair_consensus(s1, s2, prefer, trim_overhang));
     return rcpp_result_gen;
 END_RCPP
 }

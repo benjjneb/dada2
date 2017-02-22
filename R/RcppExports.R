@@ -25,8 +25,8 @@ C_eval_pair <- function(s1, s2) {
     .Call('dada2_C_eval_pair', PACKAGE = 'dada2', s1, s2)
 }
 
-C_pair_consensus <- function(s1, s2, prefer) {
-    .Call('dada2_C_pair_consensus', PACKAGE = 'dada2', s1, s2, prefer)
+C_pair_consensus <- function(s1, s2, prefer, trim_overhang) {
+    .Call('dada2_C_pair_consensus', PACKAGE = 'dada2', s1, s2, prefer, trim_overhang)
 }
 
 C_isACGT <- function(seqs) {
