@@ -373,7 +373,9 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
   }
   
   if(verbose) {
-    message("Read in ", inseqs, ", output ", outseqs, " filtered sequences.")
+    outperc <- round(outseqs * 100 / inseqs, 1)
+    outperc <- paste(" (", outperc, "%)", sep="")
+    message("Read in ", inseqs, ", output ", outseqs, outperc, " filtered sequences.", sep="")
   }
   
   if(outseqs==0) {
@@ -738,7 +740,9 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   }
   
   if(verbose) {
-    message("Read in ", inseqs, " paired-sequences, output ", outseqs, " filtered paired-sequences.")
+    outperc <- round(outseqs * 100 / inseqs, 1)
+    outperc <- paste(" (", outperc, "%)", sep="")
+    message("Read in ", inseqs, " paired-sequences, output ", outseqs, outperc, " filtered paired-sequences.", sep="")
   }
   
   if(outseqs==0) {
