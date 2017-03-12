@@ -222,11 +222,27 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
   if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs) && all(sapply(sqs, C_isACGT)))) {
     stop("Input must be a valid sequence table.")
   }
-  if(multithread) message("Multithreading not yet implemented for consensus chimera detection.")
+  # Parse multithreading argument
+  # if(multithread) message("Multithreading not yet implemented for consensus chimera detection.")
+  if(is.logical(multithread)) {
+    if(multithread==TRUE) { RcppParallel::setThreadOptions(numThreads = "auto") }
+  } else if(is.numeric(multithread)) {
+    RcppParallel::setThreadOptions(numThreads = multithread)
+    multithread <- TRUE
+  } else {
+    warning("Invalid multithread parameter. Running as a single thread.")
+    multithread <- FALSE
+  }
   if(any(duplicated(sqs))) stop("Duplicate sequences detected in input.")
-  bimdf <- C_table_bimera(seqtab, sqs, minSampleFraction, ignoreNNegatives,
-                               minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,
-                               getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
+  if(multithread) {
+    bimdf <- C_table_bimera2(seqtab, sqs,
+                             minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,
+                             getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
+  } else {
+    bimdf <- C_table_bimera(seqtab, sqs, minSampleFraction, ignoreNNegatives,
+                            minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,
+                            getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
+  }
 
   is.bim <- function(nflag, nsam, minFrac, ignoreN) { 
     nflag >= nsam || (nflag > 0 && nflag >= (nsam-ignoreN)*minFrac) 

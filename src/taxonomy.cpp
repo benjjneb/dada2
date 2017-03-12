@@ -1,5 +1,6 @@
 #include "dada.h"
 #include <Rcpp.h>
+#include <RcppParallel.h>
 using namespace Rcpp;
 
 // Gets kmer index

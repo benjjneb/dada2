@@ -17,6 +17,10 @@ C_table_bimera <- function(mat, seqs, min_frac, ignore_n, min_fold, min_abund, a
     .Call('dada2_C_table_bimera', PACKAGE = 'dada2', mat, seqs, min_frac, ignore_n, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
 }
 
+C_table_bimera2 <- function(mat, seqs, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift) {
+    .Call('dada2_C_table_bimera2', PACKAGE = 'dada2', mat, seqs, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
+}
+
 C_nwalign <- function(s1, s2, match, mismatch, gap_p, homo_gap_p, band, endsfree) {
     .Call('dada2_C_nwalign', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, homo_gap_p, band, endsfree)
 }

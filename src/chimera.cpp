@@ -1,6 +1,8 @@
 #include "dada.h"
 #include <Rcpp.h>
+#include <RcppParallel.h>
 using namespace Rcpp;
+// [[Rcpp::depends(RcppParallel)]]
 
 int get_ham_endsfree(const char *seq1, const char *seq2);
 void get_lr(char **al, int &left, int &right, int &left_oo, int &right_oo, bool allow_one_off, int max_shift);
@@ -70,7 +72,6 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
   Rcpp::LogicalVector rval(ncol, false);
   Rcpp::IntegerVector flags(ncol, 0);
   Rcpp::IntegerVector sams(ncol, 0);
-  Rcpp::IntegerVector temp;
   std::vector<int> lefts(ncol);
   std::vector<int> rights(ncol);
   std::vector<int> lefts_oo(ncol);
@@ -147,6 +148,141 @@ Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string>
     sams[j] = nsam;
   } // for(j=0;j<mat.ncol();j++)
   return(Rcpp::DataFrame::create(_["bim"]=rval,_["nflag"]=flags,_["nsam"]=sams));
+}
+
+struct BimeraTableParallel : public RcppParallel::Worker
+{
+  // source data
+  const RcppParallel::RMatrix<int> C_mat;
+  const std::vector<std::string> seqs;
+  
+  // output
+  RcppParallel::RVector<int> C_flags;
+  RcppParallel::RVector<int> C_sams;
+
+  // parameters
+  double min_fold;
+  int min_abund;
+  bool allow_one_off;
+  int min_one_off_par_dist;
+  int match;
+  int mismatch;
+  int gap_p; 
+  int max_shift;
+  
+  // initialize with source and destination
+  BimeraTableParallel(const Rcpp::IntegerMatrix mat, const std::vector<std::string> seqs,
+                  Rcpp::IntegerVector flags, Rcpp::IntegerVector sams,
+                  double min_fold, int min_abund, bool allow_one_off, int min_one_off_par_dist,
+                  int match, int mismatch, int gap_p, int max_shift)
+    : C_mat(mat), seqs(seqs), C_flags(flags), C_sams(sams), min_fold(min_fold), min_abund(min_abund), 
+      allow_one_off(allow_one_off), min_one_off_par_dist(min_one_off_par_dist), match(match), mismatch(mismatch),
+      gap_p(gap_p), max_shift(max_shift) {}
+  
+  // Perform sequence comparison
+  void operator()(std::size_t begin, std::size_t end) {
+    int i,k,nsam,nflag,sqlen,left,right,left_oo,right_oo,max_left,max_right;
+    int oo_max_left, oo_max_right, oo_max_left_oo, oo_max_right_oo;
+    char **al;
+    const int *vals = C_mat.begin(); // What happens if its not integer?
+    int nrow = C_mat.nrow();
+    int ncol = C_mat.ncol();
+    std::vector<int> lefts(ncol);
+    std::vector<int> rights(ncol);
+    std::vector<int> lefts_oo(ncol);
+    std::vector<int> rights_oo(ncol);
+    std::vector<bool> allowed(ncol);
+    
+    for(std::size_t j=begin;j<end;j++) {
+//  for(j=0;j<ncol;j++) { // Evaluate each sequence
+      nsam=0; nflag=0;
+      sqlen = seqs[j].size();
+      std::fill(lefts.begin(), lefts.end(), -1);
+      std::fill(rights.begin(),rights.end(),-1);
+      if(allow_one_off) {
+        std::fill(lefts_oo.begin(), lefts_oo.end(), -1);
+        std::fill(rights_oo.begin(),rights_oo.end(),-1);
+        std::fill(allowed.begin(), allowed.end(), false); 
+      }
+      for(i=0;i<nrow;i++) { // Evaluate in each sample (row)
+        if(vals[i+j*nrow]<=0) { continue; }
+        nsam++;
+        max_left=0; max_right=0;
+        oo_max_left=0; oo_max_right=0; oo_max_left_oo=0; oo_max_right_oo=0;
+        for(k=0;k<ncol;k++) { // Compare with all possible parents
+          if(vals[i+k*nrow]>(min_fold*vals[i+j*nrow]) && vals[i+k*nrow]>=min_abund) {
+            if(lefts[k]<0) { // Comparison not yet done to this potential parent
+              al = nwalign_vectorized2(seqs[j].c_str(), seqs[k].c_str(), (int16_t) match, (int16_t) mismatch, (int16_t) gap_p, 0, max_shift);  // Remember, alignments must be freed!
+              get_lr(al, left, right, left_oo, right_oo, allow_one_off, max_shift);
+              if(allow_one_off && get_ham_endsfree(al[0], al[1]) >= min_one_off_par_dist) {
+                allowed[k]=true;
+              }
+              
+              if((left+right) < sqlen) {
+                lefts[k]=left;
+                rights[k]=right;
+                if(allow_one_off) {
+                  lefts_oo[k] = left_oo;
+                  rights_oo[k] = right_oo;
+                }
+              } else {  // Ignore id/pure-shift/internal-indel "parents"
+                lefts[k]=0;
+                rights[k]=0;
+                if(allow_one_off) {
+                  lefts_oo[k] = 0;
+                  rights_oo[k] = 0;
+                }
+              }
+              free(al[0]);
+              free(al[1]);
+              free(al);
+            }
+            // Now compare to best parents yet found
+            if(lefts[k] > max_left) { max_left=lefts[k]; }
+            if(rights[k] > max_right) { max_right=rights[k]; }
+            if(allow_one_off && allowed[k]) {
+              if(lefts[k] > oo_max_left) { oo_max_left=lefts[k]; }
+              if(rights[k] > oo_max_right) { oo_max_right=rights[k]; }
+              if(lefts_oo[k] > oo_max_left_oo) { oo_max_left_oo=lefts_oo[k]; }
+              if(rights_oo[k] > oo_max_right_oo) { oo_max_right_oo=rights_oo[k]; }
+            }
+          } // if(vals[i+k*nrow]>vals[i+j*nrow] && vals[i+k*nrow]>=2)
+        } // for(k=0;k<mat.ncol();k++)
+        
+        // Flag if chimeric model exists
+        if((max_right+max_left)>=sqlen) {
+          nflag++;
+        } else if(allow_one_off) {
+          if((oo_max_left+oo_max_right_oo)>=sqlen || (oo_max_left_oo+oo_max_right)>=sqlen) {
+            nflag++;
+          }
+        }
+      } // for(i=0;i<mat.nrow();i++)
+      
+      C_flags[j] = nflag;
+      C_sams[j] = nsam;
+    } // for(std::size_t j=begin;j<end;j++)
+  }
+  
+};
+
+
+
+// [[Rcpp::export]]
+Rcpp::DataFrame C_table_bimera2(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_fold, int min_abund, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift) {
+  int nrow = mat.nrow();
+  int ncol = mat.ncol();
+  // matrix stored in "column-major" order (so 1st col, then 2nd col...)
+  // mat(i,j) --> vals[i+j*nrow]
+  
+  Rcpp::IntegerVector flags(ncol, 0);
+  Rcpp::IntegerVector sams(ncol, 0);
+  
+  BimeraTableParallel bimParallel(mat, seqs, flags, sams, min_fold, min_abund, allow_one_off, min_one_off_par_dist,
+                                  match, mismatch, gap_p, max_shift);
+  RcppParallel::parallelFor(0, ncol, bimParallel);
+  
+  return(Rcpp::DataFrame::create(_["nflag"]=flags,_["nsam"]=sams));
 }
 
 // Internal function to get hamming distance between aligned seqs
