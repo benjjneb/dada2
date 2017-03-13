@@ -222,27 +222,20 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
   if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs) && all(sapply(sqs, C_isACGT)))) {
     stop("Input must be a valid sequence table.")
   }
+  if(any(duplicated(sqs))) stop("Duplicate sequences detected in input.")
   # Parse multithreading argument
-  # if(multithread) message("Multithreading not yet implemented for consensus chimera detection.")
   if(is.logical(multithread)) {
     if(multithread==TRUE) { RcppParallel::setThreadOptions(numThreads = "auto") }
+    else { RcppParallel::setThreadOptions(numThreads = 1) }
   } else if(is.numeric(multithread)) {
     RcppParallel::setThreadOptions(numThreads = multithread)
-    multithread <- TRUE
   } else {
     warning("Invalid multithread parameter. Running as a single thread.")
-    multithread <- FALSE
+    RcppParallel::setThreadOptions(numThreads = 1)
   }
-  if(any(duplicated(sqs))) stop("Duplicate sequences detected in input.")
-  if(multithread) {
-    bimdf <- C_table_bimera2(seqtab, sqs,
-                             minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,
-                             getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
-  } else {
-    bimdf <- C_table_bimera(seqtab, sqs, minSampleFraction, ignoreNNegatives,
-                            minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,
-                            getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
-  }
+  bimdf <- C_table_bimera2(seqtab, sqs,
+                           minFoldParentOverAbundance, minParentAbundance, allowOneOff, minOneOffParentDistance,
+                           getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
 
   is.bim <- function(nflag, nsam, minFrac, ignoreN) { 
     nflag >= nsam || (nflag > 0 && nflag >= (nsam-ignoreN)*minFrac) 
@@ -257,19 +250,25 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 ################################################################################
 #' Remove bimeras from collections of unique sequences.
 #' 
-#' This function is a wrapper around \code{\link{isBimeraDenovo}} and \code{\link{isBimeraDenovoTable}}.
+#' This function is a convenience interface for chimera removal. Two methods to identify chimeras are
+#'  supported: Identification from pooled sequences (see \code{\link{isBimeraDenovo}} for details)
+#'  and identification by consensus across samples (see \code{\link{isBimeraDenovoTable}} for details).
 #'  Sequence variants identified as bimeric are removed, and a bimera-free collection of unique sequences
 #'  is returned.
 #' 
 #' @param unqs (Required). A \code{\link{uniques-vector}} or any object that can be coerced
 #'  into one with \code{\link{getUniques}}. A list of such objects can also be provided.
 #'   
-#' @param tableMethod (Optional). Default is "pooled".
-#'   If "pooled": The samples in the sequence table are all pooled together for chimera
-#'      identification (\code{\link{isBimeraDenovo}}).
-#'   If "consensus": The samples in a sequence table are independently checked for chimeras,
+#' @param method (Optional). Default is "pooled". Only has an effect if a sequence table is provided.   
+#' 
+#'   If "pooled": The samples in the sequence table are all pooled together for bimera
+#'      identification (\code{\link{isBimeraDenovo}}).   
+#'      
+#'   If "consensus": The samples in a sequence table are independently checked for bimeras,
 #'      and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).
 #' 
+#' @param tableMethod (DEPRECATED).
+#'
 #' @param ... (Optional). Arguments to be passed to \code{\link{isBimeraDenovo}} or \code{\link{isBimeraDenovoTable}}.
 #'   
 #' @param verbose (Optional). Default FALSE. 
@@ -288,9 +287,13 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' out.nobim <- removeBimeraDenovo(dada1)
 #' out.nobim <- removeBimeraDenovo(dada1$clustering, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 #' 
-removeBimeraDenovo <- function(unqs, tableMethod = "pooled", ..., verbose=FALSE) {
+removeBimeraDenovo <- function(unqs, method = "pooled", tableMethod=NULL, ..., verbose=FALSE) {
   if(class(unqs)!="list") {
     unqs <- list(unqs)
+  }
+  if(!is.null(tableMethod)) {
+    warning("DEPRECATED: The tableMethod argument has been replaced by the method argument. Please update your code.")
+    method <- tableMethod
   }
   outs <- list()
   for(i in seq_along(unqs)) {
@@ -308,12 +311,12 @@ removeBimeraDenovo <- function(unqs, tableMethod = "pooled", ..., verbose=FALSE)
       bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]][!bim,]
     } else if(class(unqs[[i]]) == "matrix" && !any(is.na(colnames(unqs[[i]])))) { # Tabled sequences
-      if(tableMethod == "pooled") {
+      if(method == "pooled") {
         bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
-      } else if(tableMethod == "consensus") {
+      } else if(method == "consensus") {
         bim <- isBimeraDenovoTable(unqs[[i]], ..., verbose=TRUE)
       } else {
-        stop("Valid values for tableMethod: 'pooled', 'consensus'")
+        stop("Valid values for method: 'pooled', 'consensus'")
       }
       outs[[i]] <- unqs[[i]][,!bim,drop=FALSE]
     } else {

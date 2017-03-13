@@ -13,10 +13,6 @@ C_is_bimera <- function(sq, pars, allow_one_off, min_one_off_par_dist, match, mi
     .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
 }
 
-C_table_bimera <- function(mat, seqs, min_frac, ignore_n, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift) {
-    .Call('dada2_C_table_bimera', PACKAGE = 'dada2', mat, seqs, min_frac, ignore_n, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
-}
-
 C_table_bimera2 <- function(mat, seqs, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift) {
     .Call('dada2_C_table_bimera2', PACKAGE = 'dada2', mat, seqs, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
 }

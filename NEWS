@@ -1,3 +1,18 @@
+CHANGES IN VERSION 1.3.4
+-----------------------
+
+NEW FEATURES
+
+    o filterAndTrim is the new multithreaded interface for filtering and trimming. It is R-vectorized, in that it accepts vectors of input/output files. Supports both single-read and paired-read filtering.
+    
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o Consensus chimera removal now supports multithreading.
+
+    o The new trimOverhang option in mergePairs allows the portion of paired reads that overhang the start of the other read to be removed when merging.
+
+    o Faster filtering by not enforcing redundant filtering conditions.
+
 CHANGES IN VERSION 1.3.3
 -----------------------
 
@@ -16,7 +31,7 @@ NEW FEATURES
 
     o learnErrors is a new method for learning error rates from a targeted number of reads. This wraps pre-existing functionality -- dada(..., selfConsist=TRUE) -- in a much easier to use form.
     
-    o assignTaxonomy is multithreaded (multithread=TRUE) and will individually test reverse-complemented sequences and use them to classify if they better match the reference (tryRC=TRUE).
+    o assignTaxonomy is multithreaded (multithread=TRUE) and can individually test reverse-complemented sequences and use them to classify if they better match the reference (tryRC=TRUE).
 
 CHANGES IN VERSION 1.3.1
 -----------------------
