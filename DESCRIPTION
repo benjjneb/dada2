@@ -20,7 +20,7 @@ Depends:
     methods (>= 3.2.0)
 Imports:
     Biostrings (>= 2.32.1),
-    ggplot2 (>= 1.0),
+    ggplot2 (>= 2.1.0),
     data.table (>= 1.9.4),
     reshape2 (>= 1.4.1),
     ShortRead (>= 1.24.0),

@@ -68,24 +68,24 @@
 #' @param rm.phix (Optional). Default FALSE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.
 #'
-#' @param primer.fwd (Optional). Default NULL.
+#' @param primer.fwd (Optional). Default NULL. Paired-read filtering only.
 #'  A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
 #'  compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
 #'  not an exact match, the read is filtered out.
 #'  For paired reads, the reverse read is also interrogated, and if the primer is detected on the reverse read,
 #'  the forward/reverse reads are swapped.
 #'
-#' @param matchIDs (Optional). Default FALSE.
+#' @param matchIDs (Optional). Default FALSE. Paired-read filtering only.
 #'  Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
 #'    If TRUE, only paired reads that share id fields (see below) are output.
 #'    If FALSE, no read ID checking is done.
 #'  Note: \code{matchIDs=FALSE} essentially assumes matching order between forward and reverse reads. If that
 #'    matched order is not present future processing steps may break (in particular \code{\link{mergePairs}}).
 #'
-#' @param id.sep (Optional). Default "\\s" (white-space).
+#' @param id.sep (Optional). Default "\\s" (white-space). Paired-read filtering only.
 #'  The separator between fields in the id-line of the input fastq files. Passed to the \code{\link{strsplit}}.
 #' 
-#' @param id.field (Optional). Default NULL (automatic detection).
+#' @param id.field (Optional). Default NULL (automatic detection). Paired-read filtering only.
 #'  The field of the id-line containing the sequence identifier.
 #'  If NULL (the default) and matchIDs is TRUE, the function attempts to automatically detect
 #'    the sequence identifier field under the assumption of Illumina formatted output.
@@ -103,7 +103,7 @@
 #' See \code{\link{FastqStreamer}} for details.
 #'
 #' @param OMP (Optional). Default TRUE.
-#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set to FALSE if
+#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Should be set to FALSE if
 #'  calling this function within a parallelized chunk of code.
 #'  If \code{multithread=TRUE}, this argument will be coerced to FALSE.
 #' 
@@ -121,6 +121,7 @@
 #' @importFrom parallel mcmapply
 #' @importFrom parallel detectCores
 #' @importFrom methods as
+#' @importFrom methods is
 #' 
 #' @export
 #' 
@@ -128,7 +129,7 @@
 #' testFastqs = c(system.file("extdata", "sam1F.fastq.gz", package="dada2"), system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 #' filtFastqs <- c(tempfile(fileext=".fastq.gz"), tempfile(fileext=".fastq.gz"))
 #' filterAndTrim(testFastqs, filtFastqs, maxN=0, maxEE=2, verbose=TRUE)
-#' filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=2)
+#' filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=4)
 #' 
 filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                         truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, primer.fwd=NULL,
@@ -150,12 +151,8 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
   if(!is.null(rev)) {
     PAIRED <- TRUE
     if(is.null(filt.rev)) stop("Output files for the reverse reads are required.")
-    rev <- suppressWarnings(normalizePath(rev))
-    filt.rev <- suppressWarnings(normalizePath(filt.rev))
     if(length(rev) != length(fwd)) stop("Paired forward and reverse input files must correspond.")
     if(length(rev) != length(filt.rev)) stop("Every input file (rev) must have a corresponding output file (filt.rev).")
-    if(any(duplicated(c(filt, filt.rev)))) stop("All output files must be distinct.")
-    if(any(c(filt,filt.rev) %in% c(fwd, rev))) stop("Output files must be distinct from the input files.")
     odirs <- unique(dirname(filt.rev))
     for(odir in odirs) {
       if(!dir.exists(odir)) { 
@@ -163,6 +160,10 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
         dir.create(odir, recursive=TRUE, mode="0777") 
       }
     }
+    rev <- suppressWarnings(normalizePath(rev, mustWork=TRUE))
+    filt.rev <- suppressWarnings(normalizePath(filt.rev, mustWork=FALSE))
+    if(any(duplicated(c(filt, filt.rev)))) stop("All output files must be distinct.")
+    if(any(c(filt,filt.rev) %in% c(fwd, rev))) stop("Output files must be distinct from the input files.")
   }
   # Parse multithreading
   if(multithread) {

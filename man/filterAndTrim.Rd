@@ -66,24 +66,24 @@ Expected errors are calculated from the nominal definition of the quality score:
 \item{rm.phix}{(Optional). Default FALSE.
 If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.}
 
-\item{primer.fwd}{(Optional). Default NULL.
+\item{primer.fwd}{(Optional). Default NULL. Paired-read filtering only.
 A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
 compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
 not an exact match, the read is filtered out.
 For paired reads, the reverse read is also interrogated, and if the primer is detected on the reverse read,
 the forward/reverse reads are swapped.}
 
-\item{matchIDs}{(Optional). Default FALSE.
+\item{matchIDs}{(Optional). Default FALSE. Paired-read filtering only.
 Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
   If TRUE, only paired reads that share id fields (see below) are output.
   If FALSE, no read ID checking is done.
 Note: \code{matchIDs=FALSE} essentially assumes matching order between forward and reverse reads. If that
   matched order is not present future processing steps may break (in particular \code{\link{mergePairs}}).}
 
-\item{id.sep}{(Optional). Default "\\s" (white-space).
+\item{id.sep}{(Optional). Default "\\s" (white-space). Paired-read filtering only.
 The separator between fields in the id-line of the input fastq files. Passed to the \code{\link{strsplit}}.}
 
-\item{id.field}{(Optional). Default NULL (automatic detection).
+\item{id.field}{(Optional). Default NULL (automatic detection). Paired-read filtering only.
 The field of the id-line containing the sequence identifier.
 If NULL (the default) and matchIDs is TRUE, the function attempts to automatically detect
   the sequence identifier field under the assumption of Illumina formatted output.}
@@ -101,7 +101,7 @@ This controls the peak memory requirement so that very large fastq files are sup
 See \code{\link{FastqStreamer}} for details.}
 
 \item{OMP}{(Optional). Default TRUE.
-Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set to FALSE if
+Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Should be set to FALSE if
 calling this function within a parallelized chunk of code.
 If \code{multithread=TRUE}, this argument will be coerced to FALSE.}
 
@@ -131,7 +131,7 @@ troubleshoot the issue.
 testFastqs = c(system.file("extdata", "sam1F.fastq.gz", package="dada2"), system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 filtFastqs <- c(tempfile(fileext=".fastq.gz"), tempfile(fileext=".fastq.gz"))
 filterAndTrim(testFastqs, filtFastqs, maxN=0, maxEE=2, verbose=TRUE)
-filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=2)
+filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=4)
 
 }
 \seealso{
