@@ -7,7 +7,7 @@
 isBimeraDenovoTable(seqtab, minSampleFraction = 0.9, ignoreNNegatives = 1,
   minFoldParentOverAbundance = 1, minParentAbundance = 2,
   allowOneOff = TRUE, minOneOffParentDistance = 4, maxShift = 16,
-  verbose = FALSE)
+  multithread = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{seqtab}{(Required). A sequence table. That is, an integer matrix with colnames
@@ -42,6 +42,9 @@ no such screen when considering exact bimeras.}
 \item{maxShift}{(Optional). Default is 16.
 Maximum shift allowed when aligning sequences to potential "parents".}
 
+\item{multithread}{(Optional). Default is FALSE.
+If TRUE, multithreading is enabled. NOT YET IMPLEMENTED.}
+
 \item{verbose}{(Optional). Default FALSE.
 Print verbose text output.}
 }
@@ -69,4 +72,3 @@ isBimeraDenovoTable(seqtab, allowOneOff=FALSE, minSampleFraction=0.5)
 \seealso{
 \code{\link{isBimera}}, \code{\link{removeBimeraDenovo}}
 }
-

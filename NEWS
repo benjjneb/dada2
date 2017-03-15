@@ -1,29 +1,78 @@
-CHANGES IN VERSION 1.2.0
+CHANGES IN VERSION 1.3.4
 -----------------------
 
 NEW FEATURES
 
-    o Multithreading. The dada function is now multithreaded. This behavior is controlled by the multithread argument to the function and is FALSE by default: dada(..., multithread=FALSE/TRUE). Multithreaded chimera detection is also available and activated similarly: removeBimeraDenovo(..., multithread=FALSE/TRUE).
-
-    o Species-level taxonomic assignment. The new assignSpecies function uses exact matching to assign sequences to the species level. Training fastas for species assignment are currently available for the Silva and RDP taxonomic databases.
-    
-    o Consensus-based chimera detection. isBimeraDenovoTable is a new method for detecting chimeras on multi-sample sequence tables. It first identifies bimeras on a per-sample basis, and then uses a consensus-across-samples approach to identify chimeric sequences. This improves the specificity of chimera classification for datasets with many samples. This method is also available through the convenience interface removeBimeraDenovo(..., tableMethod="consensus").
+    o filterAndTrim is the new multithreaded interface for filtering and trimming. It is R-vectorized, in that it accepts vectors of input/output files. Supports both single-read and paired-read filtering.
     
 SIGNIFICANT USER-VISIBLE CHANGES
 
-    o The vectorized aligner has been updated. It is now more flexible, handling different length sequences and variable end-gap penalties. It is also faster: On default settings the dada(...) function is now 15-25% faster, and isBimeraDenovo is 2-4x faster.
+    o Consensus chimera removal now supports multithreading.
 
-    o The vectorized Needleman-Wunsch algorithm is now available through nwalign(..., vec=TRUE). This aligner is very fast for short sequences, but performs no overflow checking so use on longer sequences (2kb+) with care.
+    o The new trimOverhang option in mergePairs allows the portion of paired reads that overhang the start of the other read to be removed when merging.
 
-    o The filenames is now included in the plotQualityProfile plot.
+    o Faster filtering by not enforcing redundant filtering conditions.
 
-    o The phiX removal functionality in fastqFilter/fastqPairedFilter is now substantially faster.
+CHANGES IN VERSION 1.3.3
+-----------------------
 
-    o A 2-5% speedup from switching to C++11 hashed containers.
+NEW FEATURES
+
+    o ITS support. The dada method now handles variable-length amplicons, which allows common ITS sequencing strategies to be processed. Taxonomic assignment against the UNITE database is also now available.
+    
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The xxxFilter methods now have maxLen and minLen filtering parameters.
+
+CHANGES IN VERSION 1.3.2
+-----------------------
+
+NEW FEATURES
+
+    o learnErrors is a new method for learning error rates from a targeted number of reads. This wraps pre-existing functionality -- dada(..., selfConsist=TRUE) -- in a much easier to use form.
+    
+    o assignTaxonomy is multithreaded (multithread=TRUE) and can individually test reverse-complemented sequences and use them to classify if they better match the reference (tryRC=TRUE).
+
+CHANGES IN VERSION 1.3.1
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The xxxFilter methods now (invisibily) return the number of reads that went in and that passed the filter.
+
+    o fastqFilter now has a maxLen parameter, primarily for filtering/trimming 454 data.
 
 BUG FIXES
 
-    o It is now more difficult to alter the internal structure of dada-class and derep-class objects.
+    o trimLeft is now enforced before any filtering is performed.
+
+    o Rscript invocations should now work without requiring an initial library(methods) call.
+
+CHANGES IN VERSION 1.1.7
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The isBimeraDenovoTable method is now available through the convenience interface removeBimeraDenovo(..., tableMethod="consensus").
+
+    o The vectorized Needleman-Wunsch algorithm is now available through nwalign(..., vec=TRUE). This aligner is very fast for short sequences, but performs no overflow checking so use on longer sequences (2kb+) with care.
+
+BUG FIXES
+
+    o It is now more difficult to mess up the internal structure of dada-class and derep-class objects.
+
+CHANGES IN VERSION 1.1.6
+-----------------------
+
+NEW FEATURES
+
+    o isBimeraDenovoTable is a new function for detecting chimeras on multi-sample sequence tables. It first identifies bimeras on a per-sample basis, and then uses a consensus approach to identify bimeric sequences. This improves the specificity of bimera classification for datasets with many samples.
+    
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The filenames is now included in the plotQualityProfile plot.
+
+BUG FIXES
 
     o assignTaxonomy now works for sequences containg Ns.
 
@@ -31,14 +80,56 @@ BUG FIXES
 
     o Fixed a memory leak when using the HOMOPOLYMER_GAP_PENALTY option.
 
+    o Warnings and errors during error estimation from small samples in the dada(…) function are now handled appropriately.
+
+
+CHANGES IN VERSION 1.1.4
+-----------------------
+
+NEW FEATURES
+
+    o Multithreaded chimera detection. The isBimeraDenovo(...) function is now multithreaded. This behavior is controlled by the multithread argument to the function, and is FALSE by default.
+
+CHANGES IN VERSION 1.1.3
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The vectorized aligner has been updated. It is now more flexible, handling different length sequences and variable end-gap penalties. It is also faster: On default settings the dada(...) function is now 15-25% faster, and isBimeraDenovo is 2-4x faster.
+
+CHANGES IN VERSION 1.1.2
+-----------------------
+
+NEW FEATURES
+
+    o Species-level taxonomic assignment. The new assignSpecies(...) function uses exact matching to assign sequences to the species level. Currently a valid species training fasta is only available for the RDP taxonomic database.
+    
+CHANGES IN VERSION 1.1.1
+-----------------------
+
+BUG FIXES
+
     o Fixed the memory leak in isBimeraDenovo and friends.
 
     o Sequence tables are now integer rather than numeric.
 
-    o Warnings and errors during error estimation from small samples in the dada(…) function are now handled appropriately.
+
+CHANGES IN VERSION 1.1
+-----------------------
+
+NEW FEATURES
+
+    o Multithreading. The dada(...) function is now multithreaded. This behavior is controlled by the multithread argument to the function, and is FALSE by default.
+    
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The phiX removal functionality in fastqFilter/fastqPairedFilter is now substantially faster.
+
+BUG FIXES
 
     o Certain diagnostic return values of dada(..., pool=TRUE) are now appropriately constructed.
 
+    o A 2-5% speedup from switching to C++11 hashed containers.
 
 CHANGES IN VERSION 1.0
 -----------------------

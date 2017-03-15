@@ -4,11 +4,11 @@
 \alias{plotQualityProfile}
 \title{Plot quality profile of a fastq file.}
 \usage{
-plotQualityProfile(fl, n = 1e+06)
+plotQualityProfile(fl, n = 5e+05)
 }
 \arguments{
-\item{fl}{(Required). \code{character(1)}.
-The file path to the fastq or fastq.gz file.}
+\item{fl}{(Required). \code{character}.
+File path(s) to fastq or fastq.gz file(s).}
 
 \item{n}{(Optional). Default 1,000,000.
 The number of records to sample from the fastq file.}
@@ -21,7 +21,7 @@ A \code{\link{ggplot}2} object.
 }
 \description{
 This function plots a visual summary of the distribution of quality scores
-as a function of sequence position for the input fastq file.
+as a function of sequence position for the input fastq file(s).
 }
 \details{
 The distribution of quality scores at each position is shown as a grey-scale
@@ -33,4 +33,3 @@ the dashed orange lines are the 25th and 75th quantiles.
 plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 
 }
-

@@ -24,4 +24,3 @@ A multi-item List with the following named values...
 \seealso{
 \code{\link{dada}}
 }
-

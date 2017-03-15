@@ -3,7 +3,8 @@
 #' 
 #' assignTaxonomy implements the RDP Naive Bayesian Classifier algorithm described in
 #' Wang et al. Applied and Environmental Microbiology 2007, with kmer size 8 and 100 bootstrap
-#' replicates.
+#' replicates. Properly formatted reference files for several popular taxonomic databases
+#' are available \url{http://benjjneb.github.io/dada2/training.html}
 #' 
 #' @param seqs (Required). A character vector of the sequences to be assigned, or an object 
 #' coercible by \code{\link{getUniques}}.
@@ -20,17 +21,34 @@
 #' @param minBoot (Optional). Default 50. 
 #' The minimum bootstrap confidence for assigning a taxonomic level.
 #'   
+#' @param tryRC (Optional). Default FALSE. 
+#' If TRUE, the reverse-complement of each sequences will be used for classification if it is a better match to the reference
+#' sequences than the forward sequence.
+#'   
+#' @param outputBootstraps (Optional). Default FALSE.
+#'  If TRUE, bootstrap values will be retained in an integer matrix. A named list containing the assigned taxonomies (named "taxa") 
+#'  and the bootstrap values (named "boot") will be returned. Minimum bootstrap confidence filtering still takes place,
+#'  to see full taxonomy set minBoot=0
+#'   
 #' @param taxLevels (Optional). Default is c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species").
 #' The taxonomic levels being assigned. Truncates if deeper levels not present in
 #' training fasta.
 #'   
+#' @param multithread (Optional). Default is FALSE.
+#'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+#'  If an integer is provided, the number of threads to use is set by passing the argument on to
+#'  \code{\link{setThreadOptions}}.
+#'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
-#' 
+#'   
 #' @return A character matrix of assigned taxonomies exceeding the minBoot level of
 #'   bootstrapping confidence. Rows correspond to the provided sequences, columns to the
 #'   taxonomic levels. NA indicates that the sequence was not consistently classified at
-#'   that level at the minBoot threshold. 
+#'   that level at the minBoot threshhold.
+#'   
+#'   If outputBootstraps is TRUE, a named list containing the assigned taxonomies (named "taxa") 
+#'   and the bootstrap values (named "boot") will be returned.
 #' 
 #' @export
 #' 
@@ -44,9 +62,9 @@
 #'  taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
 #' }
 #' 
-assignTaxonomy <- function(seqs, refFasta, minBoot=50,
+assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootstraps=FALSE,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                           verbose=FALSE) {
+                           multithread=FALSE, verbose=FALSE) {
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
@@ -54,6 +72,16 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
   refs <- as.character(sread(refsr))
   tax <- as.character(id(refsr))
   tax <- sapply(tax, function(x) gsub("^\\s+|\\s+$", "", x)) # Remove leading/trailing whitespace
+  # Sniff and parse UNITE fasta format
+  UNITE <- FALSE
+  if(all(grepl("FU\\|re[pf]s", tax[1:10]))) {
+    UNITE <- TRUE
+    cat("UNITE fungal taxonomic reference detected.\n")
+    tax <- sapply(strsplit(tax, "\\|"), `[`, 5)
+    tax <- gsub("[pcofg]__unidentified;", "_DADA2_UNSPECIFIED;", tax)
+    tax <- gsub(";s__(\\w+)_", ";s__", tax)
+    tax <- gsub(";s__sp$", ";_DADA2_UNSPECIFIED", tax)
+  }
   # Parse the taxonomies from the id string
   tax.depth <- sapply(strsplit(tax, ";"), length)
   td <- max(tax.depth)
@@ -74,8 +102,22 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
     tax.df[,i] <- as.integer(tax.df[,i])
   }
   tax.mat.int <- as.matrix(tax.df)
-  # Assign  
-  assignment <- C_assign_taxonomy(seqs, refs, ref.to.genus, tax.mat.int, verbose)
+  # Assign
+  # Parse multithreading argument
+  if(is.logical(multithread)) {
+    if(multithread==TRUE) { RcppParallel::setThreadOptions(numThreads = "auto") }
+  } else if(is.numeric(multithread)) {
+    RcppParallel::setThreadOptions(numThreads = multithread)
+    multithread <- TRUE
+  } else {
+    warning("Invalid multithread parameter. Running as a single thread.")
+    multithread <- FALSE
+  }
+  if(multithread) {
+    assignment <- C_assign_taxonomy2(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose)
+  } else {
+    assignment <- C_assign_taxonomy(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose)
+  }
   # Parse results and return tax consistent with minBoot
   bestHit <- genus.unq[assignment$tax]
   boots <- assignment$boot
@@ -91,7 +133,16 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50,
   rownames(tax.out) <- seqs
   colnames(tax.out) <- taxLevels[1:ncol(tax.out)]
   tax.out[tax.out=="_DADA2_UNSPECIFIED"] <- NA_character_
-  tax.out
+  if(outputBootstraps){
+      # Convert boots to integer matrix
+      boots.out <- matrix(boots, nrow=length(seqs), ncol=td)
+      rownames(boots.out) <- seqs
+      colnames(boots.out) <- taxLevels[1:ncol(boots.out)]
+      list(tax=tax.out, boot=boots.out)
+  } else {
+    tax.out
+  }
+
 }
 
 # Helper function for assignSpecies

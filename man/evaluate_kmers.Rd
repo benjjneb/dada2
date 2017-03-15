@@ -38,4 +38,3 @@ kmerdf <- dada2:::evaluate_kmers(getSequences(derep1), 5, getDadaOpt("SCORE_MATR
 plot(kmerdf$kmer, kmerdf$align)
 
 }
-

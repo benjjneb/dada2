@@ -10,4 +10,3 @@
 A dataset containing the error matrix estimated by DADA2 from the reverse reads of the
 Illumina Miseq 2x250 sequenced HMP mock community (see manuscript).
 }
-

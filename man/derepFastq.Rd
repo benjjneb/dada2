@@ -39,4 +39,3 @@ derep1.35 = derepFastq(testFastq, 35, TRUE)
 all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 
 }
-

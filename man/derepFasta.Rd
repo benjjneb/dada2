@@ -21,4 +21,3 @@ creating a corresponding fastq file with a uniform quality score
 and calling derepFastq.
 }
 \keyword{internal}
-

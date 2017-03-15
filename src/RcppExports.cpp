@@ -26,16 +26,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// C_table_bimera
-Rcpp::DataFrame C_table_bimera(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_frac, int ignore_n, double min_fold, int min_abund, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift);
-RcppExport SEXP dada2_C_table_bimera(SEXP matSEXP, SEXP seqsSEXP, SEXP min_fracSEXP, SEXP ignore_nSEXP, SEXP min_foldSEXP, SEXP min_abundSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
+// C_table_bimera2
+Rcpp::DataFrame C_table_bimera2(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_fold, int min_abund, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift);
+RcppExport SEXP dada2_C_table_bimera2(SEXP matSEXP, SEXP seqsSEXP, SEXP min_foldSEXP, SEXP min_abundSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type mat(matSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
-    Rcpp::traits::input_parameter< double >::type min_frac(min_fracSEXP);
-    Rcpp::traits::input_parameter< int >::type ignore_n(ignore_nSEXP);
     Rcpp::traits::input_parameter< double >::type min_fold(min_foldSEXP);
     Rcpp::traits::input_parameter< int >::type min_abund(min_abundSEXP);
     Rcpp::traits::input_parameter< bool >::type allow_one_off(allow_one_offSEXP);
@@ -44,7 +42,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type mismatch(mismatchSEXP);
     Rcpp::traits::input_parameter< int >::type gap_p(gap_pSEXP);
     Rcpp::traits::input_parameter< int >::type max_shift(max_shiftSEXP);
-    rcpp_result_gen = Rcpp::wrap(C_table_bimera(mat, seqs, min_frac, ignore_n, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift));
+    rcpp_result_gen = Rcpp::wrap(C_table_bimera2(mat, seqs, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -79,15 +77,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_pair_consensus
-Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefer);
-RcppExport SEXP dada2_C_pair_consensus(SEXP s1SEXP, SEXP s2SEXP, SEXP preferSEXP) {
+Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefer, bool trim_overhang);
+RcppExport SEXP dada2_C_pair_consensus(SEXP s1SEXP, SEXP s2SEXP, SEXP preferSEXP, SEXP trim_overhangSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
     Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
     Rcpp::traits::input_parameter< int >::type prefer(preferSEXP);
-    rcpp_result_gen = Rcpp::wrap(C_pair_consensus(s1, s2, prefer));
+    Rcpp::traits::input_parameter< bool >::type trim_overhang(trim_overhangSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_pair_consensus(s1, s2, prefer, trim_overhang));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -144,6 +143,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// C_matrixEE
+Rcpp::NumericVector C_matrixEE(Rcpp::IntegerMatrix inp);
+RcppExport SEXP dada2_C_matrixEE(SEXP inpSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type inp(inpSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_matrixEE(inp));
+    return rcpp_result_gen;
+END_RCPP
+}
 // C_nwvec
 Rcpp::CharacterVector C_nwvec(std::vector<std::string> s1, std::vector<std::string> s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree);
 RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
@@ -191,17 +201,36 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_assign_taxonomy
-Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool verbose);
-RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP, SEXP verboseSEXP) {
+Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose);
+RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP rcsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP, SEXP try_rcSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type rcs(rcsSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string> >::type refs(refsSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type ref_to_genus(ref_to_genusSEXP);
     Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type genusmat(genusmatSEXP);
+    Rcpp::traits::input_parameter< bool >::type try_rc(try_rcSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(C_assign_taxonomy(seqs, refs, ref_to_genus, genusmat, verbose));
+    rcpp_result_gen = Rcpp::wrap(C_assign_taxonomy(seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// C_assign_taxonomy2
+Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose);
+RcppExport SEXP dada2_C_assign_taxonomy2(SEXP seqsSEXP, SEXP rcsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP, SEXP try_rcSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type seqs(seqsSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type rcs(rcsSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type refs(refsSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type ref_to_genus(ref_to_genusSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type genusmat(genusmatSEXP);
+    Rcpp::traits::input_parameter< bool >::type try_rc(try_rcSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_assign_taxonomy2(seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose));
     return rcpp_result_gen;
 END_RCPP
 }

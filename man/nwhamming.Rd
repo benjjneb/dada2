@@ -28,4 +28,3 @@ nwhamming(sq1, sq2)
 nwhamming(sq1, sq2, band=16)
 
 }
-

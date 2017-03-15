@@ -5,8 +5,8 @@ C_is_bimera <- function(sq, pars, allow_one_off, min_one_off_par_dist, match, mi
     .Call('dada2_C_is_bimera', PACKAGE = 'dada2', sq, pars, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
 }
 
-C_table_bimera <- function(mat, seqs, min_frac, ignore_n, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift) {
-    .Call('dada2_C_table_bimera', PACKAGE = 'dada2', mat, seqs, min_frac, ignore_n, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
+C_table_bimera2 <- function(mat, seqs, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift) {
+    .Call('dada2_C_table_bimera2', PACKAGE = 'dada2', mat, seqs, min_fold, min_abund, allow_one_off, min_one_off_par_dist, match, mismatch, gap_p, max_shift)
 }
 
 C_nwalign <- function(s1, s2, match, mismatch, gap_p, homo_gap_p, band, endsfree) {
@@ -17,8 +17,8 @@ C_eval_pair <- function(s1, s2) {
     .Call('dada2_C_eval_pair', PACKAGE = 'dada2', s1, s2)
 }
 
-C_pair_consensus <- function(s1, s2, prefer) {
-    .Call('dada2_C_pair_consensus', PACKAGE = 'dada2', s1, s2, prefer)
+C_pair_consensus <- function(s1, s2, prefer, trim_overhang) {
+    .Call('dada2_C_pair_consensus', PACKAGE = 'dada2', s1, s2, prefer, trim_overhang)
 }
 
 C_isACGT <- function(seqs) {
@@ -64,6 +64,10 @@ C_matchRef <- function(seqs, ref, word_size, non_overlapping) {
     .Call('dada2_C_matchRef', PACKAGE = 'dada2', seqs, ref, word_size, non_overlapping)
 }
 
+C_matrixEE <- function(inp) {
+    .Call('dada2_C_matrixEE', PACKAGE = 'dada2', inp)
+}
+
 C_nwvec <- function(s1, s2, match, mismatch, gap_p, band, endsfree) {
     .Call('dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band, endsfree)
 }
@@ -76,8 +80,12 @@ dada_uniques <- function(seqs, abundances, err, quals, score, gap, use_kmers, kd
     .Call('dada2_dada_uniques', PACKAGE = 'dada2', seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, final_consensus, vectorized_alignment, homo_gap, multithread, verbose)
 }
 
-C_assign_taxonomy <- function(seqs, refs, ref_to_genus, genusmat, verbose) {
-    .Call('dada2_C_assign_taxonomy', PACKAGE = 'dada2', seqs, refs, ref_to_genus, genusmat, verbose)
+C_assign_taxonomy <- function(seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose) {
+    .Call('dada2_C_assign_taxonomy', PACKAGE = 'dada2', seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose)
+}
+
+C_assign_taxonomy2 <- function(seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose) {
+    .Call('dada2_C_assign_taxonomy2', PACKAGE = 'dada2', seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose)
 }
 
 # Register entry points for exported C++ functions

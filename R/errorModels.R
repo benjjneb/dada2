@@ -15,6 +15,9 @@
 #'  (column, eg. 31), as determined by \code{\link{loess}} smoothing over the quality
 #'  scores within each transition category.
 #' 
+#' @importFrom stats loess
+#' @importFrom stats predict
+#' 
 #' @export
 #' 
 #' @examples
@@ -62,6 +65,139 @@ loessErrfun <- function(trans) {
   return(err)
 }
 
+#' Learns the error rates from an input list, or vector, of file names or a list of \code{\link{derep-class}} objects.
+#' 
+#' Error rates are learned by alternating between sample inference and error rate estimation 
+#'  until convergence. Sample inferences is performed by the \code{\link{dada}} function.
+#'  Error rate estimation is performed by \code{errorEstimationFunction}.
+#'  The output of this function serves as input to the dada function call as the \code{err} parameter.
+#'   
+#' @param fls (Required). \code{character}.
+#'  The file path(s) to the fastq, fastq.gz file(s), or any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
+#'  A list of derep-class ojects can also be provided. 
+#'  
+#' @param nreads (Optional). Default 1e6.
+#'  The minimum number of reads to use for error rate learning. Samples are read into memory
+#'  until at least this number of reads has been reached, or all provided samples have been
+#'  read in.
+#'  
+#' @param errorEstimationFunction (Optional). Function. Default \code{\link{loessErrfun}}.
+#' 
+#'  If USE_QUALS = TRUE, \code{errorEstimationFunction} is computed on the matrix of observed transitions
+#'  after each sample inference step in order to generate the new matrix of estimated error rates.
+#'    
+#'  If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).
+#'  
+#' @param multithread (Optional). Default is FALSE.
+#'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
+#'  If an integer is provided, the number of threads to use is set by passing the argument on to
+#'  \code{\link{setThreadOptions}}.
+#'   
+#' @param randomize (Optional). Default FALSE.
+#'  If FALSE, samples are read in the provided order until enough reads are obtained.
+#'  If TRUE, samples are picked at random from those provided.
+#'  
+#' @return A named list with three entries:
+#'  $err_out: A numeric matrix with the learned error rates.
+#'  $err_in: The initialization error rates (unimportant).
+#'  $trans: A feature table of observed transitions for each type (eg. A->C) and quality score.
+#'  
+#' @importFrom methods is
+#' 
+#' @export
+#' 
+#' @seealso 
+#'  \code{\link{derepFastq}}, \code{\link{plotErrors}}, \code{\link{loessErrfun}}, \code{\link{dada}}
+#'
+#' @examples
+#'  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#'  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
+#'  err <- learnErrors(c(fl1, fl2))
+#'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
+#'  # Using a list of derep-class objects
+#'  dereps <- derepFastq(c(fl1, fl2))
+#'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE)
+#' 
+learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, randomize=FALSE) {
+  NREADS <- 0
+  drps <- vector("list", length(fls))
+  if(randomize) { fls <- sample(fls) }
+  for(i in seq_along(fls)) {
+    if (is.list.of(fls, "derep")){
+        drps[[i]] <- fls[[i]]
+    } else {
+        drps[[i]] <- derepFastq(fls[[i]])
+    }
+    NREADS <- NREADS + sum(drps[[i]]$uniques)
+    if(NREADS > nreads) { break }
+  }
+  drps <- drps[1:i]
+  # Run dada in self-consist mode on those samples
+  dds <- dada(drps, err=NULL, selfConsist=TRUE, multithread=multithread)
+  cat("Total reads used: ", NREADS, "\n")
+  return(getErrors(dds, detailed=TRUE))
+}
+
+#' Extract already computed error rates.
+#' 
+#' @param obj (Required). An R object with error rates.
+#'  Supported objects: dada-class; list of dada-class; numeric matrix; named list with $err_out, $err_in, $trans.
+#' 
+#' @param detailed (Optional). Default FALSE.
+#'  If FALSE, an error rate matrix corresponding to $err_out is returned.
+#'  If TRUE, a named list with $err_out, $err_in and $trans. $err_in and $trans can be NULL.
+#'  
+#' @param enforce (Optional). Default TRUE.
+#'  If TRUE, will check validity of $err_out and error if invalid or NULL.
+#'  
+#' @return A numeric matrix of error rates.
+#'  Or, if detailed=TRUE, a named list with $err_out, $err_in and $trans.
+#'  
+#' @importFrom methods is
+#' 
+#' @export
+#' 
+#' @examples
+#'  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#'  drp <- derepFastq(fl1)
+#'  dd <- dada(drp, err=NULL, selfConsist=TRUE)
+#'  err <- getErrors(dd)
+#' 
+getErrors <- function(obj, detailed=FALSE, enforce=TRUE) {
+  rval <- list(err_out=NULL, err_in=NULL, trans=NULL)
+  if(is(obj, "matrix") && is.numeric(obj)) {
+    rval$err_out <- obj
+  } else if(is(obj, "dada")) {
+    if(!is.null(obj$err_out)) rval$err_out <- obj$err_out
+    rval$err_in <- obj$err_in
+    rval$trans <- obj$trans
+  } else if(is.list.of(obj, "dada")) {
+    if(!all(sapply(obj, function(x) identical(x$err_out, obj[[1]]$err_out)))) {
+      stop("If list of dada-class objects provided, all must have the same output error rates.")
+    }
+    if(!is.null(obj[[1]]$err_out)) rval$err_out <- obj[[1]]$err_out
+    rval$err_in <- obj[[1]]$err_in
+    rval$trans <- Reduce("+", lapply(obj, function(x) x$trans))
+  } else if(is.list(obj) && "err_out" %in% names(obj) && "err_in" %in% names(obj) && "trans" %in% names(obj)) {
+    rval <- obj
+  }
+  
+  if(enforce) {
+    if(is.null(rval$err_out)) stop("Error matrix is NULL.")
+    if(!is.numeric(rval$err_out)) stop("Error matrix must be numeric.")
+    if(!(nrow(rval$err_out)==16)) stop("Error matrix must have 16 rows (A2A, A2C, ...).")
+    if(!all(rval$err_out>=0)) stop("All error matrix entries must be >= 0.")
+    if(!all(rval$err_out<=1)) stop("All error matrix entries must be <=1.")
+    if(any(rval$err_out==0)) warning("Zero in error matrix.")
+  }
+  
+  if(detailed) {
+    return(rval)
+  } else {
+    return(rval$err_out)
+  }
+}
+
 #' Inflates an error rate matrix by a specified factor, while accounting for saturation.
 #' 
 #' Error rates are "inflated" by the specified factor, while appropriately saturating so that rates
@@ -78,9 +214,6 @@ loessErrfun <- function(trans) {
 #' @return An error rate matrix of the same dimensions as the input error rate matrix.
 #'  
 #' @export
-#' 
-#' @importFrom stats loess
-#' @importFrom stats predict
 #' 
 #' @examples
 #'  tperr2 <- inflateErr(tperr1, 2)

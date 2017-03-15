@@ -169,4 +169,3 @@ ex2cat[, nchar(sequence)]
 \seealso{
 \code{\link{derepFastq}}, \code{\link{dada}}
 }
-

@@ -72,4 +72,3 @@ setDadaOpt(OMEGA_A = 1e-20, VERBOSE = TRUE)
 \seealso{
 \code{\link{getDadaOpt}}
 }
-

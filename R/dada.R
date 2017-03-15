@@ -30,15 +30,16 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #' @param derep (Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
 #'  A list of such objects can be provided, in which case each will be denoised with a shared error model.
 #'  
-#' @param err (Required). 16xN numeric matrix. Each entry must be between 0 and 1.
-#' 
-#'  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
-#'  
-#'  Rows correspond to the 16 possible transitions (t_ij) indexed such that 1:A->A, 2:A->C, ..., 16:T->T
+#' @param err (Required). 16xN numeric matrix, or an object coercible by \code{\link{getErrors}} 
+#'  such as the output of the \code{\link{learnErrors}} function.
 #'    
-#'  Columns correspond to quality scores. Typically there are 41 columns for the quality scores 0-40.
+#'  The matrix of estimated rates for each possible nucleotide transition (from sample nucleotide to read nucleotide).
+#'  Rows correspond to the 16 possible transitions (t_ij) indexed such that 1:A->A, 2:A->C, ..., 16:T->T
+#'  Columns correspond to quality scores. Each entry must be between 0 and 1.
+#'    
+#'  Typically there are 41 columns for the quality scores 0-40.
 #'  However, if USE_QUALS=FALSE, the matrix must have only one column.
-#'  
+#'    
 #'  If selfConsist = TRUE, \code{err} can be set to NULL and an initial error matrix will be estimated from the data
 #'  by assuming that all reads are errors away from one true sequence.
 #'    
@@ -83,7 +84,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 #'  is found in two publications:
 #' 
 #' \itemize{ 
-#'  \item{Callahan BJ, McMurdie PJ, Rosen MJ, Han AW, Johnson AJ, Holmes SP (2015). DADA2: High resolution sample inference from amplicon data. bioRxiv, 024034.}
+#'  \item{Callahan BJ, McMurdie PJ, Rosen MJ, Han AW, Johnson AJ, Holmes SP (2016). DADA2: High resolution sample inference from Illumina amplicon data. Nature Methods, 13(7), 581-3.}
 #'  \item{Rosen MJ, Callahan BJ, Fisher DS, Holmes SP (2012). Denoising PCR-amplified metagenome data. BMC bioinformatics, 13(1), 283.}
 #' }
 #'  
@@ -143,9 +144,6 @@ dada <- function(derep,
     if(!(all(C_isACGT(names(derep[[i]]$uniques))))) {
       stop("Invalid derep$uniques vector. Names must be sequences made up only of A/C/G/T.")
     }
-    if(sum(tabulate(nchar(names(derep[[i]]$uniques)))>0) > 1) {
-      stop("Invalid derep$uniques vector. All sequences must be the same length.")
-    }
   }
 
   # Validate quals matrix(es)
@@ -155,18 +153,20 @@ dada <- function(derep,
       if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) {
         stop("derep$quals matrices must have one row for each derep$unique sequence.")
       }
-      if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) {
+      if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) { ###ITS
         stop("derep$quals matrices must have as many columns as the length of the derep$unique sequences.")
       }
-      if(any(is.na(derep[[i]]$quals))) {
-        stop("NAs in derep$quals matrix. Check that all input sequences were the same length.")
+      if(any(sapply(seq(nrow(derep[[i]]$quals)), 
+                    function(row) any(is.na(derep[[i]]$quals[row,1:nchar(names(derep[[i]]$uniques)[[row]])]))))) { ###ITS
+        stop("NAs in derep$quals matrix. Check that all input sequences had valid associated qualities assigned.")
       }
-      if(min(derep[[i]]$quals) < 0) {
+      if(min(derep[[i]]$quals, na.rm=TRUE) < 0) {
         stop("Invalid derep$quals matrix. Quality values must be positive integers.")
       }
-      qmax <- max(qmax, max(derep[[i]]$quals))
+      qmax <- max(qmax, max(derep[[i]]$quals, na.rm=TRUE))
     }
   }
+
   qmax <- ceiling(qmax) # Only getting averages from derep$quals
   if(qmax > 45) {
     if(qmax > 62) {
@@ -184,16 +184,10 @@ dada <- function(derep,
   
   # Validate err matrix
   initializeErr <- FALSE
-  if(class(err) == "dada") { err <- err$err_out }
   if(is.null(err) && selfConsist) {
-    message("Initial error matrix unspecified. Error rates will be initialized to the maximum possible estimate from this data.")
     initializeErr <- TRUE
   } else {
-    if(!is.numeric(err)) stop("Error matrix must be numeric.")
-    if(!(nrow(err)==16)) stop("Error matrix must have 16 rows (A2A, A2C, ...).")
-    if(!all(err>=0)) stop("All error matrix entries must be >= 0.")
-    if(!all(err<=1)) stop("All error matrix entries must be <=1.")
-    if(any(err==0)) warning("Zero in error matrix.")
+    err <- getErrors(err, enforce=TRUE)
     if(ncol(err) < qmax+1) { # qmax = 0 if USE_QUALS = FALSE
       message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
   Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err), ").
@@ -241,7 +235,7 @@ dada <- function(derep,
       opts$VECTORIZED_ALIGNMENT=FALSE
     }
     if(opts$BAND_SIZE > 0 && opts$BAND_SIZE<8) {
-      message("Warning: The vectorized aligner is slower for very small band sizes.")
+      message("The vectorized aligner is slower for very small band sizes.")
     }
     if(opts$BAND_SIZE == 0) opts$VECTORIZED_ALIGNMENT=FALSE
   }
@@ -309,7 +303,6 @@ dada <- function(derep,
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
                           opts[["USE_QUALS"]],
                           FALSE,
-#                          opts[["FINAL_CONSENSUS"]],
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
                           multithread,
@@ -317,8 +310,7 @@ dada <- function(derep,
       
       # Augment the returns
       res$clustering$sequence <- as.character(res$clustering$sequence)
-      # ... nothing here for now
-      
+
       # List the returns
       clustering[[i]] <- res$clustering
       clusterquals[[i]] <- t(res$clusterquals) # make sequences rows and positions columns
@@ -399,7 +391,7 @@ dada <- function(derep,
     } else {
       rval2[[i]]$err_in <- errs[[1]]
     }
-    rval2[[i]]$err_out <- err           # maybe better as _final? Just the last one
+    rval2[[i]]$err_out <- err
     
     # Store the call and the options that were used in the return object
     rval2[[i]]$opts <- opts

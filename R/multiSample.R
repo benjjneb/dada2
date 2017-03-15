@@ -128,18 +128,15 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
 combineDereps2 <- function(dereps) {
   if(class(dereps) == "derep") dereps <- list(dereps)
   if(!all(sapply(dereps, function(x) class(x)=="derep"))) stop("Requires derep-class objects.")
-  if(length(unique(sapply(dereps, function(x) ncol(x$quals))))>1) {
-    stop("Only derep-class objects with same-length sequences can be combined.")
-  }
-  seqlen <- ncol(dereps[[1]]$quals)
-  
+  maxlen <- max(sapply(dereps, function(x) ncol(x$quals)))
+
   # Generate the unique sequences and make the output $uniques vector
   sqs.all <- unique(do.call(c, lapply(dereps, getSequences)))
   derepCounts <- integer(length=length(sqs.all))
   names(derepCounts) <- sqs.all
   
   # Make the output $qual matrix with the appropriate size and rownames
-  derepQuals <- matrix(0.0, nrow=length(derepCounts), ncol=seqlen)
+  derepQuals <- matrix(0.0, nrow=length(derepCounts), ncol=maxlen)
   rownames(derepQuals) <- sqs.all
   
   # Initialize the $map with appropriate length
@@ -147,6 +144,7 @@ combineDereps2 <- function(dereps) {
   
   start.map <- 1
   for(derep in dereps) {
+    if(ncol(derep$quals)<maxlen) { derep$quals <- cbind(derep$quals, matrix(NA, nrow=nrow(derep$quals), ncol=(maxlen-ncol(derep$quals)))) }
     derepCounts[names(derep$uniques)] <- derepCounts[names(derep$uniques)] + derep$uniques
     derepQuals[rownames(derep$quals),] <- derepQuals[rownames(derep$quals),] + sweep(derep$quals, 1, derep$uniques, "*")
     map <- match(names(derep$uniques), names(derepCounts))

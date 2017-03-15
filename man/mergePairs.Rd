@@ -6,7 +6,7 @@
 \usage{
 mergePairs(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch = 0,
   returnRejects = FALSE, propagateCol = character(0),
-  justConcatenate = FALSE, verbose = FALSE)
+  justConcatenate = FALSE, trimOverhang = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{dadaF}{(Required). A \code{\link{dada-class}} object, or a list of such objects.
@@ -40,6 +40,11 @@ of the provided \code{\link{dada-class}} objects with the provided names.}
 \item{justConcatenate}{(Optional). Default FALSE.
 If TRUE, the forward and reverse-complemented reverse read are concatenated rather than merged,
   with a NNNNNNNNNN (10 Ns) spacer inserted between them.}
+
+\item{trimOverhang}{(Optional). Default FALSE.
+If TRUE, "overhangs" in the alignment between the forwards and reverse read are trimmed off.
+"Overhangs" are when the reverse read extends past the start of the forward read, and vice-versa,
+as can happen when reads are longer than the amplicon and read into the other-direction primer region.}
 
 \item{verbose}{(Optional). Default FALSE. 
 If TRUE, a summary of the function results are printed to standard output.}
@@ -83,4 +88,3 @@ mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 \seealso{
 \code{\link{derepFastq}}, \code{\link{dada}}, \code{\link{fastqPairedFilter}}
 }
-

@@ -12,4 +12,3 @@ This function creates the dada2 assignSpecies fasta file for Silva
 from the SILVA_123.1_SSURef_3_3_2016_fix.fasta file.
 }
 \keyword{internal}
-

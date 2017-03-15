@@ -22,4 +22,3 @@ Internal function to replicate ShortRead::tables functionality while also return
 from reads to uniques
 }
 \keyword{internal}
-

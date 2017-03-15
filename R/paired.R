@@ -38,6 +38,11 @@
 #'  If TRUE, the forward and reverse-complemented reverse read are concatenated rather than merged,
 #'    with a NNNNNNNNNN (10 Ns) spacer inserted between them.
 #' 
+#' @param trimOverhang (Optional). Default FALSE.
+#'  If TRUE, "overhangs" in the alignment between the forwards and reverse read are trimmed off.
+#'  "Overhangs" are when the reverse read extends past the start of the forward read, and vice-versa,
+#'  as can happen when reads are longer than the amplicon and read into the other-direction primer region.
+#' 
 #' @param verbose (Optional). Default FALSE. 
 #'  If TRUE, a summary of the function results are printed to standard output.
 #'
@@ -74,7 +79,7 @@
 #' mergePairs(dadaF, derepF, dadaR, derepR, returnRejects=TRUE, propagateCol=c("n0", "birth_ham"))
 #' mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 #' 
-mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch=0, returnRejects=FALSE, propagateCol=character(0), justConcatenate=FALSE, verbose=FALSE) {
+mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch=0, returnRejects=FALSE, propagateCol=character(0), justConcatenate=FALSE, trimOverhang=FALSE, verbose=FALSE) {
   if(is(dadaF, "dada")) dadaF <- list(dadaF)
   if(is(derepF, "derep")) derepF <- list(derepF)
   if(is(dadaR, "dada")) dadaR <- list(dadaR)
@@ -119,7 +124,7 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatc
       ups$prefer <- 1 + (dadaR[[i]]$clustering$n0[ups$reverse] > dadaF[[i]]$clustering$n0[ups$forward])
       ups$accept <- (ups$nmatch > minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
       # Make the sequence
-      ups$sequence <- mapply(C_pair_consensus, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer);
+      ups$sequence <- mapply(C_pair_consensus, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer, trimOverhang);
       # Additional param to indicate whether 1:forward or 2:reverse takes precedence
       # Must also strip out any indels in the return
       # This function is only used here.
@@ -137,7 +142,7 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatc
     }
     # Sort output by abundance and name
     ups <- ups[order(ups$abundance, decreasing=TRUE),]
-    rownames(ups) <- paste0("s", ups$forward, "_", ups$reverse)
+    rownames(ups) <- NULL
     if(verbose) {
       message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
     }
@@ -578,7 +583,7 @@ mergePairsByID = function(dadaF, derepF, srF,
            by = list(seqF, seqR)]
     # (4) Make the consensus sequence, 
     #     but only for the pairs that passed (accepted merges)
-    upiddt[(accept), sequence := C_pair_consensus(als1, als2, prefer),
+    upiddt[(accept), sequence := C_pair_consensus(als1, als2, prefer, FALSE),
            by = list(seqF, seqR)]
   }
   # Optionally add column details from iddt table (includeCol)

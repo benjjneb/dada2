@@ -64,6 +64,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #'  including \code{\link{dada-class}} and \code{\link{derep-class}} objects, as well as 
 #'  \code{data.frame} objects that have both $sequence and $abundance columns. This function 
 #'  wraps the \code{\link{getUniques}} function, but return only the names (i.e. the sequences).
+#'  Can also be provided the file path to a fasta file. 
 #' 
 #' @param object (Required). The object from which to extract the sequences.
 #' 
@@ -77,6 +78,9 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #' @return \code{character}. A character vector of the sequences.
 #' 
 #' @importFrom methods is
+#' @importFrom ShortRead readFasta
+#' @importFrom ShortRead sread
+#' @importFrom ShortRead id
 #' 
 #' @export
 #' 
@@ -89,7 +93,12 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #' 
 getSequences <- function(object, collapse=FALSE, silence=TRUE) {
   if(is(object, "character")) {
-    if(collapse) {
+    if(length(object)==1 && file.exists(object)) {
+      sr <- readFasta(object)
+      seqs <- as.character(sread(sr))
+      names(seqs) <- id(sr)
+      return(seqs)
+    } else if(collapse) {
       if(any(duplicated(object)) && !silence) message("Duplicate sequences detected and merged.")
       return(unique(object))
     } else {
@@ -108,7 +117,7 @@ getNseq <- function(object) {
 }
 
 ################################################################################
-#' Needlman-Wunsch alignment.
+#' Needleman-Wunsch alignment.
 #' 
 #' This function performs a Needleman-Wunsch alignment between two sequences.
 #' 
@@ -150,13 +159,16 @@ getNseq <- function(object) {
 #' 
 nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISMATCH"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=-1, endsfree=TRUE, vec=FALSE) {
   if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
-  if(!C_isACGT(s1) || !C_isACGT(s2)) {
-    stop("Sequences must contain only A/C/G/T characters.")
-  }
   if(is.null(homo_gap)) { homo_gap <- gap }
-
-  if(vec) C_nwvec(s1, s2, match, mismatch, gap, band, endsfree)
-  else C_nwalign(s1, s2, match, mismatch, gap, homo_gap, band, endsfree)
+  if(vec) {
+    if(homo_gap != gap) stop("Homopolymer gap penalties are not implemented in the vectorized aligner.")
+    return(C_nwvec(s1, s2, match, mismatch, gap, band, endsfree))
+  } else {
+    if(!C_isACGT(s1) || !C_isACGT(s2)) {
+      stop("Sequences must contain only A/C/G/T characters.")
+    }
+    return(C_nwalign(s1, s2, match, mismatch, gap, homo_gap, band, endsfree))
+  }
 }
 
 ################################################################################
@@ -185,13 +197,13 @@ nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISM
 nwhamming <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   out <- C_eval_pair(al[1], al[2])
-  return(out["mismatch"]+out["indel"])
-})
+  return(unname(out["mismatch"]+out["indel"]))
+}, USE.NAMES=FALSE)
 
 nweval <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)
   C_eval_pair(al[1], al[2])
-})
+}, USE.NAMES=FALSE)
 
 nwextract <- function(query, ref, ...) {
   al <- nwalign(query, ref, ...)
@@ -207,8 +219,6 @@ strdiff <- function(s1, s2) {
   dd <- which(xx != yy)
   data.frame(pos=dd,nt0=xx[dd],nt1=yy[dd])
 }
-
-hamming <- Vectorize(function(x, y) nrow(strdiff(x, y)))
 
 #' @importFrom Biostrings DNAString
 #' @importFrom Biostrings DNAStringSet
@@ -229,6 +239,7 @@ checkConvergence <- function(dadaO) {
 }
 
 pfasta <- function(seqs, ids=seq(length(seqs))) {
+  seqs <- getSequences(seqs, collapse=FALSE)
   cat(paste(">", ids, "\n", seqs, sep="", collapse="\n"))
 }
 

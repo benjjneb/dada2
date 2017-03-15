@@ -4,17 +4,22 @@
 \alias{removeBimeraDenovo}
 \title{Remove bimeras from collections of unique sequences.}
 \usage{
-removeBimeraDenovo(unqs, tableMethod = "pooled", ..., verbose = FALSE)
+removeBimeraDenovo(unqs, method = "pooled", tableMethod = NULL, ...,
+  verbose = FALSE)
 }
 \arguments{
 \item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced
 into one with \code{\link{getUniques}}. A list of such objects can also be provided.}
 
-\item{tableMethod}{(Optional). Default is "pooled".
-If "pooled": The samples in the sequence table are all pooled together for chimera
-   identification (\code{\link{isBimeraDenovo}}).
-If "consensus": The samples in a sequence table are independently checked for chimeras,
-   and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).}
+\item{method}{(Optional). Default is "pooled". Only has an effect if a sequence table is provided.
+
+  If "pooled": The samples in the sequence table are all pooled together for bimera
+     identification (\code{\link{isBimeraDenovo}}).   
+     
+  If "consensus": The samples in a sequence table are independently checked for bimeras,
+     and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).}
+
+\item{tableMethod}{(DEPRECATED).}
 
 \item{...}{(Optional). Arguments to be passed to \code{\link{isBimeraDenovo}} or \code{\link{isBimeraDenovoTable}}.}
 
@@ -26,7 +31,9 @@ A uniques vector, or an object of matching class if a data.frame or sequence tab
  A list of such objects is returned if a list of input unqs was provided.
 }
 \description{
-This function is a wrapper around \code{\link{isBimeraDenovo}} and \code{\link{isBimeraDenovoTable}}.
+This function is a convenience interface for chimera removal. Two methods to identify chimeras are
+ supported: Identification from pooled sequences (see \code{\link{isBimeraDenovo}} for details)
+ and identification by consensus across samples (see \code{\link{isBimeraDenovoTable}} for details).
  Sequence variants identified as bimeric are removed, and a bimera-free collection of unique sequences
  is returned.
 }
@@ -40,4 +47,3 @@ out.nobim <- removeBimeraDenovo(dada1$clustering, minFoldParentOverAbundance = 2
 \seealso{
 \code{\link{isBimeraDenovo}}
 }
-

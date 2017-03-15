@@ -34,4 +34,3 @@ Michael Rosen \email{eigenrosen@gmail.com}
 Susan Holmes \email{susan@stat.stanford.edu}
 }
 \keyword{package}
-

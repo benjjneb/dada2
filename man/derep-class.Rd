@@ -17,4 +17,3 @@ This can be created from a FastQ sequence file using
 \seealso{
 \code{\link{derepFastq}}
 }
-

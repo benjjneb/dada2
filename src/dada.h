@@ -182,7 +182,4 @@ Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_qua
 Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat, bool use_quals);
 Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals);
 
-// methods implemented in taxonomy.cpp
-Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool verbose);
-
 #endif

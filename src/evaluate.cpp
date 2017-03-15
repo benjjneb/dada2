@@ -121,7 +121,7 @@ Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2) {
 // @return A \code{character(1)} of the consensus DNA sequence.
 // 
 // [[Rcpp::export]]
-Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefer) {
+Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefer, bool trim_overhang) {
   int i;
   if(s1.size() != s2.size()) {
     Rprintf("Warning: Aligned strings are not the same length.\n");
@@ -147,7 +147,18 @@ Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefe
       }
     }
   }
-  // Remove any remaining gaps
+  // Trim overhangs
+  if(trim_overhang) {
+    for(i=0;i<s1.size();i++) {
+      if(s1[i] != '-') { break; }
+      oseq[i] = '-';
+    }
+    for(i=s1.size()-1;i>=0;i--) {
+      if(s2[i] != '-') { break; }
+      oseq[i] = '-';
+    }
+  }
+  // Remove remaining gaps
   int j=0;
   for(i=0;i<s1.size();i++) {
     if(oseq[i] != '-') {

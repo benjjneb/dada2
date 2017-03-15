@@ -5,9 +5,11 @@
 \title{Filters and trims paired forward and reverse fastq files.}
 \usage{
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
-  truncLen = c(0, 0), trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf,
-  Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, id.sep = "\\\\s",
-  id.field = NULL, n = 1e+06, compress = TRUE, verbose = FALSE, ...)
+  truncLen = c(0, 0), maxLen = c(Inf, Inf), minLen = c(20, 20),
+  trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf, Inf),
+  rm.phix = c(FALSE, FALSE), matchIDs = FALSE, primer.fwd = NULL,
+  id.sep = "\\\\s", id.field = NULL, n = 1e+06, OMP = TRUE,
+  compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.}
@@ -15,8 +17,9 @@ fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
 \item{fout}{(Required). A \code{character(2)} naming the paths to the (forward,reverse) output files.
  Note that by default (\code{compress=TRUE}) the output fastq files are gzipped.
 
-\strong{FILTERING AND TRIMMING ARGUMENTS} that follow can be provided as length 1 or length 2 vectors. 
-If a length 1 vector is provided, the same parameter value is used for the forward and reverse sequence files.
+\strong{FILTERING AND TRIMMING ARGUMENTS}   
+
+If a length 1 vector is provided, the same parameter value is used for the forward and reverse reads.
 If a length 2 vector is provided, the first value is used for the forward reads, and the second 
   for the reverse reads.}
 
@@ -30,8 +33,13 @@ The default value of 2 is a special quality score indicating the end of good qua
   sequence in Illumina 1.8+.}
 
 \item{truncLen}{(Optional). Default 0 (no truncation).
-Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
-Note that \code{\link{dada}} currently requires all sequences to be the same length.}
+Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.}
+
+\item{maxLen}{(Optional). Default Inf (no maximum).
+Remove reads with length greater than maxLen. maxLen is enforced on the raw reads.}
+
+\item{minLen}{(Optional). Default 20.
+Remove reads with length less than minLen. minLen is enforced after all other trimming and truncation.}
 
 \item{trimLeft}{(Optional). Default 0.
 The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
@@ -45,12 +53,8 @@ After truncation, reads with higher than maxEE "expected errors" will be discard
 Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
 
 \item{rm.phix}{(Optional). Default FALSE.
- If TRUE, discard reads that match against the phiX genome, as determined by 
- \code{\link{isPhiX}}.
-
-\strong{ID MATCHING ARGUMENTS} that follow enforce matching between the sequence identification
- strings in the forward and reverse reads. The function can automatically detect and match ID fields in 
- Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393}
+If TRUE, discard reads that match against the phiX genome, as determined by 
+\code{\link{isPhiX}}.}
 
 \item{matchIDs}{(Optional). Default FALSE.
 Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
@@ -58,6 +62,19 @@ Whether to enforce matching between the id-line sequence identifiers of the forw
   If FALSE, no read ID checking is done.
 Note: \code{matchIDs=FALSE} essentially assumes matching order between forward and reverse reads. If that
   matched order is not present future processing steps may break (in particular \code{\link{mergePairs}}).}
+
+\item{primer.fwd}{(Optional). Default NULL.
+ A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
+ compared to the first len(primer.fwd) nucleotides at the start of the forward and reverse reads. If there is
+ not an exact match, the paired read is filtered out. If detected on the reverse read, the fwd/rev reads
+ are swapped.
+
+\strong{ID MATCHING ARGUMENTS}   
+
+ The following optional arguments enforce matching between the sequence identification
+ strings in the forward and reverse reads, and can automatically detect and match ID fields in 
+ Illumina format, e.g: EAS139:136:FC706VJ:2:2104:15343:197393. ID matching is not required
+ when using standard Illumina output fastq files.}
 
 \item{id.sep}{(Optional). Default "\\s" (white-space).
 The separator between fields in the id-line of the input fastq files. Passed to the \code{\link{strsplit}}.}
@@ -71,6 +88,10 @@ If NULL (the default) and matchIDs is TRUE, the function attempts to automatical
 This controls the peak memory requirement so that very large fastq files are supported. 
 Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.}
 
+\item{OMP}{(Optional). Default TRUE.
+Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
+calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).}
+
 \item{compress}{(Optional). Default TRUE.
 Whether the output fastq files should be gzip compressed.}
 
@@ -80,20 +101,15 @@ Whether to output status messages.}
 \item{...}{(Optional). Arguments passed on to \code{\link{isPhiX}}.}
 }
 \value{
-NULL.
+\code{integer(2)}.
+ The number of reads read in, and the number of reads that passed the filter and were output.
 }
 \description{
-fastqPairedFilter takes in two input fastq file (can be compressed), filters them based on several
-user-definable criteria, and outputs those reads which pass the filter in both directions along
-with their associated qualities to two new fastq file (also can be compressed). Several functions
+fastqPairedFilter filters pairs of input fastq files (can be compressed) based on several
+user-definable criteria, and outputs those read pairs which pass the filter in \strong{both} directions
+to two new fastq file (also can be compressed). Several functions
 in the \code{ShortRead} package are leveraged to do this filtering. The filtered forward/reverse reads
 remain identically ordered.
-}
-\details{
-fastqPairedFilter replicates most of the functionality of the fastq_filter command in usearch
-(http://www.drive5.com/usearch/manual/cmd_fastq_filter.html) but only pairs of reads that both
-pass the filter are retained. An added function is the option to remove
-contaminating phiX sequences as part of the filtering process.
 }
 \examples{
 
@@ -108,11 +124,6 @@ fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft
 }
 \seealso{
 \code{\link{fastqFilter}}
-
 \code{\link[ShortRead]{FastqStreamer}}
-
-\code{\link[ShortRead]{srFilter}}
-
 \code{\link[ShortRead]{trimTails}}
 }
-

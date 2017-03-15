@@ -4,9 +4,10 @@
 \alias{fastqFilter}
 \title{Filter and trim a fastq file.}
 \usage{
-fastqFilter(fn, fout, truncQ = 2, truncLen = 0, trimLeft = 0, maxN = 0,
-  minQ = 0, maxEE = Inf, rm.phix = FALSE, n = 1e+06, compress = TRUE,
-  verbose = FALSE, ...)
+fastqFilter(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf,
+  minLen = 20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf,
+  rm.phix = FALSE, primer.fwd = NULL, n = 1e+06, OMP = TRUE,
+  compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). The path to the input fastq file.}
@@ -20,8 +21,13 @@ The default value of 2 is a special quality score indicating the end of good qua
   sequence in Illumina 1.8+.}
 
 \item{truncLen}{(Optional). Default 0 (no truncation).
-Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
-Note that \code{\link{dada}} currently requires all sequences to be the same length.}
+Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.}
+
+\item{maxLen}{(Optional). Default Inf (no maximum).
+Remove reads with length greater than maxLen. maxLen is enforced on the raw reads.}
+
+\item{minLen}{(Optional). Default 20.
+Remove reads with length less than minLen. minLen is enforced after all other trimming and truncation.}
 
 \item{trimLeft}{(Optional). Default 0.
 The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
@@ -42,9 +48,18 @@ Expected errors are calculated from the nominal definition of the quality score:
 If TRUE, discard reads that match against the phiX genome, as determined by 
 \code{\link{isPhiX}}.}
 
+\item{primer.fwd}{(Optional). Default NULL.
+A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
+compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
+not an exact match, the read is filtered out.}
+
 \item{n}{(Optional). The number of records (reads) to read in and filter at any one time. 
 This controls the peak memory requirement so that very large fastq files are supported. 
 Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.}
+
+\item{OMP}{(Optional). Default TRUE.
+Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
+calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).}
 
 \item{compress}{(Optional). Default TRUE.
 Whether the output fastq file should be gzip compressed.}
@@ -55,18 +70,14 @@ Whether to output status messages.}
 \item{...}{(Optional). Arguments passed on to \code{\link{isPhiX}}.}
 }
 \value{
-NULL.
+\code{integer(2)}.
+ The number of reads read in, and the number of reads that passed the filter and were output.
 }
 \description{
 fastqFilter takes an input fastq file (can be compressed), filters it based on several
-user-definable criteria, and outputs those reads which pass the filter and their associated
-qualities to a new fastq file (also can be compressed). Several functions in the \code{ShortRead}
+user-definable criteria, and outputs those reads which pass the filter
+to a new fastq file (also can be compressed). Several functions in the \code{ShortRead}
 package are leveraged to do this filtering.
-}
-\details{
-\code{fastqFilter} replicates most of the functionality of the fastq_filter command in usearch
-(http://www.drive5.com/usearch/manual/cmd_fastq_filter.html). It adds the ability to remove
-contaminating phiX sequences as part of the filtering process.
 }
 \examples{
 testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
@@ -77,11 +88,6 @@ fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TR
 }
 \seealso{
 \code{\link{fastqPairedFilter}}
-
  \code{\link[ShortRead]{FastqStreamer}}
- 
- \code{\link[ShortRead]{srFilter}}
- 
  \code{\link[ShortRead]{trimTails}}
 }
-

@@ -21,7 +21,7 @@ If TRUE, only non-overlapping matching words are counted.}
 }
 \value{
 \code{logical(1)}.
- TRUE if sequence was fount to match the phiX genome.
+ TRUE if sequence matched the phiX genome.
 }
 \description{
 This function compares the word-profile of the input
@@ -38,4 +38,3 @@ isPhiX(sqs1, wordSize=20,  minMatches=1)
 \seealso{
 \code{\link{fastqFilter}}, \code{\link{fastqPairedFilter}}
 }
-

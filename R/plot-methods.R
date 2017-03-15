@@ -70,15 +70,16 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
   return(p1)
 }
 
-#' Plot observed error rates after denoising.
+#' Plot observed and estimated error rates.
 #' 
 #' This function plots the observed frequency of each transition
 #' (eg. A->C) as a function of the associated quality score. It also plots the final
 #' estimated error rates (if they exist). The initial input rates and the expected error
 #' rates under the nominal definition of quality scores can also be shown.
 #' 
-#' @param dq (Required). A \code{\link{dada-class}} object, or a list of such objects
-#'  that were pooled to estimate a common set of error rates.
+#' @param dq (Required). An object from which error rates can be extracted. Valid inputs are
+#'  coercible by \code{\link{getErrors}}. This includes the output of the \code{\link{dada}}
+#'  and \code{\link{learnErrors}} functions.
 #' 
 #' @param nti (Optional). Default c("A","C","G","T"). 
 #'  Some combination of the 4 DNA nucleotides.
@@ -107,6 +108,9 @@ plotComplementarySubstitutions = function(dadaOut, facetByGrp = TRUE){
 #'  or can be stored and further modified.
 #'  See \code{\link{ggsave}} for additional options.
 #'  
+#' @seealso 
+#'  \code{\link{learnErrors}}, \code{\link{getErrors}}
+#'
 #' @importFrom reshape2 melt
 #' @importFrom methods is
 #' @import ggplot2
@@ -126,45 +130,57 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
     stop("nti and ntj must be nucleotide(s): A/C/G/T.")
   }
   
-  if(is.list.of(dq, "dada")) {
-    if(!all(sapply(dq, function(x) identical(x$err_out, dq[[1]]$err_out)))) {
-      stop("If list of dada-class objects provided, all must have the same output error rates.")
+  dq <- getErrors(dq, detailed=TRUE, enforce=FALSE)
+  
+  if(!is.null(dq$trans)) {
+    if(ncol(dq$trans) <= 1) {
+      stop("plotErrors only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
     }
-    trans <- Reduce("+", lapply(dq, function(x) x$trans))
-    dq <- dq[[1]]
-    dq$trans <- trans
+    transdf = melt(dq$trans, factorsAsStrings=TRUE)
+    colnames(transdf) <- c("Transition", "Qual", "count")
+  } else if(!is.null(dq$err_out)) {
+    if(ncol(dq$err_out) <= 1) {
+      stop("plotErrors only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
+    }
+    transdf = melt(dq$err_out, factorsAsStrings=TRUE)
+    colnames(transdf) <- c("Transition", "Qual", "est")
+  } else {
+    stop("Non-null observed and/or estimated error rates (dq$trans or dq$err_out) must be provided.")
   }
-  
-  if(!is(dq, "dada")) {
-    stop("plotErrors requires a dada-class object or list of such objects.")
-  }
-  if(ncol(dq$trans) <= 1) {
-    stop("plotErrors only supported when using quality scores in the error model (i.e. USE_QUALS=TRUE).")
-  }
-  
-  transdf = melt(dq$trans, factorsAsStrings=TRUE)
-  colnames(transdf) <- c("Transition", "Qual", "count")
   transdf$from <- substr(transdf$Transition, 1, 1)
   transdf$to <- substr(transdf$Transition, 3, 3)
-  tot.count <- tapply(transdf$count, list(transdf$from, transdf$Qual), sum)
-  transdf$tot <- mapply(function(x,y) tot.count[x,y], transdf$from, as.character(transdf$Qual))
-  transdf$Observed <- transdf$count/transdf$tot
+  
+  if(!is.null(dq$trans)) {
+    tot.count <- tapply(transdf$count, list(transdf$from, transdf$Qual), sum)
+    transdf$tot <- mapply(function(x,y) tot.count[x,y], transdf$from, as.character(transdf$Qual))
+    transdf$Observed <- transdf$count/transdf$tot
+  } else {
+    transdf$Observed <- NA
+    obs <- FALSE
+  }
   if(!is.null(dq$err_out)) {
     transdf$Estimated <- mapply(function(x,y) dq$err_out[x,y], transdf$Transition, as.character(transdf$Qual))
   } else {
     transdf$Estimated <- NA
+    err_out <- FALSE
   }
-  # If selfConsist, then err_in is a list. Use the first err_in, the initial error rates provided.
-  ei <- dq$err_in; if(is.list(ei)) ei <- ei[[1]]
-  transdf$Input <- mapply(function(x,y) ei[x,y], transdf$Transition, as.character(transdf$Qual))
+  if(!is.null(dq$err_in)) {
+    # If selfConsist, then err_in is a list. Use the first err_in, the initial error rates provided.
+    ei <- dq$err_in; if(is.list(ei)) ei <- ei[[1]]
+    transdf$Input <- mapply(function(x,y) ei[x,y], transdf$Transition, as.character(transdf$Qual))
+  } else {
+    transdf$Input <- NA
+    err_in <- FALSE
+  }
   transdf$Nominal <- (1/3)*10^-(transdf$Qual/10)
   transdf$Nominal[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")] <- 1 - 10^-(transdf$Qual[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")]/10)
   
-  p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual, y=log10(Observed)))
-  if(obs) p <- p + geom_point(na.rm=TRUE)
-  if(err_out && !is.null(dq$err_out))  p <- p + geom_line(aes(y=log10(Estimated)))
-  if(err_in)   p <- p + geom_line(aes(y=log10(Input)), linetype="dashed")
-  if(nominalQ) p <- p + geom_line(aes(y=log10(Nominal)), color="red")
+  p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual))
+  if(obs) p <- p + geom_point(aes(y=Observed), na.rm=TRUE)
+  if(err_out)  p <- p + geom_line(aes(y=Estimated))
+  if(err_in)   p <- p + geom_line(aes(y=Input), linetype="dashed")
+  if(nominalQ) p <- p + geom_line(aes(y=Nominal), color="red")
+  p <- p + scale_y_log10()
   p <- p + facet_wrap(~Transition, nrow=length(nti))
   p <- p + xlab("Consensus quality score") + ylab("Error frequency (log10)")
   p
@@ -173,15 +189,15 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' Plot quality profile of a fastq file.
 #' 
 #' This function plots a visual summary of the distribution of quality scores
-#' as a function of sequence position for the input fastq file.
+#' as a function of sequence position for the input fastq file(s).
 #' 
 #' The distribution of quality scores at each position is shown as a grey-scale
 #' heat map, with dark colors corresponding to higher frequency. The plotted lines
 #' show positional summary statistics: green is the mean, orange is the median, and
 #' the dashed orange lines are the 25th and 75th quantiles.
 #' 
-#' @param fl (Required). \code{character(1)}.
-#'  The file path to the fastq or fastq.gz file.
+#' @param fl (Required). \code{character}.
+#'  File path(s) to fastq or fastq.gz file(s).
 #' 
 #' @param n (Optional). Default 1,000,000.
 #'  The number of records to sample from the fastq file.
@@ -199,24 +215,40 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' @examples
 #' plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' 
-# This code is adapted from ShortRead:::.plotCycleQuality
-#
-plotQualityProfile <- function(fl, n=1000000) {
-  df <- qa(fl, n=n)[["perCycle"]]$quality
-  # Calculate summary statistics at each position
-  means <- rowsum(df$Score*df$Count, df$Cycle)/rowsum(df$Count, df$Cycle)
-  get_quant <- function(xx, yy, q) { xx[which(cumsum(yy)/sum(yy) >=q)][[1]] }
-  q25s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.25), simplify=TRUE)
-  q50s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.5), simplify=TRUE)
-  q75s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.75), simplify=TRUE)
-  if(!all(sapply(list(names(q25s), names(q50s), names(q75s)), identical, rownames(means)))) {
-    stop("Calculated quantiles/means weren't compatible.")
+plotQualityProfile <- function(fl, n=500000) {
+  statdf <- data.frame(Cycle=integer(0), Mean=numeric(0), Q25=numeric(0), Q50=numeric(0), Q75=numeric(0), file=character(0))
+  anndf <- data.frame(minScore=numeric(0), label=character(0), rclabel=character(0), file=character(0))
+
+  FIRST <- TRUE
+  for(f in fl) {
+    srqa <- qa(f, n=n)
+    df <- srqa[["perCycle"]]$quality
+    rc <- srqa[["readCounts"]]$read
+    if (rc >= n){
+      rclabel <- paste("Reads >= ", n)
+    } else {
+      rclabel <- paste("Reads: ", rc)
+    }
+    # Calculate summary statistics at each position
+    means <- rowsum(df$Score*df$Count, df$Cycle)/rowsum(df$Count, df$Cycle)
+    get_quant <- function(xx, yy, q) { xx[which(cumsum(yy)/sum(yy) >=q)][[1]] }
+    q25s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.25), simplify=TRUE)
+    q50s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.5), simplify=TRUE)
+    q75s <- by(df, df$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.75), simplify=TRUE)
+    if(!all(sapply(list(names(q25s), names(q50s), names(q75s)), identical, rownames(means)))) {
+      stop("Calculated quantiles/means weren't compatible.")
+    }
+    if(FIRST) {
+      plotdf <- cbind(df, file=f)
+      FIRST <- FALSE
+    } else { plotdf <- rbind(plotdf, cbind(df, file=f)) }
+    statdf <- rbind(statdf, data.frame(Cycle=as.integer(rownames(means)), Mean=means, 
+                                       Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s), file=f))
+    anndf <- rbind(anndf, data.frame(minScore=min(df$Score), label=basename(f), rclabel=rclabel, file=f))
   }
-  statdf <- data.frame(Cycle=as.integer(rownames(means)),
-                       Mean=means, 
-                       Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s))
+  anndf$minScore <- min(anndf$minScore)
   # Create plot
-  ggplot(data=df, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
+  ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
     scale_fill_gradient(low="#F5F5F5", high="black") + 
     geom_line(data=statdf, aes(y=Mean), color="#66C2A5") +
     geom_line(data=statdf, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
@@ -224,5 +256,7 @@ plotQualityProfile <- function(fl, n=1000000) {
     geom_line(data=statdf, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
     ylab("Quality Score") + xlab("Cycle") +
     theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) +
-    annotate("text", 1, min(df$Score), label = basename(fl), hjust=0, vjust=0)
+    geom_text(data=anndf, aes(x=minScore+2, label=label), y=1, hjust=0, vjust=0) +
+    geom_text(data=anndf, aes(x=minScore+2, label=rclabel), y=1, hjust=0, vjust=2) + 
+    facet_wrap(~file) + theme(strip.background = element_blank(), strip.text.x = element_blank())
 }

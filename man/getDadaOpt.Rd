@@ -25,4 +25,3 @@ getDadaOpt()
 \seealso{
 \code{\link{setDadaOpt}}
 }
-

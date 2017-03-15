@@ -10,4 +10,3 @@
 A dataset containing the error matrix estimated by fitting a piecewise linear model to
 the errors observed in the mock community featured in Schirmer 2015 (metaID 35).
 }
-
