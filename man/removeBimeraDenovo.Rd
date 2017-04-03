@@ -17,7 +17,10 @@ into one with \code{\link{getUniques}}. A list of such objects can also be provi
      identification (\code{\link{isBimeraDenovo}}).   
      
   If "consensus": The samples in a sequence table are independently checked for bimeras,
-     and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).}
+     and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).
+
+  If "per-sample": The samples in a sequence table are independently checked for bimeras,
+     and sequence variants are removed (zeroed-out) from samples independently (\code{\link{isBimeraDenovo}}).}
 
 \item{tableMethod}{(DEPRECATED).}
 
