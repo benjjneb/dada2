@@ -267,6 +267,9 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #'   If "consensus": The samples in a sequence table are independently checked for bimeras,
 #'      and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).
 #' 
+#'   If "per-sample": The samples in a sequence table are independently checked for bimeras,
+#'      and sequence variants are removed (zeroed-out) from samples independently (\code{\link{isBimeraDenovo}}).
+#'
 #' @param tableMethod (DEPRECATED).
 #'
 #' @param ... (Optional). Arguments to be passed to \code{\link{isBimeraDenovo}} or \code{\link{isBimeraDenovoTable}}.
@@ -315,10 +318,22 @@ removeBimeraDenovo <- function(unqs, method = "pooled", tableMethod=NULL, ..., v
         bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       } else if(method == "consensus") {
         bim <- isBimeraDenovoTable(unqs[[i]], ..., verbose=TRUE)
+      } else if(method == "per-sample") {
+    		bim <- t(apply(unqs[[i]], 1, function(x) isBimeraDenovo(x, ..., verbose=TRUE)))
       } else {
-        stop("Valid values for method: 'pooled', 'consensus'")
+        stop("Valid values for method: 'pooled', 'consensus', or 'per-sample'")
       }
-      outs[[i]] <- unqs[[i]][,!bim,drop=FALSE]
+      if (method %in% c("pooled", "consensus")) {
+      	outs[[i]] <- unqs[[i]][,!bim,drop=FALSE]
+      } else if (method %in% c("per-sample")) {
+      	outs[[i]] <- unqs[[i]]
+      	outs[[i]][which(bim, arr.ind=T)] <- 0
+      	cbim <- colSums(outs[[i]])==0
+      	outs[[i]] <- outs[[i]][,!cbim,drop=FALSE]
+      }
+      else {
+      	stop("Valid values for method: 'pooled', 'consensus', or 'per-sample'")
+      }
     } else {
       stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
     }
