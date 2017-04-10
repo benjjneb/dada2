@@ -755,18 +755,6 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   
   return(invisible(c(reads.in=inseqs, reads.out=outseqs)))
 }
-
-#' @importFrom ShortRead srFilter
-#' @importFrom ShortRead SRFilterResult
-#' @importFrom Biostrings quality
-#' @importFrom methods as
-minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
-{
-  srFilter(function(x) {
-    apply(as(quality(x), "matrix"), 1, function(qs) min(qs, na.rm=TRUE) >= minQ)
-  }, name = .name)
-}
-
 ################################################################################
 #' Determine if input sequence(s) match the phiX genome.
 #' 
