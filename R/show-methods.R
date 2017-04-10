@@ -88,7 +88,7 @@ setMethod("names<-", "dada", function(x, value){
 #' @rdname show-methods
 #' @include allClasses.R
 #' # examples
-setMethod("c", signature("derep"), function(x,...){
+setMethod("c", signature("derep"), function(x,...,recursive=FALSE){
   list(x,...)
 })
 
@@ -100,6 +100,6 @@ setMethod("c", signature("derep"), function(x,...){
 #' @rdname show-methods
 #' @include allClasses.R
 #' # examples
-setMethod("c", signature("dada"), function(x,...){
+setMethod("c", signature("dada"), function(x,...,recursive=FALSE){
   list(x,...)
 })

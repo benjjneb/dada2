@@ -15,6 +15,9 @@
 #'  (column, eg. 31), as determined by \code{\link{loess}} smoothing over the quality
 #'  scores within each transition category.
 #' 
+#' @importFrom stats loess
+#' @importFrom stats predict
+#' 
 #' @export
 #' 
 #' @examples

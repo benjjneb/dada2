@@ -189,7 +189,7 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' Plot quality profile of a fastq file.
 #' 
 #' This function plots a visual summary of the distribution of quality scores
-#' as a function of sequence position for the input fastq file.
+#' as a function of sequence position for the input fastq file(s).
 #' 
 #' The distribution of quality scores at each position is shown as a grey-scale
 #' heat map, with dark colors corresponding to higher frequency. The plotted lines
@@ -259,6 +259,4 @@ plotQualityProfile <- function(fl, n=500000) {
     geom_text(data=anndf, aes(x=minScore+2, label=label), y=1, hjust=0, vjust=0) +
     geom_text(data=anndf, aes(x=minScore+2, label=rclabel), y=1, hjust=0, vjust=2) + 
     facet_wrap(~file) + theme(strip.background = element_blank(), strip.text.x = element_blank())
-#    annotate("text", 1, min(df$Score), label = basename(fl), hjust=0, vjust=0) +
-#    annotate("text", 1, min(df$Score), label = rclabel, hjust=0, vjust=2)
 }

@@ -6,7 +6,7 @@
 \usage{
 fastqFilter(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf,
   minLen = 20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf,
-  rm.phix = FALSE, primer.fwd = NULL, n = 1e+06, OMP = TRUE,
+  rm.phix = TRUE, primer.fwd = NULL, n = 1e+06, OMP = TRUE,
   compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
@@ -44,7 +44,7 @@ After truncation, reads contain a quality score below minQ will be discarded.}
 After truncation, reads with higher than maxEE "expected errors" will be discarded.
 Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
 
-\item{rm.phix}{(Optional). Default FALSE.
+\item{rm.phix}{(Optional). Default TRUE.
 If TRUE, discard reads that match against the phiX genome, as determined by 
 \code{\link{isPhiX}}.}
 

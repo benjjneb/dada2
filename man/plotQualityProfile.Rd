@@ -21,7 +21,7 @@ A \code{\link{ggplot}2} object.
 }
 \description{
 This function plots a visual summary of the distribution of quality scores
-as a function of sequence position for the input fastq file.
+as a function of sequence position for the input fastq file(s).
 }
 \details{
 The distribution of quality scores at each position is shown as a grey-scale

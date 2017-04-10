@@ -6,7 +6,7 @@
 \usage{
 filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL, compress = TRUE,
   truncQ = 2, truncLen = 0, trimLeft = 0, maxLen = Inf, minLen = 20,
-  maxN = 0, minQ = 0, maxEE = Inf, rm.phix = FALSE, primer.fwd = NULL,
+  maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE, primer.fwd = NULL,
   matchIDs = FALSE, id.sep = "\\\\s", id.field = NULL,
   multithread = FALSE, n = 1e+05, OMP = TRUE, verbose = FALSE)
 }
@@ -63,7 +63,7 @@ After truncation, reads contain a quality score less than \code{minQ} will be di
 After truncation, reads with higher than \code{maxEE} "expected errors" will be discarded.
 Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
 
-\item{rm.phix}{(Optional). Default FALSE.
+\item{rm.phix}{(Optional). Default TRUE.
 If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.}
 
 \item{primer.fwd}{(Optional). Default NULL. Paired-read filtering only.
@@ -121,17 +121,18 @@ is performed on the forward and reverse reads independently, and both reads must
 the read pair to be output.
 }
 \details{
-\code{filterAndTrim} is a convenience interface for the \code{\link{fastqFilter}}
-and \code{\link{fastqPairedFilter}} filtering functions, that handles multithreading.
+\code{filterAndTrim} is a multithreaded convenience interface for the \code{\link{fastqFilter}}
+and \code{\link{fastqPairedFilter}} filtering functions.
 Note that error messages and tracking are not handled gracefully when using the multithreading
 functionality. If errors arise, it is recommended to re-run without multithreading to
 troubleshoot the issue.
 }
 \examples{
-testFastqs = c(system.file("extdata", "sam1F.fastq.gz", package="dada2"), system.file("extdata", "sam2F.fastq.gz", package="dada2"))
+testFastqs = c(system.file("extdata", "sam1F.fastq.gz", package="dada2"), 
+               system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 filtFastqs <- c(tempfile(fileext=".fastq.gz"), tempfile(fileext=".fastq.gz"))
 filterAndTrim(testFastqs, filtFastqs, maxN=0, maxEE=2, verbose=TRUE)
-filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, multithread=4)
+filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE)
 
 }
 \seealso{
