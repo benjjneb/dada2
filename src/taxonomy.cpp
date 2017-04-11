@@ -412,7 +412,13 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   }
   
   AssignParallel assignParallel(seqs, rcs, genus_num_plus1, genus_kmers, kmer_prior, C_genusmat, C_unifs, C_rboot, C_rboot_tax, C_rval, k, n_kmers, ngenus, nlevel, max_arraylen, try_rc);
-  RcppParallel::parallelFor(0, nseq, assignParallel, 1); // GRAIN_SIZE=1
+  int INTERRUPT_BLOCK_SIZE=128;
+  for(i=0;i<nseq;i+=INTERRUPT_BLOCK_SIZE) {
+    j = i+INTERRUPT_BLOCK_SIZE;
+    if(j > nseq) { j = nseq; }
+    RcppParallel::parallelFor(i, j, assignParallel, 1); // GRAIN_SIZE=1
+    Rcpp::checkUserInterrupt();
+  }
   
   // Copy from C-versions back to R objects
   for(i=0;i<nseq;i++) {
