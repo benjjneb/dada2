@@ -65,7 +65,7 @@
 #'  After truncation, reads with higher than \code{maxEE} "expected errors" will be discarded.
 #'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
 #'  
-#' @param rm.phix (Optional). Default FALSE.
+#' @param rm.phix (Optional). Default TRUE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.
 #'
 #' @param primer.fwd (Optional). Default NULL. Paired-read filtering only.
@@ -133,7 +133,7 @@
 #' filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE)
 #' 
 filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
-                        truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, primer.fwd=NULL,
+                        truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=TRUE, primer.fwd=NULL,
                         matchIDs=FALSE, id.sep="\\s", id.field=NULL,
                         multithread=FALSE, n = 1e5, OMP=TRUE, verbose = FALSE) {
   PAIRED <- FALSE
@@ -235,7 +235,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  After truncation, reads with higher than maxEE "expected errors" will be discarded.
 #'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
 #'  
-#' @param rm.phix (Optional). Default FALSE.
+#' @param rm.phix (Optional). Default TRUE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
 #'
@@ -289,7 +289,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=FALSE, primer.fwd=NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=TRUE, primer.fwd=NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -435,7 +435,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #'  After truncation, reads with higher than maxEE "expected errors" will be discarded.
 #'  Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))
 #'  
-#' @param rm.phix (Optional). Default FALSE.
+#' @param rm.phix (Optional). Default TRUE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
 #'  
@@ -517,7 +517,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
 #'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(FALSE, FALSE), matchIDs = FALSE, primer.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, primer.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -755,18 +755,6 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   
   return(invisible(c(reads.in=inseqs, reads.out=outseqs)))
 }
-
-#' @importFrom ShortRead srFilter
-#' @importFrom ShortRead SRFilterResult
-#' @importFrom Biostrings quality
-#' @importFrom methods as
-minQFilter <- function (minQ = 0L, .name = "MinQFilter") 
-{
-  srFilter(function(x) {
-    apply(as(quality(x), "matrix"), 1, function(qs) min(qs, na.rm=TRUE) >= minQ)
-  }, name = .name)
-}
-
 ################################################################################
 #' Determine if input sequence(s) match the phiX genome.
 #' 

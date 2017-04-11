@@ -259,7 +259,7 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' @param unqs (Required). A \code{\link{uniques-vector}} or any object that can be coerced
 #'  into one with \code{\link{getUniques}}. A list of such objects can also be provided.
 #'   
-#' @param method (Optional). Default is "pooled". Only has an effect if a sequence table is provided.   
+#' @param method (Optional). Default is "consensus". Only has an effect if a sequence table is provided.   
 #' 
 #'   If "pooled": The samples in the sequence table are all pooled together for bimera
 #'      identification (\code{\link{isBimeraDenovo}}).   
@@ -267,6 +267,9 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #'   If "consensus": The samples in a sequence table are independently checked for bimeras,
 #'      and a consensus decision on each sequence variant is made (\code{\link{isBimeraDenovoTable}}).
 #' 
+#'   If "per-sample": The samples in a sequence table are independently checked for bimeras,
+#'      and sequence variants are removed (zeroed-out) from samples independently (\code{\link{isBimeraDenovo}}).
+#'
 #' @param tableMethod (DEPRECATED).
 #'
 #' @param ... (Optional). Arguments to be passed to \code{\link{isBimeraDenovo}} or \code{\link{isBimeraDenovoTable}}.
@@ -277,7 +280,7 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' @return A uniques vector, or an object of matching class if a data.frame or sequence table is provided.
 #'  A list of such objects is returned if a list of input unqs was provided.
 #'
-#' @seealso \code{\link{isBimeraDenovo}}
+#' @seealso \code{\link{isBimeraDenovoTable}}, \code{\link{isBimeraDenovo}}
 #' 
 #' @export
 #' 
@@ -285,9 +288,9 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' out.nobim <- removeBimeraDenovo(dada1)
-#' out.nobim <- removeBimeraDenovo(dada1$clustering, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
+#' out.nobim <- removeBimeraDenovo(dada1$clustering, method="pooled", minFoldParentOverAbundance = 2, allowOneOff=FALSE)
 #' 
-removeBimeraDenovo <- function(unqs, method = "pooled", tableMethod=NULL, ..., verbose=FALSE) {
+removeBimeraDenovo <- function(unqs, method = "consensus", tableMethod=NULL, ..., verbose=FALSE) {
   if(class(unqs)!="list") {
     unqs <- list(unqs)
   }
@@ -311,14 +314,29 @@ removeBimeraDenovo <- function(unqs, method = "pooled", tableMethod=NULL, ..., v
       bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]][!bim,]
     } else if(class(unqs[[i]]) == "matrix" && !any(is.na(colnames(unqs[[i]])))) { # Tabled sequences
+      if(missing(method) && i==1) {
+        message("As of the 1.4 release, the default method changed to consensus (from pooled).")
+      }
       if(method == "pooled") {
         bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       } else if(method == "consensus") {
-        bim <- isBimeraDenovoTable(unqs[[i]], ..., verbose=TRUE)
+        bim <- isBimeraDenovoTable(unqs[[i]], ..., verbose=verbose)
+      } else if(method == "per-sample") {
+    		bim <- t(apply(unqs[[i]], 1, function(x) isBimeraDenovo(x, ..., verbose=verbose)))
       } else {
-        stop("Valid values for method: 'pooled', 'consensus'")
+        stop("Valid values for method: 'pooled', 'consensus', or 'per-sample'")
       }
-      outs[[i]] <- unqs[[i]][,!bim,drop=FALSE]
+      if (method %in% c("pooled", "consensus")) {
+      	outs[[i]] <- unqs[[i]][,!bim,drop=FALSE]
+      } else if (method %in% c("per-sample")) {
+      	outs[[i]] <- unqs[[i]]
+      	outs[[i]][which(bim, arr.ind=T)] <- 0
+      	cbim <- colSums(outs[[i]])==0
+      	outs[[i]] <- outs[[i]][,!cbim,drop=FALSE]
+      }
+      else {
+      	stop("Valid values for method: 'pooled', 'consensus', or 'per-sample'")
+      }
     } else {
       stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
     }

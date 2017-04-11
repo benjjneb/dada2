@@ -1,3 +1,12 @@
+CHANGES IN VERSION 1.3.5
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The default chimera removal method is now "consensus" in the removeBimeraDenovo function (method="consensus").
+
+    o The filtering functions now remove phiX by default (rm.phix=TRUE).
+
 CHANGES IN VERSION 1.3.4
 -----------------------
 

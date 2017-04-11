@@ -7,7 +7,7 @@
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), maxLen = c(Inf, Inf), minLen = c(20, 20),
   trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf, Inf),
-  rm.phix = c(FALSE, FALSE), matchIDs = FALSE, primer.fwd = NULL,
+  rm.phix = c(TRUE, TRUE), matchIDs = FALSE, primer.fwd = NULL,
   id.sep = "\\\\s", id.field = NULL, n = 1e+06, OMP = TRUE,
   compress = TRUE, verbose = FALSE, ...)
 }
@@ -52,7 +52,7 @@ After truncation, reads contain a quality score below minQ will be discarded.}
 After truncation, reads with higher than maxEE "expected errors" will be discarded.
 Expected errors are calculated from the nominal definition of the quality score: EE = sum(10^(-Q/10))}
 
-\item{rm.phix}{(Optional). Default FALSE.
+\item{rm.phix}{(Optional). Default TRUE.
 If TRUE, discard reads that match against the phiX genome, as determined by 
 \code{\link{isPhiX}}.}
 
