@@ -4,14 +4,17 @@
 \alias{plotQualityProfile}
 \title{Plot quality profile of a fastq file.}
 \usage{
-plotQualityProfile(fl, n = 5e+05)
+plotQualityProfile(fl, n = 5e+05, summarize = FALSE)
 }
 \arguments{
 \item{fl}{(Required). \code{character}.
 File path(s) to fastq or fastq.gz file(s).}
 
-\item{n}{(Optional). Default 1,000,000.
+\item{n}{(Optional). Default 500,000.
 The number of records to sample from the fastq file.}
+
+\item{summarize}{(Optional). Default FALSE.
+If TRUE, compute an aggregate quality profile for all fastq files provided.}
 }
 \value{
 A \code{\link{ggplot}2} object.

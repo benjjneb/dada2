@@ -199,9 +199,12 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' @param fl (Required). \code{character}.
 #'  File path(s) to fastq or fastq.gz file(s).
 #' 
-#' @param n (Optional). Default 1,000,000.
+#' @param n (Optional). Default 500,000.
 #'  The number of records to sample from the fastq file.
 #' 
+#' @param summarize (Optional). Default FALSE.
+#'  If TRUE, compute an aggregate quality profile for all fastq files provided.
+#'  
 #' @return A \code{\link{ggplot}2} object.
 #'  Will be rendered to default device if \code{\link{print}ed},
 #'  or can be stored and further modified.
@@ -215,7 +218,7 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' @examples
 #' plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' 
-plotQualityProfile <- function(fl, n=500000) {
+plotQualityProfile <- function(fl, n=500000, summarize=FALSE) {
   statdf <- data.frame(Cycle=integer(0), Mean=numeric(0), Q25=numeric(0), Q50=numeric(0), Q75=numeric(0), file=character(0))
   anndf <- data.frame(minScore=numeric(0), label=character(0), rclabel=character(0), file=character(0))
 
@@ -248,15 +251,32 @@ plotQualityProfile <- function(fl, n=500000) {
   }
   anndf$minScore <- min(anndf$minScore)
   # Create plot
-  ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
-    scale_fill_gradient(low="#F5F5F5", high="black") + 
-    geom_line(data=statdf, aes(y=Mean), color="#66C2A5") +
-    geom_line(data=statdf, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
-    geom_line(data=statdf, aes(y=Q50), color="#FC8D62", size=0.25) +
-    geom_line(data=statdf, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
-    ylab("Quality Score") + xlab("Cycle") +
-    theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) +
-    geom_text(data=anndf, aes(x=minScore+2, label=label), y=1, hjust=0, vjust=0) +
-    geom_text(data=anndf, aes(x=minScore+2, label=rclabel), y=1, hjust=0, vjust=2) + 
-    facet_wrap(~file) + theme(strip.background = element_blank(), strip.text.x = element_blank())
+  if (summarize) {
+  	plotdf.summary <- aggregate(Count ~ Cycle + Score, plotdf, sum)
+  	means <- rowsum(plotdf.summary$Score*plotdf.summary$Count, plotdf.summary$Cycle)/rowsum(plotdf.summary$Count, plotdf.summary$Cycle)
+    q25s <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.25), simplify=TRUE)
+    q50s <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.5), simplify=TRUE)
+    q75s <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.75), simplify=TRUE)
+    statdf.summary <- data.frame(Cycle=as.integer(rownames(means)), Mean=means, Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s))
+    ggplot(data=plotdf.summary, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
+		  scale_fill_gradient(low="#F5F5F5", high="black") + 
+		  geom_line(data=statdf.summary, aes(y=Mean), color="#66C2A5") +
+		  geom_line(data=statdf.summary, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
+		  geom_line(data=statdf.summary, aes(y=Q50), color="#FC8D62", size=0.25) +
+		  geom_line(data=statdf.summary, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
+		  ylab("Quality Score") + xlab("Cycle") +
+		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) + theme(strip.background = element_blank(), strip.text.x = element_blank())
+  } else {
+  	ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
+		  scale_fill_gradient(low="#F5F5F5", high="black") + 
+		  geom_line(data=statdf, aes(y=Mean), color="#66C2A5") +
+		  geom_line(data=statdf, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
+		  geom_line(data=statdf, aes(y=Q50), color="#FC8D62", size=0.25) +
+		  geom_line(data=statdf, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
+		  ylab("Quality Score") + xlab("Cycle") +
+		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) +
+		  geom_text(data=anndf, aes(x=minScore+2, label=label), y=1, hjust=0, vjust=0) +
+		  geom_text(data=anndf, aes(x=minScore+2, label=rclabel), y=1, hjust=0, vjust=2) + 
+		  facet_wrap(~file) + theme(strip.background = element_blank(), strip.text.x = element_blank())
+	}
 }
