@@ -208,8 +208,6 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #' 
 #' @param truncQ (Optional). Default 2.
 #'  Truncate reads at the first instance of a quality score less than or equal to \code{truncQ}.
-#'  The default value of 2 is a special quality score indicating the end of good quality
-#'    sequence in Illumina 1.8+.
 #'  
 #' @param truncLen (Optional). Default 0 (no truncation).
 #'  Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.
@@ -408,8 +406,6 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' 
 #' @param truncQ (Optional). Default 2.
 #'  Truncate reads at the first instance of a quality score less than or equal to \code{truncQ}.
-#'  The default value of 2 is a special quality score indicating the end of good quality
-#'    sequence in Illumina 1.8+.
 #'  
 #' @param truncLen (Optional). Default 0 (no truncation).
 #'  Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.

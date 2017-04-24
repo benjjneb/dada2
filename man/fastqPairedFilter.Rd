@@ -28,9 +28,7 @@ After truncation, sequences with more than \code{maxN} Ns will be discarded.
 Note that \code{\link{dada}} currently does not allow Ns.}
 
 \item{truncQ}{(Optional). Default 2.
-Truncate reads at the first instance of a quality score less than or equal to \code{truncQ}.
-The default value of 2 is a special quality score indicating the end of good quality
-  sequence in Illumina 1.8+.}
+Truncate reads at the first instance of a quality score less than or equal to \code{truncQ}.}
 
 \item{truncLen}{(Optional). Default 0 (no truncation).
 Truncate reads after \code{truncLen} bases. Reads shorter than this are discarded.}
