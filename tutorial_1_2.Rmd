@@ -1,0 +1,320 @@
+---
+title: "DADA2 Pipeline Tutorial (1.2)"
+---
+
+Here we walk through version 1.2 of the DADA2 pipeline on a small multi-sample dataset. Our starting point is a set of Illumina-sequenced paired-end fastq files that have been split (or "demultiplexed") by sample and from which the barcodes/adapters have already been removed. The end product is a **sequence table**, a higher-resolution analogue of the ubiquitous "OTU table", which records the number of times each ribosomal sequence variant (SV) was observed in each sample. We also assign taxonomies to the output sequences, and demonstrate how the data can be importeted into the popular [phyloseq](https://joey711.github.io/phyloseq/) R package for the analysis of microbiome data.
+
+-----------------------
+
+# Starting point
+
+This workflow assumes that the data you are starting with meets certain criteria:
+
+* Non-biological nucleotides have been removed (primers/adapters/barcodes...)
+* Samples are demultiplexed (split into individual per-sample fastqs)
+* If paired reads, the forward and reverse fastqs contain reads in matching order
+
+If any of these criteria are not true for your data (are you sure primers aren't still there?) you need to remedy those issues before beginning this workflow. See [the FAQ](faq.html) for some recommendations for common issues.
+
+# Getting ready
+
+First we load the necessary libraries. If you don't already have the dada2 package, see the [dada2 installation instructions](dada-installation.html). The ShortRead and ggplot2 packages are available from [Bioconductor](http://bioconductor.org/install/):
+```{r libraries, message=FALSE, warning=FALSE}
+library(dada2); packageVersion("dada2")
+library(ShortRead); packageVersion("ShortRead")
+library(ggplot2); packageVersion("ggplot2")
+```
+
+*If your dada2 version is <1.2.0 you must upgrade to the current release version to run this workflow: `biocLite("dada2")`. This may first require updating your Bioconductor installation: `biocLite("BiocUpgrade")` and reinstalling Bioconductor: `biocLite()`*
+
+The data we will work with are the same as those in the [Mothur Miseq SOP](http://www.mothur.org/wiki/MiSeq_SOP) walkthrough. Download the [example data used in the Mother MiSeq SOP](http://www.mothur.org/w/images/d/d6/MiSeqSOPData.zip) and unzip it. These files represent longitudinal samples from a mouse post-weaning as well as one mock community control. But for now just consider them as paired-end fastq files to be processed. Download the data, extract it, and then define the following path variable so that it points to the extracted directory on **your** machine:
+```{r path}
+path <- "~/MiSeq_SOP" # CHANGE ME to the directory containing the fastq files after unzipping.
+fns <- list.files(path)
+fns
+```
+
+If the packages successfully loaded and your listed files match those here, then you are ready to go through the DADA2 pipeline.
+
+&nbsp;
+
+# Filtering and Trimming
+
+First we read in the names of the fastq files, and perform some string manipulation to get lists of the forward and reverse fastq files in matched order:
+```{r filenames}
+fastqs <- fns[grepl(".fastq$", fns)]
+fastqs <- sort(fastqs) # Sort ensures forward/reverse reads are in same order
+fnFs <- fastqs[grepl("_R1", fastqs)] # Just the forward read files
+fnRs <- fastqs[grepl("_R2", fastqs)] # Just the reverse read files
+# Get sample names, assuming files named as so: SAMPLENAME_XXX.fastq
+sample.names <- sapply(strsplit(fnFs, "_"), `[`, 1)
+# Specify the full path to the fnFs and fnRs
+fnFs <- file.path(path, fnFs)
+fnRs <- file.path(path, fnRs)
+```
+
+**<span style="color:red">If using this workflow on your own data:</span>** The string manipulations above, especially the extraction of sample names from the file names, may have to be modified.
+
+## Examine quality profiles of forward and reverse reads
+
+It is important to look at your data. We start by visualizing the quality profiles along the sequencing reads. 
+
+**Visualize the quality profile of the forward reads**:
+```{r see-quality-F}
+plotQualityProfile(fnFs[[1]])
+plotQualityProfile(fnFs[[2]])
+```
+
+The forward reads are good quality. We generally advise trimming the last few nucleotides to avoid less well-controlled errors that can arise there. There is no suggestion from these quality profiles that any additional trimming is needed, so we will truncate the forward reads at position 240 (trimming the last 10 nucleotides).
+
+**Visualize the quality profile of the reverse reads**:
+```{r see-quality-R}
+plotQualityProfile(fnRs[[1]])
+plotQualityProfile(fnRs[[2]])
+```
+
+The reverse reads are of significantly worse quality, especially at the end, which is common in Illumina paired-end sequencing. This isn't too worrisome, DADA2 incorporates quality information into its error model which makes the algorithm is robust to lower quality sequence, but trimming as the average qualities crash is still a good idea. We will truncate at position 160 where the quality distribution crashes.
+
+**<span style="color:red">If using this workflow on your own data:</span>** Your reads must **overlap after trimming** in order to merge them later! The 2x250 V4 sequence data being analyzed here is almost completely overlapping, thus our trimming can be completely guided by the quality scores. If you are using a less-overlapping primer set, like V1-V2 or V3-V4, you must keep enough of each read to maintain the overlap between them (the more the better).
+
+## Perform filtering and trimming
+
+We'll use standard filtering parameters: `maxN=0` (DADA2 requires no Ns), `truncQ=2` and `maxEE=2`. The `maxEE` parameter sets the maximum number of "expected errors" allowed in a read, which is [a better filter than simply averaging quality scores](http://www.drive5.com/usearch/manual/expected_errors.html). We use the `fastqPairedFilter` function to jointly filter the forward and reverse reads.
+
+**Filter the forward and reverse reads**:
+```{r filter, message=FALSE, warning=FALSE}
+# Make directory and filenames for the filtered fastqs
+filt_path <- file.path(path, "filtered")
+if(!file_test("-d", filt_path)) dir.create(filt_path)
+filtFs <- file.path(filt_path, paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs <- file.path(filt_path, paste0(sample.names, "_R_filt.fastq.gz"))
+# Filter
+for(i in seq_along(fnFs)) {
+  fastqPairedFilter(c(fnFs[i], fnRs[i]), c(filtFs[i], filtRs[i]),
+                    truncLen=c(240,160), 
+                    maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+                    compress=TRUE, verbose=TRUE)
+}
+```
+
+The preceding filtering can be replaced by other filtering methods. However, in order for the later DADA2 `mergePairs` step to work, the filtered forward and reverse reads must be in matched order. The fastq files that come off the Illumina machine have this property, and `fastqPairedFilter` preserves it, but not all filtering tools do so.
+
+**<span style="color:red">If using this workflow on your own data:</span>** The standard filtering parameters are starting points, not set in stone. For example, if too few reads are passing the filter, considering relaxing `maxEE`, perhaps especially on the reverse reads (eg. `maxEE=c(2,5)`). If you want to speed up downstream computation, consider tightening `maxEE`.
+
+&nbsp;
+
+# Dereplication
+
+Dereplication combines all identical sequencing reads into into "unique sequences" with a corresponding "abundance": the number of reads with that same sequence. Dereplication substantially reduces computation time by eliminating redundant comparisons.
+
+Dereplication in the DADA2 pipeline has one crucial addition from other pipelines: **DADA2 retains a summary of the quality information associated with each unique sequence**. The consensus quality profile of a unique sequence is the average of the positional qualities from the dereplicated reads. These quality profiles inform the error model of the subsequent denoising step, significantly increasing DADA2's accuracy.
+
+**Dereplicate the filtered fastq files**:
+```{r dereplicate, message=FALSE}
+derepFs <- derepFastq(filtFs, verbose=TRUE)
+derepRs <- derepFastq(filtRs, verbose=TRUE)
+# Name the derep-class objects by the sample names
+names(derepFs) <- sample.names
+names(derepRs) <- sample.names
+```
+
+**<span style="color:red">If using this workflow on your own data:</span>** The tutorial dataset is small enough to easily load into memory. If your dataset exceeds available RAM, it is preferable to process samples one-by-one in a streaming fashion: see the [DADA2 Workflow on Big Data](bigdata.html) for an example.
+
+&nbsp;
+
+# Learn the Error Rates
+
+The DADA2 algorithm depends on a parametric error model (`err`) and amplicon dataset will have different error rates. DADA2 learns its error model from the data itself by alternating estimation of the error rates and the composition of the sample until they converge on a jointly consistent solution (this is similar to the E-M algorithm).
+
+To perform this joint inference we run `dada` with `selfConsist=TRUE`. As in many optimization problems, the algorithm must begin with an initial guess, for which we provide the maximum possible error rates in this data (the error rates if only the most abundant sequence is correct and all the rest are errors) by setting `err=NULL`. 
+
+*The following runs in about 4 minutes on a 2013 Macbook Pro:*
+
+```{r}
+dadaFs.lrn <- dada(derepFs, err=NULL, selfConsist = TRUE, multithread=TRUE)
+errF <- dadaFs.lrn[[1]]$err_out
+dadaRs.lrn <- dada(derepRs, err=NULL, selfConsist = TRUE, multithread=TRUE)
+errR <- dadaRs.lrn[[1]]$err_out
+```
+
+It is always worthwhile, as a sanity check if nothing else, to visualize the estimated error rates:
+```{r plot-errors}
+plotErrors(dadaFs.lrn[[1]], nominalQ=TRUE)
+```
+
+The error rates for each possible transition (eg. A->C, A->G, ...) are shown. Points are the observed error rates for each consensus quality score. The black line shows the estimated error rates after convergence. The red line is the error rates expected under the nominal definition of the Q-value. Here the black line (the estimated rates) fits the observed rates well, and the error rates drop with increased quality as expected. Everything looks reasonable and we proceed with confidence.
+
+**<span style="color:red">If using this workflow on your own data:</span>** Parameter learning is the most computationally intensive portion of this workflow as sample inference is re-run for every iteration of the self-consistency loop. For larger datasets it is often preferable to estimate error rates from a subset of the data: see the [DADA2 Workflow on Big Data](bigdata.html) for an example.
+
+&nbsp;
+
+# Sample Inference
+
+We are now ready to apply the core sequence-variant inference algorithm to the dereplicated data. 
+
+**Infer the sequence variants in each sample**:
+```{r dada}
+dadaFs <- dada(derepFs, err=errF, multithread=TRUE)
+dadaRs <- dada(derepRs, err=errR, multithread=TRUE)
+```
+
+Inspecting the dada-class object returned by dada:
+```{r see-dada}
+dadaFs[[1]]
+```
+
+The DADA2 algorithm inferred `r length(dadaFs[[1]]$sequence)` real variants from the `r length(dadaFs[[1]]$map)` unique sequences in the first sample. There is much more to the `dada-class` return object than this (see `help("dada-class")` for some info), including multiple diagnostics about the quality of each inferred sample sequence, but that is beyond the scope of an introductory tutorial.
+
+**Also see [our discussion on pooling samples for error estimation and sample inference](pool.html).**
+
+**<span style="color:red">If using this workflow on your own data:</span>** DADA2 also supports 454 and Ion Torrent data, although [we recommend some minor parameter changes](faq.html#can-i-use-dada2-with-my-454-or-ion-torrent-data) for those sequencing technologies.
+
+&nbsp;
+
+# Merge paired reads
+
+Spurious sequence variants can be further reduced by merging these overlapping reads. The core function here is `mergePairs`, which depends on the forward and reverse reads being in matching order at the time they were dereplicated.
+
+**Merge the denoised forward and reverse reads**:
+```{r merge, message=FALSE}
+mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose=TRUE)
+# Inspect the merger data.frame from the first sample
+head(mergers[[1]])
+```
+
+We now have a `data.frame` for each sample with the merged `$sequence`, its `$abundance`, and the indices of the merged `$forward` and `$reverse` denoised sequences. Paired reads that did not exactly overlap were removed by `mergePairs`.
+
+**<span style="color:red">If using this workflow on your own data:</span>** Most of your **reads** should successfully merge. If that is not the case, upstream parameters may need to be revisited. In particular, did you trim away the overlap between your reads?
+
+&nbsp;
+
+# Constructing the sequence table
+
+We can now construct a sequence table of our mouse samples that is analagous to the "OTU table" produced by classical methods.
+
+**Construct sequence table**:
+```{r seqtab}
+seqtab <- makeSequenceTable(mergers[names(mergers) != "Mock"])
+dim(seqtab)
+# Inspect distribution of sequence lengths
+table(nchar(getSequences(seqtab)))
+```
+
+The sequence table is a `matrix` with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. Our merged sequences all fall in the expected range for these V4 amplicon. 
+
+**<span style="color:red">If using this workflow on your own data:</span>** Sequences that are much longer or shorter than expected may be the result of non-specific priming, and may be worth removing (eg. `seqtab2 <- seqtab[,nchar(colnames(seqtab)) %in% seq(250,256)]`). This is analogous to "cutting a band" in-silico to get amplicons of the targeted length.
+
+&nbsp;
+
+# Remove chimeras
+
+The core `dada` method removes substitution and indel errors, but chimeras remain. Fortunately, the accuracy of the sequences after denoising makes identifying chimeras easier than it is when dealing with fuzzy OTUs: all sequences which can be exactly reconstructed as a bimera (two-parent chimera) from more abundant sequences.
+
+**Remove chimeric sequences**:
+```{r chimeras, message=FALSE}
+seqtab.nochim <- removeBimeraDenovo(seqtab, verbose=TRUE)
+dim(seqtab.nochim)
+sum(seqtab.nochim)/sum(seqtab)
+```
+
+The fraction of chimeras varies based on factors including experimental procedures and sample complexity, but can be substantial. Here chimeras make up about `r round(100*(ncol(seqtab)-ncol(seqtab.nochim))/ncol(seqtab))`\% of the inferred sequence variants, but those variants account for only about `r round(100*(sum(seqtab)-sum(seqtab.nochim))/sum(seqtab))`\% of the total sequence reads.
+
+**<span style="color:red">If using this workflow on your own data:</span>** Most of your **reads** should remain after chimera removal (it is not uncommon for a majority of **sequence variants** to be removed though). If most of your reads were removed as chimeric, upstream processing may need to be revisited. In almost all cases this is caused by primer sequences with ambiguous nucleotides that were not removed prior to beginning the DADA2 pipeline.
+
+&nbsp;
+
+# Assign taxonomy
+
+It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to classify sequence variants taxonomically. The DADA2 package provides a native implementation of [the RDP's naive Bayesian classifier](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes a set of sequences and a training set of taxonomically classified sequences, and outputs the taxonomic assignments with at least `minBoot` bootstrap confidence. 
+
+Appropriately formatted training fastas for the [RDP training set 14](http://dx.doi.org/10.5281/zenodo.158955), the [GreenGenes 13.8 release clustered at 97\% identity](http://dx.doi.org/10.5281/zenodo.158955), the [Silva reference database v123](http://dx.doi.org/10.5281/zenodo.158958) ([Silva dual license](http://dx.doi.org/10.5281/zenodo.158958)), and the [UNITE ITS database](https://unite.ut.ee/repository.php) (use the General Fasta release files) are available. To follow along, download the `rdp_train_set_14.fa.gz` file, and place it in the directory with the fastq files.
+
+**Assign taxonomy:**
+```{r taxify}
+taxa <- assignTaxonomy(seqtab.nochim, "rdp_train_set_14.fa.gz")
+unname(head(taxa))
+```
+
+Unsurprisingly, the Bacteroidetes are well represented among the most abundant taxa in these fecal samples.
+
+*[Species-level assignment using exact matching](assign.html#species-assignment) is also available.*
+
+&nbsp;
+
+# Evaluate accuracy
+
+One of the processed samples was a "mock community", in which a mixture of 20 known strains was sequenced (this mock community is supposed to be 21 strains, but *P. acnes* was absent). Reference sequences corresponding to these strains were provided in the downloaded zip archive. We dropped the Mock sample when making our sequence table, but we return to that sample and compare the sequence variants inferred by DADA2 to the expected composition of the community.
+
+**Evaluating DADA2's accuracy on the mock community**:
+```{r accuracy}
+unqs.mock <- getUniques(removeBimeraDenovo(mergers[["Mock"]], verbose=TRUE))
+cat("DADA2 inferred", length(unqs.mock), "sample sequences present in the Mock community.\n")
+
+mockRef <- readFasta(file.path(path, "HMP_MOCK.v35.fasta"))
+match.ref <- sum(sapply(names(unqs.mock), function(x) any(grepl(x, as.character(sread(mockRef))))))
+cat("Of those,", sum(match.ref), "were exact matches to the expected reference sequences.\n")
+```
+
+This mock community dataset contained **20** bacterial strains. DADA2 found **20** unique sequences all of which **exactly** match the reference genomes of the expected community members. The residual error rate after the DADA2 pipeline for this sample is **0\%**.
+
+In comparison, [the mothur pipeline finds 34 OTUs in this Mock community sample](http://www.mothur.org/wiki/MiSeq_SOP#Assessing_error_rates). DADA2 infers sequence variants exactly instead of fuzzy 97\% OTUs, and outputs fewer false positives than the OTU methods!
+
+**Here ends the DADA2 portion of the tutorial**.
+
+---------------------------------------------------------
+
+# Bonus: Handoff to phyloseq
+
+The DADA2 pipeline produced a sequence table and a taxonomy table which is appropriate for further analysis in phyloseq. We'll also include the small amount of metadata we have -- the samples are named by the gender (G), mouse subject number (X) and the day post-weaning (Y) it was sampled (eg. GXDY).
+
+**Import into phyloseq**:
+```{r phyloseq, message=FALSE, warning=FALSE}
+library(phyloseq); packageVersion("phyloseq")
+library(ggplot2); packageVersion("ggplot2")
+
+# Make a data.frame holding the sample data
+samples.out <- rownames(seqtab.nochim)
+subject <- sapply(strsplit(samples.out, "D"), `[`, 1)
+gender <- substr(subject,1,1)
+subject <- substr(subject,2,999)
+day <- as.integer(sapply(strsplit(samples.out, "D"), `[`, 2))
+samdf <- data.frame(Subject=subject, Gender=gender, Day=day)
+samdf$When <- "Early"
+samdf$When[samdf$Day>100] <- "Late"
+rownames(samdf) <- samples.out
+
+# Construct phyloseq object (straightforward from dada2 outputs)
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
+               sample_data(samdf), 
+               tax_table(taxa))
+ps
+```
+
+We are now ready to use phyloseq.
+
+**Visualize alpha-diversity**:
+```{r richness, warning=FALSE}
+plot_richness(ps, x="Day", measures=c("Shannon", "Simpson"), color="When") + theme_bw()
+```
+
+No obvious systematic difference in alpha-diversity between early and late samples.
+
+**Ordinate**:
+```{r ordinate}
+ord.nmds.bray <- ordinate(ps, method="NMDS", distance="bray")
+plot_ordination(ps, ord.nmds.bray, color="When", title="Bray NMDS")
+```
+
+Ordination picks out a clear separation between the early and late samples.
+
+**Bar plot**:
+```{r bar-plot}
+top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Day", fill="Family") + facet_wrap(~When, scales="free_x")
+```
+
+Nothing glaringly obvious jumps out from the taxonomic distribution of the top 20 sequences to explain the early-late differentiation.
+
+This was just a bare bones demonstration of how the data from DADA2 can be easily imported into phyloseq and interrogated. For further examples on the many analyses possible with phyloseq, see [the phyloseq web site](https://joey711.github.io/phyloseq/)!

@@ -5,7 +5,7 @@ navbar:
   left:
     - text: "Install"
       href: dada-installation.html
-    - text: "Walkthrough"
+    - text: "Tutorial"
       href: tutorial.html
     - text: "Big Data"
       href: bigdata.html
@@ -16,8 +16,6 @@ navbar:
           href: https://www.bioconductor.org/packages/3.4/bioc/manuals/dada2/man/dada2.pdf
         - text: "Taxonomy"
           href: assign.html
-        - text: "Species"
-          href: species.html
         - text: "Pooling"
           href: pool.html
         - text: "FAQ"

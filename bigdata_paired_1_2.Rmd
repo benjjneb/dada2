@@ -1,11 +1,11 @@
 ---
-title: 'A DADA2 workflow for Big Data: Paired-end (1.4)'
+title: 'A DADA2 workflow for Big Data: Paired-end (1.2)'
 output: html_document
 ---
 
 --------------------------
 
-**<span style="color:red">More discussion of the computational strategy of the big data workflow is available in [the single-read version](bigdata.html).**
+**<span style="color:red">More discussion of the computational strategy of the big data workflow is available in [the single-read version](bigdata_1_2.html).**
 
 ## Starting point
 
@@ -13,7 +13,7 @@ The workflow below expects demultiplexed, per-sample, gzipped fastq files for th
 
 **NOTE: The filename parsing in this workflow expects the paired forward and reverse fastq files to have the same `samplename_` prefix.**
 
-## Filter
+## Filtering
 
 Please consider the filtering parameters, one set of parameters is not optimal for all datasets.
 
@@ -22,22 +22,28 @@ Please consider the filtering parameters, one set of parameters is not optimal f
 library(dada2); packageVersion("dada2")
 # File parsing
 pathF <- "/path/to/FWD" # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
-pathR <- "/path/to/REV" # CHANGE ME ...
+pathR <- "/path/to/REV" # CHANGE ME, ...
 filtpathF <- file.path(pathF, "filtered") # Filtered forward files go into the pathF/filtered/ subdirectory
 filtpathR <- file.path(pathR, "filtered") # ...
-fastqFs <- sort(list.files(pathF, pattern="fastq.gz"))
-fastqRs <- sort(list.files(pathR, pattern="fastq.gz"))
+fastqFs <- sort(list.files(pathF, pattern="fastq"))
+fastqRs <- sort(list.files(pathR, pattern="fastq"))
+dir.create(filtpathF)
+dir.create(filtpathR)
 if(length(fastqFs) != length(fastqRs)) stop("Forward and reverse files do not match.")
 # Filtering: THESE PARAMETERS ARENT OPTIMAL FOR ALL DATASETS
-filterAndTrim(fwd=file.path(pathF, fastqFs), filt=file.path(filtpathF, fastqFs),
-              rev=file.path(pathR, fastqRs), filt.rev=file.path(filtpathR, fastqRs),
-              truncLen=c(240,200), maxEE=2, truncQ=11, maxN=0, rm.phix=TRUE,
-              compress=TRUE, verbose=TRUE, multithread=TRUE)
+for(i in seq_along(fastqFs)) {
+  fqF <- fastqFs[[i]]; fqR <- fastqRs[[i]]
+  fastqPairedFilter(c(file.path(pathF,fqF), file.path(pathR, fqR)),
+              c(file.path(filtpathF, fqF), file.path(filtpathR, fqR)),
+              truncLen=c(240,200),
+              maxEE=2, truncQ=11, maxN=0, rm.phix=TRUE,
+              compress=TRUE, verbose=TRUE)
+}
 ```
 
-## Infer Sequence Variants
+## Sample inference
 
-This portion of the workflow should be performed on a run-by-run basis, as error rates can differ between runs. 
+The `NSAM.LEARN` parameter below should be large enough that the total number of reads across `NSAM.LEARN` samples exceeds 1M. 
 
 **Sample inference script:**
 ```{r inference, eval=FALSE}
@@ -45,8 +51,8 @@ library(dada2); packageVersion("dada2")
 # File parsing
 filtpathF <- "/path/to/FWD/filtered" # CHANGE ME to the directory containing your filtered forward fastq files
 filtpathR <- "/path/to/FWD/filtered" # CHANGE ME ...
-filtFs <- list.files(filtpathF, pattern="fastq.gz", full.names = TRUE)
-filtRs <- list.files(filtpathR, pattern="fastq.gz", full.names = TRUE)
+filtFs <- list.files(filtpathF, full.names = TRUE)
+filtRs <- list.files(filtpathR, full.names = TRUE)
 sample.names <- sapply(strsplit(basename(filtFs), "_"), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
 sample.namesR <- sapply(strsplit(basename(filtRs), "_"), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
 if(!identical(sample.names, sample.namesR)) stop("Forward and reverse files do not match.")
@@ -54,9 +60,16 @@ names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 set.seed(100)
 # Learn forward error rates
-errF <- learnErrors(filtFs, nread=2e6, multithread=TRUE)
+NSAM.LEARN <- 25 # Choose enough samples to have at least 1M reads
+drp.learnF <- derepFastq(sample(filtFs, NSAM.LEARN))
+dd.learnF <- dada(drp.learnF, err=NULL, selfConsist=TRUE, multithread=TRUE)
+errF <- dd.learnF[[1]]$err_out
+rm(drp.learnF);rm(dd.learnF)
 # Learn reverse error rates
-errR <- learnErrors(filtRs, nread=2e6, multithread=TRUE)
+drp.learnR <- derepFastq(sample(filtRs, NSAM.LEARN))
+dd.learnR <- dada(drp.learnR, err=NULL, selfConsist=TRUE, multithread=TRUE)
+errR <- dd.learnR[[1]]$err_out
+rm(drp.learnR);rm(dd.learnR)
 # Sample inference and merger of paired-end reads
 mergers <- vector("list", length(sample.names))
 names(mergers) <- sample.names
@@ -72,28 +85,8 @@ for(sam in sample.names) {
 rm(derepF); rm(derepR)
 # Construct sequence table and remove chimeras
 seqtab <- makeSequenceTable(mergers)
+seqtab <- removeBimeraDenovo(seqtab, multithread=TRUE)
 saveRDS(seqtab, "/path/to/run1/output/seqtab.rds") # CHANGE ME to where you want sequence table saved
 ```
 
 The final result, the count matrix of samples (rows) by non-chimeric sequence variants (columns), is stored as as serialized R object. Read it back into R with `foo <- readRDS("/path/to/run1/output/seqtab.rds")`.
-
-## Merge Runs, Remove Chimeras, Assign Taxonomy
-
-This part is the same as in the single-read version of this workflow.
-
-**Chimera/Taxonomy script:**
-```{r combine, eval=FALSE}
-library(dada2); packageVersion("dada2")
-# Merge multiple runs (if necessary)
-st1 <- readRDS("/path/to/run1/output/seqtab.rds")
-st2 <- readRDS("/path/to/run2/output/seqtab.rds")
-st3 <- readRDS("/path/to/run3/output/seqtab.rds")
-st.all <- mergeSequenceTables(st1, st2, st3)
-# Remove chimeras
-seqtab <- removeBimeraDenovo(st.all, method="consensus", multithread=TRUE)
-# Assign taxonomy
-tax <- assignTaxonomy(seqtab, "/path/to/silva_nr_v123_train_set.fa.gz", multithread=TRUE)
-# Write to disk
-saveRDS(seqtab, "/path/to/study/seqtab_final.rds") # CHANGE ME to where you want sequence table saved
-saveRDS(tax, "/pathto/study/tax_final.rds") # CHANGE ME ...
-```

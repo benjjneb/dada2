@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -181,7 +181,7 @@ $(document).ready(function () {
   <a href="dada-installation.html">Install</a>
 </li>
 <li>
-  <a href="tutorial.html">Walkthrough</a>
+  <a href="tutorial.html">Tutorial</a>
 </li>
 <li>
   <a href="bigdata.html">Big Data</a>
@@ -200,9 +200,6 @@ $(document).ready(function () {
     </li>
     <li>
       <a href="assign.html">Taxonomy</a>
-    </li>
-    <li>
-      <a href="species.html">Species</a>
     </li>
     <li>
       <a href="pool.html">Pooling</a>
@@ -272,14 +269,13 @@ $(document).ready(function () {
 <hr />
 <p>The primary goal of the dada2 package is to infer the exact sequence variants in amplicon sequenced samples and their associated abundances. However, a common companion step, especially when sequencing taxonomic markers such as 16S or 18S rRNA gene or the ITS region in fungi, is to assign taxonomy to the inferred sequence variants (or OTUs) by comparing them to a reference database of sequences with known taxonomy.</p>
 <p>The dada2 package provides two taxonomic assignment methods.</p>
-<p><code>assignTaxonomy(...)</code> implements the RDP classifier method described in <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/">Wang et al. 2007</a>. In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence assignment at each taxonomic level.</p>
-<p>If assignment down to the species level is desired, <code>assignSpecies(...)</code> uses exact string matching against a reference database to assign Genus-species binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if sufficiently unambiguous.</p>
+<p><code>assignTaxonomy(...)</code> implements the RDP naive Bayesian classifier method described in <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/">Wang et al. 2007</a>. In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence assignment at each taxonomic level.</p>
+<p>If assignment down to the species level is desired, <code>assignSpecies(...)</code> uses exact string matching against a reference database to assign <em>Genus species</em> binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if sufficiently unambiguous.</p>
 <p>These two functions can be combined to produce taxonomic assignments from Kingdom down to Species with the <code>addSpecies(...)</code> convenience function.</p>
-<p><em>The species assignment portion of this workflow was introduces in release 1.2 of the dada2 package</em></p>
 <div id="getting-started" class="section level2">
 <h2>Getting started</h2>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.2.1&#39;</code></pre>
+<pre><code>## [1] &#39;1.4.0&#39;</code></pre>
 <p>Both <code>assignTaxonomy</code> and <code>assignSpecies</code> depend on training datasets of taxonomically assigned sequences. Appropriately <a href="training.html">formatted datasets for several popular reference databases</a> are available.</p>
 <p>In order to follow along with the examples below, <a href="training.html">download</a> the <code>rdp_train_set_14.fa.gz</code> and <code>rdp_species_assignment_14.fa.gz</code> files to an appropriate location on your local machine.</p>
 <p> </p>
@@ -300,7 +296,7 @@ $(document).ready(function () {
 &quot;ACGTAGGTCCCGAACGTTGCGCGAAATTACTGGGCGTAAAGGGTCCGTAGGCGGTCTGGTAAGTGGAAGGTGAAAGCCCACGGCTCAACCGTGGAATTGCCTTCCAAACTGCTGGACTTGAGGGCGGAAGAGGTCGGCGGAATTCCCGGTGTAGCGGTGAAATGCGTAGATATCGGGAGGA&quot;)</code></pre>
 <p>We run the <code>assignTaxonomy(...)</code> function with the RDP as the reference dataset. <em>To run the following on your local machine, modify the filename in the second argument to point to where the <code>rdp_train_set_14.fa.gz</code> file sits on your computer.</em></p>
 <pre class="r"><code>set.seed(100) # Initialize random number generator for reproducibility
-taxa &lt;- assignTaxonomy(seqs, &quot;rdp_train_set_14.fa.gz&quot;)
+taxa &lt;- assignTaxonomy(seqs, &quot;rdp_train_set_14.fa.gz&quot;, multithread=FALSE)
 unname(taxa)</code></pre>
 <pre><code>##       [,1]       [,2]              [,3]                 
 ##  [1,] &quot;Bacteria&quot; &quot;Proteobacteria&quot;  &quot;Gammaproteobacteria&quot;
@@ -393,7 +389,7 @@ unname(genus.species)</code></pre>
 ##  [8,] &quot;chrysanthemi/dadantii/dianthicola/dieffenbachiae/nigrifluens/paradisiaca/roseae/solani/zeae&quot;
 ##  [9,] NA                                                                                           
 ## [10,] &quot;marina&quot;</code></pre>
-<p>Several of these sequences exactly match multiple species. Setting <code>allowMultiple</code> to an integer value allows fine-grained control over this behavior. For example, <code>allowMultiple=3</code> returns up to 3 different matched species, but if 4 or more are matched it returns ‘NA’.</p>
+<p>Several of these sequences exactly match multiple species. Setting <code>allowMultiple</code> to an integer value allows fine-grained control over this behavior. For example, <code>allowMultiple=3</code> returns up to 3 different matched species, but if 4 or more are matched it returns <code>NA</code>.</p>
 <p>In many cases it is desirable to link the species annotation in with the broader taxonomic annotation afforded by <code>assignTaxonomy</code>. The convenience function <code>addSpecies</code> serves this purpose, as it takes as input a taxonomy table, and outputs a table with an added species column. <em>Note that only those genus-species binomials which are consistent with the genus assigned in the provided taxonomy table are retained in the output.</em></p>
 <pre class="r"><code>tt &lt;- assignTaxonomy(seqs, &quot;Training/silva_nr_v123_train_set.fa.gz&quot;)
 tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v123.fa.gz&quot;, verbose=TRUE)</code></pre>

@@ -11,7 +11,7 @@
 
 
 
-<title>The DADA2 R package</title>
+<title>A DADA2 workflow for Big Data: Paired-end (1.2)</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -261,63 +261,88 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">The DADA2 R package</h1>
+<h1 class="title toc-ignore">A DADA2 workflow for Big Data: Paired-end (1.2)</h1>
 
 </div>
 
 
-<div id="fast-accurate-single-nucleotide-resolution-for-amplicon-data" class="section level2">
-<h2>Fast, accurate, single-nucleotide resolution for amplicon data</h2>
 <hr />
+<p><strong><span style="color:red">More discussion of the computational strategy of the big data workflow is available in <a href="bigdata_1_2.html">the single-read version</a>.</strong></p>
+<div id="starting-point" class="section level2">
+<h2>Starting point</h2>
+<p>The workflow below expects demultiplexed, per-sample, gzipped fastq files for the primer-free forward reads of a Hiseq run to be in the directory <code>pathF</code> (defined below), and the corresponding primer-free reverse read files to be in a different directory <code>pathR</code>. The string parsing below expects forward and reverse filenames of the following format: <code>samplename_XXX.fastq.gz</code>, but other formats simply require modification to the filename parsing portions of these scripts.</p>
+<p><strong>NOTE: The filename parsing in this workflow expects the paired forward and reverse fastq files to have the same <code>samplename_</code> prefix.</strong></p>
 </div>
-<div id="installation" class="section level2">
-<h2>Installation</h2>
-<p>Binaries for the current release version of DADA2 (1.4) are available from Bioconductor (note that you must have R 3.4.0 or newer, and <a href="https://www.bioconductor.org/install/">Biocondcutor version 3.5</a>, to install the current release from Bioconductor):</p>
-<pre class="s"><code>## try http:// if https:// URLs are not supported
-source(&quot;https://bioconductor.org/biocLite.R&quot;)
-biocLite(&quot;dada2&quot;)</code></pre>
-<p>If you wish to install the latest and greatest development version, or to install to R 3.3, see our <a href="dada-installation.html">from-source installation instructions</a>.</p>
-<p> </p>
+<div id="filtering" class="section level2">
+<h2>Filtering</h2>
+<p>Please consider the filtering parameters, one set of parameters is not optimal for all datasets.</p>
+<p><strong>Filtering script:</strong></p>
+<pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
+# File parsing
+pathF &lt;- &quot;/path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
+pathR &lt;- &quot;/path/to/REV&quot; # CHANGE ME, ...
+filtpathF &lt;- file.path(pathF, &quot;filtered&quot;) # Filtered forward files go into the pathF/filtered/ subdirectory
+filtpathR &lt;- file.path(pathR, &quot;filtered&quot;) # ...
+fastqFs &lt;- sort(list.files(pathF, pattern=&quot;fastq&quot;))
+fastqRs &lt;- sort(list.files(pathR, pattern=&quot;fastq&quot;))
+dir.create(filtpathF)
+dir.create(filtpathR)
+if(length(fastqFs) != length(fastqRs)) stop(&quot;Forward and reverse files do not match.&quot;)
+# Filtering: THESE PARAMETERS ARENT OPTIMAL FOR ALL DATASETS
+for(i in seq_along(fastqFs)) {
+  fqF &lt;- fastqFs[[i]]; fqR &lt;- fastqRs[[i]]
+  fastqPairedFilter(c(file.path(pathF,fqF), file.path(pathR, fqR)),
+              c(file.path(filtpathF, fqF), file.path(filtpathR, fqR)),
+              truncLen=c(240,200),
+              maxEE=2, truncQ=11, maxN=0, rm.phix=TRUE,
+              compress=TRUE, verbose=TRUE)
+}</code></pre>
 </div>
-<div id="tutorials" class="section level2">
-<h2>Tutorials</h2>
-<p><strong>Start here:</strong> The <a href="tutorial.html">DADA2 tutorial</a> goes through a typical workflow for paired end Illumina Miseq data: raw amplicon sequence data is processed into the table of biological sequence variants (SVs) present in each sample.</p>
-<p>The <a href="bigdata.html">DADA2 Workflow on Big Data</a> goes through workflow optimized to run on large datasets (10s of millions to billions of reads).</p>
-<p>Short demonstrations of <a href="assign.html">assigning taxonomy</a> and <a href="assign.html">assigning species</a> to sequences.</p>
-<p> </p>
-</div>
-<div id="benchmarking" class="section level2">
-<h2>Benchmarking</h2>
-<p>Our <a href="http://dx.doi.org/10.1038/nmeth.3869">manuscript</a> (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4927377/">OA link</a>) compares the accuracy of DADA2 and other methods on several mock community datasets.</p>
-<p>Further <a href="SotA.html">benchmarking of DADA2 against the methods evaluated in a recent QIIME1 benchmarking paper</a> is available.</p>
-<p>We describe <a href="http://www.biorxiv.org/content/early/2017/03/07/113597">the broad advantages of exact sequence variants over OTUs in a recent preprint</a>.</p>
-<p>And sometimes a picture says a thousand word:</p>
-<div class="figure">
-<img src="dada2_accuracy.jpg" />
-
-</div>
-<p> </p>
-</div>
-<div id="advantages" class="section level2">
-<h2>Advantages</h2>
-<ul>
-<li><p><strong>High Resolution</strong>: DADA2 infers exact sequence variants from amplicon data, resolving differences of even 1 or 2 nucleotides.</p></li>
-<li><p><strong>Accuracy</strong>: DADA2 reports fewer false positive sequence variants than other methods report false OTUs.</p></li>
-<li><p><strong>Computational Scaling</strong>: The compute time of DADA2 scales linearly sample number, and memory requirements are essentially flat.</p></li>
-<li><p><strong>Open Source</strong>: DADA2 is licensed under the <a href="http://www.gnu.org/licenses/lgpl-3.0.en.html">LGPL version 3</a>.</p></li>
-</ul>
-<p> </p>
-</div>
-<div id="support-and-development" class="section level2">
-<h2>Support and Development</h2>
-<p>Planned feature improvements are publicly catalogued at the main DADA2 development site on github; specifically on the <a href="https://github.com/benjjneb/dada2/issues">issues tracker for DADA2</a>. If the feature you are hoping for is not listed, you are welcome to add it as a feature request on this page.</p>
-<p>Bug reports and problems using DADA2 are also welcome on <a href="https://github.com/benjjneb/dada2/issues">the issues tracker</a>. We prefer posting to the issue tracker over email as these posts are searchable by other users who may experience the same problems.</p>
-<p> </p>
-</div>
-<div id="how" class="section level2">
-<h2>How?</h2>
-<p><strong>Accuracy:</strong> DADA2’s crucial advantage is that it uses more of the data. The DADA2 error model incorporates quality information, which is ignored by all other methods after filtering. The DADA2 error model incorporates quantitative abundances, whereas most other methods use abundance ranks if they use abundance at all. The DADA2 error model identifies the differences between sequences, eg. A-&gt;C, whereas other methods merely count the mismatches. DADA2 can parameterize its error model from the data itself, rather than relying on previous datasets that may or may not reflect the PCR and sequencing protocols used in your study.</p>
-<p><strong>Performance:</strong> DADA2’s performance gains come from the fact that it infers sequences exactly rather than constructing OTUs. De novo OTUs cannot be compared across samples unless all samples were pooled during OTU construction. However, <a href="http://www.biorxiv.org/content/early/2017/03/07/113597">exact sequences <strong>are</strong> comparable across samples, as exact sequences are consistent labels</a>. Thus DADA2 can analyze each sample independently, resulting in linear scaling with sample number and trivial parallelization.</p>
+<div id="sample-inference" class="section level2">
+<h2>Sample inference</h2>
+<p>The <code>NSAM.LEARN</code> parameter below should be large enough that the total number of reads across <code>NSAM.LEARN</code> samples exceeds 1M.</p>
+<p><strong>Sample inference script:</strong></p>
+<pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
+# File parsing
+filtpathF &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered forward fastq files
+filtpathR &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME ...
+filtFs &lt;- list.files(filtpathF, full.names = TRUE)
+filtRs &lt;- list.files(filtpathR, full.names = TRUE)
+sample.names &lt;- sapply(strsplit(basename(filtFs), &quot;_&quot;), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
+sample.namesR &lt;- sapply(strsplit(basename(filtRs), &quot;_&quot;), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
+if(!identical(sample.names, sample.namesR)) stop(&quot;Forward and reverse files do not match.&quot;)
+names(filtFs) &lt;- sample.names
+names(filtRs) &lt;- sample.names
+set.seed(100)
+# Learn forward error rates
+NSAM.LEARN &lt;- 25 # Choose enough samples to have at least 1M reads
+drp.learnF &lt;- derepFastq(sample(filtFs, NSAM.LEARN))
+dd.learnF &lt;- dada(drp.learnF, err=NULL, selfConsist=TRUE, multithread=TRUE)
+errF &lt;- dd.learnF[[1]]$err_out
+rm(drp.learnF);rm(dd.learnF)
+# Learn reverse error rates
+drp.learnR &lt;- derepFastq(sample(filtRs, NSAM.LEARN))
+dd.learnR &lt;- dada(drp.learnR, err=NULL, selfConsist=TRUE, multithread=TRUE)
+errR &lt;- dd.learnR[[1]]$err_out
+rm(drp.learnR);rm(dd.learnR)
+# Sample inference and merger of paired-end reads
+mergers &lt;- vector(&quot;list&quot;, length(sample.names))
+names(mergers) &lt;- sample.names
+for(sam in sample.names) {
+  cat(&quot;Processing:&quot;, sam, &quot;\n&quot;)
+    derepF &lt;- derepFastq(filtFs[[sam]])
+    ddF &lt;- dada(derepF, err=errF, multithread=TRUE)
+    derepR &lt;- derepFastq(filtRs[[sam]])
+    ddR &lt;- dada(derepR, err=errR, multithread=TRUE)
+    merger &lt;- mergePairs(ddF, derepF, ddR, derepR)
+    mergers[[sam]] &lt;- merger
+}
+rm(derepF); rm(derepR)
+# Construct sequence table and remove chimeras
+seqtab &lt;- makeSequenceTable(mergers)
+seqtab &lt;- removeBimeraDenovo(seqtab, multithread=TRUE)
+saveRDS(seqtab, &quot;/path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to where you want sequence table saved</code></pre>
+<p>The final result, the count matrix of samples (rows) by non-chimeric sequence variants (columns), is stored as as serialized R object. Read it back into R with <code>foo &lt;- readRDS(&quot;/path/to/run1/output/seqtab.rds&quot;)</code>.</p>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">

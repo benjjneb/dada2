@@ -35,7 +35,7 @@ fastqFilter(..., trimLeft=15)
 
 Do your reads overlap after the trimming and filtering you performed? In the tutorial we analyzed 2x250 Miseq reads using the 515F and 805R primers, meaning the reads strongly overlap and we could trim as dictated by the quality scores. However, if you are using a less-overlapping sequencing/primer-set combination, you must retain enough sequence for the reads to healthily overlap (`mergePairs` requires 20 nts of overlap by default).
 
-Another possibility is that you have bad data. One quick way to test this is to simply look at the forward reads alone. If it's 16S data, does assignTaxonomy identify any of the, say, top 20 output sequences? If not, or if you are using non-16S data, try BLAST-ing the top output sequences against nt. Are they hitting what you expect? If not, you probably have a bad sequencing run on your hands.
+Another possibility is that you have bad data. One quick way to test this is to simply look at the forward reads alone. If it's 16S data, does `assignTaxonomy` identify any of the, say, top 20 output sequences? If not, or if you are using non-16S data, try BLAST-ing the top output sequences against nt. Are they hitting what you expect? If not, you probably have a bad sequencing run on your hands.
 
 &nbsp;
 
@@ -49,7 +49,7 @@ The most common reason that far too many reads are flagged as chimeric is that p
 
 ## How can I remove primers/adapters/etc from my amplicon reads?
 
-We recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic) for this purpose, but there are many other options that work as well. You have to tell these programs what the primers you used were!
+We recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic) for this purpose. Provided the primers are at the start of your reads and are a constant length, you can also use the `trimLeft` argument of dada2's filtering functions to remove the primer nucleotides. Please double-check that your primers have been removed! The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.
 
 &nbsp;
 
@@ -68,5 +68,11 @@ fastqPairedFilter(c("forwardReads.fastq", "reverseReads.fastq"),
                   c("forwardMatch.fastq", "reverseMatch.fastq"),
                   matchIDs=TRUE)
 ```
+
+&nbsp;
+
+## What about [INSERT OTHER QUESTION]?
+
+We actively support the dada2 package through the [issues tracker](https://github.com/benjjneb/dada2/issues) on github. You can search previously posted topics using the search box at the top of the page (delete the "is:issue is:open" text and put in your search keywords). If you don't find an answer for your issue in a previous post, please open a new issue and we will be happy to help.
 
 &nbsp;

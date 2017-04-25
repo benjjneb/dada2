@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -181,7 +181,7 @@ $(document).ready(function () {
   <a href="dada-installation.html">Install</a>
 </li>
 <li>
-  <a href="tutorial.html">Walkthrough</a>
+  <a href="tutorial.html">Tutorial</a>
 </li>
 <li>
   <a href="bigdata.html">Big Data</a>
@@ -200,9 +200,6 @@ $(document).ready(function () {
     </li>
     <li>
       <a href="assign.html">Taxonomy</a>
-    </li>
-    <li>
-      <a href="species.html">Species</a>
     </li>
     <li>
       <a href="pool.html">Pooling</a>
@@ -272,22 +269,22 @@ $(document).ready(function () {
 <hr />
 <div id="install-binaries-from-bioconductor" class="section level2">
 <h2><strong>Install binaries from Bioconductor</strong></h2>
-<p>Binary installation is available through the Bioconductor package repository. Currently, <strong>binary installation is only supported for the current release version of dada2, and only on R 3.3.1 and later</strong>.</p>
+<p>Binary installation is available through the Bioconductor package repository. Binary installation of the current version of the dada2 package (1.4) requires R 3.4:</p>
 <pre class="s"><code>## try http:// if https:// URLs are not supported
 source(&quot;https://bioconductor.org/biocLite.R&quot;)
 biocLite(&quot;dada2&quot;)</code></pre>
 <p>Allow installation of any additional packages requested. You are ready to start using dada2!</p>
-<p><em>If the above installed version 1.0.3 of dada2, you must first update your Bioconductor installation to version 3.4: <code>biocLite(&quot;BiocUpgrade&quot;)</code> then <code>biocLite()</code></em></p>
+<p><em>If the above installed an early version of dada2 (1.0 or 1.2) you can get the current dada2 release by updating your Bioconductor installation to version 3.5: <code>biocLite(&quot;BiocUpgrade&quot;)</code> then <code>biocLite()</code></em></p>
 <hr />
 </div>
 <div id="install-from-source" class="section level2">
 <h2><strong>Install from source</strong></h2>
-<p>Source installation is available for R3.2 or later, and the latest and greatest features will first be available only through source installs of the development branch.</p>
+<p>Source installation is available for R3.2 or later, and the latest and greatest features will be available first through source installs of the development branch.</p>
 <div id="download" class="section level3">
 <h3>0. Download</h3>
 <ul>
-<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.2)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.2.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.2.tar.gz">tarball</a>.</p></li>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.3)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.4)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.4.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.4.tar.gz">tarball</a>.</p></li>
+<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.5)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
 </ul>
 </div>
 <div id="install-external-dependencies" class="section level3">
@@ -321,7 +318,7 @@ devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
                  dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
 <p>Check Package Version</p>
 <pre class="r"><code>packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.2.1&#39;</code></pre>
+<pre><code>## [1] &#39;1.5.0&#39;</code></pre>
 </div>
 <div id="troubleshoot-dependencies-optional" class="section level3">
 <h3>3. Troubleshoot Dependencies (Optional)</h3>

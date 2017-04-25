@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -181,7 +181,7 @@ $(document).ready(function () {
   <a href="dada-installation.html">Install</a>
 </li>
 <li>
-  <a href="tutorial.html">Walkthrough</a>
+  <a href="tutorial.html">Tutorial</a>
 </li>
 <li>
   <a href="bigdata.html">Big Data</a>
@@ -200,9 +200,6 @@ $(document).ready(function () {
     </li>
     <li>
       <a href="assign.html">Taxonomy</a>
-    </li>
-    <li>
-      <a href="species.html">Species</a>
     </li>
     <li>
       <a href="pool.html">Pooling</a>
@@ -275,7 +272,7 @@ $(document).ready(function () {
 <h1>Getting ready</h1>
 <p>Load the necessary libraries:</p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.2.1&#39;</code></pre>
+<pre><code>## [1] &#39;1.4.0&#39;</code></pre>
 <pre class="r"><code>library(microbenchmark); packageVersion(&quot;microbenchmark&quot;)</code></pre>
 <pre><code>## [1] &#39;1.4.2.1&#39;</code></pre>
 <p>We’ll be working with the same data used in <a href="tutorial.html">the tutorial</a>, so grab that data if you don’t have it already and then set your working directory to its location:</p>
@@ -298,7 +295,6 @@ names(drps) &lt;- sample.names</code></pre>
 <h1>Pooling for error rate estimation</h1>
 <p>The first type of pooling we’ll consider is pooling samples for error rate estimation. This is the default functionality of the <code>dada(...)</code> function when passed a list of samples, but for comparison purposes we’ll first look at what happens if we estimate error rates using just one sample alone:</p>
 <pre class="r"><code>dd1 &lt;- dada(drps[[1]], err=NULL, selfConsist=TRUE, multithread=TRUE)</code></pre>
-<pre><code>## Initial error matrix unspecified. Error rates will be initialized to the maximum possible estimate from this data.</code></pre>
 <pre><code>## Initializing error rates to maximum possible estimate.
 ## Sample 1 - 7228 reads in 2014 unique sequences.
 ##    selfConsist step 2 
@@ -309,11 +305,13 @@ names(drps) &lt;- sample.names</code></pre>
 ## 
 ## Convergence after  5  rounds.</code></pre>
 <pre class="r"><code>plotErrors(dd1, nominalQ=TRUE)</code></pre>
+<pre><code>## Warning: Transformation introduced infinite values in continuous y-axis
+
+## Warning: Transformation introduced infinite values in continuous y-axis</code></pre>
 <p><img src="pool_files/figure-html/estimate-1-1.png" width="672" /></p>
 <p>The two things to look for in the output of <code>plotErrors</code> are that the observed error rates (black dots) are reasonably well fit by the modeled error rates (black line), and that the error rates are sensible, in particular that they are mostly decreasing with quality score.</p>
 <p>Now let’s pool our samples while estimating error rates:</p>
 <pre class="r"><code>dd &lt;- dada(drps, err=NULL, selfConsist=TRUE, multithread=TRUE)</code></pre>
-<pre><code>## Initial error matrix unspecified. Error rates will be initialized to the maximum possible estimate from this data.</code></pre>
 <pre><code>## Initializing error rates to maximum possible estimate.
 ## Sample 1 - 7228 reads in 2014 unique sequences.
 ## Sample 2 - 5382 reads in 1667 unique sequences.
@@ -343,6 +341,9 @@ names(drps) &lt;- sample.names</code></pre>
 ## 
 ## Convergence after  5  rounds.</code></pre>
 <pre class="r"><code>plotErrors(dd, nominalQ=TRUE)</code></pre>
+<pre><code>## Warning: Transformation introduced infinite values in continuous y-axis
+
+## Warning: Transformation introduced infinite values in continuous y-axis</code></pre>
 <p><img src="pool_files/figure-html/estimate-pool-1.png" width="672" /></p>
 <p>The difference is not large, but the fit between the observed points and the modeled line has clearly improved by pooling together more data.</p>
 <p>There are two additional things to note here. First, it is not advised to pool samples that don’t share an “error history”, in particular samples that come from different sequencing runs or different PCR protocols. Samples from different runs should typically be run through the <code>dada(...)</code> function separately, so that the correct run-specific error rates can be learned.</p>
@@ -377,43 +378,43 @@ names(drps) &lt;- sample.names</code></pre>
 ## Sample 20 - 4377 reads in 920 unique sequences.</code></pre>
 <pre><code>## Unit: seconds
 ##                                         expr      min       lq     mean
-##  dd.sep &lt;- dada(drps, err = dd[[1]]$err_out) 32.13928 32.13928 32.13928
+##  dd.sep &lt;- dada(drps, err = dd[[1]]$err_out) 24.35027 24.35027 24.35027
 ##    median       uq      max neval
-##  32.13928 32.13928 32.13928     1</code></pre>
+##  24.35027 24.35027 24.35027     1</code></pre>
 <p>Now we pool the samples for sample inference:</p>
 <pre class="r"><code>microbenchmark(dd.pool &lt;- dada(drps, err=dd[[1]]$err_out, pool=TRUE), times=1)</code></pre>
 <pre><code>## 20 samples were pooled: 141735 reads in 23616 unique sequences.</code></pre>
 <pre><code>## Unit: seconds
 ##                                                       expr      min
-##  dd.pool &lt;- dada(drps, err = dd[[1]]$err_out, pool = TRUE) 73.68671
+##  dd.pool &lt;- dada(drps, err = dd[[1]]$err_out, pool = TRUE) 62.40344
 ##        lq     mean   median       uq      max neval
-##  73.68671 73.68671 73.68671 73.68671 73.68671     1</code></pre>
-<p>The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of the multithreading introduced in <a href="https://github.com/benjjneb/dada2">version 1.1</a>) but sample-by-sample processing <a href="bigdata.html">remains computationally tractable out to any study size</a> (eg. 20 Hiseq runs).</p>
+##  62.40344 62.40344 62.40344 62.40344 62.40344     1</code></pre>
+<p>The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of multithreading) but sample-by-sample processing <a href="bigdata.html">remains computationally tractable out to any study size</a> (eg. 20 Hiseq runs).</p>
 <p>We’ll also take a quick look at the differences in output:</p>
 <pre class="r"><code>st &lt;- makeSequenceTable(dd.sep)
-st.sep &lt;- removeBimeraDenovo(st, multithread=TRUE)
-
-st &lt;- makeSequenceTable(dd.pool)
-st.pool &lt;- removeBimeraDenovo(st, multithread=TRUE)
-
-dim(st.sep); dim(st.pool)</code></pre>
-<pre><code>## [1]  20 267</code></pre>
-<pre><code>## [1]  20 288</code></pre>
+st.sep &lt;- removeBimeraDenovo(st, multithread=TRUE)</code></pre>
+<pre><code>## As of the 1.4 release, the default method changed to consensus (from pooled).</code></pre>
+<pre class="r"><code>st &lt;- makeSequenceTable(dd.pool)
+st.pool &lt;- removeBimeraDenovo(st, multithread=TRUE)</code></pre>
+<pre><code>## As of the 1.4 release, the default method changed to consensus (from pooled).</code></pre>
+<pre class="r"><code>dim(st.sep); dim(st.pool)</code></pre>
+<pre><code>## [1]  20 277</code></pre>
+<pre><code>## [1]  20 297</code></pre>
 <p>As expected, pooling detected a few more sequence variants, due to an increased power to detect rare variants.</p>
 <pre class="r"><code>sq.sep &lt;- getSequences(st.sep)
 sq.pool &lt;- getSequences(st.pool)
 sum(!sq.sep %in% sq.pool);sum(sq.sep %in% sq.pool); sum(!sq.pool %in% sq.sep)</code></pre>
-<pre><code>## [1] 15</code></pre>
-<pre><code>## [1] 252</code></pre>
-<pre><code>## [1] 36</code></pre>
+<pre><code>## [1] 21</code></pre>
+<pre><code>## [1] 256</code></pre>
+<pre><code>## [1] 41</code></pre>
 <pre class="r"><code>sum(st.sep[,!sq.sep %in% sq.pool])</code></pre>
-<pre><code>## [1] 185</code></pre>
+<pre><code>## [1] 237</code></pre>
 <pre class="r"><code>sum(st.sep[,sq.sep %in% sq.pool])</code></pre>
-<pre><code>## [1] 135168</code></pre>
+<pre><code>## [1] 135360</code></pre>
 <pre class="r"><code>sum(st.pool[,sq.pool %in% sq.sep])</code></pre>
-<pre><code>## [1] 127771</code></pre>
+<pre><code>## [1] 128010</code></pre>
 <pre class="r"><code>sum(st.pool[,!sq.pool %in% sq.sep])</code></pre>
-<pre><code>## [1] 955</code></pre>
+<pre><code>## [1] 1265</code></pre>
 <p>The large majority of sequences, and the vast majority of reads (&gt;99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities.</p>
 </div>
 

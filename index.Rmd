@@ -8,7 +8,7 @@ title: "The DADA2 R package"
 
 ## Installation
 
-Binaries for the current release version of DADA2 (1.2) are available from Bioconductor (note that you must have R 3.3.1 or newer, and [Biocondcutor version 3.4](https://www.bioconductor.org/install/), to install the current release from Bioconductor):
+Binaries for the current release version of DADA2 (1.4) are available from Bioconductor (note that you must have R 3.4.0 or newer, and [Biocondcutor version 3.5](https://www.bioconductor.org/install/), to install the current release from Bioconductor):
 
 ```S
 ## try http:// if https:// URLs are not supported
@@ -16,7 +16,7 @@ source("https://bioconductor.org/biocLite.R")
 biocLite("dada2")
 ```
 
-If you wish to install the latest and greatest development version, or to install to R 3.2, see our [from-source installation instructions](dada-installation.html).
+If you wish to install the latest and greatest development version, or to install to earlier versions of R, see our [from-source installation instructions](dada-installation.html).
 
 &nbsp;
 
@@ -34,7 +34,9 @@ Short demonstrations of [assigning taxonomy](assign.html) and [assigning species
 
 Our [manuscript](http://dx.doi.org/10.1038/nmeth.3869) ([OA link](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4927377/)) compares the accuracy of DADA2 and other methods on several mock community datasets. 
 
-Further [benchmarking of DADA2 against the methods evaluated in a recent QIIME1 benchmarking paper](SotA.html) is also available.
+Further [benchmarking of DADA2 against the methods evaluated in a recent QIIME1 benchmarking paper](SotA.html) is available.
+
+We describe [the broad advantages of exact sequence variants over OTUs in a recent preprint](http://www.biorxiv.org/content/early/2017/03/07/113597).
 
 And sometimes a picture says a thousand word:
 
@@ -44,7 +46,7 @@ And sometimes a picture says a thousand word:
 
 ## Advantages
 
-* **High Resolution**: DADA2 infers exact sequence variants from Illumina amplicon data, resolving differences of even 1 or 2 nucleotides.
+* **High Resolution**: DADA2 infers exact sequence variants from amplicon data, resolving differences of even 1 or 2 nucleotides.
   
 * **Accuracy**: DADA2 reports fewer false positive sequence variants than other methods report false OTUs.
 
@@ -66,4 +68,4 @@ Bug reports and problems using DADA2 are also welcome on [the issues tracker](ht
 
 **Accuracy:** DADA2's crucial advantage is that it uses more of the data. The DADA2 error model incorporates quality information, which is ignored by all other methods after filtering. The DADA2 error model incorporates quantitative abundances, whereas most other methods use abundance ranks if they use abundance at all. The DADA2 error model identifies the differences between sequences, eg. A->C, whereas other methods merely count the mismatches. DADA2 can parameterize its error model from the data itself, rather than relying on previous datasets that may or may not reflect the PCR and sequencing protocols used in your study.
 
-**Performance:** DADA2's performance gains come from the fact that it infers sequences exactly rather than constructing OTUs. De novo OTUs cannot be compared across samples unless all samples were pooled during OTU construction. However, exact sequences **are** comparable across samples, as exact sequences are consistent labels. Thus DADA2 can analyze each sample independently, resulting in linear scaling with sample number and trivial parallelization.
+**Performance:** DADA2's performance gains come from the fact that it infers sequences exactly rather than constructing OTUs. De novo OTUs cannot be compared across samples unless all samples were pooled during OTU construction. However, [exact sequences **are** comparable across samples, as exact sequences are consistent labels](http://www.biorxiv.org/content/early/2017/03/07/113597). Thus DADA2 can analyze each sample independently, resulting in linear scaling with sample number and trivial parallelization.

@@ -8,13 +8,11 @@ The primary goal of the dada2 package is to infer the exact sequence variants in
 
 The dada2 package provides two taxonomic assignment methods.
 
-`assignTaxonomy(...)` implements the RDP classifier method described in [Wang et al. 2007](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/). In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence assignment at each taxonomic level.
+`assignTaxonomy(...)` implements the RDP naive Bayesian classifier method described in [Wang et al. 2007](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/). In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence assignment at each taxonomic level.
 
-If assignment down to the species level is desired, `assignSpecies(...)` uses exact string matching against a reference database to assign Genus-species binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if sufficiently unambiguous.
+If assignment down to the species level is desired, `assignSpecies(...)` uses exact string matching against a reference database to assign *Genus species* binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if sufficiently unambiguous.
 
 These two functions can be combined to produce taxonomic assignments from Kingdom down to Species with the `addSpecies(...)` convenience function.
-
-*The species assignment portion of this workflow was introduces in release 1.2 of the dada2 package*
 
 ## Getting started
 
@@ -49,7 +47,7 @@ We run the `assignTaxonomy(...)` function with the RDP as the reference dataset.
 
 ```{r}
 set.seed(100) # Initialize random number generator for reproducibility
-taxa <- assignTaxonomy(seqs, "rdp_train_set_14.fa.gz")
+taxa <- assignTaxonomy(seqs, "rdp_train_set_14.fa.gz", multithread=FALSE)
 unname(taxa)
 ```
 
@@ -79,7 +77,7 @@ By default the `assignSpecies` method only returns species assignments if there 
 unname(assignSpecies(seqs, "Training/rdp_species_assignment_14.fa.gz", allowMultiple=TRUE))
 ```
 
-Several of these sequences exactly match multiple species. Setting `allowMultiple` to an integer value allows fine-grained control over this behavior. For example, `allowMultiple=3` returns up to 3 different matched species, but if 4 or more are matched it returns 'NA'.
+Several of these sequences exactly match multiple species. Setting `allowMultiple` to an integer value allows fine-grained control over this behavior. For example, `allowMultiple=3` returns up to 3 different matched species, but if 4 or more are matched it returns `NA`.
 
 In many cases it is desirable to link the species annotation in with the broader taxonomic annotation afforded by `assignTaxonomy`. The convenience function `addSpecies` serves this purpose, as it takes as input a taxonomy table, and outputs a table with an added species column. *Note that only those genus-species binomials which are consistent with the genus assigned in the provided taxonomy table are retained in the output.*
 

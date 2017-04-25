@@ -1,13 +1,15 @@
 ---
-title: "A DADA2 workflow for Big Data"
+title: "A DADA2 workflow for Big Data (1.4)"
 output: html_document
 ---
 
 --------------------------
 
-As the size of datasets grows the computational tractability of bioinformatics tools face new challenges. In the amplicon sequencing context the Hiseq platform is seeing increasing uptake, especially with the advent of 250nt Hiseq chemistry. A Hiseq lane typically contains 100M+ reads, and multiplexed samples on a Hiseq lane are typically sequenced to a depth of 100k+ reads.
+As the size of datasets grows the computational tractability of bioinformatics tools face new challenges. In the amplicon sequencing context the Hiseq platform is seeing increasing usage, especially with the advent of 250nt Hiseq chemistry. A Hiseq lane typically contains 100M+ reads, and multiplexed samples on a Hiseq lane are typically sequenced to a depth of 100k+ reads.
 
-The DADA2 pipeline capably handles data at this scale with relatively modest time and memory requirements. However, certain adjustments to the [introductory workflow](tutorial.html) make a substantial difference in computational costs. Here we present such a workflow, optimized to reduce computational time and control memory requirements. *Note that this workflow benefits significantly from the multithreading that was introduced in the 1.2 release.*
+The DADA2 pipeline capably handles data at this scale with relatively modest time and memory requirements. However, certain adjustments to the [tutorial workflow](tutorial.html) make a substantial difference in computational costs. Here we present such a workflow, optimized to reduce computational time and control memory requirements.
+
+*This workflow takes advantage of updated functionality in the 1.4 release. The [workflow for the previous 1.2 version](big_dada_1_2.html) is also available.*
 
 --------------------------
 
@@ -15,109 +17,107 @@ The DADA2 pipeline capably handles data at this scale with relatively modest tim
 
 If solely interested in the recipe, feel free to jump ahead to the next section, but we'll start by outlining the basic strategy being used here to reduce the computational costs of the DADA2 pipeline, and how the unique features of DADA2 are being leveraged to implement that strategy.
 
-The fundamental challenge of *de novo* bioinformatic methods is that memory requirements and running time scale quadratically with sequencing depth, because these methods rely on pairwise comparisons between all sequencing reads. There are many ways to ameliorate this issue (eg. dereplication, quality filtering, ...) but the fundamental scaling issue remains.
+The fundamental challenge of *de novo* OTU methods is that memory requirements and running time scale quadratically with sequencing depth, because these methods rely on pairwise comparisons between all sequencing reads. There are many ways to ameliorate this issue (eg. dereplication, quality filtering, ...) but the fundamental scaling issue remains.
 
-DADA2 breaks this quadratic scaling by **processing samples independently**. This is possible because DADA2 infers exact biological sequences, and exact sequences are consistent labels that can be directly compared across separately processed samples. This isn't the case for OTUs, as the boundaries and membership of OTUs depend on the rest of the dataset, and thus are only valid and consistent when all sequences are pooled together for OTU picking.
+DADA2 breaks this quadratic scaling by **processing samples independently**. This is possible because DADA2 infers exact sequence variants, and exact sequences are consistent labels that can be directly compared across separately processed samples. This isn't the case for OTUs, as the boundaries and membership of de novo OTUs depend on the rest of the dataset, and thus are only valid and consistent when all sequences are pooled together for OTU picking. 
 
 Separable sample processing allows DADA2's running time to scale linearly in the number of samples, and its memory requirements to remain nearly flat. In addition, the most costly portion of the workflow is fully [data parallelizable](https://en.wikipedia.org/wiki/Data_parallelism), and can be spread across non-interacting compute nodes, a particularly attractive feature in the era of cloud computing.
 
+*These issues are discussed in more detail in our preprint ["Exact sequence variants should replace operational taxonomic units in marker gene data analysis"](http://www.biorxiv.org/content/early/2017/03/07/113597)*.
+
 ## Starting point
 
-The workflow below expects demultiplexed, per-sample, gzipped fastq files for the primer-free forward reads of a Hiseq run to be in the directory `path` (defined below). The string parsing below expects filenames of the following format: `samplename_XXX.fastq.gz`, but other formats simply require modification to the filename parsing portions of these scripts.
+This workflow expects demultiplexed, per-sample, gzipped fastq files for the primer-free forward reads of a Hiseq run to be in the directory `path` (defined below). The string parsing expects filenames of the following format: `samplename_XXX.fastq.gz`.
 
 **<span style="color:red">A version of this workflow [for paired end data](bigdata_paired.html) is also available.**
 
-## Filtering
+## Filter
 
-I typically process large datasets in two stages: Filtering and then Sample Inference. This makes sense because filtering is inherently a linear-time process with low memory requirements, and because it is often useful to filter a couple times with modified parameters to find the best choices for different sequencing runs. These two steps are presented as two self-contained chunks, which can be individually submitted as jobs on a server/cloud environment.
+We typically process large datasets in three stages: Filtering, Sample Inference and Chimeras/Taxonomy. This allows filtering, a linear-time process with low memory requirements, to be performed a couple times with modified parameters to find the best choices for different sequencing runs as needed. The Filtering, Sample Inference and Chimeras/Taxonomy workflow steps are presented here as self-contained chunks, which can be individually submitted as jobs on a server/cloud environment.
 
 **Filtering script:**
 ```{r filter, eval=FALSE}
 library(dada2); packageVersion("dada2")
-# File parsing
+# Filename parsing
 path <- "/path/to/FWD" # CHANGE ME to the directory containing your demultiplexed fastq files
 filtpath <- file.path(path, "filtered") # Filtered files go into the filtered/ subdirectory
-dir.create(filtpath)
-fns <- list.files(path)
-fastqs <- fns[grepl(".fastq.gz$", fns)] # CHANGE if different file extensions
+fns <- list.files(path, pattern="fastq.gz") # CHANGE if different file extensions
 # Filtering
-for(i in seq_along(fastqs)) {
-  fastq <- fastqs[[i]]
-  fastqFilter(file.path(path,fastq), file.path(filtpath, fastq),
-              trimLeft=10, truncLen=240,
-              maxEE=1, truncQ=11, maxN=0, rm.phix=TRUE,
-              compress=TRUE, verbose=TRUE)
-}
+filterAndTrim(file.path(path,fns), file.path(filtpath,fns), 
+              truncLen=240, maxEE=1, truncQ=11, rm.phix=TRUE,
+              compress=TRUE, verbose=TRUE, multithread=TRUE)
 ```
 
-A brief aside: **If there is only one part of any amplicon bioinformatics workflow on which you spend time considering the parameters, it should be filtering!** The above parameters work well for good quality 250nt Hiseq data, but they are not set in stone, and should be changed if they don't work for your data. `maxN=0` is required for later processing, but all the other parameters can be changed. If too few reads are passing the filter, raise `maxEE` and/or reduce `truncQ`. If quality drops sharply at the end of your reads, reduce `truncLen`. If your reads are very good quality and you want to cut down computation time reduce `maxEE`.
+**If there is only one part of any amplicon bioinformatics workflow on which you spend time considering the parameters, it should be filtering!** The above parameters work well for good quality 250nt Hiseq data, but they are not set in stone, and should be changed if they don't work for your data. If too few reads are passing the filter, increase `maxEE` and/or reduce `truncQ`. If quality drops sharply at the end of your reads, reduce `truncLen`. If your reads are high quality and you want to reduce computation time in the sample inference step, reduce `maxEE`.
 
-## Sample Inference
+## Infer Sequence Variants
 
-Now for the meat of the method, sample inference from the filtered reads. This proceeds in three steps: (1) learning the error rates, (2) sample inference with the DADA2 algorithm, (3) removal of chimeras.
+The crucial difference between this workflow and the introductory workflow is that the samples are read in and processed in a streaming fashion (within a for-loop) during sample inference, so only one sample is fully loaded into memory at a time. This keeps memory requirements quite low: A Hiseq lane can be processed on 8GB of memory (although more is nice!).
 
-The first important difference between this workflow and the introductory workflow is that error rates are learned from a subset of the data. Learning error rates is computationally intensive, it requires multiple iterations of the core algorithm, but the entire dataset is not required. As a rule of thumb, a million reads is more than adequate to learn the error rates. I tend to overkill a bit and use 2-5 million reads for Hiseq lanes because why not.
-
-The second important difference is that the samples are read in and processed in a streaming fashion, so that only one sample is stored in memory at a time during the main sample inference stage. This keeps memory requirements quite low. In principle a Hiseq lane can be processed on 8GB of memory (although I definitely recommend more!).
+The second performance-relevant feature to be aware of is that error rates are being learned from a subset of the data. Learning error rates is computationally intensive, as it requires multiple iterations of the core algorithm. As a rule of thumb, a million reads is more than adequate to learn the error rates. I tend to overkill a bit and use 2+ million reads for a Hiseq lane because why not.
 
 **Sample inference script:**
 ```{r inference, eval=FALSE}
 library(dada2); packageVersion("dada2")
 # File parsing
 filtpath <- "/path/to/FWD/filtered" # CHANGE ME to the directory containing your filtered fastq files
-fns <- list.files(filtpath, full.names = TRUE)
-filts <- fns[grepl("fastq.gz$", fns)] # CHANGE if different file extensions
+filts <- list.files(filtpath, pattern="fastq.gz", full.names = TRUE) # CHANGE if different file extensions
 sample.names <- sapply(strsplit(basename(filts), "_"), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
 names(filts) <- sample.names
 # Learn error rates
 set.seed(100)
-filts.learn <- sample(filts, 25) # Pick 25 samples (>100k reads/sample) to learn from
-drp.learn <- derepFastq(filts.learn)
-dd.learn <- dada(drp.learn, err=NULL, selfConsist=TRUE, multithread=TRUE)
-err <- dd.learn[[1]]$err_out
-rm(drp.learn);rm(dd.learn)
-# Sample inference
+err <- learnErrors(filts, nreads = 2e6, multithread=TRUE, randomize=TRUE)
+# Infer sequence variants
 dds <- vector("list", length(sample.names))
 names(dds) <- sample.names
 for(sam in sample.names) {
   cat("Processing:", sam, "\n")
-	derep <- derepFastq(filts[[sam]])
-	dds[[sam]] <- dada(derep, err=err, multithread=TRUE)
+  derep <- derepFastq(filts[[sam]])
+  dds[[sam]] <- dada(derep, err=err, multithread=TRUE)
 }
-rm(derep)
-# Construct sequence table and remove chimeras
+# Construct sequence table and write to disk
 seqtab <- makeSequenceTable(dds)
-seqtab <- removeBimeraDenovo(seqtab, multithread=TRUE)
 saveRDS(seqtab, "/path/to/run1/output/seqtab.rds") # CHANGE ME to where you want sequence table saved
 ```
 
-The final result, the count matrix of samples (rows) by non-chimeric sequence variants (columns), is stored as as serialized R object. Read it back into R with `foo <- readRDS("/path/to/run1/output/seqtab.rds")`.
+The final result, the count matrix of samples (rows) by sequence variants (columns), is stored as as serialized R object. Read it back into R with `foo <- readRDS("/path/to/run1/output/seqtab.rds")`.
 
-## Multiple runs
+## Merge Runs, Remove Chimeras, Assign Taxonomy
 
-The embarrassingly parallel nature of the DADA2 pipeline makes putting together multiple runs extremely simple. The one thing to be aware of -- **the trimming parameters of different runs should be identical** if you want to simply merge them together later (otherwise the sequences aren't directly comparable).
+Large projects can span multiple sequencing runs, and because different runs can have different error profiles, it is recommended to learn the error rates for each run individually. Typically this means running the Sample Inference script once for each run or lane, and then merging those runs together into a full-study sequence table. If your study is contained on one run, that part of this script can be ignored.
 
-**Combine multiple runs:**
+*Note: The **trimming parameters of different runs should be identical** if you want to simply merge them together later (otherwise the sequences aren't directly comparable).*
+
+Once the full-study sequence table is created, chimeras can be identified and removed, and taxonomy assigned. For chimera removal, we have found that the `"consensus"` chimera removal method works better on large studies, but the `"pooled"` method is also an option.
+
+**Chimera/Taxonomy script:**
 ```{r combine, eval=FALSE}
 library(dada2); packageVersion("dada2")
+# Merge multiple runs (if necessary)
 st1 <- readRDS("/path/to/run1/output/seqtab.rds")
 st2 <- readRDS("/path/to/run2/output/seqtab.rds")
 st3 <- readRDS("/path/to/run3/output/seqtab.rds")
-st <- mergeSequenceTables(st1, st2, st3)
-saveRDS(st, "/path/to/study/output/seqtab_final.rds")
+st.all <- mergeSequenceTables(st1, st2, st3)
+# Remove chimeras
+seqtab <- removeBimeraDenovo(st.all, method="consensus", multithread=TRUE)
+# Assign taxonomy
+tax <- assignTaxonomy(seqtab, "/path/to/silva_nr_v123_train_set.fa.gz", multithread=TRUE)
+# Write to disk
+saveRDS(seqtab, "/path/to/study/seqtab_final.rds") # CHANGE ME to where you want sequence table saved
+saveRDS(tax, "/pathto/study/tax_final.rds") # CHANGE ME ...
 ```
 
 --------------------------
 
 ## How long does it take?
 
-There are too many factors that influence running time to give an answer that will hold for everyone. But I can offer my experience running primarily human microbiome data on a fairly typical compute node as a guide.
+There are too many factors that influence running time to give an answer that will hold for everyone. But we can offer our experience running primarily human microbiome data on a fairly typical compute node as a guide.
 
 **Dataset:** Relatively good quality Hiseq lanes of ~150M reads each, split amongst ~750 samples from a varying mix of oral, fecal and vaginal communities.
 
 **Hardware:** A [general compute node](http://sherlock.stanford.edu/mediawiki/index.php/Main_Page) with 16 cores and 64GB of memory.
 
-**Running times:** Filtering takes 2-3 hours (and is run on 2 cores and 16GB of memory). The sample inference workflow (16 cores, 64GB) takes from 2-16 hours, with running times increasing with lower run quality and higher diversity samples. Paired-end sequencing takes twice as long, as sample inference is run independently on the forward and reverse reads before merging (see [tutorial](tutorial.html) and the [paired-end version of the big data workflow](bigdata_paired.html)).
+**Running times:** The Sample Inference step (16 cores, 64GB) takes from 2-16 hours, with running times increasing with lower run quality and higher diversity samples. Paired-end sequencing takes twice as long, as sample inference is run independently on the forward and reverse reads before merging (see [tutorial](tutorial.html) and the [paired-end version of the big data workflow](bigdata_paired.html)). The Filtering and Chimera/Taxonomy steps generally take significantly less time than Sample Inference.
 
 One scaling issue to be aware of: Because the running time of the core sample inference method scales quadratically with the depth of individual samples, but linearly in the number of samples, running times will be longer when fewer samples are multiplexed. Very roughly, if your 150M Hiseq reads are split across 150 samples instead of 750, the running time will be about 5x higher.
 

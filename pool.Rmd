@@ -82,7 +82,7 @@ Now we pool the samples for sample inference:
 microbenchmark(dd.pool <- dada(drps, err=dd[[1]]$err_out, pool=TRUE), times=1)
 ```
 
-The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of the multithreading introduced in [version 1.1](https://github.com/benjjneb/dada2)) but sample-by-sample processing [remains computationally tractable out to any study size](bigdata.html) (eg. 20 Hiseq runs).
+The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of multithreading) but sample-by-sample processing [remains computationally tractable out to any study size](bigdata.html) (eg. 20 Hiseq runs).
 
 We'll also take a quick look at the differences in output:
 ```{r}

@@ -4,14 +4,14 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
 
 
 
-<title>A DADA2 workflow for Big Data: Paired-end</title>
+<title>A DADA2 workflow for Big Data: Paired-end (1.4)</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -181,7 +181,7 @@ $(document).ready(function () {
   <a href="dada-installation.html">Install</a>
 </li>
 <li>
-  <a href="tutorial.html">Walkthrough</a>
+  <a href="tutorial.html">Tutorial</a>
 </li>
 <li>
   <a href="bigdata.html">Big Data</a>
@@ -200,9 +200,6 @@ $(document).ready(function () {
     </li>
     <li>
       <a href="assign.html">Taxonomy</a>
-    </li>
-    <li>
-      <a href="species.html">Species</a>
     </li>
     <li>
       <a href="pool.html">Pooling</a>
@@ -264,7 +261,7 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">A DADA2 workflow for Big Data: Paired-end</h1>
+<h1 class="title toc-ignore">A DADA2 workflow for Big Data: Paired-end (1.4)</h1>
 
 </div>
 
@@ -276,41 +273,35 @@ $(document).ready(function () {
 <p>The workflow below expects demultiplexed, per-sample, gzipped fastq files for the primer-free forward reads of a Hiseq run to be in the directory <code>pathF</code> (defined below), and the corresponding primer-free reverse read files to be in a different directory <code>pathR</code>. The string parsing below expects forward and reverse filenames of the following format: <code>samplename_XXX.fastq.gz</code>, but other formats simply require modification to the filename parsing portions of these scripts.</p>
 <p><strong>NOTE: The filename parsing in this workflow expects the paired forward and reverse fastq files to have the same <code>samplename_</code> prefix.</strong></p>
 </div>
-<div id="filtering" class="section level2">
-<h2>Filtering</h2>
+<div id="filter" class="section level2">
+<h2>Filter</h2>
 <p>Please consider the filtering parameters, one set of parameters is not optimal for all datasets.</p>
 <p><strong>Filtering script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # File parsing
 pathF &lt;- &quot;/path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
-pathR &lt;- &quot;/path/to/REV&quot; # CHANGE ME, ...
+pathR &lt;- &quot;/path/to/REV&quot; # CHANGE ME ...
 filtpathF &lt;- file.path(pathF, &quot;filtered&quot;) # Filtered forward files go into the pathF/filtered/ subdirectory
 filtpathR &lt;- file.path(pathR, &quot;filtered&quot;) # ...
-fastqFs &lt;- sort(list.files(pathF, pattern=&quot;fastq&quot;))
-fastqRs &lt;- sort(list.files(pathR, pattern=&quot;fastq&quot;))
-dir.create(filtpathF)
-dir.create(filtpathR)
+fastqFs &lt;- sort(list.files(pathF, pattern=&quot;fastq.gz&quot;))
+fastqRs &lt;- sort(list.files(pathR, pattern=&quot;fastq.gz&quot;))
 if(length(fastqFs) != length(fastqRs)) stop(&quot;Forward and reverse files do not match.&quot;)
 # Filtering: THESE PARAMETERS ARENT OPTIMAL FOR ALL DATASETS
-for(i in seq_along(fastqFs)) {
-  fqF &lt;- fastqFs[[i]]; fqR &lt;- fastqRs[[i]]
-  fastqPairedFilter(c(file.path(pathF,fqF), file.path(pathR, fqR)),
-              c(file.path(filtpathF, fqF), file.path(filtpathR, fqR)),
-              truncLen=c(240,200),
-              maxEE=2, truncQ=11, maxN=0, rm.phix=TRUE,
-              compress=TRUE, verbose=TRUE)
-}</code></pre>
+filterAndTrim(fwd=file.path(pathF, fastqFs), filt=file.path(filtpathF, fastqFs),
+              rev=file.path(pathR, fastqRs), filt.rev=file.path(filtpathR, fastqRs),
+              truncLen=c(240,200), maxEE=2, truncQ=11, maxN=0, rm.phix=TRUE,
+              compress=TRUE, verbose=TRUE, multithread=TRUE)</code></pre>
 </div>
-<div id="sample-inference" class="section level2">
-<h2>Sample inference</h2>
-<p>The <code>NSAM.LEARN</code> parameter below should be large enough that the total number of reads across <code>NSAM.LEARN</code> samples exceeds 1M.</p>
+<div id="infer-sequence-variants" class="section level2">
+<h2>Infer Sequence Variants</h2>
+<p>This portion of the workflow should be performed on a run-by-run basis, as error rates can differ between runs.</p>
 <p><strong>Sample inference script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # File parsing
 filtpathF &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered forward fastq files
 filtpathR &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME ...
-filtFs &lt;- list.files(filtpathF, full.names = TRUE)
-filtRs &lt;- list.files(filtpathR, full.names = TRUE)
+filtFs &lt;- list.files(filtpathF, pattern=&quot;fastq.gz&quot;, full.names = TRUE)
+filtRs &lt;- list.files(filtpathR, pattern=&quot;fastq.gz&quot;, full.names = TRUE)
 sample.names &lt;- sapply(strsplit(basename(filtFs), &quot;_&quot;), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
 sample.namesR &lt;- sapply(strsplit(basename(filtRs), &quot;_&quot;), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
 if(!identical(sample.names, sample.namesR)) stop(&quot;Forward and reverse files do not match.&quot;)
@@ -318,16 +309,9 @@ names(filtFs) &lt;- sample.names
 names(filtRs) &lt;- sample.names
 set.seed(100)
 # Learn forward error rates
-NSAM.LEARN &lt;- 25 # Choose enough samples to have at least 1M reads
-drp.learnF &lt;- derepFastq(sample(filtFs, NSAM.LEARN))
-dd.learnF &lt;- dada(drp.learnF, err=NULL, selfConsist=TRUE, multithread=TRUE)
-errF &lt;- dd.learnF[[1]]$err_out
-rm(drp.learnF);rm(dd.learnF)
+errF &lt;- learnErrors(filtFs, nread=2e6, multithread=TRUE)
 # Learn reverse error rates
-drp.learnR &lt;- derepFastq(sample(filtRs, NSAM.LEARN))
-dd.learnR &lt;- dada(drp.learnR, err=NULL, selfConsist=TRUE, multithread=TRUE)
-errR &lt;- dd.learnR[[1]]$err_out
-rm(drp.learnR);rm(dd.learnR)
+errR &lt;- learnErrors(filtRs, nread=2e6, multithread=TRUE)
 # Sample inference and merger of paired-end reads
 mergers &lt;- vector(&quot;list&quot;, length(sample.names))
 names(mergers) &lt;- sample.names
@@ -343,9 +327,26 @@ for(sam in sample.names) {
 rm(derepF); rm(derepR)
 # Construct sequence table and remove chimeras
 seqtab &lt;- makeSequenceTable(mergers)
-seqtab &lt;- removeBimeraDenovo(seqtab, multithread=TRUE)
 saveRDS(seqtab, &quot;/path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to where you want sequence table saved</code></pre>
 <p>The final result, the count matrix of samples (rows) by non-chimeric sequence variants (columns), is stored as as serialized R object. Read it back into R with <code>foo &lt;- readRDS(&quot;/path/to/run1/output/seqtab.rds&quot;)</code>.</p>
+</div>
+<div id="merge-runs-remove-chimeras-assign-taxonomy" class="section level2">
+<h2>Merge Runs, Remove Chimeras, Assign Taxonomy</h2>
+<p>This part is the same as in the single-read version of this workflow.</p>
+<p><strong>Chimera/Taxonomy script:</strong></p>
+<pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
+# Merge multiple runs (if necessary)
+st1 &lt;- readRDS(&quot;/path/to/run1/output/seqtab.rds&quot;)
+st2 &lt;- readRDS(&quot;/path/to/run2/output/seqtab.rds&quot;)
+st3 &lt;- readRDS(&quot;/path/to/run3/output/seqtab.rds&quot;)
+st.all &lt;- mergeSequenceTables(st1, st2, st3)
+# Remove chimeras
+seqtab &lt;- removeBimeraDenovo(st.all, method=&quot;consensus&quot;, multithread=TRUE)
+# Assign taxonomy
+tax &lt;- assignTaxonomy(seqtab, &quot;/path/to/silva_nr_v123_train_set.fa.gz&quot;, multithread=TRUE)
+# Write to disk
+saveRDS(seqtab, &quot;/path/to/study/seqtab_final.rds&quot;) # CHANGE ME to where you want sequence table saved
+saveRDS(tax, &quot;/pathto/study/tax_final.rds&quot;) # CHANGE ME ...</code></pre>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
