@@ -287,40 +287,29 @@ $(document).ready(function () {
 <p>The data we will work with are the same as those in the <a href="http://www.mothur.org/wiki/MiSeq_SOP">Mothur Miseq SOP</a> walkthrough. Download the <a href="http://www.mothur.org/w/images/d/d6/MiSeqSOPData.zip">example data</a> and unzip. These files represent longitudinal samples from a mouse post-weaning and one mock community control. For now just consider them paired-end fastq files to be processed. Define the following path variable so that it points to the extracted directory on <strong>your</strong> machine:</p>
 <pre class="r"><code>path &lt;- &quot;~/MiSeq_SOP&quot; # CHANGE ME to the directory containing the fastq files after unzipping.
 list.files(path)</code></pre>
-<pre><code>##  [1] &quot;F3D0_filtered.fq.gz&quot;           &quot;F3D0_S188_L001_R1_001.fastq&quot;  
-##  [3] &quot;F3D0_S188_L001_R2_001.fastq&quot;   &quot;F3D1_filtered.fq.gz&quot;          
-##  [5] &quot;F3D1_S189_L001_R1_001.fastq&quot;   &quot;F3D1_S189_L001_R2_001.fastq&quot;  
-##  [7] &quot;F3D141_filtered.fq.gz&quot;         &quot;F3D141_S207_L001_R1_001.fastq&quot;
-##  [9] &quot;F3D141_S207_L001_R2_001.fastq&quot; &quot;F3D142_filtered.fq.gz&quot;        
-## [11] &quot;F3D142_S208_L001_R1_001.fastq&quot; &quot;F3D142_S208_L001_R2_001.fastq&quot;
-## [13] &quot;F3D143_filtered.fq.gz&quot;         &quot;F3D143_S209_L001_R1_001.fastq&quot;
-## [15] &quot;F3D143_S209_L001_R2_001.fastq&quot; &quot;F3D144_filtered.fq.gz&quot;        
-## [17] &quot;F3D144_S210_L001_R1_001.fastq&quot; &quot;F3D144_S210_L001_R2_001.fastq&quot;
-## [19] &quot;F3D145_filtered.fq.gz&quot;         &quot;F3D145_S211_L001_R1_001.fastq&quot;
-## [21] &quot;F3D145_S211_L001_R2_001.fastq&quot; &quot;F3D146_filtered.fq.gz&quot;        
-## [23] &quot;F3D146_S212_L001_R1_001.fastq&quot; &quot;F3D146_S212_L001_R2_001.fastq&quot;
-## [25] &quot;F3D147_filtered.fq.gz&quot;         &quot;F3D147_S213_L001_R1_001.fastq&quot;
-## [27] &quot;F3D147_S213_L001_R2_001.fastq&quot; &quot;F3D148_filtered.fq.gz&quot;        
-## [29] &quot;F3D148_S214_L001_R1_001.fastq&quot; &quot;F3D148_S214_L001_R2_001.fastq&quot;
-## [31] &quot;F3D149_filtered.fq.gz&quot;         &quot;F3D149_S215_L001_R1_001.fastq&quot;
-## [33] &quot;F3D149_S215_L001_R2_001.fastq&quot; &quot;F3D150_filtered.fq.gz&quot;        
-## [35] &quot;F3D150_S216_L001_R1_001.fastq&quot; &quot;F3D150_S216_L001_R2_001.fastq&quot;
-## [37] &quot;F3D2_filtered.fq.gz&quot;           &quot;F3D2_S190_L001_R1_001.fastq&quot;  
-## [39] &quot;F3D2_S190_L001_R2_001.fastq&quot;   &quot;F3D3_filtered.fq.gz&quot;          
-## [41] &quot;F3D3_S191_L001_R1_001.fastq&quot;   &quot;F3D3_S191_L001_R2_001.fastq&quot;  
-## [43] &quot;F3D5_filtered.fq.gz&quot;           &quot;F3D5_S193_L001_R1_001.fastq&quot;  
-## [45] &quot;F3D5_S193_L001_R2_001.fastq&quot;   &quot;F3D6_filtered.fq.gz&quot;          
-## [47] &quot;F3D6_S194_L001_R1_001.fastq&quot;   &quot;F3D6_S194_L001_R2_001.fastq&quot;  
-## [49] &quot;F3D7_filtered.fq.gz&quot;           &quot;F3D7_S195_L001_R1_001.fastq&quot;  
-## [51] &quot;F3D7_S195_L001_R2_001.fastq&quot;   &quot;F3D8_filtered.fq.gz&quot;          
-## [53] &quot;F3D8_S196_L001_R1_001.fastq&quot;   &quot;F3D8_S196_L001_R2_001.fastq&quot;  
-## [55] &quot;F3D9_filtered.fq.gz&quot;           &quot;F3D9_S197_L001_R1_001.fastq&quot;  
-## [57] &quot;F3D9_S197_L001_R2_001.fastq&quot;   &quot;filtered&quot;                     
-## [59] &quot;full&quot;                          &quot;HMP_MOCK.v35.fasta&quot;           
-## [61] &quot;Mock_filtered.fq.gz&quot;           &quot;Mock_S280_L001_R1_001.fastq&quot;  
-## [63] &quot;Mock_S280_L001_R2_001.fastq&quot;   &quot;mouse.dpw.metadata&quot;           
-## [65] &quot;mouse.time.design&quot;             &quot;stability.batch&quot;              
-## [67] &quot;stability.files&quot;               &quot;test&quot;</code></pre>
+<pre><code>##  [1] &quot;F3D0_S188_L001_R1_001.fastq&quot;   &quot;F3D0_S188_L001_R2_001.fastq&quot;  
+##  [3] &quot;F3D1_S189_L001_R1_001.fastq&quot;   &quot;F3D1_S189_L001_R2_001.fastq&quot;  
+##  [5] &quot;F3D141_S207_L001_R1_001.fastq&quot; &quot;F3D141_S207_L001_R2_001.fastq&quot;
+##  [7] &quot;F3D142_S208_L001_R1_001.fastq&quot; &quot;F3D142_S208_L001_R2_001.fastq&quot;
+##  [9] &quot;F3D143_S209_L001_R1_001.fastq&quot; &quot;F3D143_S209_L001_R2_001.fastq&quot;
+## [11] &quot;F3D144_S210_L001_R1_001.fastq&quot; &quot;F3D144_S210_L001_R2_001.fastq&quot;
+## [13] &quot;F3D145_S211_L001_R1_001.fastq&quot; &quot;F3D145_S211_L001_R2_001.fastq&quot;
+## [15] &quot;F3D146_S212_L001_R1_001.fastq&quot; &quot;F3D146_S212_L001_R2_001.fastq&quot;
+## [17] &quot;F3D147_S213_L001_R1_001.fastq&quot; &quot;F3D147_S213_L001_R2_001.fastq&quot;
+## [19] &quot;F3D148_S214_L001_R1_001.fastq&quot; &quot;F3D148_S214_L001_R2_001.fastq&quot;
+## [21] &quot;F3D149_S215_L001_R1_001.fastq&quot; &quot;F3D149_S215_L001_R2_001.fastq&quot;
+## [23] &quot;F3D150_S216_L001_R1_001.fastq&quot; &quot;F3D150_S216_L001_R2_001.fastq&quot;
+## [25] &quot;F3D2_S190_L001_R1_001.fastq&quot;   &quot;F3D2_S190_L001_R2_001.fastq&quot;  
+## [27] &quot;F3D3_S191_L001_R1_001.fastq&quot;   &quot;F3D3_S191_L001_R2_001.fastq&quot;  
+## [29] &quot;F3D5_S193_L001_R1_001.fastq&quot;   &quot;F3D5_S193_L001_R2_001.fastq&quot;  
+## [31] &quot;F3D6_S194_L001_R1_001.fastq&quot;   &quot;F3D6_S194_L001_R2_001.fastq&quot;  
+## [33] &quot;F3D7_S195_L001_R1_001.fastq&quot;   &quot;F3D7_S195_L001_R2_001.fastq&quot;  
+## [35] &quot;F3D8_S196_L001_R1_001.fastq&quot;   &quot;F3D8_S196_L001_R2_001.fastq&quot;  
+## [37] &quot;F3D9_S197_L001_R1_001.fastq&quot;   &quot;F3D9_S197_L001_R2_001.fastq&quot;  
+## [39] &quot;filtered&quot;                      &quot;HMP_MOCK.v35.fasta&quot;           
+## [41] &quot;Mock_S280_L001_R1_001.fastq&quot;   &quot;Mock_S280_L001_R2_001.fastq&quot;  
+## [43] &quot;mouse.dpw.metadata&quot;            &quot;mouse.time.design&quot;            
+## [45] &quot;stability.batch&quot;               &quot;stability.files&quot;</code></pre>
 <p>If the package successfully loaded and your listed files match those here, you are ready to go through the DADA2 pipeline.</p>
 <p> </p>
 </div>
@@ -603,7 +592,7 @@ unname(head(taxa))</code></pre>
 ## [6,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot;
 ##      [,5]                 [,6]         
 ## [1,] &quot;Porphyromonadaceae&quot; NA           
-## [2,] &quot;Porphyromonadaceae&quot; NA           
+## [2,] &quot;Porphyromonadaceae&quot; &quot;Barnesiella&quot;
 ## [3,] &quot;Porphyromonadaceae&quot; &quot;Barnesiella&quot;
 ## [4,] &quot;Porphyromonadaceae&quot; &quot;Barnesiella&quot;
 ## [5,] &quot;Bacteroidaceae&quot;     &quot;Bacteroides&quot;
@@ -635,7 +624,7 @@ cat(&quot;Of those,&quot;, sum(match.ref), &quot;were exact matches to the expec
 <p>The DADA2 pipeline produced a sequence table and a taxonomy table which is appropriate for further analysis in phyloseq. We’ll also include the small amount of metadata we have – the samples are named by the gender (G), mouse subject number (X) and the day post-weaning (Y) it was sampled (eg. GXDY).</p>
 <p><strong>Import into phyloseq</strong>:</p>
 <pre class="r"><code>library(phyloseq); packageVersion(&quot;phyloseq&quot;)</code></pre>
-<pre><code>## [1] &#39;1.19.1&#39;</code></pre>
+<pre><code>## [1] &#39;1.19.2&#39;</code></pre>
 <pre class="r"><code>library(ggplot2); packageVersion(&quot;ggplot2&quot;)</code></pre>
 <pre><code>## [1] &#39;2.2.1&#39;</code></pre>
 <pre class="r"><code># Make a data.frame holding the sample data
@@ -669,48 +658,34 @@ ps</code></pre>
 <pre><code>## Square root transformation
 ## Wisconsin double standardization
 ## Run 0 stress 0.08908957 
-## Run 1 stress 0.09001142 
-## Run 2 stress 0.0890896 
-## ... Procrustes: rmse 4.738746e-05  max resid 9.483471e-05 
+## Run 1 stress 0.1492663 
+## Run 2 stress 0.1575954 
+## Run 3 stress 0.08909009 
+## ... Procrustes: rmse 8.756021e-05  max resid 0.0001995808 
 ## ... Similar to previous best
-## Run 3 stress 0.1567956 
-## Run 4 stress 0.1589834 
-## Run 5 stress 0.08908958 
-## ... Procrustes: rmse 3.772943e-05  max resid 7.803237e-05 
+## Run 4 stress 0.08908957 
+## ... New best solution
+## ... Procrustes: rmse 1.170523e-05  max resid 2.719575e-05 
 ## ... Similar to previous best
-## Run 6 stress 0.09001142 
-## Run 7 stress 0.1560123 
-## Run 8 stress 0.08908957 
-## ... Procrustes: rmse 2.713082e-05  max resid 5.623156e-05 
+## Run 5 stress 0.1493609 
+## Run 6 stress 0.09001143 
+## Run 7 stress 0.09001141 
+## Run 8 stress 0.09001149 
+## Run 9 stress 0.08908957 
+## ... Procrustes: rmse 1.978163e-05  max resid 4.044171e-05 
 ## ... Similar to previous best
-## Run 9 stress 0.1571054 
-## Run 10 stress 0.1483223 
+## Run 10 stress 0.09001141 
 ## Run 11 stress 0.09001141 
-## Run 12 stress 0.08908957 
-## ... Procrustes: rmse 1.142128e-05  max resid 2.192915e-05 
-## ... Similar to previous best
-## Run 13 stress 0.08908957 
-## ... New best solution
-## ... Procrustes: rmse 1.188873e-05  max resid 2.3888e-05 
-## ... Similar to previous best
-## Run 14 stress 0.08908957 
-## ... Procrustes: rmse 3.270616e-05  max resid 7.368531e-05 
-## ... Similar to previous best
-## Run 15 stress 0.08908957 
-## ... New best solution
-## ... Procrustes: rmse 1.287628e-05  max resid 2.95429e-05 
-## ... Similar to previous best
-## Run 16 stress 0.1563968 
-## Run 17 stress 0.08908957 
-## ... New best solution
-## ... Procrustes: rmse 1.435735e-06  max resid 3.943943e-06 
-## ... Similar to previous best
-## Run 18 stress 0.08908957 
-## ... Procrustes: rmse 6.373224e-06  max resid 1.42764e-05 
-## ... Similar to previous best
+## Run 12 stress 0.1474742 
+## Run 13 stress 0.1486409 
+## Run 14 stress 0.09001147 
+## Run 15 stress 0.09001141 
+## Run 16 stress 0.3744339 
+## Run 17 stress 0.1565616 
+## Run 18 stress 0.148641 
 ## Run 19 stress 0.09001141 
 ## Run 20 stress 0.08908957 
-## ... Procrustes: rmse 9.693952e-06  max resid 2.302114e-05 
+## ... Procrustes: rmse 1.880762e-05  max resid 4.591301e-05 
 ## ... Similar to previous best
 ## *** Solution reached</code></pre>
 <pre class="r"><code>plot_ordination(ps, ord.nmds.bray, color=&quot;When&quot;, title=&quot;Bray NMDS&quot;)</code></pre>
