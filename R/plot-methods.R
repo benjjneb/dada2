@@ -202,7 +202,7 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' @param n (Optional). Default 500,000.
 #'  The number of records to sample from the fastq file.
 #' 
-#' @param summarize (Optional). Default FALSE.
+#' @param aggregate (Optional). Default FALSE.
 #'  If TRUE, compute an aggregate quality profile for all fastq files provided.
 #'  
 #' @return A \code{\link{ggplot}2} object.
@@ -218,9 +218,9 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' @examples
 #' plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' 
-plotQualityProfile <- function(fl, n=500000, summarize=FALSE) {
+plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
   statdf <- data.frame(Cycle=integer(0), Mean=numeric(0), Q25=numeric(0), Q50=numeric(0), Q75=numeric(0), file=character(0))
-  anndf <- data.frame(minScore=numeric(0), label=character(0), rclabel=character(0), file=character(0))
+  anndf <- data.frame(minScore=numeric(0), label=character(0), rclabel=character(0), rc=numeric(0), file=character(0))
 
   FIRST <- TRUE
   for(f in fl) {
@@ -247,11 +247,11 @@ plotQualityProfile <- function(fl, n=500000, summarize=FALSE) {
     } else { plotdf <- rbind(plotdf, cbind(df, file=f)) }
     statdf <- rbind(statdf, data.frame(Cycle=as.integer(rownames(means)), Mean=means, 
                                        Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s), file=f))
-    anndf <- rbind(anndf, data.frame(minScore=min(df$Score), label=basename(f), rclabel=rclabel, file=f))
+    anndf <- rbind(anndf, data.frame(minScore=min(df$Score), label=basename(f), rclabel=rclabel, rc=rc, file=f))
   }
   anndf$minScore <- min(anndf$minScore)
   # Create plot
-  if (summarize) {
+  if (aggregate) {
   	plotdf.summary <- aggregate(Count ~ Cycle + Score, plotdf, sum)
   	means <- rowsum(plotdf.summary$Score*plotdf.summary$Count, plotdf.summary$Cycle)/rowsum(plotdf.summary$Count, plotdf.summary$Cycle)
     q25s <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.25), simplify=TRUE)
@@ -264,7 +264,9 @@ plotQualityProfile <- function(fl, n=500000, summarize=FALSE) {
 		  geom_line(data=statdf.summary, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
 		  geom_line(data=statdf.summary, aes(y=Q50), color="#FC8D62", size=0.25) +
 		  geom_line(data=statdf.summary, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
-		  ylab("Quality Score") + xlab("Cycle") +
+		  ylab("Quality Score") + xlab("Cycle") + 
+		  annotate("text", x=0, y=min(anndf$minScore)+2, label=sprintf("%d files (aggregated)", nrow(anndf)), hjust=0) + 
+		  annotate("text", x=0, y=min(anndf$minScore)+1, label=sprintf("Total reads: %d", sum(anndf$rc)), hjust=0) + 
 		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) + theme(strip.background = element_blank(), strip.text.x = element_blank())
   } else {
   	ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
@@ -275,8 +277,8 @@ plotQualityProfile <- function(fl, n=500000, summarize=FALSE) {
 		  geom_line(data=statdf, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
 		  ylab("Quality Score") + xlab("Cycle") +
 		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) +
-		  geom_text(data=anndf, aes(x=minScore+2, label=label), y=1, hjust=0, vjust=0) +
-		  geom_text(data=anndf, aes(x=minScore+2, label=rclabel), y=1, hjust=0, vjust=2) + 
+		  geom_text(data=anndf, aes(x=0, label=label, y=minScore+2), hjust=0, vjust=0) +
+		  geom_text(data=anndf, aes(x=0, label=rclabel, y=minScore+2), hjust=0, vjust=2) + 
 		  facet_wrap(~file) + theme(strip.background = element_blank(), strip.text.x = element_blank())
 	}
 }
