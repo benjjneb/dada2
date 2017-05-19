@@ -292,11 +292,9 @@ $(document).ready(function () {
 # Filename parsing
 path &lt;- &quot;/path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed fastq files
 filtpath &lt;- file.path(path, &quot;filtered&quot;) # Filtered files go into the filtered/ subdirectory
-dir.create(filtpath)
 fns &lt;- list.files(path, pattern=&quot;fastq.gz&quot;) # CHANGE if different file extensions
-filts &lt;- file.path(filtpath, fns) # Same names as input files, but in filtered/ subdirectory
 # Filtering
-filterAndTrim(fns, filts, 
+filterAndTrim(file.path(path,fns), file.path(filtpath,fns), 
               truncLen=240, maxEE=1, truncQ=11, rm.phix=TRUE,
               compress=TRUE, verbose=TRUE, multithread=TRUE)</code></pre>
 <p><strong>If there is only one part of any amplicon bioinformatics workflow on which you spend time considering the parameters, it should be filtering!</strong> The above parameters work well for good quality 250nt Hiseq data, but they are not set in stone, and should be changed if they don’t work for your data. If too few reads are passing the filter, increase <code>maxEE</code> and/or reduce <code>truncQ</code>. If quality drops sharply at the end of your reads, reduce <code>truncLen</code>. If your reads are high quality and you want to reduce computation time in the sample inference step, reduce <code>maxEE</code>.</p>
@@ -309,8 +307,8 @@ filterAndTrim(fns, filts,
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # File parsing
 filtpath &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered fastq files
-fns &lt;- list.files(filtpath, pattern=&quot;fastq.gz&quot;, full.names = TRUE) # CHANGE if different file extensions
-sample.names &lt;- sapply(strsplit(basename(filts), &quot;_&quot;), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
+filts &lt;- list.files(filtpath, pattern=&quot;fastq.gz&quot;, full.names=TRUE) # CHANGE if different file extensions
+sample.names &lt;- sapply(strsplit(basename(filts), &quot;_&quot;), `[`, 1) # Assumes filename = sample_XXX.fastq.gz
 names(filts) &lt;- sample.names
 # Learn error rates
 set.seed(100)
@@ -331,7 +329,7 @@ saveRDS(seqtab, &quot;/path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to wher
 <div id="merge-runs-remove-chimeras-assign-taxonomy" class="section level2">
 <h2>Merge Runs, Remove Chimeras, Assign Taxonomy</h2>
 <p>Large projects can span multiple sequencing runs, and because different runs can have different error profiles, it is recommended to learn the error rates for each run individually. Typically this means running the Sample Inference script once for each run or lane, and then merging those runs together into a full-study sequence table. If your study is contained on one run, that part of this script can be ignored.</p>
-<p><em>Note: The <strong>trimming parameters of different runs should be identical</strong> if you want to simply merge them together later (otherwise the sequences aren’t directly comparable).</em></p>
+<p><strong><span style="color:red">If using this workflow on your own data:</span></strong> Sequences must cover the same gene region if you want to simply merge them together later, otherwise the sequences aren’t directly comparable. In practice this means that the same primer set and the same (or no) <code>trimLeft</code> value was used across runs. Single-reads must also be truncated to the same length (this is not necessary for overlapping paired-reads, as <code>truncLen</code> doesn’t affect the region covered by the merged reads).</p>
 <p>Once the full-study sequence table is created, chimeras can be identified and removed, and taxonomy assigned. For chimera removal, we have found that the <code>&quot;consensus&quot;</code> chimera removal method works better on large studies, but the <code>&quot;pooled&quot;</code> method is also an option.</p>
 <p><strong>Chimera/Taxonomy script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
@@ -387,7 +385,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

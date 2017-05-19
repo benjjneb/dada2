@@ -61,8 +61,8 @@ The second performance-relevant feature to be aware of is that error rates are b
 library(dada2); packageVersion("dada2")
 # File parsing
 filtpath <- "/path/to/FWD/filtered" # CHANGE ME to the directory containing your filtered fastq files
-filts <- list.files(filtpath, pattern="fastq.gz", full.names = TRUE) # CHANGE if different file extensions
-sample.names <- sapply(strsplit(basename(filts), "_"), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
+filts <- list.files(filtpath, pattern="fastq.gz", full.names=TRUE) # CHANGE if different file extensions
+sample.names <- sapply(strsplit(basename(filts), "_"), `[`, 1) # Assumes filename = sample_XXX.fastq.gz
 names(filts) <- sample.names
 # Learn error rates
 set.seed(100)
@@ -86,7 +86,7 @@ The final result, the count matrix of samples (rows) by sequence variants (colum
 
 Large projects can span multiple sequencing runs, and because different runs can have different error profiles, it is recommended to learn the error rates for each run individually. Typically this means running the Sample Inference script once for each run or lane, and then merging those runs together into a full-study sequence table. If your study is contained on one run, that part of this script can be ignored.
 
-*Note: The **trimming parameters of different runs should be identical** if you want to simply merge them together later (otherwise the sequences aren't directly comparable).*
+**<span style="color:red">If using this workflow on your own data:</span>** Sequences must cover the same gene region if you want to simply merge them together later, otherwise the sequences aren't directly comparable. In practice this means that the same primer set and the same (or no) `trimLeft` value was used across runs. Single-reads must also be truncated to the same length (this is not necessary for overlapping paired-reads, as `truncLen` doesn't affect the region covered by the merged reads).
 
 Once the full-study sequence table is created, chimeras can be identified and removed, and taxonomy assigned. For chimera removal, we have found that the `"consensus"` chimera removal method works better on large studies, but the `"pooled"` method is also an option.
 
