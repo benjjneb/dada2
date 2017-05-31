@@ -297,6 +297,33 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, verbose=FALSE) {
   taxtab
 }
 
+#' This function creates the dada2 assignTaxonomy training fasta for the RDP
+#' from the trainset16_022016.fa file.
+#' @keywords internal
+makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
+  # Read in the fasta and pull out the taxonomy entries
+  sr <- readFasta(fin)
+  id <- as.character(gsub("\"", "", id(sr)))
+  tax <- sapply(strsplit(id, "\\t"), `[`, 2)
+  tax <- gsub("^Root;", "", tax)
+  tax <- strsplit(tax, ";")
+  # Get the names of the standard 6 taxonomic levels
+  db <- read.table(file=fdb, sep="*", stringsAsFactors=FALSE)
+  colnames(db) <- c("Index", "Name", "L", "R", "Level")
+  keep <- db$Name[db$Level %in% c("domain", "phylum", "class", "order", "family", "genus")]
+  # Cut down to just the 6 level taxonomy
+  tax <- sapply(tax, function(x) x[x %in% keep])
+  tax <- lapply(tax, paste, collapse = ";")
+  tax <- unlist(tax)
+  # Final formatting
+  tax <- paste0(tax, ";") # Ending semicolon
+  tax <- gsub("[^;]*_incertae_sedis;$", "", tax) # Uncertain lowest-level assignment is better to leave blank
+  tax <- gsub(" ", "_", tax)
+  # Write to disk
+  writeFasta(ShortRead(sread(sr), BStringSet(tax)), fout,
+             width=20000L, compress=compress)
+}
+
 #' This function creates the dada2 assignSpecies fasta file for the RDP
 #' from the rdp_Bacteria_unaligned.fa file.
 #' @keywords internal
@@ -330,7 +357,7 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
   # Drop Candidatus strings
   binom <- gsub("Candidatus ", "", binom)
   geni <- gsub("Candidatus ", "", geni)
-
+  
   # Subset down to those binomials which match the curated genus
   binom.geni <- sapply(strsplit(binom, "\\s"), `[`, 1)
   gen.match <- mapply(matchGenera, geni, binom.geni)
@@ -341,7 +368,7 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
   # Make matrix of genus/species
   binom[sapply(strsplit(binom, "\\s"), length)==1] <- paste(binom[sapply(strsplit(binom, "\\s"), length)==1], "sp.")
   binom2 <- cbind(sapply(strsplit(binom, "\\s"), `[`, 1),
-                sapply(strsplit(binom, "\\s"), `[`, 2))
+                  sapply(strsplit(binom, "\\s"), `[`, 2))
   # Keep only those with a named species
   has.spec <- !grepl("sp\\.", binom2[,2])
   sum(has.spec)

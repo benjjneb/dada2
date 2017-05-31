@@ -248,3 +248,27 @@ RcppExport SEXP dada2_RcppExport_registerCCallable() {
     R_RegisterCCallable("dada2", "dada2_RcppExport_validate", (DL_FUNC)dada2_RcppExport_validate);
     return R_NilValue;
 }
+
+static const R_CallMethodDef CallEntries[] = {
+    {"dada2_dada_uniques", (DL_FUNC) &dada2_dada_uniques, 19},
+    {"dada2_C_is_bimera", (DL_FUNC) &dada2_C_is_bimera, 8},
+    {"dada2_C_table_bimera2", (DL_FUNC) &dada2_C_table_bimera2, 10},
+    {"dada2_C_nwalign", (DL_FUNC) &dada2_C_nwalign, 8},
+    {"dada2_C_eval_pair", (DL_FUNC) &dada2_C_eval_pair, 2},
+    {"dada2_C_pair_consensus", (DL_FUNC) &dada2_C_pair_consensus, 4},
+    {"dada2_C_isACGT", (DL_FUNC) &dada2_C_isACGT, 1},
+    {"dada2_evaluate_kmers", (DL_FUNC) &dada2_evaluate_kmers, 6},
+    {"dada2_C_subpos", (DL_FUNC) &dada2_C_subpos, 2},
+    {"dada2_C_matchRef", (DL_FUNC) &dada2_C_matchRef, 4},
+    {"dada2_C_matrixEE", (DL_FUNC) &dada2_C_matrixEE, 1},
+    {"dada2_C_nwvec", (DL_FUNC) &dada2_C_nwvec, 7},
+    {"dada2_C_assign_taxonomy", (DL_FUNC) &dada2_C_assign_taxonomy, 7},
+    {"dada2_C_assign_taxonomy2", (DL_FUNC) &dada2_C_assign_taxonomy2, 7},
+    {"dada2_RcppExport_registerCCallable", (DL_FUNC) &dada2_RcppExport_registerCCallable, 0},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_dada2(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+}
