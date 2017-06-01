@@ -275,8 +275,8 @@ $(document).ready(function () {
 <p><strong>Maintained:</strong></p>
 <ul>
 <li><p><strong><a href="http://dx.doi.org/10.5281/zenodo.158955">GreenGenes version 13.8</a></strong></p></li>
-<li><p><strong><a href="http://dx.doi.org/10.5281/zenodo.158955">RDP version 14</a></strong></p></li>
-<li><p><strong><a href="http://dx.doi.org/10.5281/zenodo.158958">Silva version 123</a></strong> (<a href="https://www.arb-silva.de/silva-license-information/">Silva dual-license</a>)</p></li>
+<li><p><strong><a href="https://doi.org/10.5281/zenodo.801828">RDP trainset 16</a></strong>         (previous: <a href="http://dx.doi.org/10.5281/zenodo.158955">RDP trainset 14</a>)</p></li>
+<li><p><strong><a href="https://doi.org/10.5281/zenodo.801832">Silva version 128</a></strong>       (previous: <a href="http://dx.doi.org/10.5281/zenodo.158958">Silva version 123</a>; <strong><a href="https://www.arb-silva.de/silva-license-information/">Silva dual-license</a></strong>)</p></li>
 <li><p><strong><a href="https://unite.ut.ee/repository.php">UNITE (General Fasta releases)</a></strong> (<strong><span style="color:red">version 1.3.3 or later of the dada2 package</span></strong>)</p></li>
 </ul>
 <p><strong>Contributed</strong>:</p>
@@ -284,7 +284,8 @@ $(document).ready(function () {
 <li><a href="http://doi.org/10.5281/zenodo.159205">HitDB version 1</a> (Human InTestinal 16S rRNA)</li>
 </ul>
 <hr />
-<p>Note that currently species-assignment training fastas are only available for the Silva and RDP databases. In addition to thanking the folks at RDP, Silva and GreenGenes for making these datasets available, we also want to thank Pat Schloss and the <a href="http://www.mothur.org">mothur</a> team for making cleaner versions of the Silva and RDP training set available. To be specific, we created the dada2-compatible training fastas from <a href="http://www.mothur.org/wiki/Silva_reference_files">the mothur-compatible Silva.nr_v123 files</a> (<a href="http://blog.mothur.org/2015/12/03/SILVA-v123-reference-files/">described here</a>, and <a href="https://www.arb-silva.de/silva-license-information/">license here</a>), the <a href="http://mothur.org/wiki/RDP_reference_files">mothur-compatible 16S rRNA reference (RDP)</a> (<a href="http://blog.mothur.org/2015/05/27/RDP-v14-reference_files/">described here</a>), and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
+<p>Note that currently species-assignment training fastas are only available for the Silva and RDP databases. In addition to thanking the folks at RDP, Silva and GreenGenes for making these datasets available, we also want to thank Pat Schloss and the <a href="http://www.mothur.org">mothur</a> team for making cleaner versions of the Silva available. To be specific, we created the dada2-compatible training fastas from <a href="http://www.mothur.org/wiki/Silva_reference_files">the mothur-compatible Silva training data</a> (<a href="http://blog.mothur.org/2017/03/22/SILVA-v128-reference-files/">described here</a>, and <a href="https://www.arb-silva.de/silva-license-information/">license here</a>), the <a href="http://rdp.cme.msu.edu/misc/resources.jsp">RDP trainset and release 11.5 database</a>, and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
+<p>As of version 1.5.1, the scripts to parse and produce the dada2-formatted training fastas are included as private functions within the dada2 R package. Inspect the <code>taxonomy.R</code> file to see the code.</p>
 </div>
 <div id="formatting-custom-databases" class="section level2">
 <h2>Formatting custom databases</h2>
@@ -328,7 +329,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>
