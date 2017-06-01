@@ -3,12 +3,12 @@
 \name{makeSpeciesFasta_RDP}
 \alias{makeSpeciesFasta_RDP}
 \title{This function creates the dada2 assignSpecies fasta file for the RDP
-from the rdp_Bacteria_unaligned.fa file.}
+from the RDP's _Bacteria_unaligned.fa file.}
 \usage{
 makeSpeciesFasta_RDP(fin, fout, compress = TRUE)
 }
 \description{
-This function creates the dada2 assignSpecies fasta file for the RDP
-from the rdp_Bacteria_unaligned.fa file.
+## RDP Trainset 16/Release 11.5
+dada2:::makeSpeciesFasta_RDP("~/Desktop/RDP/current_Bacteria_unaligned.fa", "~/tax/rdp_species_assignment_16.fa.gz")
 }
 \keyword{internal}

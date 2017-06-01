@@ -3,12 +3,13 @@
 \name{makeSpeciesFasta_Silva}
 \alias{makeSpeciesFasta_Silva}
 \title{This function creates the dada2 assignSpecies fasta file for Silva
-from the SILVA_123.1_SSURef_3_3_2016_fix.fasta file.}
+from the SILVA_[VERSION]_SSURef_tax_silva.fasta file}
 \usage{
 makeSpeciesFasta_Silva(fin, fout, compress = TRUE)
 }
 \description{
-This function creates the dada2 assignSpecies fasta file for Silva
-from the SILVA_123.1_SSURef_3_3_2016_fix.fasta file.
+## Silva release v128
+dada2:::makeSpeciesFasta_Silva("~/Desktop/Silva/SILVA_128_SSURef_tax_silva.fasta.gz", 
+    "~/tax/silva_species_assignment_v128.fa.gz")
 }
 \keyword{internal}

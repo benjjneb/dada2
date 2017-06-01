@@ -2,13 +2,15 @@
 % Please edit documentation in R/taxonomy.R
 \name{makeTaxonomyFasta_RDP}
 \alias{makeTaxonomyFasta_RDP}
-\title{This function creates the dada2 assignTaxonomy training fasta for the RDP
-from the trainset16_022016.fa file.}
+\title{This function creates the dada2 assignTaxonomy training fasta for the RDP trainset .fa file}
 \usage{
 makeTaxonomyFasta_RDP(fin, fdb, fout, compress = TRUE)
 }
 \description{
-This function creates the dada2 assignTaxonomy training fasta for the RDP
-from the trainset16_022016.fa file.
+## RDP Trainset 16
+path <- "~/Desktop/RDP/RDPClassifier_16S_trainsetNo16_rawtrainingdata"
+dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset16_022016.fa"), 
+    file.path(path, "trainset16_db_taxid.txt"), 
+    "~/tax/rdp_train_set_16.fa.gz")
 }
 \keyword{internal}
