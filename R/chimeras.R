@@ -15,8 +15,8 @@
 #'  A vector of possible "parent" sequence that could form the left and right
 #'  sides of the bimera.
 #'   
-#' @param allowOneOff (Optional). A \code{logical(1)}. Default is TRUE.
-#'   If TRUE, sq will be identified as a bimera if it is one mismatch or indel away 
+#' @param allowOneOff (Optional). A \code{logical(1)}. Default is FALSE.
+#'   If FALSE, sq will be identified as a bimera if it is one mismatch or indel away 
 #'   from an exact bimera.
 #' 
 #' @param minOneOffParentDistance (Optional). A \code{numeric(1)}. Default is 4.
@@ -40,7 +40,7 @@
 #' sqs1 <- getSequences(derep1)
 #' isBimera(sqs1[[20]], sqs1[1:10])
 #' 
-isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16) {
+isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16) {
   rval <- C_is_bimera(sq, parents, allowOneOff, minOneOffParentDistance, 
               getDadaOpt("MATCH"), getDadaOpt("MISMATCH"), getDadaOpt("GAP_PENALTY"), maxShift)
   return(rval)
@@ -66,8 +66,8 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' @param minParentAbundance (Optional). A \code{numeric(1)}. Default is 8.
 #'   Only sequences at least this abundant can be "parents".
 #' 
-#' @param allowOneOff (Optional). A \code{logical(1)}. Default is TRUE.
-#'   If TRUE, sequences that have one mismatch or indel to an exact bimera are also
+#' @param allowOneOff (Optional). A \code{logical(1)}. Default is FALSE.
+#'   If FALSE, sequences that have one mismatch or indel to an exact bimera are also
 #'   flagged as bimeric.
 #' 
 #' @param minOneOffParentDistance (Optional). A \code{numeric(1)}. Default is 4.
@@ -100,9 +100,9 @@ isBimera <- function(sq, parents, allowOneOff=TRUE, minOneOffParentDistance=4, m
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' isBimeraDenovo(dada1)
-#' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
+#' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=TRUE)
 #' 
-isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
   if(any(duplicated(getSequences(unqs)))) message("Duplicate sequences detected.")
   unqs.int <- getUniques(unqs, silence=TRUE) # Internal, keep input unqs for proper return value when duplications
   abunds <- unname(unqs.int)
@@ -183,8 +183,8 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 #' @param minParentAbundance (Optional). Default is 2.
 #'   Only sequences at least this abundant can be "parents". Evaluated on a per-sample basis.
 #' 
-#' @param allowOneOff (Optional). Default is TRUE.
-#'   If TRUE, sequences that have one mismatch or indel to an exact bimera are also
+#' @param allowOneOff (Optional). Default is FALSE.
+#'   If FALSE, sequences that have one mismatch or indel to an exact bimera are also
 #'   flagged as bimeric.
 #' 
 #' @param minOneOffParentDistance (Optional). Default is 4.
@@ -215,9 +215,9 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 #' dd <- dada(list(derep1,derep2), err=NULL, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' seqtab <- makeSequenceTable(dd)
 #' isBimeraDenovoTable(seqtab)
-#' isBimeraDenovoTable(seqtab, allowOneOff=FALSE, minSampleFraction=0.5)
+#' isBimeraDenovoTable(seqtab, allowOneOff=TRUE, minSampleFraction=0.5)
 #' 
-isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1, minParentAbundance = 2, allowOneOff=TRUE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
+isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1, minParentAbundance = 2, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
   sqs <- colnames(seqtab)
   if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs) && all(sapply(sqs, C_isACGT)))) {
     stop("Input must be a valid sequence table.")
