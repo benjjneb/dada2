@@ -12,7 +12,7 @@ The dada2 package provides two taxonomic assignment methods.
 
 If assignment down to the species level is desired, `assignSpecies(...)` uses exact string matching against a reference database to assign *Genus species* binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if sufficiently unambiguous.
 
-These two functions can be combined to produce taxonomic assignments from Kingdom down to Species with the `addSpecies(...)` convenience function.
+These two functions can be combined to produce taxonomic assignments from Kingdom down to Species with the `addSpecies(...)` convenience function. Consistent [training fastas for this purpose are provided for the Silva and RDP databases](training.html).
 
 ## Getting started
 
@@ -22,14 +22,14 @@ library(dada2); packageVersion("dada2")
 
 Both `assignTaxonomy` and `assignSpecies` depend on training datasets of taxonomically assigned sequences. Appropriately [formatted datasets for several popular reference databases](training.html) are available.
 
-In order to follow along with the examples below, [download](training.html) the `rdp_train_set_14.fa.gz` and `rdp_species_assignment_14.fa.gz` files to an appropriate location on your local machine.
+In order to follow along with the examples below, [download](training.html) the `rdp_train_set_16.fa.gz` and `rdp_species_assignment_16.fa.gz` files to an appropriate location on your local machine.
 
 &nbsp;
 
 ## Taxonomic assignment
 
 Here we classify a handful of 16S sequences from the v4 region against the RDP training set. Our sequences of interest:
-```{r}
+```{r seqs}
 seqs <- c(
 "ACGGAGGGTCCGAGCGTTAATCGGAATTACTGGGCGTAAAGCGTGCGCAGGCGGTTTGTTAAGCGAGATGTGAAAGCCCCGGGCTCAACCTGGGAATTGCATTTCGAACTGGCGAACTAGAGTCTTGTAGAGGGGGGTAGAATTCCAGGTGTAGCGGTGAAATGCGTAGAGATCTGGAGGA",
 "ACAGAGGTCTCAAGCGTTGTTCGGAATCACTGGGCGTAAAGCGTGCGTAGGCTGTTTCGTAAGTCGTGTGTGAAAGGCGCGGGCTCAACCCGCGGACGGCACATGATACTGCGAGACTAGAGTAATGGAGGGGGAACCGGAATTCTCGGTGTAGCAGTGAAATGCGTAGATATCGAGAGGA",
@@ -43,20 +43,20 @@ seqs <- c(
 "ACGTAGGTCCCGAACGTTGCGCGAAATTACTGGGCGTAAAGGGTCCGTAGGCGGTCTGGTAAGTGGAAGGTGAAAGCCCACGGCTCAACCGTGGAATTGCCTTCCAAACTGCTGGACTTGAGGGCGGAAGAGGTCGGCGGAATTCCCGGTGTAGCGGTGAAATGCGTAGATATCGGGAGGA")
 ```
 
-We run the `assignTaxonomy(...)` function with the RDP as the reference dataset. *To run the following on your local machine, modify the filename in the second argument to point to where the `rdp_train_set_14.fa.gz` file sits on your computer.*
+We run the `assignTaxonomy(...)` function with the RDP as the reference dataset. *To run the following on your local machine, modify the filename in the second argument to point to where the `rdp_train_set_16.fa.gz` file sits on your computer.*
 
-```{r}
+```{r assign-taxonomy}
 set.seed(100) # Initialize random number generator for reproducibility
-taxa <- assignTaxonomy(seqs, "rdp_train_set_14.fa.gz", multithread=FALSE)
+taxa <- assignTaxonomy(seqs, "Training/rdp_train_set_16.fa.gz", multithread=FALSE)
 unname(taxa)
 ```
 
 The return value of `assignTaxonomy(...)` is a character matrix, with each row corresponding to an input sequence, and each column corresponding to a taxonomic level. For the RDP training set, the levels are Kingdom, Phylum, Class, Order, Family, Genus, and we see that each sequence has been classified all the way to genus.
 
 An important parameter to consider when running `assignTaxonomy(...)` is `minBoot`, which sets the minimum bootstrapping support required to return a taxonomic classification. The original paper recommended a threshold of 50 for sequences of 250nts or less (as these are) but a threshold of 80 generally. Let's see what happens when we classify at that higher threshold:
-```{r}
+```{r minboot-80}
 set.seed(100) # Initialize random number generator for reproducibility
-taxa.80 <- assignTaxonomy(seqs, "rdp_train_set_14.fa.gz", minBoot=80)
+taxa.80 <- assignTaxonomy(seqs, "Training/rdp_train_set_16.fa.gz", minBoot=80)
 unname(taxa.80)
 ```
 
@@ -66,24 +66,28 @@ At this more stringent threshold, sequence 5 and 7 are not classified at the gen
 
 We now run the `assignSpecies` function against the RDP species-level training set. *To run the following on your local machine, modify the filename in the second argument to point to where the `rdp_species_assignment_14.fa.gz` file sits on your computer.*
 
+**<span style="color:red">As of version 1.5.2, the assignSpecies has been reimplemented to be much faster -- more than 100x faster for common use cases.</span>**
+
 ```{r assign-species}
-genus.species <- assignSpecies(seqs, "Training/rdp_species_assignment_14.fa.gz")
+genus.species <- assignSpecies(seqs, "Training/rdp_species_assignment_16.fa.gz")
 unname(genus.species)
 ```
 
 By default the `assignSpecies` method only returns species assignments if there is no ambiguity, i.e. all exact matches were to the same species. However, given that we are generally working with fragments of the 16S gene, it is common that exact matches are made to multiple sequences that are identical over the sequenced region. This is often still useful information, so to have all sequence hits returned the `returnMultiple=TRUE` argument can be passed to the `assignSpecies` function:
 
 ```{r assign-species-multi}
-unname(assignSpecies(seqs, "Training/rdp_species_assignment_14.fa.gz", allowMultiple=TRUE))
+unname(assignSpecies(seqs, "Training/rdp_species_assignment_16.fa.gz", allowMultiple=TRUE))
 ```
 
 Several of these sequences exactly match multiple species. Setting `allowMultiple` to an integer value allows fine-grained control over this behavior. For example, `allowMultiple=3` returns up to 3 different matched species, but if 4 or more are matched it returns `NA`.
 
-In many cases it is desirable to link the species annotation in with the broader taxonomic annotation afforded by `assignTaxonomy`. The convenience function `addSpecies` serves this purpose, as it takes as input a taxonomy table, and outputs a table with an added species column. *Note that only those genus-species binomials which are consistent with the genus assigned in the provided taxonomy table are retained in the output.*
+## Kingom to Species
+
+In many cases it is desirable to link the species annotation in with the broader taxonomic annotation afforded by `assignTaxonomy`. The convenience function `addSpecies` serves this purpose, as it takes as input a taxonomy table, and outputs a table with an added species column. Only those genus-species binomials which are consistent with the genus assigned in the provided taxonomy table are retained in the output. *Note that we have switched to the silva training fastas here for demonstration purposes.*
 
 ```{r add-species}
-tt <- assignTaxonomy(seqs, "Training/silva_nr_v123_train_set.fa.gz")
-tt.plus <- addSpecies(tt, "Training/silva_species_assignment_v123.fa.gz", verbose=TRUE)
+tt <- assignTaxonomy(seqs, "Training/silva_nr_v128_train_set.fa.gz")
+tt.plus <- addSpecies(tt, "Training/silva_species_assignment_v128.fa.gz", verbose=TRUE)
 unname(tt.plus)
 ```
 
