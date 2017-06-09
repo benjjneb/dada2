@@ -65,6 +65,53 @@ loessErrfun <- function(trans) {
   return(err)
 }
 
+#' Estimate error rates for each type of transition while ignoring quality scores.
+#' 
+#' This function accepts a matrix of observed transitions, groups together all observed
+#' transitions regardless of quality scores, and estimates the error rate for that transition
+#' as the observed fraction of those transitions. This can be used in place of the default
+#' \code{\link{loessErrfun}} when calling \code{\link{learnErrors}} or \code{link{dada}}
+#' with the effect that quality scores will be effectively ignored.
+#' 
+#' @param trans (Required). A matrix of the observed transition counts. Must be 16 rows,
+#' with the rows named "A2A", "A2C", ...
+#' 
+#' @return A numeric matrix with 16 rows and the same number of columns as trans.
+#'  The estimated error rates for each transition (row, eg. "A2C") are identical across
+#'  all columns (which correspond to quality scores).
+#' 
+#' @export
+#' 
+#' @examples
+#' fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' err.noqual <- learnErrors(fl1, errorEstimationFunction=noqualErrfun)
+#' 
+noqualErrfun <- function(trans) {
+  # Init matrix to record the estimated transition probabilities
+  est <- matrix(0, nrow=0, ncol=ncol(trans))
+  for(nti in c("A","C","G","T")) {
+    for(ntj in c("A","C","G","T")) {
+      if(nti != ntj) {
+        row.name <- paste0(nti,"2",ntj)
+        # Estimate transition rate by aggregating across all quality scores
+        tot.trans <- sum(trans[row.name,])
+        tot.init.nt <- sum(trans[paste0(nti,"2",c("A","C","G","T")),])
+        est <- rbind(est, rep(tot.trans/tot.init.nt, ncol(trans)))
+      } # if(nti != ntj)
+    } # for(ntj in c("A","C","G","T"))
+  } # for(nti in c("A","C","G","T"))
+  
+  # Expand the err matrix with the self-transition probs
+  err <- rbind(1-colSums(est[1:3,]), est[1:3,],
+               est[4,], 1-colSums(est[4:6,]), est[5:6,],
+               est[7:8,], 1-colSums(est[7:9,]), est[9,],
+               est[10:12,], 1-colSums(est[10:12,]))
+  rownames(err) <- paste0(rep(c("A","C","G","T"), each=4), "2", c("A","C","G","T"))
+  colnames(err) <- colnames(trans)
+  # Return
+  return(err)
+}
+
 #' Learns the error rates from an input list, or vector, of file names or a list of \code{\link{derep-class}} objects.
 #' 
 #' Error rates are learned by alternating between sample inference and error rate estimation 
@@ -83,11 +130,9 @@ loessErrfun <- function(trans) {
 #'  
 #' @param errorEstimationFunction (Optional). Function. Default \code{\link{loessErrfun}}.
 #' 
-#'  If USE_QUALS = TRUE, \code{errorEstimationFunction} is computed on the matrix of observed transitions
+#'  \code{errorEstimationFunction} is computed on the matrix of observed transitions
 #'  after each sample inference step in order to generate the new matrix of estimated error rates.
 #'    
-#'  If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).
-#'  
 #' @param multithread (Optional). Default is FALSE.
 #'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
 #'  If an integer is provided, the number of threads to use is set by passing the argument on to
@@ -133,7 +178,7 @@ learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, 
   }
   drps <- drps[1:i]
   # Run dada in self-consist mode on those samples
-  dds <- dada(drps, err=NULL, selfConsist=TRUE, multithread=multithread)
+  dds <- dada(drps, err=NULL, errorEstimationFunction=errorEstimationFunction, selfConsist=TRUE, multithread=multithread)
   cat("Total reads used: ", NREADS, "\n")
   return(getErrors(dds, detailed=TRUE))
 }
