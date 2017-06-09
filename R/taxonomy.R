@@ -225,7 +225,6 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
   seqs <- getSequences(seqs)
   # Read in the reference fasta
   refsr <- readFasta(refFasta)
-  refs <- as(sread(refsr), "character")
   ids <- as(id(refsr), "character")
   genus <- sapply(strsplit(ids, "\\s"), `[`, 2)
   species <- sapply(strsplit(ids, "\\s"), `[`, 3)
@@ -234,7 +233,7 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
   lens <- nchar(seqs)
   for(len in unique(lens)) { # Requires all same length sequences
     seqdict <- PDict(seqs[lens==len])
-    vhit <- (vcountPDict(seqdict, refdna)>0)
+    vhit <- (vcountPDict(seqdict, sread(refsr))>0)
     hits[lens==len] <- lapply(seq(nrow(vhit)), function(x) vhit[x,])
   }
   # Get genus species return strings
