@@ -201,6 +201,8 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' 
 #' @export
 #' 
+#' @importFrom Biostrings vcountPDict
+#' @importFrom Biostrings PDict
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead sread
 #' @importFrom ShortRead id
@@ -212,6 +214,13 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' }
 #' 
 assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
+  # Define number of multiple species to return
+  if(is.logical(allowMultiple)) {
+    if(allowMultiple) keep <- Inf
+    else keep <- 1
+  } else {
+    keep <- as.integer(allowMultiple)
+  }
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
@@ -221,13 +230,12 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
   genus <- sapply(strsplit(ids, "\\s"), `[`, 2)
   species <- sapply(strsplit(ids, "\\s"), `[`, 3)
   # Identify the exact hits
-  hits <- lapply(seqs, function(x) grepl(x, refs, fixed=TRUE))
-  # Define number of multiple species to return
-  if(is.logical(allowMultiple)) {
-    if(allowMultiple) keep <- Inf
-    else keep <- 1
-  } else {
-    keep <- as.integer(allowMultiple)
+  hits <- vector("list", length(seqs))
+  lens <- nchar(seqs)
+  for(len in unique(lens)) { # Requires all same length sequences
+    seqdict <- PDict(seqs[lens==len])
+    vhit <- (vcountPDict(seqdict, refdna)>0)
+    hits[lens==len] <- lapply(seq(nrow(vhit)), function(x) vhit[x,])
   }
   # Get genus species return strings
   rval <- cbind(unlist(sapply(hits, mapHits, refs=genus, keep=1)),

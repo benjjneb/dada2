@@ -1,3 +1,23 @@
+CHANGES IN VERSION 1.5.2
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o assignSpecies has been reimplemented to be much, much faster (>100x faster with enough query sequences).
+
+    o The allowOneOff flag has been set to FALSE by default in the xxxBimeraDenovo functions.
+
+BUG FIXES
+
+    o The compress option is now respected by trimAndFilter.
+
+CHANGES IN VERSION 1.5.1
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The parsing functions to create the training fastas compatible with assignTaxonomy and assignSpecies from the Silva and RDP databases are now included as private functions in the taxonomy.R file. In parallel, updated versions of both RDP (trainset 16) and Silva (v128) training fastas were released on Zenodo.
+
 CHANGES IN VERSION 1.3.5
 -----------------------
 

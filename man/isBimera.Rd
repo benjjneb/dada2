@@ -4,7 +4,7 @@
 \alias{isBimera}
 \title{Determine if input sequence is a bimera of putative parent sequences.}
 \usage{
-isBimera(sq, parents, allowOneOff = TRUE, minOneOffParentDistance = 4,
+isBimera(sq, parents, allowOneOff = FALSE, minOneOffParentDistance = 4,
   maxShift = 16)
 }
 \arguments{
@@ -15,8 +15,8 @@ The sequence being evaluated as a possible bimera.}
 A vector of possible "parent" sequence that could form the left and right
 sides of the bimera.}
 
-\item{allowOneOff}{(Optional). A \code{logical(1)}. Default is TRUE.
-If TRUE, sq will be identified as a bimera if it is one mismatch or indel away 
+\item{allowOneOff}{(Optional). A \code{logical(1)}. Default is FALSE.
+If FALSE, sq will be identified as a bimera if it is one mismatch or indel away 
 from an exact bimera.}
 
 \item{minOneOffParentDistance}{(Optional). A \code{numeric(1)}. Default is 4.

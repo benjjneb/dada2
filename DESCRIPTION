@@ -1,14 +1,15 @@
 Package: dada2
 Type: Package
 Title: Accurate, high-resolution sample inference from amplicon sequencing data
-Description: The dada2 package infers exact sequence variants (SVs) from amplicon 
-    data, replacing the coarser and less accurate OTU clustering approach. The dada2
-    pipeline takes as input demultiplexed fastq files, and outputs the sequence variants
-    and their sample-wise abundances after removing substitution and chimera
-    errors. Taxonomic classification is available via a native implementation
-    of the RDP naive Bayesian classifier.
-Version: 1.5.1
-Date: 2017-06-01
+Description: The dada2 package infers exact amplicon sequence variants (ASVs) from 
+    high-throughput amplicon sequencing data, replacing the coarser and less accurate
+    OTU clustering approach. The dada2 pipeline takes as input demultiplexed fastq 
+    files, and outputs the sequence variants and their sample-wise abundances after 
+    removing substitution and chimera errors. Taxonomic classification is available
+    via a native implementation of the RDP naive Bayesian classifier, and genus-species
+    assignment by exact matching.
+Version: 1.5.2
+Date: 2017-06-08
 Maintainer: Benjamin Callahan <benjamin.j.callahan@gmail.com>
 Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan
     Holmes

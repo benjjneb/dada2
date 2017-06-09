@@ -6,7 +6,7 @@
 \usage{
 isBimeraDenovoTable(seqtab, minSampleFraction = 0.9, ignoreNNegatives = 1,
   minFoldParentOverAbundance = 1, minParentAbundance = 2,
-  allowOneOff = TRUE, minOneOffParentDistance = 4, maxShift = 16,
+  allowOneOff = FALSE, minOneOffParentDistance = 4, maxShift = 16,
   multithread = FALSE, verbose = FALSE)
 }
 \arguments{
@@ -30,8 +30,8 @@ Only sequences greater than this-fold more abundant than a sequence can be its
 \item{minParentAbundance}{(Optional). Default is 2.
 Only sequences at least this abundant can be "parents". Evaluated on a per-sample basis.}
 
-\item{allowOneOff}{(Optional). Default is TRUE.
-If TRUE, sequences that have one mismatch or indel to an exact bimera are also
+\item{allowOneOff}{(Optional). Default is FALSE.
+If FALSE, sequences that have one mismatch or indel to an exact bimera are also
 flagged as bimeric.}
 
 \item{minOneOffParentDistance}{(Optional). Default is 4.
@@ -66,7 +66,7 @@ derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 dd <- dada(list(derep1,derep2), err=NULL, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 seqtab <- makeSequenceTable(dd)
 isBimeraDenovoTable(seqtab)
-isBimeraDenovoTable(seqtab, allowOneOff=FALSE, minSampleFraction=0.5)
+isBimeraDenovoTable(seqtab, allowOneOff=TRUE, minSampleFraction=0.5)
 
 }
 \seealso{

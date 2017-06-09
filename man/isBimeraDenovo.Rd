@@ -5,7 +5,7 @@
 \title{Identify bimeras from collections of unique sequences.}
 \usage{
 isBimeraDenovo(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8,
-  allowOneOff = TRUE, minOneOffParentDistance = 4, maxShift = 16,
+  allowOneOff = FALSE, minOneOffParentDistance = 4, maxShift = 16,
   multithread = FALSE, verbose = FALSE)
 }
 \arguments{
@@ -19,8 +19,8 @@ Only sequences greater than this-fold more abundant than a sequence can be its
 \item{minParentAbundance}{(Optional). A \code{numeric(1)}. Default is 8.
 Only sequences at least this abundant can be "parents".}
 
-\item{allowOneOff}{(Optional). A \code{logical(1)}. Default is TRUE.
-If TRUE, sequences that have one mismatch or indel to an exact bimera are also
+\item{allowOneOff}{(Optional). A \code{logical(1)}. Default is FALSE.
+If FALSE, sequences that have one mismatch or indel to an exact bimera are also
 flagged as bimeric.}
 
 \item{minOneOffParentDistance}{(Optional). A \code{numeric(1)}. Default is 4.
@@ -54,7 +54,7 @@ being a bimera of those more abundant "parents".
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 isBimeraDenovo(dada1)
-isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=FALSE)
+isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=TRUE)
 
 }
 \seealso{
