@@ -19,10 +19,8 @@ read in.}
 
 \item{errorEstimationFunction}{(Optional). Function. Default \code{\link{loessErrfun}}.
 
- If USE_QUALS = TRUE, \code{errorEstimationFunction} is computed on the matrix of observed transitions
- after each sample inference step in order to generate the new matrix of estimated error rates.
-   
- If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).}
+ \code{errorEstimationFunction} is computed on the matrix of observed transitions
+ after each sample inference step in order to generate the new matrix of estimated error rates.}
 
 \item{multithread}{(Optional). Default is FALSE.
 If TRUE, multithreading is enabled and the number of available threads is automatically determined.   

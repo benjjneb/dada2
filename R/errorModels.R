@@ -83,10 +83,8 @@ loessErrfun <- function(trans) {
 #'  
 #' @param errorEstimationFunction (Optional). Function. Default \code{\link{loessErrfun}}.
 #' 
-#'  If USE_QUALS = TRUE, \code{errorEstimationFunction} is computed on the matrix of observed transitions
+#'  \code{errorEstimationFunction} is computed on the matrix of observed transitions
 #'  after each sample inference step in order to generate the new matrix of estimated error rates.
-#'    
-#'  If USE_QUALS = FALSE, this argument is ignored, and transition rates are estimated by maximum likelihood (t_ij = n_ij/n_i).
 #'  
 #' @param multithread (Optional). Default is FALSE.
 #'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
@@ -133,7 +131,7 @@ learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, 
   }
   drps <- drps[1:i]
   # Run dada in self-consist mode on those samples
-  dds <- dada(drps, err=NULL, selfConsist=TRUE, multithread=multithread)
+  dds <- dada(drps, err=NULL, selfConsist=TRUE, errorEstimationFunction=errorEstimationFunction, multithread=multithread)
   cat("Total reads used: ", NREADS, "\n")
   return(getErrors(dds, detailed=TRUE))
 }

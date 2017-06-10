@@ -181,14 +181,15 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                      mapply(c, fwd, rev, SIMPLIFY=FALSE), mapply(c, filt, filt.rev, SIMPLIFY=FALSE), 
                      MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, maxLen=maxLen, minLen=minLen,
                                      maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, primer.fwd=primer.fwd,
-                                     matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, verbose=verbose),
+                                     matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, 
+                                     compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
   } else {
     rval <- mcmapply(fastqFilter, 
                      fwd, filt, 
                      MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, maxLen=maxLen, minLen=minLen, 
                                      maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, primer.fwd=primer.fwd,
-                                     n=n, OMP=OMP, verbose=verbose),
+                                     n=n, OMP=OMP, compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
   }
   colnames(rval) <- basename(fwd)
