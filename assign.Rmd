@@ -66,7 +66,7 @@ At this more stringent threshold, sequence 5 and 7 are not classified at the gen
 
 We now run the `assignSpecies` function against the RDP species-level training set. *To run the following on your local machine, modify the filename in the second argument to point to where the `rdp_species_assignment_14.fa.gz` file sits on your computer.*
 
-**<span style="color:red">As of version 1.5.2, the assignSpecies has been reimplemented to be much faster -- more than 100x faster for common use cases.</span>**
+**<span style="color:red">As of version 1.5.2, assignSpecies has been reimplemented to be much faster -- more than 100x faster for common use cases.</span>**
 
 ```{r assign-species}
 genus.species <- assignSpecies(seqs, "Training/rdp_species_assignment_16.fa.gz")

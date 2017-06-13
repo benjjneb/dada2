@@ -275,7 +275,7 @@ $(document).ready(function () {
 <div id="getting-started" class="section level2">
 <h2>Getting started</h2>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.5.2&#39;</code></pre>
+<pre><code>## [1] &#39;1.4.0&#39;</code></pre>
 <p>Both <code>assignTaxonomy</code> and <code>assignSpecies</code> depend on training datasets of taxonomically assigned sequences. Appropriately <a href="training.html">formatted datasets for several popular reference databases</a> are available.</p>
 <p>In order to follow along with the examples below, <a href="training.html">download</a> the <code>rdp_train_set_16.fa.gz</code> and <code>rdp_species_assignment_16.fa.gz</code> files to an appropriate location on your local machine.</p>
 <p> </p>
@@ -352,8 +352,8 @@ unname(taxa.80)</code></pre>
 <div id="species-assignment" class="section level2">
 <h2>Species assignment</h2>
 <p>We now run the <code>assignSpecies</code> function against the RDP species-level training set. <em>To run the following on your local machine, modify the filename in the second argument to point to where the <code>rdp_species_assignment_14.fa.gz</code> file sits on your computer.</em></p>
-<p><strong><span style="color:red">As of version 1.5.2, the assignSpecies has been reimplemented to be much faster – more than 100x faster for common use cases.</span></strong></p>
-<pre class="r"><code>genus.species &lt;- assignSpecies(seqs, &quot;Training/rdp_species_assignment_14.fa.gz&quot;)
+<p><strong><span style="color:red">As of version 1.5.2, assignSpecies has been reimplemented to be much faster – more than 100x faster for common use cases.</span></strong></p>
+<pre class="r"><code>genus.species &lt;- assignSpecies(seqs, &quot;Training/rdp_species_assignment_16.fa.gz&quot;)
 unname(genus.species)</code></pre>
 <pre><code>##       [,1]                   [,2]            
 ##  [1,] &quot;Shewanella&quot;           NA              
@@ -367,7 +367,7 @@ unname(genus.species)</code></pre>
 ##  [9,] NA                     NA              
 ## [10,] &quot;Persephonella&quot;        &quot;marina&quot;</code></pre>
 <p>By default the <code>assignSpecies</code> method only returns species assignments if there is no ambiguity, i.e. all exact matches were to the same species. However, given that we are generally working with fragments of the 16S gene, it is common that exact matches are made to multiple sequences that are identical over the sequenced region. This is often still useful information, so to have all sequence hits returned the <code>returnMultiple=TRUE</code> argument can be passed to the <code>assignSpecies</code> function:</p>
-<pre class="r"><code>unname(assignSpecies(seqs, &quot;Training/rdp_species_assignment_14.fa.gz&quot;, allowMultiple=TRUE))</code></pre>
+<pre class="r"><code>unname(assignSpecies(seqs, &quot;Training/rdp_species_assignment_16.fa.gz&quot;, allowMultiple=TRUE))</code></pre>
 <pre><code>##       [,1]                  
 ##  [1,] &quot;Shewanella&quot;          
 ##  [2,] &quot;Akkermansia&quot;         
@@ -379,24 +379,24 @@ unname(genus.species)</code></pre>
 ##  [8,] NA                    
 ##  [9,] NA                    
 ## [10,] &quot;Persephonella&quot;       
-##       [,2]                                                                                         
-##  [1,] &quot;arctica/baltica/hafniensis/massilia/putrefaciens&quot;                                           
-##  [2,] &quot;muciniphila&quot;                                                                                
-##  [3,] &quot;piger&quot;                                                                                      
-##  [4,] &quot;yellowstonense&quot;                                                                             
-##  [5,] &quot;pontiacus&quot;                                                                                  
-##  [6,] &quot;faecichinchillae/faecis/thetaiotaomicron&quot;                                                   
-##  [7,] &quot;arenicola/pacifica/tropica&quot;                                                                 
-##  [8,] &quot;chrysanthemi/dadantii/dianthicola/dieffenbachiae/nigrifluens/paradisiaca/roseae/solani/zeae&quot;
-##  [9,] NA                                                                                           
+##       [,2]                                                                                   
+##  [1,] &quot;arctica/baltica/hafniensis/massilia/putrefaciens/vesiculosa&quot;                          
+##  [2,] &quot;muciniphila&quot;                                                                          
+##  [3,] &quot;piger&quot;                                                                                
+##  [4,] &quot;yellowstonense&quot;                                                                       
+##  [5,] &quot;pontiacus&quot;                                                                            
+##  [6,] &quot;faecichinchillae/faecis/thetaiotaomicron&quot;                                             
+##  [7,] &quot;arenicola/pacifica/tropica&quot;                                                           
+##  [8,] &quot;aquatica/chrysanthemi/dadantii/dianthicola/nigrifluens/paradisiaca/roseae/solani/zeae&quot;
+##  [9,] NA                                                                                     
 ## [10,] &quot;marina&quot;</code></pre>
 <p>Several of these sequences exactly match multiple species. Setting <code>allowMultiple</code> to an integer value allows fine-grained control over this behavior. For example, <code>allowMultiple=3</code> returns up to 3 different matched species, but if 4 or more are matched it returns <code>NA</code>.</p>
 </div>
 <div id="kingom-to-species" class="section level2">
 <h2>Kingom to Species</h2>
 <p>In many cases it is desirable to link the species annotation in with the broader taxonomic annotation afforded by <code>assignTaxonomy</code>. The convenience function <code>addSpecies</code> serves this purpose, as it takes as input a taxonomy table, and outputs a table with an added species column. Only those genus-species binomials which are consistent with the genus assigned in the provided taxonomy table are retained in the output. <em>Note that we have switched to the silva training fastas here for demonstration purposes.</em></p>
-<pre class="r"><code>tt &lt;- assignTaxonomy(seqs, &quot;Training/silva_nr_v123_train_set.fa.gz&quot;)
-tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v123.fa.gz&quot;, verbose=TRUE)</code></pre>
+<pre class="r"><code>tt &lt;- assignTaxonomy(seqs, &quot;Training/silva_nr_v128_train_set.fa.gz&quot;)
+tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v128.fa.gz&quot;, verbose=TRUE)</code></pre>
 <pre><code>## 5 out of 10 were assigned to the species level.
 ## Of which 4 had genera consistent with the input table.</code></pre>
 <pre class="r"><code>unname(tt.plus)</code></pre>
@@ -416,7 +416,7 @@ tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v123.fa.gz&
 ##  [2,] &quot;Verrucomicrobiales&quot; &quot;Verrucomicrobiaceae&quot; &quot;Akkermansia&quot;         
 ##  [3,] &quot;Desulfovibrionales&quot; &quot;Desulfovibrionaceae&quot; &quot;Desulfovibrio&quot;       
 ##  [4,] &quot;Aquificales&quot;        &quot;Hydrogenothermaceae&quot; &quot;Sulfurihydrogenibium&quot;
-##  [5,] &quot;Rhodobacterales&quot;    &quot;Rhodobacteraceae&quot;    &quot;Loktanella&quot;          
+##  [5,] &quot;Rhodobacterales&quot;    &quot;Rhodobacteraceae&quot;    NA                    
 ##  [6,] &quot;Bacteroidales&quot;      &quot;Bacteroidaceae&quot;      &quot;Bacteroides&quot;         
 ##  [7,] &quot;Micromonosporales&quot;  &quot;Micromonosporaceae&quot;  &quot;Salinispora&quot;         
 ##  [8,] &quot;Enterobacteriales&quot;  &quot;Enterobacteriaceae&quot;  &quot;Dickeya&quot;             
