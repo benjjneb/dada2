@@ -30,7 +30,8 @@ Imports:
 Suggests:
     BiocStyle,
     knitr,
-    rmarkdown
+    rmarkdown,
+    shiny
 LinkingTo:
     Rcpp,
     RcppParallel
@@ -40,7 +41,7 @@ biocViews: Microbiome, Sequencing, Classification, Metagenomics
 URL: http://benjjneb.github.io/dada2/
 BugReports: https://github.com/benjjneb/dada2/issues
 LazyData: true
-Collate:
+Collate: 
     'RcppExports.R'
     'allClasses.R'
     'allPackage.R'
@@ -53,6 +54,7 @@ Collate:
     'paired.R'
     'plot-methods.R'
     'sequenceIO.R'
+    'shiny.R'
     'show-methods.R'
     'taxonomy.R'
 RoxygenNote: 6.0.1
