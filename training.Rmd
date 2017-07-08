@@ -6,7 +6,7 @@ The `assignTaxonomy` and `assignSpecies` functions require appropriately formatt
 
 ## DADA2-formatted reference databases
 
-We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes. As of version 1.3.3 the dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be contributed, and shared here if referencable by doi (eg. Zenodo). 
+We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes. As of version 1.3.3 the dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be "contibuted" and will be made available through this page if referencable by doi (eg. deposited at Zenodo or Figshare). 
 
 *Please note that the files provided here are just derivative reformattings of these taxonomic databases. If using these files for taxonomic assignment, the source database should be cited.*
 
@@ -14,9 +14,9 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 **Maintained:**
 
-* **[Silva version 128](https://doi.org/10.5281/zenodo.801832)** &nbsp; &nbsp; &nbsp; (previous: [Silva version 123](http://dx.doi.org/10.5281/zenodo.158958); **[Silva dual-license](https://www.arb-silva.de/silva-license-information/)**)
+* **[Silva version 128](https://doi.org/10.5281/zenodo.801831)** &nbsp; &nbsp; &nbsp; (previous: [Silva version 123](http://dx.doi.org/10.5281/zenodo.158958); **[Silva dual-license](https://www.arb-silva.de/silva-license-information/)**)
 
-* **[RDP trainset 16](https://doi.org/10.5281/zenodo.801828)** &nbsp; &nbsp; &nbsp; &nbsp; (previous: [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955))
+* **[RDP trainset 16](https://doi.org/10.5281/zenodo.801827)** &nbsp; &nbsp; &nbsp; &nbsp; (previous: [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955))
 
 * **[GreenGenes version 13.8](http://dx.doi.org/10.5281/zenodo.158955)**
 
