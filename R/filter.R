@@ -145,12 +145,14 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
       dir.create(odir, recursive=TRUE, mode="0777")
     }
   }
+  if(!all(file.exists(fwd))) stop("Some input files do not exist.")
   fwd <- normalizePath(fwd, mustWork=TRUE)
-  filt <- suppressWarnings(normalizePath(filt, mustWork=FALSE)) ###F MUST PROPAGATE TO REVERSE
+  filt <- suppressWarnings(normalizePath(filt, mustWork=FALSE))
   if(any(duplicated(filt))) stop("All output files must be distinct.")
   if(any(filt %in% fwd)) stop("Output files must be distinct from the input files.")
   if(!is.null(rev)) {
     PAIRED <- TRUE
+    if(!all(file.exists(rev))) stop("Some input files do not exist.")
     if(is.null(filt.rev)) stop("Output files for the reverse reads are required.")
     if(length(rev) != length(fwd)) stop("Paired forward and reverse input files must correspond.")
     if(length(rev) != length(filt.rev)) stop("Every input file (rev) must have a corresponding output file (filt.rev).")

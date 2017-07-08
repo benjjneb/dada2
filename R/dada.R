@@ -203,19 +203,10 @@ dada <- function(derep,
   
   # Validate errorEstimationFunction
   if(!opts$USE_QUALS) {
-    if(!is.null(errorEstimationFunction)) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
-    errorEstimationFunction = NULL  # NULL error function has different meaning depending on USE_QUALS
+    if(!missing(errorEstimationFunction)) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
+    errorEstimationFunction <- NULL  # NULL error function has different meaning depending on USE_QUALS
   } else {
-    if(is.null(errorEstimationFunction)) { 
-      if(selfConsist) {
-        warning("Did not provide errorEstimationFunction for selfConsist mode, using the default loessErrfun.")
-        errorEstimationFunction <- loessErrfun
-      } else {
-        message("Did not provide errorEstimationFunction, no post-dada error rates ($err_out) will be estimated.") 
-      }
-    } else {
-      if(!is.function(errorEstimationFunction)) stop("Must provide a function for errorEstimationFunction.")
-    }
+    if(!is.function(errorEstimationFunction)) stop("Must provide a function for errorEstimationFunction.")
   }
   
   # Validate alignment parameters
@@ -459,15 +450,14 @@ dada <- function(derep,
 #' @details The various dada options...
 #' 
 #' OMEGA_A: This parameter sets the threshold for when DADA2 calls unique sequences significantly overabundant, and therefore creates a
-#'  new cluster with that sequence as the center. The default value is 1e-40, which is a conservative setting to avoid making false
+#'  new cluster with that sequence as the center. Default is 1e-40, which is a conservative setting to avoid making false
 #'  positive inferences, but which comes at the cost of reducing the ability to identify some rare variants.
 #' 
 #' USE_QUALS: If TRUE, the dada(...) error model takes into account the consensus quality score of the dereplicated unique sequences.
-#'  If FALSE, quality scores are ignored. The default is TRUE, however if applying DADA2 to pyrosequenced data it is recommended to set
-#'  USE_QUALS to FALSE, as quality scores are not informative about substitution error rates in pyrosequencing.
+#'  If FALSE, quality scores are ignored. Default is TRUE.
 #' 
 #' USE_KMERS: If TRUE, a 5-mer distance screen is performed prior to performing each pairwise alignment, and if the 5mer-distance
-#'  is greater than KDIST_CUTOFF, no alignment is performed. TRUE by default.
+#'  is greater than KDIST_CUTOFF, no alignment is performed. Default is TRUE.
 #' 
 #' KDIST_CUTOFF: The default value of 0.42 was chosen to screen pairs of sequences that differ by >10\%, and was
 #'  calibrated on Illumina sequenced 16S amplicon data. The assumption is that sequences that differ by such a large
@@ -494,7 +484,7 @@ dada <- function(derep,
 #'  criteria is ignored.
 #'
 #' MAX_CLUST: The maximum number of clusters. Once this many clusters have been created, the algorithm terminates regardless
-#'  of whether the statistical model suggests more sample sequences exist. If set to 0 this argument is ignored. Default
+#'  of whether the statistical model suggests more real sequence variants exist. If set to 0 this argument is ignored. Default
 #'  value is 0.
 #'  
 #' MAX_CONSIST: The maximum number of steps when selfConsist=TRUE. If convergence is not reached in MAX_CONSIST steps,
