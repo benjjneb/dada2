@@ -142,6 +142,12 @@ noqualErrfun <- function(trans) {
 #'  If FALSE, samples are read in the provided order until enough reads are obtained.
 #'  If TRUE, samples are picked at random from those provided.
 #'  
+#' @param MAX_CONSIST (Optional). Default 10.
+#'  The maximum number of times to step through the self-consistency loop. If convergence was not
+#'  reached in MAX_CONSIST steps, the estimated error rates in the last step are returned.
+#'  
+#' @param ... (Optional). Additional arguments will be passed on to the \code{\link{dada}} function.
+#'  
 #' @return A named list with three entries:
 #'  $err_out: A numeric matrix with the learned error rates.
 #'  $err_in: The initialization error rates (unimportant).
@@ -161,9 +167,10 @@ noqualErrfun <- function(trans) {
 #'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
 #'  # Using a list of derep-class objects
 #'  dereps <- derepFastq(c(fl1, fl2))
-#'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE)
+#'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE, MAX_CONSIST=20)
 #' 
-learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, randomize=FALSE) {
+learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, 
+                        randomize=FALSE, MAX_CONSIST=10, ...) {
   NREADS <- 0
   drps <- vector("list", length(fls))
   if(randomize) { fls <- sample(fls) }
@@ -178,7 +185,8 @@ learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, 
   }
   drps <- drps[1:i]
   # Run dada in self-consist mode on those samples
-  dds <- dada(drps, err=NULL, errorEstimationFunction=errorEstimationFunction, selfConsist=TRUE, multithread=multithread)
+  dds <- dada(drps, err=NULL, errorEstimationFunction=errorEstimationFunction, selfConsist=TRUE, 
+              multithread=multithread, MAX_CONSIST=MAX_CONSIST, ...)
   cat("Total reads used: ", NREADS, "\n")
   return(getErrors(dds, detailed=TRUE))
 }
