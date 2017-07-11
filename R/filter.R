@@ -177,6 +177,9 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
     if(is.na(ncores)) ncores <- 1
   } else {
     ncores <- 1
+    if (.Platform$OS.type=="windows") {
+    	message("multithreading is DISABLED as .Platform$OS.type was detected as 'windows'")
+    }
   }
   # Filter and Trim
   if(PAIRED) {
