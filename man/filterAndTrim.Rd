@@ -89,11 +89,12 @@ If NULL (the default) and matchIDs is TRUE, the function attempts to automatical
   the sequence identifier field under the assumption of Illumina formatted output.}
 
 \item{multithread}{(Optional). Default is FALSE.
-If TRUE, input files are filtered in parallel via \code{\link[parallel]{mclapply}}.
-If an integer is provided, it is passed to the \code{mc.cores} argument of \code{\link[parallel]{mclapply}}.
-Note that the parallelization here is by forking, and each process is loading another fastq file into
-memory. If memory is an issue, execute in a clean environment and reduce the chunk size \code{n} and/or
-the number of threads.}
+ If TRUE, input files are filtered in parallel via \code{\link[parallel]{mclapply}}.
+ If an integer is provided, it is passed to the \code{mc.cores} argument of \code{\link[parallel]{mclapply}}.
+ Note that the parallelization here is by forking, and each process is loading another fastq file into
+ memory. Additionally, this option is ignored under Windows machines, with \code{mc.cores} set to 1.
+If memory is an issue, execute in a clean environment and reduce the chunk size \code{n} and/or
+ the number of threads.}
 
 \item{n}{(Optional). Default \code{1e5}.
 The number of records (reads) to read in and filter at any one time. 
