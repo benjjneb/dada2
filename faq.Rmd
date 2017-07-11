@@ -11,40 +11,39 @@ The dada2 workflow assumes that you are starting with demultiplexed fastq files.
 
 There are multiple methods to demultiplex such data. We use [the idemp tool](https://github.com/yhwu/idemp). The [fastx-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/) performs demultiplexing.
 
-You can also demultiplex using [QIIME](http://qiime.org/) by running `split_libraries_fastq.py` followed by `split_sequence_file_on_sample_ids.py`. If using QIIME to demultiplex paired-end data, we recommend turning off filtering as the QIIME filtering causes the forward/reverse reads to be in mismatched order. You can do this by passing `split_libraries_fastq.py` the following arguments: `-r 999 -n 999 -q 0 -p 0.0001`.
+You can also demultiplex using [QIIME1](http://qiime.org/) by running `split_libraries_fastq.py` followed by `split_sequence_file_on_sample_ids.py`. If using QIIME1 to demultiplex paired-end data, we recommend turning off filtering as the QIIME filtering causes the forward/reverse reads to be in mismatched order. You can do this by passing `split_libraries_fastq.py` the following arguments: `-r 999 -n 999 -q 0 -p 0.0001`. The [QIIME2 platform](https://docs.qiime2.org/) also supports demultiplexing for the EMP indexing format.
 
 &nbsp;
 
 ## How can I remove primers/adapters/etc from my amplicon reads?
 
-We recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic) for this purpose. Provided the primers are at the start of your reads and are a constant length, you can also use the `trimLeft` argument of dada2's filtering functions to remove the primer nucleotides. Please double-check that your primers have been removed! The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.
+We recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic) for this purpose. Provided the primers are at the start of your reads and are a constant length, you can also use the `trimLeft` argument of dada2's filtering functions to remove the primer nucleotides. **Please double-check that your primers have been removed!** The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.
 
 &nbsp;
 
 ## What if my forward and reverse reads aren't in matching order?
 
-This situation commonly arises when external filtering methods, like the QIIME demultiplexing script, are used and filter the forward and reverse reads independently. This can be remedied by using adding `matchIDs=TRUE` flag to the `fastqPairedFilter` function. For example, if no more filtering is required, the following will retain just those reads that match between the forward and reverse fastq files (assumes Illumina fastq headers):
+This situation commonly arises when external filtering methods, like the QIIME demultiplexing script, are used and filter the forward and reverse reads independently. This can be remedied by using adding `matchIDs=TRUE` flag to the `filterAndTrim` or `fastqPairedFilter` functions. For example, if no more filtering is required, the following will retain just those reads that match between the forward and reverse fastq files (assumes Illumina fastq headers):
 
 ```S
-fastqPairedFilter(c("forwardReads.fastq", "reverseReads.fastq"),
-                  c("forwardMatch.fastq", "reverseMatch.fastq"),
-                  matchIDs=TRUE)
+filterAndTrim(..., matchIDs=TRUE)
 ```
 
 &nbsp;
 
 ## Can I use dada2 with my 454 or Ion Torrent data?
 
-Yes. We recommend the following 454-specific parameters when using the `dada` function on 454 data for best results:
+Yes. We recommend the following 454-specific parameters for best results:
 
 ```S
+filterAndTrim(..., maxLen=XXX) # XXX depends on the chemistry
 dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)
 ```
 
 We recommend the following IT-specific parameters when filtering Ion Torrent data for best results:
 
 ```S
-fastqFilter(..., trimLeft=15)
+filterAndTrim(..., trimLeft=15)
 ```
 
 &nbsp;
@@ -59,9 +58,9 @@ The `mergePairs(..., justConcatenate=TRUE)` option allows the paired reads to be
 
 ## What if the self-consistency loop terminated before convergence?
 
-In almost all cases, you just proceed with the learned error rates. While in most cases convergence is reached within the `MAX_CONSIST=10` rounds of self-consistent looping allowed by default, the error model is suitable to use as long as it is close to convergence. The estimation of the error rates is important primarily because of the huge difference in error rates that can exist between different runs and sequencing technologies. The small fluctuations in slow-converging datasets are minor relative to those major differences, and are often smaller than the noise inherent in our fitting methods anyway.
+In almost all cases, just proceed with the learned error rates. While in most cases convergence is reached within the `MAX_CONSIST=10` rounds of self-consistent looping allowed by default, the error model is suitable to use as long as it is close to convergence. The estimation of the error rates is important primarily because of the huge difference in error rates that can exist between different runs and sequencing technologies. The small fluctuations in slow-converging datasets are minor relative to those major differences, and are often smaller than the uncertainty in the estimation methods anyway.
 
-For those who want to be sure the non-converged error model is reasonable, there are two ways to inspect the error rates and diagnose any potential issues. The first is to use `plotErrors(err, nominalQ=TRUE`). Do the fitted error rates (black line) reasonably fit the observations (black points) and generally decrease with increasing Q? Second, inspect the output of `dada2:::checkConvergence(err)`, which gives the sum of absolute differences between error rate parameters at each step. Are the final values much lower (multiple orders of magnitude) than the first two values? If the answers to both questions are yes, then it is appropriate to use the error rates as is. The perfectionist can try increasing the allowed number of self-consistency steps with e.g. `setDadaOpt(MAX_CONSIST=20)` and see if the error model improves further.
+For those who want to be sure the non-converged error model is reasonable, there are two ways to inspect the error rates and diagnose any potential issues. The first is to use `plotErrors(err, nominalQ=TRUE`). Do the fitted error rates (black line) reasonably fit the observations (black points) and generally decrease with increasing Q? Second, inspect the output of `dada2:::checkConvergence(err)`, which gives the sum of absolute differences between error rate parameters at each step. Are the final values much lower (multiple orders of magnitude) than the first two values? If the answers to both questions are yes, then it is appropriate to use the error rates as is. The perfectionist can try increasing the allowed number of self-consistency steps with e.g. `learnErrors(..., MAX_CONSIST=20)` and see if the error model improves further.
 
 &nbsp;
 
@@ -77,7 +76,7 @@ Another possibility is that you have bad data. One quick way to test this is to 
 
 It is common for chimeric sequences to be a majority (even large majority) of the total number of unique sequence variants inferred by the `dada(...)` algorithm, but they should not be a majority of the sequencing reads. That is, there may be many chimeras, but they are relatively low abundance. 
 
-The most common reason that far too many reads are flagged as chimeric is that primer sequences were not removed prior to starting the dada2 workflow. The ambiguous nucleotides in universal primer sequences will be interpreted as real variation by the dada2 pipeline, and this interferes with the chimera algorithm. If you see over `25%` of your sequencing reads being flagged chimeric, remove the primers from your reads and restart the workflow with the clean data.
+The most common reason that far too many reads are flagged as chimeric is that primer sequences were not removed prior to starting the dada2 workflow. The ambiguous nucleotides in universal primer sequences will be interpreted as real variation by the dada2 pipeline, and this interferes with the chimera algorithm. In most cases, if you see over `25%` of your sequencing reads being flagged chimeric, remove the primers from your reads and restart the workflow with the clean data.
 
 &nbsp;
 

@@ -69,7 +69,9 @@ plotQualityProfile(fnRs[1:2])
 
 The reverse reads are significantly worse quality, especially at the end, which is common in Illumina sequencing. This isn't too worrisome, DADA2 incorporates quality information into its error model which makes the algorithm [robust to lower quality sequence](https://twitter.com/bejcal/status/771010634074820608), but trimming as the average qualities crash is still a good idea as long as our reads will still overlap. We will truncate at position 160 where the quality distribution crashes.
 
-<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">If using this workflow on your own data:</span>** **Your reads must overlap after truncation in order to merge them later!!!** The tutorial is using 2x250 V4 sequence data, so the forward and reverse reads almost completely overlap and our trimming can be completely guided by the quality scores. If you are using a less-overlapping primer set, like V1-V2 or V3-V4, your `truncLen` must be large enough to maintain the overlap between them (the more the better).</div>
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">If using this workflow on your own data:</span>** **Your reads must still overlap after truncation in order to merge them later!** The tutorial is using 2x250 V4 sequence data, so the forward and reverse reads almost completely overlap and our trimming can be completely guided by the quality scores. If you are using a less-overlapping primer set, like V1-V2 or V3-V4, your `truncLen` must be large enough to maintain `20 + biological.length.variation` nucleotides of overlap between them.
+
+Non-overlapping primer sets are supported as well with `mergePairs(..., justConcatenate=TRUE)` when performing merging.</div>
 
 &nbsp;
 
@@ -88,7 +90,7 @@ We'll use standard filtering parameters: `maxN=0` (DADA2 requires no Ns), `trunc
 ```{r filter, message=FALSE, warning=FALSE}
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
               maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
-              compress=TRUE, multithread=TRUE)
+              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 head(out)
 ```
 

@@ -283,28 +283,27 @@ $(document).ready(function () {
 <h2>How can I demultiplex my fastq files?</h2>
 <p>The dada2 workflow assumes that you are starting with demultiplexed fastq files. That is, there is one fastq (or one forward and one reverse) for each sample. This is commonly the format in which sequencing data is received from sequencing centers, but especially when using single-index barcoding it is also fairly common to receive un-demultiplexed data alongside an “index” fastq.</p>
 <p>There are multiple methods to demultiplex such data. We use <a href="https://github.com/yhwu/idemp">the idemp tool</a>. The <a href="http://hannonlab.cshl.edu/fastx_toolkit/">fastx-toolkit</a> performs demultiplexing.</p>
-<p>You can also demultiplex using <a href="http://qiime.org/">QIIME</a> by running <code>split_libraries_fastq.py</code> followed by <code>split_sequence_file_on_sample_ids.py</code>. If using QIIME to demultiplex paired-end data, we recommend turning off filtering as the QIIME filtering causes the forward/reverse reads to be in mismatched order. You can do this by passing <code>split_libraries_fastq.py</code> the following arguments: <code>-r 999 -n 999 -q 0 -p 0.0001</code>.</p>
+<p>You can also demultiplex using <a href="http://qiime.org/">QIIME1</a> by running <code>split_libraries_fastq.py</code> followed by <code>split_sequence_file_on_sample_ids.py</code>. If using QIIME1 to demultiplex paired-end data, we recommend turning off filtering as the QIIME filtering causes the forward/reverse reads to be in mismatched order. You can do this by passing <code>split_libraries_fastq.py</code> the following arguments: <code>-r 999 -n 999 -q 0 -p 0.0001</code>. The <a href="https://docs.qiime2.org/">QIIME2 platform</a> also supports demultiplexing for the EMP indexing format.</p>
 <p> </p>
 </div>
 <div id="how-can-i-remove-primersadaptersetc-from-my-amplicon-reads" class="section level2">
 <h2>How can I remove primers/adapters/etc from my amplicon reads?</h2>
-<p>We recommend the <a href="http://cutadapt.readthedocs.io/en/stable/index.html">cutadapt tool</a> or the <a href="http://www.usadellab.org/cms/?page=trimmomatic">trimmomatic tool</a> for this purpose. Provided the primers are at the start of your reads and are a constant length, you can also use the <code>trimLeft</code> argument of dada2’s filtering functions to remove the primer nucleotides. Please double-check that your primers have been removed! The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.</p>
+<p>We recommend the <a href="http://cutadapt.readthedocs.io/en/stable/index.html">cutadapt tool</a> or the <a href="http://www.usadellab.org/cms/?page=trimmomatic">trimmomatic tool</a> for this purpose. Provided the primers are at the start of your reads and are a constant length, you can also use the <code>trimLeft</code> argument of dada2’s filtering functions to remove the primer nucleotides. <strong>Please double-check that your primers have been removed!</strong> The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.</p>
 <p> </p>
 </div>
 <div id="what-if-my-forward-and-reverse-reads-arent-in-matching-order" class="section level2">
 <h2>What if my forward and reverse reads aren’t in matching order?</h2>
-<p>This situation commonly arises when external filtering methods, like the QIIME demultiplexing script, are used and filter the forward and reverse reads independently. This can be remedied by using adding <code>matchIDs=TRUE</code> flag to the <code>fastqPairedFilter</code> function. For example, if no more filtering is required, the following will retain just those reads that match between the forward and reverse fastq files (assumes Illumina fastq headers):</p>
-<pre class="s"><code>fastqPairedFilter(c(&quot;forwardReads.fastq&quot;, &quot;reverseReads.fastq&quot;),
-                  c(&quot;forwardMatch.fastq&quot;, &quot;reverseMatch.fastq&quot;),
-                  matchIDs=TRUE)</code></pre>
+<p>This situation commonly arises when external filtering methods, like the QIIME demultiplexing script, are used and filter the forward and reverse reads independently. This can be remedied by using adding <code>matchIDs=TRUE</code> flag to the <code>filterAndTrim</code> or <code>fastqPairedFilter</code> functions. For example, if no more filtering is required, the following will retain just those reads that match between the forward and reverse fastq files (assumes Illumina fastq headers):</p>
+<pre class="s"><code>filterAndTrim(..., matchIDs=TRUE)</code></pre>
 <p> </p>
 </div>
 <div id="can-i-use-dada2-with-my-454-or-ion-torrent-data" class="section level2">
 <h2>Can I use dada2 with my 454 or Ion Torrent data?</h2>
-<p>Yes. We recommend the following 454-specific parameters when using the <code>dada</code> function on 454 data for best results:</p>
-<pre class="s"><code>dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)</code></pre>
+<p>Yes. We recommend the following 454-specific parameters for best results:</p>
+<pre class="s"><code>filterAndTrim(..., maxLen=XXX) # XXX depends on the chemistry
+dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)</code></pre>
 <p>We recommend the following IT-specific parameters when filtering Ion Torrent data for best results:</p>
-<pre class="s"><code>fastqFilter(..., trimLeft=15)</code></pre>
+<pre class="s"><code>filterAndTrim(..., trimLeft=15)</code></pre>
 <p> </p>
 </div>
 <div id="can-i-use-dada2-if-my-reads-dont-overlap" class="section level2">
@@ -315,8 +314,8 @@ $(document).ready(function () {
 </div>
 <div id="what-if-the-self-consistency-loop-terminated-before-convergence" class="section level2">
 <h2>What if the self-consistency loop terminated before convergence?</h2>
-<p>In almost all cases, you just proceed with the learned error rates. While in most cases convergence is reached within the <code>MAX_CONSIST=10</code> rounds of self-consistent looping allowed by default, the error model is suitable to use as long as it is close to convergence. The estimation of the error rates is important primarily because of the huge difference in error rates that can exist between different runs and sequencing technologies. The small fluctuations in slow-converging datasets are minor relative to those major differences, and are often smaller than the noise inherent in our fitting methods anyway.</p>
-<p>For those who want to be sure the non-converged error model is reasonable, there are two ways to inspect the error rates and diagnose any potential issues. The first is to use <code>plotErrors(err, nominalQ=TRUE</code>). Do the fitted error rates (black line) reasonably fit the observations (black points) and generally decrease with increasing Q? Second, inspect the output of <code>dada2:::checkConvergence(err)</code>, which gives the sum of absolute differences between error rate parameters at each step. Are the final values much lower (multiple orders of magnitude) than the first two values? If the answers to both questions are yes, then it is appropriate to use the error rates as is. The perfectionist can try increasing the allowed number of self-consistency steps with e.g. <code>setDadaOpt(MAX_CONSIST=20)</code> and see if the error model improves further.</p>
+<p>In almost all cases, just proceed with the learned error rates. While in most cases convergence is reached within the <code>MAX_CONSIST=10</code> rounds of self-consistent looping allowed by default, the error model is suitable to use as long as it is close to convergence. The estimation of the error rates is important primarily because of the huge difference in error rates that can exist between different runs and sequencing technologies. The small fluctuations in slow-converging datasets are minor relative to those major differences, and are often smaller than the uncertainty in the estimation methods anyway.</p>
+<p>For those who want to be sure the non-converged error model is reasonable, there are two ways to inspect the error rates and diagnose any potential issues. The first is to use <code>plotErrors(err, nominalQ=TRUE</code>). Do the fitted error rates (black line) reasonably fit the observations (black points) and generally decrease with increasing Q? Second, inspect the output of <code>dada2:::checkConvergence(err)</code>, which gives the sum of absolute differences between error rate parameters at each step. Are the final values much lower (multiple orders of magnitude) than the first two values? If the answers to both questions are yes, then it is appropriate to use the error rates as is. The perfectionist can try increasing the allowed number of self-consistency steps with e.g. <code>learnErrors(..., MAX_CONSIST=20)</code> and see if the error model improves further.</p>
 <p> </p>
 </div>
 <div id="why-arent-any-of-my-reads-being-successfully-merged" class="section level2">
@@ -328,7 +327,7 @@ $(document).ready(function () {
 <div id="why-are-so-many-of-my-reads-being-removed-as-chimeras" class="section level2">
 <h2>Why are so many of my reads being removed as chimeras?</h2>
 <p>It is common for chimeric sequences to be a majority (even large majority) of the total number of unique sequence variants inferred by the <code>dada(...)</code> algorithm, but they should not be a majority of the sequencing reads. That is, there may be many chimeras, but they are relatively low abundance.</p>
-<p>The most common reason that far too many reads are flagged as chimeric is that primer sequences were not removed prior to starting the dada2 workflow. The ambiguous nucleotides in universal primer sequences will be interpreted as real variation by the dada2 pipeline, and this interferes with the chimera algorithm. If you see over <code>25%</code> of your sequencing reads being flagged chimeric, remove the primers from your reads and restart the workflow with the clean data.</p>
+<p>The most common reason that far too many reads are flagged as chimeric is that primer sequences were not removed prior to starting the dada2 workflow. The ambiguous nucleotides in universal primer sequences will be interpreted as real variation by the dada2 pipeline, and this interferes with the chimera algorithm. In most cases, if you see over <code>25%</code> of your sequencing reads being flagged chimeric, remove the primers from your reads and restart the workflow with the clean data.</p>
 <p> </p>
 </div>
 <div id="what-about-insert-other-question" class="section level2">

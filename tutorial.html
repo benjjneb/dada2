@@ -340,7 +340,8 @@ fnRs &lt;- file.path(path, fnRs)</code></pre>
 <p><img src="tutorial_files/figure-html/see-quality-R-1.png" width="672" /></p>
 <p>The reverse reads are significantly worse quality, especially at the end, which is common in Illumina sequencing. This isn’t too worrisome, DADA2 incorporates quality information into its error model which makes the algorithm <a href="https://twitter.com/bejcal/status/771010634074820608">robust to lower quality sequence</a>, but trimming as the average qualities crash is still a good idea as long as our reads will still overlap. We will truncate at position 160 where the quality distribution crashes.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
-<strong><span style="color:red">If using this workflow on your own data:</span></strong> <strong>Your reads must overlap after truncation in order to merge them later!!!</strong> The tutorial is using 2x250 V4 sequence data, so the forward and reverse reads almost completely overlap and our trimming can be completely guided by the quality scores. If you are using a less-overlapping primer set, like V1-V2 or V3-V4, your <code>truncLen</code> must be large enough to maintain the overlap between them (the more the better).
+<p><strong><span style="color:red">If using this workflow on your own data:</span></strong> <strong>Your reads must still overlap after truncation in order to merge them later!</strong> The tutorial is using 2x250 V4 sequence data, so the forward and reverse reads almost completely overlap and our trimming can be completely guided by the quality scores. If you are using a less-overlapping primer set, like V1-V2 or V3-V4, your <code>truncLen</code> must be large enough to maintain <code>20 + biological.length.variation</code> nucleotides of overlap between them.</p>
+Non-overlapping primer sets are supported as well with <code>mergePairs(..., justConcatenate=TRUE)</code> when performing merging.
 </div>
 <p> </p>
 </div>
@@ -354,7 +355,7 @@ filtRs &lt;- file.path(filt_path, paste0(sample.names, &quot;_R_filt.fastq.gz&qu
 <p><strong>Filter the forward and reverse reads</strong>:</p>
 <pre class="r"><code>out &lt;- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
               maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
-              compress=TRUE, multithread=TRUE)
+              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 head(out)</code></pre>
 <pre><code>##                               reads.in reads.out
 ## F3D0_S188_L001_R1_001.fastq       7793      7113
@@ -620,7 +621,7 @@ unname(head(taxa))</code></pre>
 ## [5,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot;
 ## [6,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot;
 ##      [,5]                 [,6]         
-## [1,] &quot;Porphyromonadaceae&quot; &quot;Coprobacter&quot;
+## [1,] &quot;Porphyromonadaceae&quot; NA           
 ## [2,] &quot;Porphyromonadaceae&quot; NA           
 ## [3,] &quot;Porphyromonadaceae&quot; NA           
 ## [4,] &quot;Porphyromonadaceae&quot; &quot;Barnesiella&quot;
@@ -689,44 +690,41 @@ ps</code></pre>
 <pre><code>## Square root transformation
 ## Wisconsin double standardization
 ## Run 0 stress 0.08908957 
-## Run 1 stress 0.1493619 
-## Run 2 stress 0.08908959 
-## ... Procrustes: rmse 5.693755e-05  max resid 0.0001237885 
-## ... Similar to previous best
-## Run 3 stress 0.08908957 
+## Run 1 stress 0.09001141 
+## Run 2 stress 0.1566927 
+## Run 3 stress 0.14832 
+## Run 4 stress 0.08908957 
 ## ... New best solution
-## ... Procrustes: rmse 9.935625e-06  max resid 2.18974e-05 
+## ... Procrustes: rmse 1.306672e-05  max resid 2.557528e-05 
 ## ... Similar to previous best
-## Run 4 stress 0.1499185 
-## Run 5 stress 0.08908957 
-## ... Procrustes: rmse 7.486711e-06  max resid 1.993791e-05 
-## ... Similar to previous best
-## Run 6 stress 0.3744332 
-## Run 7 stress 0.1502671 
-## Run 8 stress 0.09001141 
-## Run 9 stress 0.09001141 
-## Run 10 stress 0.1474728 
-## Run 11 stress 0.1556003 
-## Run 12 stress 0.161324 
-## Run 13 stress 0.08908958 
-## ... Procrustes: rmse 4.726698e-05  max resid 9.970712e-05 
-## ... Similar to previous best
-## Run 14 stress 0.08908957 
-## ... Procrustes: rmse 4.270861e-06  max resid 1.052587e-05 
-## ... Similar to previous best
-## Run 15 stress 0.08908957 
+## Run 5 stress 0.09001141 
+## Run 6 stress 0.08908957 
 ## ... New best solution
-## ... Procrustes: rmse 1.263171e-06  max resid 2.65943e-06 
+## ... Procrustes: rmse 9.698225e-06  max resid 2.57105e-05 
 ## ... Similar to previous best
-## Run 16 stress 0.09001142 
-## Run 17 stress 0.08908958 
-## ... Procrustes: rmse 3.211466e-05  max resid 6.651034e-05 
+## Run 7 stress 0.09001142 
+## Run 8 stress 0.1445594 
+## Run 9 stress 0.1483199 
+## Run 10 stress 0.08908957 
+## ... Procrustes: rmse 5.912012e-06  max resid 1.563327e-05 
 ## ... Similar to previous best
+## Run 11 stress 0.1483209 
+## Run 12 stress 0.1572154 
+## Run 13 stress 0.08908957 
+## ... New best solution
+## ... Procrustes: rmse 3.174047e-06  max resid 8.138095e-06 
+## ... Similar to previous best
+## Run 14 stress 0.1474733 
+## Run 15 stress 0.09001141 
+## Run 16 stress 0.14832 
+## Run 17 stress 0.1528529 
 ## Run 18 stress 0.09001141 
 ## Run 19 stress 0.08908957 
-## ... Procrustes: rmse 7.489312e-06  max resid 1.955265e-05 
+## ... Procrustes: rmse 7.262909e-06  max resid 1.892221e-05 
 ## ... Similar to previous best
-## Run 20 stress 0.09001142 
+## Run 20 stress 0.08908957 
+## ... Procrustes: rmse 2.028543e-05  max resid 3.816283e-05 
+## ... Similar to previous best
 ## *** Solution reached</code></pre>
 <pre class="r"><code>plot_ordination(ps, ord.nmds.bray, color=&quot;When&quot;, title=&quot;Bray NMDS&quot;)</code></pre>
 <p><img src="tutorial_files/figure-html/ordinate-1.png" width="672" /></p>
