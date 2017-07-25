@@ -16,7 +16,7 @@ namespace dada2 {
             require("dada2", Rcpp::Named("quietly") = true);
             typedef int(*Ptr_validate)(const char*);
             static Ptr_validate p_validate = (Ptr_validate)
-                R_GetCCallable("dada2", "dada2_RcppExport_validate");
+                R_GetCCallable("dada2", "_dada2_RcppExport_validate");
             if (!p_validate(sig)) {
                 throw Rcpp::function_not_exported(
                     "C++ function with signature '" + std::string(sig) + "' not found in dada2");
