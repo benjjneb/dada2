@@ -114,12 +114,25 @@ shinyServer(function(input, output, session){
     # Progress bar...
     # progress <- shiny::Progress$new(session, min=1, max=15)
     # on.exit(progress$close())
-    qtab = fastqFilesTab[(Sample %chin% includeSamples),
-                         {
-                           message("Tabulating from:\n", File)
-                           tabulate_quality(fastqFile = file.path(inputDirPath(), File),
-                                            nReads = nReads)
-                         }, by = c("File", "Direction")]
+    withProgress(
+      message = 'Sampling quality profiles from sequence files...',
+      detail = 'This may take a while...',
+      value = 0, 
+      expr = {
+        incProgUnit = 1 / (fastqFilesTab[, 1, by = c("File", "Direction")] %>% nrow)
+        qtab <- fastqFilesTab[
+          (Sample %chin% includeSamples),
+          {
+            message("Tabulating from:\n", File)
+            incProgress(
+              amount = incProgUnit,
+              message = Direction[1],
+              detail = File[1])
+            tabulate_quality(
+              fastqFile = file.path(inputDirPath(), File),
+              nReads = nReads)
+          }, by = c("File", "Direction")]
+      })
     return(qtab)
   })
   maxLength = reactive({
@@ -323,9 +336,15 @@ shinyServer(function(input, output, session){
     jsonlite::write_json(x = ftArgsList,
                          path = file.path(inputDirPath(),
                                           "filterAndTrim.json"))
-    # Execute the filter-trimming
-    do.call(what = "filterAndTrim",
-            args = ftArgsList)
+    withProgress(message = 'Filtering and trimming in progress...',
+                 detail = 'This may take a while...',
+                 value = 0, 
+                 expr = {
+                   # Execute the filter-trimming
+                   incProgress(1/5)
+                   do.call(what = "filterAndTrim",
+                           args = ftArgsList)
+                 })
     
     return("FilterTrim Executed!!!")
   })
@@ -362,29 +381,46 @@ shinyServer(function(input, output, session){
                           size = min(learnSize, length(samplesToLearnFrom)))
     time0 = Sys.time()
     setorderv(fastqFilesTab, c("Sample", "Direction"))
-    # Canonical syntax.
-    # errR <- learnErrors(filtRs, nread=2e6, multithread=TRUE)
-    # Learn forward error rates
-    errF <- learnErrors(fls = fastqFilesTab[(Sample %chin% learnSamples & Direction == "F")]$FileFull,
-                        nreads = nReads,
-                        multithread = multithread)
-    # Learn reverse error rates
-    errR <- learnErrors(fls = fastqFilesTab[(Sample %chin% learnSamples & Direction == "R")]$FileFull,
-                        nreads = nReads,
-                        multithread = multithread)
-    timeDADA2Learn = (time0 - Sys.time())
-    timeDADA2Learn
-    message("Time to learn error rates:\n", timeDADA2Learn)
     
+    filesLearnForward = fastqFilesTab[(Sample %chin% learnSamples & Direction == "F")]$FileFull
+    withProgress(
+      message = 'Learning (forward) error rates...',
+      detail = 'This can take a while...',
+      value = 0, 
+      expr = {
+        incProgress(1/length(filesLearnForward))
+        errF <- learnErrors(
+          fls = filesLearnForward,
+          nreads = nReads,
+          multithread = multithread)
+      }
+    )
+    # Learn reverse error rates
+    filesLearnReverse = fastqFilesTab[(Sample %chin% learnSamples & Direction == "R")]$FileFull
+    withProgress(
+      message = 'Learning reverse error rates...',
+      detail = 'This can take a while...',
+      value = 0, 
+      expr = {
+        incProgress(1/length(filesLearnReverse))
+        errR <- learnErrors(
+          fls = filesLearnReverse,
+          nreads = nReads,
+          multithread = multithread)
+      }
+    )
+    timeDADA2Learn = (time0 - Sys.time())
     message("\n\n Saving error matrices to FT directory...\n\n")
     # Save list of error matrices
-    errs = list(ForwardErrors = errF,
-                ReverseErrors = errR)
+    errs = list(forward = errF,
+                reverse = errR)
     saveRDS(object = errs,
             file = file.path(ftDir, "errs.RDS"))
-    
-    message("Learned errors from:\n", ftDir)
-    return("Learned Errors...")
+    # Return a final message
+    msgLearnTime = paste("Learned errors from:\n", ftDir, "\n",
+                         "time elapsed:\n", round(timeDADA2Learn, 3))
+    message(msgLearnTime)
+    return(msgLearnTime)
   })
   
   # Reactive holding the errors
@@ -392,7 +428,9 @@ shinyServer(function(input, output, session){
     ftDir = inputDirPathFT()
     errorsFile = file.path(ftDir, "errs.RDS")
     # Validate that file exists in order to show plot.
-    file.exists(errorsFile) %>% need(message = "...") %>% validate
+    file.exists(errorsFile) %>% 
+      need(message = paste(errorsFile, " not found...")) %>% 
+      validate
     # message the errors file path
     message("Learned Errors being stored at:\n",
             errorsFile)
@@ -401,14 +439,16 @@ shinyServer(function(input, output, session){
                                session = session,
                                filePath = errorsFile,
                                readFunc = readRDS)
+    # Expect to at least have $forward errors (even if not paired)
+    errs()$forward %>% need(message = "$forward missing or malformed...") %>% validate
     return(errs())
   })
   
   pErrors = reactive({
     return(
       list(
-        ForwardErrors = plotErrors(errs()$ForwardErrors),
-        ReverseErrors = plotErrors(errs()$ReverseErrors)
+        ForwardErrors = plotErrors(errs()$forward),
+        ReverseErrors = plotErrors(errs()$reverse)
       )
     )
   })

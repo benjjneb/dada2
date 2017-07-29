@@ -70,35 +70,40 @@ sbp_filtertrim = sidebarPanel(
     )
   ),
   h4("Fastq Info Table"),
-  DT::dataTableOutput('infoTable')
+  div(DT::dataTableOutput('infoTable'), 
+      style = "font-size: 75%; width: 75%")
 )
 
 uiFilterTrim = fluidPage(
-  h4("Filter and trim fastq sequences"),
-  sbp_filtertrim,
-  column(
-    width=8,
-    mainPanel(
-      actionButton("actionb_filtertrim", "Execute FilterTrim", icon("filter")),
-      h5("Samples included in quality profiling:"),
-      textOutput("includeSamples"),
-      h5("Quality by Cycle"),
-      plotOutput("QbyC"),
-      textOutput("PrepFT"),
-      textOutput("ExecFT")
+  fluidRow(
+    column(width = 12,
+           h4("Filter and trim fastq sequences"),
+           sbp_filtertrim,
+           column(width=8, offset = 0, style='padding:0px;',
+             mainPanel(
+               actionButton("actionb_filtertrim", "Execute FilterTrim", icon("filter")),
+               h5("Samples included in quality profiling:"),
+               textOutput("includeSamples"),
+               h5("Quality by Cycle"),
+               plotOutput("QbyC", width = "6in", height = "3.5in"),
+               textOutput("PrepFT"),
+               textOutput("ExecFT")
+             )
+           )
     )
   ),
-  fluidRow(column(width = 12,
-                  "On-page documentation here.",
-                  "Directory should have... oligo-removed, sample-demultiplexed fastq sequences."))
+  fluidRow(
+    column(width = 12,
+           "On-page documentation here.",
+           "Directory should have... oligo-removed, sample-demultiplexed fastq sequences."))
 )
 
-################################################################################
-# UI Learn Errors
-################################################################################
-# Sidebar Panel Learn Errors
-sbp_learnerrors = sidebarPanel(
-  width = 4,
+  ################################################################################
+  # UI Learn Errors
+  ################################################################################
+  # Sidebar Panel Learn Errors
+  sbp_learnerrors = sidebarPanel(
+    width = 4,
   fluidRow(
     column(width = 6, h4("Data Selection")),
     column(width=6,
@@ -132,7 +137,8 @@ sbp_learnerrors = sidebarPanel(
     )
   ),
   h4("Fastq Info Table"),
-  DT::dataTableOutput('infoTableFT')
+  div(DT::dataTableOutput('infoTableFT'), 
+      style = "font-size: 75%; width: 75%")
 )
 
 uiLearnErrors = fluidPage(
@@ -193,7 +199,8 @@ sbp_rundada = sidebarPanel(
     )
   ),
   h4("Fastq Info Table"),
-  DT::dataTableOutput('infoTableRD')
+  div(DT::dataTableOutput('infoTableRD'), 
+      style = "font-size: 75%; width: 75%")
 )
 
 uiRunDADA = fluidPage(
