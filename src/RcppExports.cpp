@@ -10,7 +10,7 @@ using namespace Rcpp;
 
 // dada_uniques
 Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, bool use_quals, bool final_consensus, bool vectorized_alignment, int homo_gap, bool multithread, bool verbose);
-RcppExport SEXP dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP final_consensusSEXP, SEXP vectorized_alignmentSEXP, SEXP homo_gapSEXP, SEXP multithreadSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP final_consensusSEXP, SEXP vectorized_alignmentSEXP, SEXP homo_gapSEXP, SEXP multithreadSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -39,7 +39,7 @@ END_RCPP
 }
 // C_is_bimera
 bool C_is_bimera(std::string sq, std::vector<std::string> pars, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift);
-RcppExport SEXP dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
+RcppExport SEXP _dada2_C_is_bimera(SEXP sqSEXP, SEXP parsSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -57,7 +57,7 @@ END_RCPP
 }
 // C_table_bimera2
 Rcpp::DataFrame C_table_bimera2(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_fold, int min_abund, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift);
-RcppExport SEXP dada2_C_table_bimera2(SEXP matSEXP, SEXP seqsSEXP, SEXP min_foldSEXP, SEXP min_abundSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
+RcppExport SEXP _dada2_C_table_bimera2(SEXP matSEXP, SEXP seqsSEXP, SEXP min_foldSEXP, SEXP min_abundSEXP, SEXP allow_one_offSEXP, SEXP min_one_off_par_distSEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP max_shiftSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -77,7 +77,7 @@ END_RCPP
 }
 // C_nwalign
 Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, int match, int mismatch, int gap_p, int homo_gap_p, int band, bool endsfree);
-RcppExport SEXP dada2_C_nwalign(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP homo_gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
+RcppExport SEXP _dada2_C_nwalign(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP homo_gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -95,7 +95,7 @@ END_RCPP
 }
 // C_eval_pair
 Rcpp::IntegerVector C_eval_pair(std::string s1, std::string s2);
-RcppExport SEXP dada2_C_eval_pair(SEXP s1SEXP, SEXP s2SEXP) {
+RcppExport SEXP _dada2_C_eval_pair(SEXP s1SEXP, SEXP s2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -107,7 +107,7 @@ END_RCPP
 }
 // C_pair_consensus
 Rcpp::CharacterVector C_pair_consensus(std::string s1, std::string s2, int prefer, bool trim_overhang);
-RcppExport SEXP dada2_C_pair_consensus(SEXP s1SEXP, SEXP s2SEXP, SEXP preferSEXP, SEXP trim_overhangSEXP) {
+RcppExport SEXP _dada2_C_pair_consensus(SEXP s1SEXP, SEXP s2SEXP, SEXP preferSEXP, SEXP trim_overhangSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -121,7 +121,7 @@ END_RCPP
 }
 // C_isACGT
 Rcpp::LogicalVector C_isACGT(std::vector<std::string> seqs);
-RcppExport SEXP dada2_C_isACGT(SEXP seqsSEXP) {
+RcppExport SEXP _dada2_C_isACGT(SEXP seqsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -132,7 +132,7 @@ END_RCPP
 }
 // evaluate_kmers
 Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, unsigned int max_aligns);
-RcppExport SEXP dada2_evaluate_kmers(SEXP seqsSEXP, SEXP kmer_sizeSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {
+RcppExport SEXP _dada2_evaluate_kmers(SEXP seqsSEXP, SEXP kmer_sizeSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -148,7 +148,7 @@ END_RCPP
 }
 // C_subpos
 Rcpp::DataFrame C_subpos(std::string s1, std::string s2);
-RcppExport SEXP dada2_C_subpos(SEXP s1SEXP, SEXP s2SEXP) {
+RcppExport SEXP _dada2_C_subpos(SEXP s1SEXP, SEXP s2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -160,7 +160,7 @@ END_RCPP
 }
 // C_matchRef
 Rcpp::IntegerVector C_matchRef(std::vector<std::string> seqs, std::string ref, unsigned int word_size, bool non_overlapping);
-RcppExport SEXP dada2_C_matchRef(SEXP seqsSEXP, SEXP refSEXP, SEXP word_sizeSEXP, SEXP non_overlappingSEXP) {
+RcppExport SEXP _dada2_C_matchRef(SEXP seqsSEXP, SEXP refSEXP, SEXP word_sizeSEXP, SEXP non_overlappingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -174,7 +174,7 @@ END_RCPP
 }
 // C_matrixEE
 Rcpp::NumericVector C_matrixEE(Rcpp::IntegerMatrix inp);
-RcppExport SEXP dada2_C_matrixEE(SEXP inpSEXP) {
+RcppExport SEXP _dada2_C_matrixEE(SEXP inpSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -185,7 +185,7 @@ END_RCPP
 }
 // C_nwvec
 Rcpp::CharacterVector C_nwvec(std::vector<std::string> s1, std::vector<std::string> s2, int16_t match, int16_t mismatch, int16_t gap_p, int band, bool endsfree);
-RcppExport SEXP dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
+RcppExport SEXP _dada2_C_nwvec(SEXP s1SEXP, SEXP s2SEXP, SEXP matchSEXP, SEXP mismatchSEXP, SEXP gap_pSEXP, SEXP bandSEXP, SEXP endsfreeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -202,7 +202,7 @@ END_RCPP
 }
 // C_assign_taxonomy
 Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose);
-RcppExport SEXP dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP rcsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP, SEXP try_rcSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _dada2_C_assign_taxonomy(SEXP seqsSEXP, SEXP rcsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP, SEXP try_rcSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -219,7 +219,7 @@ END_RCPP
 }
 // C_assign_taxonomy2
 Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose);
-RcppExport SEXP dada2_C_assign_taxonomy2(SEXP seqsSEXP, SEXP rcsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP, SEXP try_rcSEXP, SEXP verboseSEXP) {
+RcppExport SEXP _dada2_C_assign_taxonomy2(SEXP seqsSEXP, SEXP rcsSEXP, SEXP refsSEXP, SEXP ref_to_genusSEXP, SEXP genusmatSEXP, SEXP try_rcSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -236,7 +236,7 @@ END_RCPP
 }
 
 // validate (ensure exported C++ functions exist before calling them)
-static int dada2_RcppExport_validate(const char* sig) { 
+static int _dada2_RcppExport_validate(const char* sig) { 
     static std::set<std::string> signatures;
     if (signatures.empty()) {
     }
@@ -244,27 +244,27 @@ static int dada2_RcppExport_validate(const char* sig) {
 }
 
 // registerCCallable (register entry points for exported C++ functions)
-RcppExport SEXP dada2_RcppExport_registerCCallable() { 
-    R_RegisterCCallable("dada2", "dada2_RcppExport_validate", (DL_FUNC)dada2_RcppExport_validate);
+RcppExport SEXP _dada2_RcppExport_registerCCallable() { 
+    R_RegisterCCallable("dada2", "_dada2_RcppExport_validate", (DL_FUNC)_dada2_RcppExport_validate);
     return R_NilValue;
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"dada2_dada_uniques", (DL_FUNC) &dada2_dada_uniques, 19},
-    {"dada2_C_is_bimera", (DL_FUNC) &dada2_C_is_bimera, 8},
-    {"dada2_C_table_bimera2", (DL_FUNC) &dada2_C_table_bimera2, 10},
-    {"dada2_C_nwalign", (DL_FUNC) &dada2_C_nwalign, 8},
-    {"dada2_C_eval_pair", (DL_FUNC) &dada2_C_eval_pair, 2},
-    {"dada2_C_pair_consensus", (DL_FUNC) &dada2_C_pair_consensus, 4},
-    {"dada2_C_isACGT", (DL_FUNC) &dada2_C_isACGT, 1},
-    {"dada2_evaluate_kmers", (DL_FUNC) &dada2_evaluate_kmers, 6},
-    {"dada2_C_subpos", (DL_FUNC) &dada2_C_subpos, 2},
-    {"dada2_C_matchRef", (DL_FUNC) &dada2_C_matchRef, 4},
-    {"dada2_C_matrixEE", (DL_FUNC) &dada2_C_matrixEE, 1},
-    {"dada2_C_nwvec", (DL_FUNC) &dada2_C_nwvec, 7},
-    {"dada2_C_assign_taxonomy", (DL_FUNC) &dada2_C_assign_taxonomy, 7},
-    {"dada2_C_assign_taxonomy2", (DL_FUNC) &dada2_C_assign_taxonomy2, 7},
-    {"dada2_RcppExport_registerCCallable", (DL_FUNC) &dada2_RcppExport_registerCCallable, 0},
+    {"_dada2_dada_uniques", (DL_FUNC) &_dada2_dada_uniques, 19},
+    {"_dada2_C_is_bimera", (DL_FUNC) &_dada2_C_is_bimera, 8},
+    {"_dada2_C_table_bimera2", (DL_FUNC) &_dada2_C_table_bimera2, 10},
+    {"_dada2_C_nwalign", (DL_FUNC) &_dada2_C_nwalign, 8},
+    {"_dada2_C_eval_pair", (DL_FUNC) &_dada2_C_eval_pair, 2},
+    {"_dada2_C_pair_consensus", (DL_FUNC) &_dada2_C_pair_consensus, 4},
+    {"_dada2_C_isACGT", (DL_FUNC) &_dada2_C_isACGT, 1},
+    {"_dada2_evaluate_kmers", (DL_FUNC) &_dada2_evaluate_kmers, 6},
+    {"_dada2_C_subpos", (DL_FUNC) &_dada2_C_subpos, 2},
+    {"_dada2_C_matchRef", (DL_FUNC) &_dada2_C_matchRef, 4},
+    {"_dada2_C_matrixEE", (DL_FUNC) &_dada2_C_matrixEE, 1},
+    {"_dada2_C_nwvec", (DL_FUNC) &_dada2_C_nwvec, 7},
+    {"_dada2_C_assign_taxonomy", (DL_FUNC) &_dada2_C_assign_taxonomy, 7},
+    {"_dada2_C_assign_taxonomy2", (DL_FUNC) &_dada2_C_assign_taxonomy2, 7},
+    {"_dada2_RcppExport_registerCCallable", (DL_FUNC) &_dada2_RcppExport_registerCCallable, 0},
     {NULL, NULL, 0}
 };
 

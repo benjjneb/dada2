@@ -164,7 +164,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 #' as bimeric by this consensus procedure.
 #' 
 #' @param seqtab (Required). A sequence table. That is, an integer matrix with colnames
-#'   corresponding to A/C/G/T sequences.
+#'   corresponding to DNA sequences.
 #'  
 #' @param minSampleFraction (Optional). Default is 0.9.
 #'   The fraction of samples in which a sequence must be flagged as bimeric in order for it to
@@ -219,7 +219,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 #' 
 isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1, minParentAbundance = 2, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
   sqs <- colnames(seqtab)
-  if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs) && all(sapply(sqs, C_isACGT)))) {
+  if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs))) {
     stop("Input must be a valid sequence table.")
   }
   if(any(duplicated(sqs))) stop("Duplicate sequences detected in input.")

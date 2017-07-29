@@ -94,7 +94,8 @@
 #'  If TRUE, input files are filtered in parallel via \code{\link[parallel]{mclapply}}.
 #'  If an integer is provided, it is passed to the \code{mc.cores} argument of \code{\link[parallel]{mclapply}}.
 #'  Note that the parallelization here is by forking, and each process is loading another fastq file into
-#'  memory. If memory is an issue, execute in a clean environment and reduce the chunk size \code{n} and/or
+#'  memory. Additionally, this option is ignored under Windows machines, with \code{mc.cores} set to 1.
+#'	If memory is an issue, execute in a clean environment and reduce the chunk size \code{n} and/or
 #'  the number of threads.
 #'   
 #' @param n (Optional). Default \code{1e5}.
@@ -145,12 +146,14 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
       dir.create(odir, recursive=TRUE, mode="0777")
     }
   }
+  if(!all(file.exists(fwd))) stop("Some input files do not exist.")
   fwd <- normalizePath(fwd, mustWork=TRUE)
-  filt <- suppressWarnings(normalizePath(filt, mustWork=FALSE)) ###F MUST PROPAGATE TO REVERSE
+  filt <- suppressWarnings(normalizePath(filt, mustWork=FALSE))
   if(any(duplicated(filt))) stop("All output files must be distinct.")
   if(any(filt %in% fwd)) stop("Output files must be distinct from the input files.")
   if(!is.null(rev)) {
     PAIRED <- TRUE
+    if(!all(file.exists(rev))) stop("Some input files do not exist.")
     if(is.null(filt.rev)) stop("Output files for the reverse reads are required.")
     if(length(rev) != length(fwd)) stop("Paired forward and reverse input files must correspond.")
     if(length(rev) != length(filt.rev)) stop("Every input file (rev) must have a corresponding output file (filt.rev).")
@@ -167,13 +170,16 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
     if(any(c(filt,filt.rev) %in% c(fwd, rev))) stop("Output files must be distinct from the input files.")
   }
   # Parse multithreading
-  if(multithread) {
+  if(multithread && .Platform$OS.type=="unix") {
     OMP <- FALSE
     ncores <- detectCores()
     if(is.numeric(multithread)) ncores <- multithread
     if(is.na(ncores)) ncores <- 1
   } else {
     ncores <- 1
+    if (multithread && .Platform$OS.type=="windows") {
+    	message("Multithreading is DISABLED, as multithreaded filtering is not supported on .Platform$OS.type 'windows'")
+    }
   }
   # Filter and Trim
   if(PAIRED) {

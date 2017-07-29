@@ -11,7 +11,7 @@ isBimeraDenovoTable(seqtab, minSampleFraction = 0.9, ignoreNNegatives = 1,
 }
 \arguments{
 \item{seqtab}{(Required). A sequence table. That is, an integer matrix with colnames
-corresponding to A/C/G/T sequences.}
+corresponding to DNA sequences.}
 
 \item{minSampleFraction}{(Optional). Default is 0.9.
 The fraction of samples in which a sequence must be flagged as bimeric in order for it to

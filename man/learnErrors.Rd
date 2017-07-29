@@ -5,7 +5,7 @@
 \title{Learns the error rates from an input list, or vector, of file names or a list of \code{\link{derep-class}} objects.}
 \usage{
 learnErrors(fls, nreads = 1e+06, errorEstimationFunction = loessErrfun,
-  multithread = FALSE, randomize = FALSE)
+  multithread = FALSE, randomize = FALSE, MAX_CONSIST = 10, ...)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
@@ -30,6 +30,12 @@ If an integer is provided, the number of threads to use is set by passing the ar
 \item{randomize}{(Optional). Default FALSE.
 If FALSE, samples are read in the provided order until enough reads are obtained.
 If TRUE, samples are picked at random from those provided.}
+
+\item{MAX_CONSIST}{(Optional). Default 10.
+The maximum number of times to step through the self-consistency loop. If convergence was not
+reached in MAX_CONSIST steps, the estimated error rates in the last step are returned.}
+
+\item{...}{(Optional). Additional arguments will be passed on to the \code{\link{dada}} function.}
 }
 \value{
 A named list with three entries:
@@ -50,7 +56,7 @@ Error rates are learned by alternating between sample inference and error rate e
  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
  # Using a list of derep-class objects
  dereps <- derepFastq(c(fl1, fl2))
- err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE)
+ err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE, MAX_CONSIST=20)
 
 }
 \seealso{

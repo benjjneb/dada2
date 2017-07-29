@@ -424,7 +424,7 @@ makeTaxonomyFasta_Silva <- function(fin, ftax, fout, compress=TRUE) {
   if(!identical(taxdf$id, ids)) stop("Input align and taxonomy files don't match.")
   # Final formatting
   tax <- taxdf$tax
-  tax <- gsub("Escherichia-Shigella", "Esherichica/Shigella", tax)
+  tax <- gsub("Escherichia-Shigella", "Escherichia/Shigella", tax)
   # Remove faux-assignments added by new Mothur processing script
   tax <- gsub("[^;]*_ge;$", "", tax)
   tax <- gsub("[^;]*_fa;$", "", tax)
