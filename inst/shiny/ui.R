@@ -98,12 +98,12 @@ uiFilterTrim = fluidPage(
            "Directory should have... oligo-removed, sample-demultiplexed fastq sequences."))
 )
 
-  ################################################################################
-  # UI Learn Errors
-  ################################################################################
-  # Sidebar Panel Learn Errors
-  sbp_learnerrors = sidebarPanel(
-    width = 4,
+################################################################################
+# UI Learn Errors
+################################################################################
+# Sidebar Panel Learn Errors
+sbp_learnerrors = sidebarPanel(
+  width = 4,
   fluidRow(
     column(width = 6, h4("Data Selection")),
     column(width=6,

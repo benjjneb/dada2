@@ -12,8 +12,12 @@ shinyServer(function(input, output, session){
   ########################################
   # Hard-coded params
   ########################################
-  # The user-exposed options for searching. Might be OS brittle.
+  # The user-exposed options for searching.
+  # If they are not present or available, they do not get shown in the widget.
   volumes <- c(
+    # This one is for playing-nice with the docker image.
+    # Users are recommended to volume-mount host data dir to this path at runtime
+    RStudioHome = "/home/rstudio/Downloads/",
     Downloads = "~/Downloads/",
     Home = "~/",
     Root = "/")
@@ -22,7 +26,6 @@ shinyServer(function(input, output, session){
   ########################################
   # Inputs and reactives and logic and stuff
   ########################################
-  
   # input folder selection for OG
   shinyDirChoose(input, 'dirOG', roots=volumes, session=session, restrictions = restrictedPaths)
   inputDirPath = reactive({
