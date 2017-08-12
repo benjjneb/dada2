@@ -192,6 +192,10 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' of all exactly matched species is returned. If an integer is provided, multiple
 #' identifications up to that many are returned as a concatenated string.
 #'   
+#' @param tryRC (Optional). Default FALSE. 
+#' If TRUE, the reverse-complement of each sequences will also be tested for exact matching 
+#' to the reference sequences.
+#'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
 #' 
@@ -205,6 +209,7 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' @importFrom Biostrings PDict
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead sread
+#' @importFrom ShortRead reverseComplement
 #' @importFrom ShortRead id
 #' @importFrom methods as
 #' 
@@ -213,7 +218,7 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #'  taxa <- assignSpecies(dadaF, "rdp_species.fa.gz")
 #' }
 #' 
-assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
+assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verbose=FALSE) {
   # Define number of multiple species to return
   if(is.logical(allowMultiple)) {
     if(allowMultiple) keep <- Inf
@@ -234,6 +239,7 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, verbose=FALSE) {
   for(len in unique(lens)) { # Requires all same length sequences
     seqdict <- PDict(seqs[lens==len])
     vhit <- (vcountPDict(seqdict, sread(refsr))>0)
+    if(tryRC) vhit <- vhit | (vcountPDict(seqdict, reverseComplement(sread(refsr)))>0)
     hits[lens==len] <- lapply(seq(nrow(vhit)), function(x) vhit[x,])
   }
   # Get genus species return strings

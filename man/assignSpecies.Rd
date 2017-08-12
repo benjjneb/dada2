@@ -4,7 +4,8 @@
 \alias{assignSpecies}
 \title{Taxonomic assignment to the species level by exact matching.}
 \usage{
-assignSpecies(seqs, refFasta, allowMultiple = FALSE, verbose = FALSE)
+assignSpecies(seqs, refFasta, allowMultiple = FALSE, tryRC = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 
@@ -23,6 +24,10 @@ Defines the behavior when multiple exact matches against different species are r
 By default only unambiguous identifications are return. If TRUE, a concatenated string
 of all exactly matched species is returned. If an integer is provided, multiple
 identifications up to that many are returned as a concatenated string.}
+
+\item{tryRC}{(Optional). Default FALSE. 
+If TRUE, the reverse-complement of each sequences will also be tested for exact matching 
+to the reference sequences.}
 
 \item{verbose}{(Optional). Default FALSE.
 If TRUE, print status to standard output.}
