@@ -483,7 +483,7 @@ mergePairsByID = function(dadaF, derepF, srF,
               Attempting to read...")
     }
     srF <- readFastq(srF)
-    }
+  }
   if(!inherits(srF, "ShortRead")){
     stop("`srF` was not properly read, or is wrong object type.
          Please check documentation and try again.")
@@ -491,11 +491,11 @@ mergePairsByID = function(dadaF, derepF, srF,
   # Reverse Reads
   if(inherits(srR, "character")){
     if(verbose){
-      message("`srR` interpreted as path to forward reads fastq file.
+      message("`srR` interpreted as path to reverse reads fastq file.
               Attempting to read...")
     }
     srR <- readFastq(srR)
-    }
+  }
   if(!inherits(srR, "ShortRead")){
     stop("`srR` was not properly read, or is wrong object type.
          Please check documentation and try again.")
@@ -551,7 +551,6 @@ mergePairsByID = function(dadaF, derepF, srF,
   # (still long form, nrow == nreads)
   iddt[, abundance := .N, by = list(seqF, seqR)]
   # Unique Pair iddt
-#  upiddt = unique(iddt)
   upiddt = unique(iddt, by=key(iddt))
   setkey(upiddt, seqF, seqR)
   if(verbose){
@@ -590,7 +589,6 @@ mergePairsByID = function(dadaF, derepF, srF,
   if( !is.null(includeCol) ){
     iddtProp = iddt[, c("seqF", "seqR", includeCol), with = FALSE]
     setkey(iddtProp, seqF, seqR)
-#    iddtProp <- unique(iddtProp)
     iddtProp <- unique(iddtProp, by=key(iddtProp))
     setkey(upiddt, seqF, seqR)
     upiddt <- iddtProp[upiddt]
