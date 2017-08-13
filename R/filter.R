@@ -199,6 +199,11 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                      mc.cores=ncores, mc.silent=TRUE)
   }
   colnames(rval) <- basename(fwd)
+  if(all(rval["reads.out",]==0)) {
+    warning("No reads passed the filter. Please revisit your filtering parameters.")
+  } else if(any(rval["reads.out",]==0)) {
+    message("Some input samples had no reads pass the filter.")
+  }
   return(invisible(t(rval)))
 }
 #' Filter and trim a fastq file.
