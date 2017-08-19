@@ -484,7 +484,7 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   // Parallelize for loop to perform all comparisons
   Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
   if(comps==NULL) Rcpp::stop("Memory allocation failed.");
-  CompareParallel compareParallel(b, i, comps, use_kmers, testing, kdist_cutoff, ncol, err_mat);
+  CompareParallel compareParallel(b, i, comps, use_kmers, kdist_cutoff, testing, ncol, err_mat);
   RcppParallel::parallelFor(0, b->nraw, compareParallel, GRAIN_SIZE);
   
   // Selectively store
