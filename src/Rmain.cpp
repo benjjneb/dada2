@@ -1,5 +1,13 @@
 #include "dada.h"
 #include <Rcpp.h>
+#ifdef _WIN32 //  Windows
+#define cpuid(info, x)    __cpuidex(info, x, 0)
+#else //  GCC Intrinsics
+#include <cpuid.h>
+void cpuid(int info[4], int InfoType){
+  __cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
+}
+#endif
 
 using namespace Rcpp;
 //' @useDynLib dada2
@@ -70,7 +78,25 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   if(err.nrow() != 16) {
     Rcpp::stop("Error matrix must have 16 rows.");
   }
+  // Check for SSE2+ support
+  // Code adapted from Stack Overflow (Mysticial) 
+  // https://stackoverflow.com/questions/6121792/how-to-check-if-a-cpu-supports-the-sse3-instruction-set
+  bool HW_SSE = false;
+  bool HW_SSE2 = false;
+  bool HW_SSE3 = false;
+  int info[4];
+  cpuid(info, 0);
+  int nIds = info[0];
 
+  //  Detect Features
+  if (nIds >= 0x00000001){
+    cpuid(info,0x00000001);
+    HW_SSE    = (info[3] & ((int)1 << 25)) != 0;
+    HW_SSE2   = (info[3] & ((int)1 << 26)) != 0;
+    HW_SSE3   = (info[2] & ((int)1 <<  0)) != 0;
+  }
+  if(!(HW_SSE && HW_SSE2)) { testing = false; }
+  
   /********** CONSTRUCT RAWS *********/
   char seq[SEQLEN];
   double qual[SEQLEN];
