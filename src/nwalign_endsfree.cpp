@@ -39,9 +39,10 @@ void _add( uint16_t * dst, uint16_t const * src, size_t n )
 }
  */
 
+// Computes kmer distance with SSE intrinsics.
 // Consider packing into 8 bit integers. Issues is a max of 256 (kmers)
 // No native unsigned integer comparisons though which is a problem (would be down to 128 kmers in practice)
-double kmer_dist2(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
+double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   size_t n_kmer = 1 << (2*k); // 4^k kmers
   int16_t dst[8];
   uint16_t dotsum = 0;
@@ -53,14 +54,20 @@ double kmer_dist2(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
 
   // TEST THIS CODE! Works in base (100 read) example
   // PROFILE THIS CODE! Near identical in speed to -O2 optimized kmer code.
+  // ALIGNMENT NOT GUARANTEED, so loads need to be changed
+  // "The address of a block returned by malloc or realloc in GNU systems is always a multiple of eight (or sixteen on 64-bit systems). If you need a block whose address is a multiple of a higher power of two than that, use aligned_alloc or posix_memalign. aligned_alloc and posix_memalign are declared in stdlib.h.
+  // SO OK in 64 bit, but not 32 bit...
+  // NOTE: TO STAY SSE2, ALL HERE IS TREATED AS SIGNED INTs
   for(uint16_t const * end( kv1 + n_kmer );kv1<end;kv1+=8,kv2+=8) {
-    __m128i kk1 = _mm_load_si128( (__m128i*) kv1 );
-    __m128i kk2 = _mm_load_si128( (__m128i*) kv2 );
-    __m128i klt = _mm_cmplt_epi16 (kk1, kk2);
-    vsum = _mm_add_epi16(vsum, _mm_and_si128 (klt, kk1));
-    vsum = _mm_add_epi16(vsum, _mm_andnot_si128 (klt, kk2));
+    __m128i kk1 = _mm_loadu_si128( (__m128i*) kv1 );
+    __m128i kk2 = _mm_loadu_si128( (__m128i*) kv2 );
+//    __m128i klt = _mm_cmplt_epi16 (kk1, kk2);
+//   vsum = _mm_add_epi16(vsum, _mm_and_si128 (klt, kk1));
+//    vsum = _mm_add_epi16(vsum, _mm_andnot_si128 (klt, kk2));
+    __m128i kmin = _mm_min_epi16(kk1, kk2);
+    vsum = _mm_add_epi16(vsum, kmin);
   }
-  _mm_store_si128 ((__m128i*) &dst, vsum);
+  _mm_storeu_si128 ((__m128i*) &dst, vsum);
   dotsum = dst[0] + dst[1] + dst[2] + dst[3] + dst[4] + dst[5] + dst[6] + dst[7];
 
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
@@ -112,11 +119,11 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
 char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, bool testing) {
   char **al;
   double kdist;
-  double kdist2;
-  
+
   if(use_kmers) {
     if(testing) { ///TEST
-      kdist = kmer_dist2(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
+      kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
+///TEST      if(kdist != kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE)) { Rprintf("."); }
     } else {
       kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
     }
