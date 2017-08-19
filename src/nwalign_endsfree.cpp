@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "dada.h"
+#include "emmintrin.h"
 // [[Rcpp::interfaces(cpp)]]
 
 /************* KMERS *****************
@@ -12,10 +13,55 @@ double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   int n_kmer = 1 << (2*k); // 4^k kmers
   uint16_t dotsum = 0;
   double dot = 0.0;
-  
+
   for(i=0;i<n_kmer; i++) {
     dotsum += (kv1[i] < kv2[i] ? kv1[i] : kv2[i]);
   }
+  
+  dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
+  
+  return (1. - dot);
+}
+
+/*
+ 
+void _add( uint16_t * dst, uint16_t const * src, size_t n )
+  {
+  for( uint16_t const * end( dst + n ); dst != end; dst+=8, src+=8 )
+  {
+    __m128i _s = _mm_load_si128( (__m128i*) src );
+    __m128i _d = _mm_load_si128( (__m128i*) dst );
+
+    _d = _mm_add_epi16( _d, _s );
+
+    _mm_store_si128( (__m128i*) dst, _d );
+  }
+}
+ */
+
+// Consider packing into 8 bit integers. Issues is a max of 256 (kmers)
+// No native unsigned integer comparisons though which is a problem (would be down to 128 kmers in practice)
+double kmer_dist2(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
+  size_t n_kmer = 1 << (2*k); // 4^k kmers
+  int16_t dst[8];
+  uint16_t dotsum = 0;
+  double dot = 0.0;
+  
+//  __m128i *km1 = reinterpret_cast<__m128i*>(kv1);
+//  __m128i *km2 = reinterpret_cast<__m128i*>(kv2);
+  __m128i vsum = _mm_set1_epi16(0);
+
+  // TEST THIS CODE! Works in base (100 read) example
+  // PROFILE THIS CODE! Near identical in speed to -O2 optimized kmer code.
+  for(uint16_t const * end( kv1 + n_kmer );kv1<end;kv1+=8,kv2+=8) {
+    __m128i kk1 = _mm_load_si128( (__m128i*) kv1 );
+    __m128i kk2 = _mm_load_si128( (__m128i*) kv2 );
+    __m128i klt = _mm_cmplt_epi16 (kk1, kk2);
+    vsum = _mm_add_epi16(vsum, _mm_and_si128 (klt, kk1));
+    vsum = _mm_add_epi16(vsum, _mm_andnot_si128 (klt, kk2));
+  }
+  _mm_store_si128 ((__m128i*) &dst, vsum);
+  dotsum = dst[0] + dst[1] + dst[2] + dst[3] + dst[4] + dst[5] + dst[6] + dst[7];
 
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   return (1. - dot);
@@ -63,12 +109,17 @@ uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s
  * Banded Needleman Wunsch
  */
 
-char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment) {
+char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, bool testing) {
   char **al;
   double kdist;
+  double kdist2;
   
   if(use_kmers) {
-    kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
+    if(testing) { ///TEST
+      kdist = kmer_dist2(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
+    } else {
+      kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
+    }
   }
   
   if(use_kmers && kdist > kdist_cutoff) {
@@ -655,12 +706,12 @@ Sub *al2subs(char **al) {
 }
 
 // Wrapper for al2subs(raw_align(...)) that manages memory and qualities
-Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment) {
+Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, bool testing) {
   int s;
   char **al;
   Sub *sub;
 
-  al = raw_align(raw0, raw1, score, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment);
+  al = raw_align(raw0, raw1, score, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment, testing);
   sub = al2subs(al);
 
   if(sub) {

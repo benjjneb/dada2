@@ -16,6 +16,7 @@ assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("VERBOSE", FALSE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
+assign("TESTING", FALSE, envir = dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -297,7 +298,8 @@ dada <- function(derep,
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
                           multithread,
-                          opts[["VERBOSE"]])
+                          opts[["VERBOSE"]],
+                          opts[["TESTING"]])
       
       # Augment the returns
       res$clustering$sequence <- as.character(res$clustering$sequence)
@@ -491,6 +493,8 @@ dada <- function(derep,
 #'  the algorithm will terminate with a warning message. Default value is 10.
 #'  
 #' VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
+#' 
+#' TESTING: FALSE. Don't change this.
 #' 
 #' @seealso 
 #'  \code{\link{getDadaOpt}}

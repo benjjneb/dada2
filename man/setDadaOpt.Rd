@@ -62,6 +62,8 @@ MAX_CONSIST: The maximum number of steps when selfConsist=TRUE. If convergence i
  the algorithm will terminate with a warning message. Default value is 10.
  
 VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
+
+TESTING: FALSE. Don't change this.
 }
 \examples{
 setDadaOpt(OMEGA_A = 1e-20)
