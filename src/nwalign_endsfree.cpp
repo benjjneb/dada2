@@ -1,129 +1,25 @@
 #include <string.h>
 #include <stdlib.h>
 #include "dada.h"
-#include "emmintrin.h"
 // [[Rcpp::interfaces(cpp)]]
-
-/************* KMERS *****************
- * Current Kmer implementation assumes A/C/G/T only.
- */
-
-double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
-  int i;
-  int n_kmer = 1 << (2*k); // 4^k kmers
-  uint16_t dotsum = 0;
-  double dot = 0.0;
-
-  for(i=0;i<n_kmer; i++) {
-    dotsum += (kv1[i] < kv2[i] ? kv1[i] : kv2[i]);
-  }
-  
-  dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
-  
-  return (1. - dot);
-}
-
-/*
- 
-void _add( uint16_t * dst, uint16_t const * src, size_t n )
-  {
-  for( uint16_t const * end( dst + n ); dst != end; dst+=8, src+=8 )
-  {
-    __m128i _s = _mm_load_si128( (__m128i*) src );
-    __m128i _d = _mm_load_si128( (__m128i*) dst );
-
-    _d = _mm_add_epi16( _d, _s );
-
-    _mm_store_si128( (__m128i*) dst, _d );
-  }
-}
- */
-
-// Computes kmer distance with SSE intrinsics.
-// Consider packing into 8 bit integers. Issues is a max of 256 (kmers)
-// No native unsigned integer comparisons though which is a problem (would be down to 128 kmers in practice)
-double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
-  size_t n_kmer = 1 << (2*k); // 4^k kmers
-  int16_t dst[8];
-  uint16_t dotsum = 0;
-  double dot = 0.0;
-  
-//  __m128i *km1 = reinterpret_cast<__m128i*>(kv1);
-//  __m128i *km2 = reinterpret_cast<__m128i*>(kv2);
-  __m128i vsum = _mm_set1_epi16(0);
-
-  // TEST THIS CODE! Works in base (100 read) example
-  // PROFILE THIS CODE! Near identical in speed to -O2 optimized kmer code.
-  // ALIGNMENT NOT GUARANTEED, so loads need to be changed
-  // "The address of a block returned by malloc or realloc in GNU systems is always a multiple of eight (or sixteen on 64-bit systems). If you need a block whose address is a multiple of a higher power of two than that, use aligned_alloc or posix_memalign. aligned_alloc and posix_memalign are declared in stdlib.h.
-  // SO OK in 64 bit, but not 32 bit...
-  // NOTE: TO STAY SSE2, ALL HERE IS TREATED AS SIGNED INTs
-  for(uint16_t const * end( kv1 + n_kmer );kv1<end;kv1+=8,kv2+=8) {
-    __m128i kk1 = _mm_loadu_si128( (__m128i*) kv1 );
-    __m128i kk2 = _mm_loadu_si128( (__m128i*) kv2 );
-//    __m128i klt = _mm_cmplt_epi16 (kk1, kk2);
-//   vsum = _mm_add_epi16(vsum, _mm_and_si128 (klt, kk1));
-//    vsum = _mm_add_epi16(vsum, _mm_andnot_si128 (klt, kk2));
-    __m128i kmin = _mm_min_epi16(kk1, kk2);
-    vsum = _mm_add_epi16(vsum, kmin);
-  }
-  _mm_storeu_si128 ((__m128i*) &dst, vsum);
-  dotsum = dst[0] + dst[1] + dst[2] + dst[3] + dst[4] + dst[5] + dst[6] + dst[7];
-
-  dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
-  return (1. - dot);
-}
-
-uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
-  int i, j, nti;
-  int len = strlen(seq);
-  size_t kmer = 0;
-  size_t n_kmers = (1 << (2*k));  // 4^k kmers
-  uint16_t *kvec = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
-  if (kvec == NULL)  Rcpp::stop("Memory allocation failed.");
-  for(kmer=0;kmer<n_kmers;kmer++) { kvec[kmer] = 0; }
-
-  if(len <=0 || len > SEQLEN) {
-    Rcpp::stop("Unexpected sequence length.");
-  }
-
-  for(i=0; i<len-k; i++) {
-    kmer = 0;
-    for(j=i; j<i+k; j++) {
-      nti = ((int) seq[j]) - 1; // Change 1s, 2s, 3s, 4s, to 0/1/2/3
-      if(nti != 0 && nti != 1 && nti != 2 && nti != 3) {
-        Rcpp::stop("Unexpected nucleotide.");
-        kmer = 999999;
-        break;
-      }
-      kmer = 4*kmer + nti;
-    }
-    
-    // Make sure kmer index is valid. This doesn't solve the N's/-'s
-    // issue though, as the "length" of the string (# of kmers) needs
-    // to also reflect the reduction from the N's/-'s
-    if(kmer == 999999) { ; } 
-    else if(kmer >= n_kmers) {
-      Rcpp::stop("Kmer index out of range.");
-    } else { // Valid kmer
-      kvec[kmer]++;
-    }
-  }
-  return kvec;
-}
 
 /************* ALIGNMENT *****************
  * Banded Needleman Wunsch
  */
 
-char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, bool testing) {
+char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE) {
   char **al;
-  double kdist;
+  double kdist, kdist2;
 
   if(use_kmers) {
-    if(testing) { ///TEST
+    if(SSE==1) {
+      kdist = kmer_dist_SSEi_8(raw1->kmer8, raw1->length, raw2->kmer8, raw2->length, KMER_SIZE);
+      if(kdist<0) { // Overflow
+        kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
+      }
+      ///TEST      if(kdist != kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE)) { Rprintf("."); }
+    } else if(SSE==2) {
       kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
-///TEST      if(kdist != kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE)) { Rprintf("."); }
     } else {
       kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
     }
@@ -713,12 +609,12 @@ Sub *al2subs(char **al) {
 }
 
 // Wrapper for al2subs(raw_align(...)) that manages memory and qualities
-Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, bool testing) {
+Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE) {
   int s;
   char **al;
   Sub *sub;
 
-  al = raw_align(raw0, raw1, score, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment, testing);
+  al = raw_align(raw0, raw1, score, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment, SSE);
   sub = al2subs(al);
 
   if(sub) {

@@ -38,7 +38,9 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
   // Assign sequence and associated properties
   strcpy(raw->seq, seq);
   raw->length = strlen(seq);
-  raw->kmer = get_kmer(seq, KMER_SIZE);
+///  raw->kmer = get_kmer(seq, KMER_SIZE);
+///  raw->kmer8 = get_kmer8(seq, KMER_SIZE);
+  raw->kord = get_kmer_order(seq, KMER_SIZE);
   raw->reads = reads;
   // Allocate and copy quals (quals downgraded to floats here for memory savings)
   if(qual) { 
@@ -56,7 +58,9 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
 void raw_free(Raw *raw) {
   free(raw->seq);
   if(raw->qual) { free(raw->qual); }
-  free(raw->kmer);
+///  free(raw->kmer);
+///  free(raw->kmer8);
+  free(raw->kord);
   free(raw);  
 }
 
@@ -259,19 +263,46 @@ void bi_assign_center(Bi *bi) {
 Performs alignments and computes lambda for all raws to the specified Bi
 Stores only those that can possibly be recruited to this Bi
 */
-void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, bool testing) {
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, int SSE) {
   unsigned int index, cind;
   double lambda;
   Raw *raw;
+  Raw *center = b->bi[i]->center;
+  uint8_t *center_kmer8 = center->kmer8; // Store original kmer8 pointer
   Sub *sub;
   Comparison comp;
-  
+  /* Testing code for keeping comparative kmer8 close to others. Isn't improving perf thus far.
+  // Caching current kmer8 w/in the k8 memory block every CACHE_SIZE strides
+  size_t cached;
+  size_t n_kmer = 1 << (2*KMER_SIZE);
+  uint8_t *kcache = (uint8_t *) malloc(n_kmer * sizeof(uint8_t)); //E
+  if (kcache == NULL)  Rcpp::stop("Memory allocation failed.");
+  cached=CACHE_STRIDE-1;
+  // Cache
+  if(cached < b->nraw) {
+    memcpy(kcache, b->raw[cached]->kmer8, n_kmer);
+    memcpy(b->raw[cached]->kmer8, center->kmer8, n_kmer);
+    center->kmer8 = b->raw[cached]->kmer8;
+  } */
+
   // align all raws to this sequence and compute corresponding lambda
   if(verbose) { Rprintf("C%iLU:", i); }
   for(index=0, cind=0; index<b->nraw; index++) {
     raw = b->raw[index];
+    
+/*    if(index == cached) { // Return real data
+      memcpy(raw->kmer8, kcache, n_kmer);
+      if((cached+=CACHE_STRIDE) < b->nraw) { // Move cache forward
+        memcpy(kcache, raw->kmer8, n_kmer);
+        memcpy(raw->kmer8, center_kmer8, n_kmer);
+        center->kmer8 = b->raw[cached]->kmer8;
+      } else {
+        center->kmer8 = center_kmer8;
+      }
+} */
+
     // get sub object
-    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment, testing);
+    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment, SSE);
     b->nalign++;
     if(!sub) { b->nshroud++; }
     
@@ -325,7 +356,7 @@ void *t_compare(void *tc_in) {
   for(index=inp->start, j=0; index<inp->end; index++, j++) {
     // Make sub object
     raw = b->raw[index];
-    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, inp->use_kmers, inp->kdist_cutoff, b->band_size, b->vectorized_alignment, testing);
+    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, inp->use_kmers, inp->kdist_cutoff, b->band_size, b->vectorized_alignment, SSE);
 
     // Make comparison object
     comps[j].i = i;
@@ -349,7 +380,7 @@ void *t_compare(void *tc_in) {
 // Stores only those that can possibly be recruited to this Bi
 // MULTITHREADED
 
-void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose, bool testing) {
+void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose, int SSE) {
   unsigned int index, cind, thr, row, col, ncol;
   double lambda;
   Raw *raw;
@@ -429,14 +460,14 @@ struct CompareParallel : public RcppParallel::Worker
   // parameters
   bool use_kmers;
   double kdist_cutoff;
-  bool testing;
+  int SSE;
   unsigned int ncol;
   double *err_mat;
   
   // initialize with source and destination
-  CompareParallel(B *b, unsigned int i, Comparison *output, bool use_kmers, double kdist_cutoff, bool testing,
+  CompareParallel(B *b, unsigned int i, Comparison *output, bool use_kmers, double kdist_cutoff, int SSE,
                   unsigned int ncol, double *err_mat) 
-    : b(b), i(i), output(output), use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), testing(testing), ncol(ncol), err_mat(err_mat) {}
+    : b(b), i(i), output(output), use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), SSE(SSE), ncol(ncol), err_mat(err_mat) {}
   
   // Perform sequence comparison
   void operator()(std::size_t begin, std::size_t end) {
@@ -445,7 +476,7 @@ struct CompareParallel : public RcppParallel::Worker
     
     for(std::size_t index=begin;index<end;index++) {
       raw = b->raw[index];
-      sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment, testing);
+      sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment, SSE);
       
       // Make comparison object
       output[index].i = i;
@@ -464,7 +495,7 @@ struct CompareParallel : public RcppParallel::Worker
 };
 
 
-void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, bool testing) {
+void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, int SSE) {
   unsigned int index, cind, row, col, ncol;
   double lambda;
   Raw *raw;
@@ -484,7 +515,7 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   // Parallelize for loop to perform all comparisons
   Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
   if(comps==NULL) Rcpp::stop("Memory allocation failed.");
-  CompareParallel compareParallel(b, i, comps, use_kmers, kdist_cutoff, testing, ncol, err_mat);
+  CompareParallel compareParallel(b, i, comps, use_kmers, kdist_cutoff, SSE, ncol, err_mat);
   RcppParallel::parallelFor(0, b->nraw, compareParallel, GRAIN_SIZE);
   
   // Selectively store

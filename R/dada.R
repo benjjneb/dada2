@@ -16,7 +16,7 @@ assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("VERBOSE", FALSE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
-assign("TESTING", FALSE, envir = dada_opts)
+assign("SSE", 0L, envir = dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -299,7 +299,7 @@ dada <- function(derep,
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
                           multithread,
                           opts[["VERBOSE"]],
-                          opts[["TESTING"]])
+                          opts[["SSE"]])
       
       # Augment the returns
       res$clustering$sequence <- as.character(res$clustering$sequence)
@@ -494,7 +494,9 @@ dada <- function(derep,
 #'  
 #' VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
 #' 
-#' TESTING: FALSE. Don't change this.
+#' SSE: Default 0. Controls the level of explicit SSE vectorization (versus auto-vectorization). 
+#'  0: None. 1: SSE2. 2: AVX2.
+#'  Don't use for now (being tested).
 #' 
 #' @seealso 
 #'  \code{\link{getDadaOpt}}

@@ -9,8 +9,8 @@
 using namespace Rcpp;
 
 // dada_uniques
-Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, bool use_quals, bool final_consensus, bool vectorized_alignment, int homo_gap, bool multithread, bool verbose, bool testing);
-RcppExport SEXP _dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP final_consensusSEXP, SEXP vectorized_alignmentSEXP, SEXP homo_gapSEXP, SEXP multithreadSEXP, SEXP verboseSEXP, SEXP testingSEXP) {
+Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances, Rcpp::NumericMatrix err, Rcpp::NumericMatrix quals, Rcpp::NumericMatrix score, int gap, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, bool use_quals, bool final_consensus, bool vectorized_alignment, int homo_gap, bool multithread, bool verbose, int SSE);
+RcppExport SEXP _dada2_dada_uniques(SEXP seqsSEXP, SEXP abundancesSEXP, SEXP errSEXP, SEXP qualsSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP use_kmersSEXP, SEXP kdist_cutoffSEXP, SEXP band_sizeSEXP, SEXP omegaASEXP, SEXP max_clustSEXP, SEXP min_foldSEXP, SEXP min_hammingSEXP, SEXP use_qualsSEXP, SEXP final_consensusSEXP, SEXP vectorized_alignmentSEXP, SEXP homo_gapSEXP, SEXP multithreadSEXP, SEXP verboseSEXP, SEXP SSESEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -33,8 +33,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type homo_gap(homo_gapSEXP);
     Rcpp::traits::input_parameter< bool >::type multithread(multithreadSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
-    Rcpp::traits::input_parameter< bool >::type testing(testingSEXP);
-    rcpp_result_gen = Rcpp::wrap(dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, final_consensus, vectorized_alignment, homo_gap, multithread, verbose, testing));
+    Rcpp::traits::input_parameter< int >::type SSE(SSESEXP);
+    rcpp_result_gen = Rcpp::wrap(dada_uniques(seqs, abundances, err, quals, score, gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, use_quals, final_consensus, vectorized_alignment, homo_gap, multithread, verbose, SSE));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -144,6 +144,45 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type band(bandSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type max_aligns(max_alignsSEXP);
     rcpp_result_gen = Rcpp::wrap(evaluate_kmers(seqs, kmer_size, score, gap, band, max_aligns));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kmer_dist
+Rcpp::NumericVector kmer_dist(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size);
+RcppExport SEXP _dada2_kmer_dist(SEXP s1SEXP, SEXP s2SEXP, SEXP kmer_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector< std::string > >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::vector< std::string > >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< int >::type kmer_size(kmer_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(kmer_dist(s1, s2, kmer_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kmer_matches
+Rcpp::IntegerVector kmer_matches(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size);
+RcppExport SEXP _dada2_kmer_matches(SEXP s1SEXP, SEXP s2SEXP, SEXP kmer_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector< std::string > >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::vector< std::string > >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< int >::type kmer_size(kmer_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(kmer_matches(s1, s2, kmer_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kdist_matches
+Rcpp::IntegerVector kdist_matches(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size);
+RcppExport SEXP _dada2_kdist_matches(SEXP s1SEXP, SEXP s2SEXP, SEXP kmer_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector< std::string > >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::vector< std::string > >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< int >::type kmer_size(kmer_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(kdist_matches(s1, s2, kmer_size));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -259,6 +298,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dada2_C_pair_consensus", (DL_FUNC) &_dada2_C_pair_consensus, 4},
     {"_dada2_C_isACGT", (DL_FUNC) &_dada2_C_isACGT, 1},
     {"_dada2_evaluate_kmers", (DL_FUNC) &_dada2_evaluate_kmers, 6},
+    {"_dada2_kmer_dist", (DL_FUNC) &_dada2_kmer_dist, 3},
+    {"_dada2_kmer_matches", (DL_FUNC) &_dada2_kmer_matches, 3},
+    {"_dada2_kdist_matches", (DL_FUNC) &_dada2_kdist_matches, 3},
     {"_dada2_C_subpos", (DL_FUNC) &_dada2_C_subpos, 2},
     {"_dada2_C_matchRef", (DL_FUNC) &_dada2_C_matchRef, 4},
     {"_dada2_C_matrixEE", (DL_FUNC) &_dada2_C_matrixEE, 1},
