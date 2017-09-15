@@ -68,6 +68,10 @@ kmer_dist <- function(s1, s2, kmer_size) {
     .Call('_dada2_kmer_dist', PACKAGE = 'dada2', s1, s2, kmer_size)
 }
 
+kord_dist <- function(s1, s2, kmer_size, SSE) {
+    .Call('_dada2_kord_dist', PACKAGE = 'dada2', s1, s2, kmer_size, SSE)
+}
+
 kmer_matches <- function(s1, s2, kmer_size) {
     .Call('_dada2_kmer_matches', PACKAGE = 'dada2', s1, s2, kmer_size)
 }

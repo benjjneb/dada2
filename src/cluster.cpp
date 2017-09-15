@@ -268,7 +268,7 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
   double lambda;
   Raw *raw;
   Raw *center = b->bi[i]->center;
-  uint8_t *center_kmer8 = center->kmer8; // Store original kmer8 pointer
+//  uint8_t *center_kmer8 = center->kmer8; // Store original kmer8 pointer
   Sub *sub;
   Comparison comp;
   /* Testing code for keeping comparative kmer8 close to others. Isn't improving perf thus far.

@@ -322,6 +322,39 @@ Rcpp::NumericVector kmer_dist(std::vector< std::string > s1, std::vector< std::s
 }
 
 // [[Rcpp::export]]
+Rcpp::NumericVector kord_dist(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size, int SSE) {
+  size_t len1 = 0, len2 = 0;
+  char *seq1, *seq2;
+  
+  size_t nseqs = s1.size();
+  if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
+  
+  Rcpp::NumericVector kdist(nseqs);
+  uint16_t *kord1;
+  uint16_t *kord2;
+  
+  for(int i=0;i<nseqs;i++) {
+    seq1 = intstr(s1[i].c_str());
+    len1 = s1[i].size();
+    kord1 = get_kmer_order(seq1, kmer_size);
+    seq2 = intstr(s2[i].c_str());
+    len2 = s2[i].size();
+    kord2 = get_kmer_order(seq2, kmer_size);
+    if(SSE==1) {
+      kdist[i] = kord_dist_SSEi(kord1, len1, kord2, len2, kmer_size);
+    } else {
+      kdist[i] = kord_dist(kord1, len1, kord2, len2, kmer_size);
+    }
+    free(kord2);
+    free(seq2);
+    free(kord1);
+    free(seq1);
+  }
+  
+  return(kdist);
+}
+
+// [[Rcpp::export]]
 Rcpp::IntegerVector kmer_matches(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size) {
   int i,j;
   size_t len1 = 0, len2 = 0;

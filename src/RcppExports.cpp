@@ -160,6 +160,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// kord_dist
+Rcpp::NumericVector kord_dist(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size, int SSE);
+RcppExport SEXP _dada2_kord_dist(SEXP s1SEXP, SEXP s2SEXP, SEXP kmer_sizeSEXP, SEXP SSESEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector< std::string > >::type s1(s1SEXP);
+    Rcpp::traits::input_parameter< std::vector< std::string > >::type s2(s2SEXP);
+    Rcpp::traits::input_parameter< int >::type kmer_size(kmer_sizeSEXP);
+    Rcpp::traits::input_parameter< int >::type SSE(SSESEXP);
+    rcpp_result_gen = Rcpp::wrap(kord_dist(s1, s2, kmer_size, SSE));
+    return rcpp_result_gen;
+END_RCPP
+}
 // kmer_matches
 Rcpp::IntegerVector kmer_matches(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size);
 RcppExport SEXP _dada2_kmer_matches(SEXP s1SEXP, SEXP s2SEXP, SEXP kmer_sizeSEXP) {
@@ -299,6 +313,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dada2_C_isACGT", (DL_FUNC) &_dada2_C_isACGT, 1},
     {"_dada2_evaluate_kmers", (DL_FUNC) &_dada2_evaluate_kmers, 6},
     {"_dada2_kmer_dist", (DL_FUNC) &_dada2_kmer_dist, 3},
+    {"_dada2_kord_dist", (DL_FUNC) &_dada2_kord_dist, 4},
     {"_dada2_kmer_matches", (DL_FUNC) &_dada2_kmer_matches, 3},
     {"_dada2_kdist_matches", (DL_FUNC) &_dada2_kdist_matches, 3},
     {"_dada2_C_subpos", (DL_FUNC) &_dada2_C_subpos, 2},

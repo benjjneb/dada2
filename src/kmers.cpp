@@ -23,9 +23,7 @@ double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   return (1. - dot);
 }
 
-// Computes kmer distance with SSE intrinsics.
-// Consider packing into 8 bit integers. Issues is a max of 255 (kmers)
-// No native unsigned integer comparisons though which is a problem (would be down to 128 kmers in practice)
+// Computes kmer distance with SSE2 intrinsics.
 double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   size_t n_kmer = 1 << (2*k); // 4^k kmers
   int16_t dst[64];
@@ -37,13 +35,7 @@ double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   //  __m128i *km2 = reinterpret_cast<__m128i*>(kv2);
   __m128i vsum = _mm_set1_epi16(0);
   
-  // TEST THIS CODE! Works in base (100 read) example
-  // PROFILE THIS CODE! Near identical in speed to -O2 optimized kmer code.
-  // ALIGNMENT NOT GUARANTEED, so loads need to be changed
-  // "The address of a block returned by malloc or realloc in GNU systems is always a multiple of eight (or sixteen on 64-bit systems). If you need a block whose address is a multiple of a higher power of two than that, use aligned_alloc or posix_memalign. aligned_alloc and posix_memalign are declared in stdlib.h.
-  // SO OK in 64 bit, but not 32 bit...
-  // NOTE: TO STAY SSE2, ALL HERE IS TREATED AS SIGNED INTs
-  for(uint16_t const * end( kv1 + n_kmer );kv1<end;kv1+=STEP,kv2+=STEP) {
+  for(uint16_t const * end( kv1 + n_kmer );kv1<end;kv1+=STEP,kv2+=STEP) { // assumes n_kmer divisible by STEP
     __m128i kk1 = _mm_loadu_si128( (__m128i*) kv1 );
     __m128i kk2 = _mm_loadu_si128( (__m128i*) kv2 );
     __m128i kmin = _mm_min_epi16(kk1, kk2);
@@ -56,9 +48,8 @@ double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   return (1. - dot);
 }
 
-// Computes kmer distance with SSE intrinsics.
-// Consider packing into 8 bit integers. Issues is a max of 255 (kmers)
-// No native unsigned integer comparisons though which is a problem (would be down to 128 kmers in practice)
+// Computes kmer distance with SSE2 intrinsics.
+// Uses kmers packed into 8 bit integers. Can overflow, in which case negative value is returned.
 double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
   size_t n_kmer = 1 << (2*k); // 4^k kmers
   // memcpy to put the two vectors in spatial proximity solves the cache miss issue and speed everything up greatly.
@@ -77,7 +68,7 @@ double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
   __m128i vsum_a = _mm_set1_epi8(0x00);
 //  __m128i vsum_b = _mm_set1_epi8(0x00);
   
-  for(uint8_t const * end( kv1 + n_kmer );kv1<end;kv1+=STEP,kv2+=STEP) {
+  for(uint8_t const * end( kv1 + n_kmer );kv1<end;kv1+=STEP,kv2+=STEP) { // assumes n_kmer divisible by STEP
     __m128i kk1 = _mm_loadu_si128( (__m128i*) kv1 );
     __m128i kk2 = _mm_loadu_si128( (__m128i*) kv2 );
     __m128i kmin_a = _mm_min_epu8(kk1, kk2);
@@ -96,6 +87,59 @@ double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
     dotsum += dst[i];
   }
   if(overflow) { return(-1.); }
+  
+  dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
+  return (1. - dot);
+}
+
+// Computes "kmer distance" with SSE2 intrinsics, based on ordered kmers (e.g. gapless align)
+// If different lengths, returns -1 (invalid)
+double kord_dist(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
+  int i;
+  size_t n_kmer = 1 << (2*k); // 4^k kmers
+  int16_t dotsum = 0;
+  double dot = 0.0;
+  
+  if(len1 != len2 || kord1 == NULL || kord2 == NULL) { return(-1.0); } // Exit if different lengths
+  size_t klen = len1 - k + 1;
+
+  for(i=0;i<klen;i++) {
+    dotsum += (kord1[i] == kord2[i]);
+  }
+  
+  dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
+  return (1. - dot);
+}
+
+// Computes "kmer distance" with SSE2 intrinsics, based on ordered kmers (e.g. gapless align)
+// If different lengths, returns -1 (invalid)
+double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
+  int i;
+  size_t n_kmer = 1 << (2*k); // 4^k kmers
+  int16_t dst[64];
+  size_t STEP=8;
+  uint16_t dotsum = 0;
+  double dot = 0.0;
+  
+  if(len1 != len2 || kord1 == NULL || kord2 == NULL) { return(-1.0); } // Exit if different lengths
+  size_t klen = len1 - k + 1;
+  size_t n_vec = klen - (klen % STEP); // Vectorize over this many
+  
+  __m128i vsum = _mm_set1_epi16(0);
+  
+  for(uint16_t const * end( kord1 + n_vec );kord1<end;kord1+=STEP,kord2+=STEP) {
+    __m128i kk1 = _mm_loadu_si128( (__m128i*) kord1 );
+    __m128i kk2 = _mm_loadu_si128( (__m128i*) kord2 );
+    __m128i keq = _mm_cmpeq_epi16(kk1, kk2);
+    vsum = _mm_sub_epi16(vsum, keq); // Using 0xFFFF = -1
+  }
+  _mm_storeu_si128 ((__m128i*) &dst, vsum);
+  for(i=0;i<STEP;i++) {
+    dotsum += dst[i]; 
+  }
+  for(i=n_vec;i<klen;i++,kord1++,kord2++) { // kord starts pointing to where it was left
+    if(*kord1 == *kord2) { dotsum++; };
+  }
   
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   return (1. - dot);
