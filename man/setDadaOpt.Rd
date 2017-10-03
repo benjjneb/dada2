@@ -62,6 +62,10 @@ MAX_CONSIST: The maximum number of steps when selfConsist=TRUE. If convergence i
  the algorithm will terminate with a warning message. Default value is 10.
  
 VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
+
+SSE: Default 0. Controls the level of explicit SSE vectorization (versus auto-vectorization). 
+ 0: None. 1: SSE2. 2: AVX2.
+ Don't use for now (being tested).
 }
 \examples{
 setDadaOpt(OMEGA_A = 1e-20)

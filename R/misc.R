@@ -64,7 +64,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #'  including \code{\link{dada-class}} and \code{\link{derep-class}} objects, as well as 
 #'  \code{data.frame} objects that have both $sequence and $abundance columns. This function 
 #'  wraps the \code{\link{getUniques}} function, but return only the names (i.e. the sequences).
-#'  Can also be provided the file path to a fasta file. 
+#'  Can also be provided the file path to a fasta or fastq file. 
 #' 
 #' @param object (Required). The object from which to extract the sequences.
 #' 
@@ -79,6 +79,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #' 
 #' @importFrom methods is
 #' @importFrom ShortRead readFasta
+#' @importFrom ShortRead readFastq
 #' @importFrom ShortRead sread
 #' @importFrom ShortRead id
 #' 
@@ -94,7 +95,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 getSequences <- function(object, collapse=FALSE, silence=TRUE) {
   if(is(object, "character")) {
     if(length(object)==1 && file.exists(object)) {
-      sr <- readFasta(object)
+      sr <- tryCatch(readFasta(object), error=function(err) { readFastq(object) })
       seqs <- as.character(sread(sr))
       names(seqs) <- id(sr)
       return(seqs)

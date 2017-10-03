@@ -293,6 +293,146 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
 }
 
 // [[Rcpp::export]]
+Rcpp::NumericVector kmer_dist(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size) {
+  size_t len1 = 0, len2 = 0;
+  char *seq1, *seq2;
+  
+  size_t nseqs = s1.size();
+  if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
+  
+  Rcpp::NumericVector kdist(nseqs);
+  uint16_t *kv1;
+  uint16_t *kv2;
+  
+  for(int i=0;i<nseqs;i++) {
+    seq1 = intstr(s1[i].c_str());
+    len1 = s1[i].size();
+    kv1 = get_kmer(seq1, kmer_size);
+    seq2 = intstr(s2[i].c_str());
+    len2 = s2[i].size();
+    kv2 = get_kmer(seq2, kmer_size);
+    kdist[i] = kmer_dist(kv1, len1, kv2, len2, kmer_size);
+    free(kv2);
+    free(seq2);
+    free(kv1);
+    free(seq1);
+  }
+  
+  return(kdist);
+}
+
+// [[Rcpp::export]]
+Rcpp::NumericVector kord_dist(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size, int SSE) {
+  size_t len1 = 0, len2 = 0;
+  char *seq1, *seq2;
+  
+  size_t nseqs = s1.size();
+  if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
+  
+  Rcpp::NumericVector kdist(nseqs);
+  uint16_t *kord1;
+  uint16_t *kord2;
+  
+  for(int i=0;i<nseqs;i++) {
+    seq1 = intstr(s1[i].c_str());
+    len1 = s1[i].size();
+    kord1 = get_kmer_order(seq1, kmer_size);
+    seq2 = intstr(s2[i].c_str());
+    len2 = s2[i].size();
+    kord2 = get_kmer_order(seq2, kmer_size);
+    if(SSE==1) {
+      kdist[i] = kord_dist_SSEi(kord1, len1, kord2, len2, kmer_size);
+    } else {
+      kdist[i] = kord_dist(kord1, len1, kord2, len2, kmer_size);
+    }
+    free(kord2);
+    free(seq2);
+    free(kord1);
+    free(seq1);
+  }
+  
+  return(kdist);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector kmer_matches(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size) {
+  int i,j;
+  size_t len1 = 0, len2 = 0;
+  size_t klen1 = 0, klen2 = 0, klen_min = 0;
+  int matches=0;
+  char *seq1, *seq2;
+  
+  size_t nseqs = s1.size();
+  if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
+  
+  Rcpp::IntegerVector kmatch(nseqs);
+  uint16_t *kord1;
+  uint16_t *kord2;
+  
+  for(i=0;i<nseqs;i++) {
+    seq1 = intstr(s1[i].c_str());
+    len1 = s1[i].size();
+    klen1 = len1 - kmer_size + 1;
+    kord1 = get_kmer_order(seq1, kmer_size);
+    seq2 = intstr(s2[i].c_str());
+    len2 = s2[i].size();
+    klen2 = len2 - kmer_size + 1;
+    kord2 = get_kmer_order(seq2, kmer_size);
+    // Calculate matches
+    matches=0;
+    klen_min = klen1 < klen2 ? klen1 : klen2;
+    for(j=0;j<klen_min;j++) {
+      if(kord1[j] == kord2[j]) { matches++; }
+    }
+    kmatch[i] = matches;
+    free(kord2);
+    free(seq2);
+    free(kord1);
+    free(seq1);
+  }
+  
+  return(kmatch);
+}
+
+// [[Rcpp::export]]
+Rcpp::IntegerVector kdist_matches(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size) {
+  int i, j;
+  uint16_t dotsum = 0;
+  size_t len1 = 0, len2 = 0;
+  char *seq1, *seq2;
+  int n_kmer = 1 << (2*kmer_size); // 4^k kmers
+
+  size_t nseqs = s1.size();
+  if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
+  
+  Rcpp::IntegerVector kdist_match(nseqs);
+  uint16_t *kv1;
+  uint16_t *kv2;
+  
+  for(i=0;i<nseqs;i++) {
+    seq1 = intstr(s1[i].c_str());
+    len1 = s1[i].size();
+    kv1 = get_kmer(seq1, kmer_size);
+    seq2 = intstr(s2[i].c_str());
+    len2 = s2[i].size();
+    kv2 = get_kmer(seq2, kmer_size);
+    // code from kmer_dist
+    dotsum = 0;
+    for(j=0;j<n_kmer;j++) {
+      dotsum += (kv1[j] < kv2[j] ? kv1[j] : kv2[j]);
+    }
+    kdist_match[i] = dotsum;
+    free(kv2);
+    free(seq2);
+    free(kv1);
+    free(seq1);
+  }
+  
+  return(kdist_match);
+}
+
+
+// [[Rcpp::export]]
 Rcpp::DataFrame C_subpos(std::string s1, std::string s2) {
   unsigned int i=0;
   unsigned int pos0=1; // R-style 1-indexing
