@@ -1,3 +1,19 @@
+CHANGES IN VERSION 1.5.4
+-----------------------
+
+BUG FIXES
+
+    o End-point off-by-one bug in kmer distance calculations fixed. Minor impact on dada(...) output.
+
+    o Multithreading bug fixed.
+
+CHANGES IN VERSION 1.5.3
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o A version of the kmer-distance calculation that is explicitly SSE vectorized has been added and can be toggled on with the dada(..., SSE=1) option. This is intended for use when the code has not been natively compiled by a modern compiler, such as is the case for the bioconda binaries.
+
 CHANGES IN VERSION 1.5.2
 -----------------------
 
@@ -5,7 +21,7 @@ SIGNIFICANT USER-VISIBLE CHANGES
 
     o assignSpecies has been reimplemented to be much, much faster (>100x faster with enough query sequences).
 
-    o The allowOneOff flag has been set to FALSE by default in the xxxBimeraDenovo functions.
+    o The allowOneOff flag has been set to FALSE by default in the xxxBimeraDenovo functions.SRR5295658 
 
 BUG FIXES
 

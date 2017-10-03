@@ -10,6 +10,7 @@
 char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE) {
   char **al;
   double kdist = 0.0;
+/// Commented lines relate to testing of add'l speedups
 ///  double kodist = -1.0; // Needs to be different than kdist for fall-back when use_kmers=FALSE
 ///  static size_t nnw=0;
 ///  static size_t ngl=0;
@@ -17,16 +18,16 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
 ///  static size_t REPORT=1000;
 
   if(use_kmers) {
-    if(SSE==1) {
+    if(SSE==2) { // 8-bit explicit SSE
       kdist = kmer_dist_SSEi_8(raw1->kmer8, raw1->length, raw2->kmer8, raw2->length, KMER_SIZE);
       if(kdist<0) { // Overflow
         kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
       }
 ///      kodist = kord_dist_SSEi(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
-    } else if(SSE==2) {
+    } else if(SSE==1) { // 16-bit explicit SSE
       kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
 ///      kodist = kord_dist(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
-    } else {
+    } else { // implicit vectorization
       kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
     }
   }

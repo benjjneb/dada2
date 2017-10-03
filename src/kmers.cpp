@@ -31,8 +31,6 @@ double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   uint16_t dotsum = 0;
   double dot = 0.0;
   
-  //  __m128i *km1 = reinterpret_cast<__m128i*>(kv1);
-  //  __m128i *km2 = reinterpret_cast<__m128i*>(kv2);
   __m128i vsum = _mm_set1_epi16(0);
   
   for(uint16_t const * end( kv1 + n_kmer );kv1<end;kv1+=STEP,kv2+=STEP) { // assumes n_kmer divisible by STEP
@@ -52,8 +50,8 @@ double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
 // Uses kmers packed into 8 bit integers. Can overflow, in which case negative value is returned.
 double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
   size_t n_kmer = 1 << (2*k); // 4^k kmers
-  // memcpy to put the two vectors in spatial proximity solves the cache miss issue and speed everything up greatly.
-  // However it then becomes the bottleneck.
+/// memcpy to put the two vectors in spatial proximity solves the cache miss issue and speed everything up greatly.
+/// However it then becomes the bottleneck.
 ///  uint8_t kv[2048];
 ///  memcpy(kv, kv1, 1024);
 ///  memcpy(&kv[1024],kv2,1024);
@@ -73,14 +71,9 @@ double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
     __m128i kk2 = _mm_loadu_si128( (__m128i*) kv2 );
     __m128i kmin_a = _mm_min_epu8(kk1, kk2);
     vsum_a = _mm_adds_epu8(vsum_a, kmin_a);
-//    __m128i kk3 = _mm_loadu_si128( (__m128i*) (kv1+16) );
-//    __m128i kk4 = _mm_loadu_si128( (__m128i*) (kv2+16) );
-//    __m128i kmin_b = _mm_min_epu8(kk3, kk4);
-//    vsum_b = _mm_adds_epu8(vsum_b, kmin_b);
   }
   _mm_storeu_si128 ((__m128i*) &dst, vsum_a);
-//  _mm_storeu_si128 ((__m128i*) &(dst[16]), vsum_b);
-  
+
   bool overflow=false;
   for(i=0;i<STEP;i++) {
     if(dst[i] == 255) { overflow=true; }
