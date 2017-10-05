@@ -103,29 +103,18 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", vec=T
   rownames(collapsed) <- rownames(seqtab)
   for(query in seqs) {
     added=FALSE
-    if(length(seqs.out) > 0) { # Not first sequence
-      hams <- nwhamming(query, seqs.out, vec=TRUE, endsfree=TRUE, band=16) # band is arbitrary since need exact match
-      if(any(hams==0)) {
-        ref <- seqs.out[hams==0][[1]] # First is most abundant
-        collapsed[,ref] <- collapsed[,ref] + seqtab[,query]
-        added=TRUE
+    prefix <- substr(query, 1, minOverlap)
+    for(ref in seqs.out) { # Loop over the reference sequences already added to output
+      prefix.ref <- substr(ref, 1, minOverlap)
+      # Prescreen to see if costly alignment worthwhile, this could all be moved C-side
+      if(grepl(prefix, ref) || grepl(prefix.ref, query)) { 
+        if(nwhamming(query,ref,vec=vec,band=16) == 0) {  # band is arbitrary since need exact match
+          collapsed[,ref] <- collapsed[,ref] + seqtab[,query] 
+          added=TRUE
+          break
+        }
       }
-    }
-###! Prior version. Faster, but failed to collapse this case: _ACGTACGT_ ... TACGTACGTT
-###! Because one sequences is completely internal to the other, so neithe prefix nor suffix hit...
-#    added=FALSE
-#    prefix <- substr(query, 1, minOverlap)
-#    suffix <- substr(query, nchar(query)-minOverlap+1,nchar(query))
-#    for(ref in seqs.out) { # Loop over the reference sequences already added to output
-#      # Prescreen to see if costly alignment worthwhile, this all should possibly be C-side
-#      if(grepl(prefix, ref) || grepl(suffix, ref)) { 
-#        if(nwhamming(query,ref,vec=vec,band=-1) == 0) { # No mismatches or internal indels
-#          collapsed[,ref] <- collapsed[,ref] + seqtab[,query] 
-#          added=TRUE
-#          break
-#        }
-#      }
-#    } # for(ref in seqs.out)
+    } # for(ref in seqs.out)
     
     if(!added) {
       collapsed[,query] <- seqtab[,query]
