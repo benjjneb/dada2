@@ -199,6 +199,11 @@ is.sequence.table <- function(tab) {
 #' 
 #' @param ... (Optional). Additional sequence tables.
 #' 
+#' @param repeats (Optional). Default "error".
+#'  Specifies how merging should proceed in the presence of repeated sample names.
+#'  Valid values: "error", "sum".
+#'  If "sum", then samples with the same name are summed together in the merged table.
+#' 
 #' @param orderBy (Optional). \code{character(1)}. Default "abundance".
 #' Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
 #' Valid values: "abundance", "nsamples", NULL.
@@ -216,7 +221,7 @@ is.sequence.table <- function(tab) {
 #'   mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3)
 #' }
 #' 
-mergeSequenceTables <- function(table1, table2, ..., orderBy = "abundance") {
+mergeSequenceTables <- function(table1, table2, ..., repeats="error", orderBy = "abundance") {
   # Combine passed tables into a list
   tables <- list(table1, table2)
   tables <- c(tables, list(...))
@@ -224,12 +229,13 @@ mergeSequenceTables <- function(table1, table2, ..., orderBy = "abundance") {
   if(!(all(sapply(tables, is.sequence.table)))) {
     stop("At least two valid sequence tables, and no invalid objects, are expected.")
   }
-  sample.names <- rownames(tables[[1]])
-  for(i in seq(2, length(tables))) {
-    sample.names <- c(sample.names, rownames(tables[[i]]))
-  }
+  sample.names <- c(sapply(tables, rownames), recursive=TRUE)
   if(any(duplicated(sample.names))) {
-    stop("Duplicated sample names detected in the rownames.")
+    if(repeats=="error") { stop("Duplicated sample names detected in the rownames.") }
+    else { 
+      sample.names <- unique(sample.names)
+      message("Duplicated sample names detected in the rownames.") 
+    }
   }
   seqs <- unique(c(sapply(tables, colnames), recursive=TRUE))
   # Make merged table
@@ -237,7 +243,7 @@ mergeSequenceTables <- function(table1, table2, ..., orderBy = "abundance") {
   rownames(rval) <- sample.names
   colnames(rval) <- seqs
   for(tab in tables) {
-    rval[rownames(tab), colnames(tab)] <- tab
+    rval[rownames(tab), colnames(tab)] <- rval[rownames(tab), colnames(tab)] + tab
   }
   # Order columns
   if(!is.null(orderBy)) {

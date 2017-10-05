@@ -4,7 +4,8 @@
 \alias{mergeSequenceTables}
 \title{Merge two or more sample-by-sequence observation matrices.}
 \usage{
-mergeSequenceTables(table1, table2, ..., orderBy = "abundance")
+mergeSequenceTables(table1, table2, ..., repeats = "error",
+  orderBy = "abundance")
 }
 \arguments{
 \item{table1}{(Required). Named integer matrix. Rownames correspond to samples
@@ -14,6 +15,11 @@ and column names correspond to sequences. The output of \code{\link{makeSequence
 and column names correspond to sequences. The output of \code{\link{makeSequenceTable}}.}
 
 \item{...}{(Optional). Additional sequence tables.}
+
+\item{repeats}{(Optional). Default "error".
+Specifies how merging should proceed in the presence of repeated sample names.
+Valid values: "error", "sum".
+If "sum", then samples with the same name are summed together in the merged table.}
 
 \item{orderBy}{(Optional). \code{character(1)}. Default "abundance".
 Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
