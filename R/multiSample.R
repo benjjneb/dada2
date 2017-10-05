@@ -67,6 +67,13 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' @param minOverlap (Optional). \code{numeric(1)}. Default 20.
 #' The minimum amount of overlap between sequences required to collapse them together.
 #' 
+#' @param orderBy (Optional). \code{character(1)}. Default "abundance".
+#' Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
+#' Valid values: "abundance", "nsamples", NULL.
+#' 
+#' @param vec (Optional). \code{logical(1)}. Default TRUE.
+#' Use the vectorized aligner. Should be turned off if sequences exceed 2kb in length.
+#' 
 #' @param verbose (Optional). \code{logical(1)}. Default FALSE.
 #' If TRUE, a summary of the function results are printed to standard output.
 #' 
@@ -86,28 +93,40 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' seqtab <- makeSequenceTable(list(sample1=dada1, sample2=dada2))
 #' collapseNoMismatch(seqtab)
 #' 
-collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
+collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", vec=TRUE, verbose=FALSE) {
   unqs.srt <- sort(getUniques(seqtab), decreasing=TRUE)
   seqs <- names(unqs.srt) # The input sequences in order of decreasing total abundance
   seqs.out <- character(0) # The output sequences (after collapsing)
   # collapsed will be the output sequence table  
-  collapsed <- matrix(0, nrow=nrow(seqtab), ncol=ncol(seqtab))
+  collapsed <- matrix(0L, nrow=nrow(seqtab), ncol=ncol(seqtab))
   colnames(collapsed) <- colnames(seqtab) # Keep input ordering for output table
   rownames(collapsed) <- rownames(seqtab)
   for(query in seqs) {
     added=FALSE
-    prefix <- substr(query, 1, minOverlap)
-    suffix <- substr(query, nchar(query)-minOverlap+1,nchar(query))
-    for(ref in seqs.out) { # Loop over the reference sequences already added to output
-      # Prescreen to see if costly alignment worthwhile, this all should possibly be C-side
-      if(grepl(prefix, ref) || grepl(suffix, ref)) { 
-        if(nwhamming(query,ref,band=-1) == 0) { # No mismatches/indels, join more abundant sequence
-          collapsed[,ref] <- collapsed[,ref] + seqtab[,query] 
-          added=TRUE
-          break
-        }
+    if(length(seqs.out) > 0) { # Not first sequence
+      hams <- nwhamming(query, seqs.out, vec=TRUE, endsfree=TRUE, band=16) # band is arbitrary since need exact match
+      if(any(hams==0)) {
+        ref <- seqs.out[hams==0][[1]] # First is most abundant
+        collapsed[,ref] <- collapsed[,ref] + seqtab[,query]
+        added=TRUE
       }
-    } # for(ref in seqs.out)
+    }
+###! Prior version. Faster, but failed to collapse this case: _ACGTACGT_ ... TACGTACGTT
+###! Because one sequences is completely internal to the other, so neithe prefix nor suffix hit...
+#    added=FALSE
+#    prefix <- substr(query, 1, minOverlap)
+#    suffix <- substr(query, nchar(query)-minOverlap+1,nchar(query))
+#    for(ref in seqs.out) { # Loop over the reference sequences already added to output
+#      # Prescreen to see if costly alignment worthwhile, this all should possibly be C-side
+#      if(grepl(prefix, ref) || grepl(suffix, ref)) { 
+#        if(nwhamming(query,ref,vec=vec,band=-1) == 0) { # No mismatches or internal indels
+#          collapsed[,ref] <- collapsed[,ref] + seqtab[,query] 
+#          added=TRUE
+#          break
+#        }
+#      }
+#    } # for(ref in seqs.out)
+    
     if(!added) {
       collapsed[,query] <- seqtab[,query]
       seqs.out <- c(seqs.out, query)
@@ -117,6 +136,16 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, verbose=FALSE) {
     stop("Mismatch between output sequences and the collapsed sequence table.")
   }
   collapsed <- collapsed[,colnames(collapsed) %in% seqs.out,drop=FALSE]
+  # Order columns
+  if(!is.null(orderBy)) {
+    if(orderBy == "abundance") {
+      collapsed <- collapsed[,order(colSums(collapsed), decreasing=TRUE),drop=FALSE]
+    } else if(orderBy == "nsamples") {
+      collapsed <- collapsed[,order(colSums(collapsed>0), decreasing=TRUE),drop=FALSE]
+    }
+  }
+  
+  collapsed <- collapsed[,order(colSums(collapsed), decreasing=TRUE)]
   
   if(verbose) message("Output ", ncol(collapsed), " collapsed sequences out of ", ncol(seqtab), " input sequences.")
   collapsed

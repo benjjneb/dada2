@@ -185,7 +185,8 @@ dada <- function(derep,
   
   # Validate err matrix
   initializeErr <- FALSE
-  if(is.null(err) && selfConsist) {
+  if(selfConsist && (missing(err) || is.null(err))) {
+    err <- NULL
     initializeErr <- TRUE
   } else {
     err <- getErrors(err, enforce=TRUE)

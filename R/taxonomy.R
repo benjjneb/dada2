@@ -65,10 +65,16 @@
 assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootstraps=FALSE,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
                            multithread=FALSE, verbose=FALSE) {
+  MIN_REF_LEN <- 20 # Enforced minimum length of reference seqs. Must be bigger than the kmer-size used (8).
   # Get character vector of sequences
   seqs <- getSequences(seqs)
   # Read in the reference fasta
   refsr <- readFasta(refFasta)
+  lens <- width(sread(refsr))
+  if(any(lens<MIN_REF_LEN)) {
+    refsr <- refsr[lens>=MIN_REF_LEN]
+    warning(paste0("Some reference sequences were too short (<", MIN_REF_LEN, "nts) and were excluded."))
+  }
   refs <- as.character(sread(refsr))
   tax <- as.character(id(refsr))
   tax <- sapply(tax, function(x) gsub("^\\s+|\\s+$", "", x)) # Remove leading/trailing whitespace

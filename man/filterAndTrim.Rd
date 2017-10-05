@@ -92,7 +92,7 @@ If NULL (the default) and matchIDs is TRUE, the function attempts to automatical
  If TRUE, input files are filtered in parallel via \code{\link[parallel]{mclapply}}.
  If an integer is provided, it is passed to the \code{mc.cores} argument of \code{\link[parallel]{mclapply}}.
  Note that the parallelization here is by forking, and each process is loading another fastq file into
- memory. Additionally, this option is ignored under Windows machines, with \code{mc.cores} set to 1.
+ memory. This option is ignored in Windows, as Windows does not support forking, with \code{mc.cores} set to 1.
 If memory is an issue, execute in a clean environment and reduce the chunk size \code{n} and/or
  the number of threads.}
 

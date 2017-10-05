@@ -4,13 +4,21 @@
 \alias{collapseNoMismatch}
 \title{Combine together sequences that are identical up to shifts and/or length.}
 \usage{
-collapseNoMismatch(seqtab, minOverlap = 20, verbose = FALSE)
+collapseNoMismatch(seqtab, minOverlap = 20, orderBy = "abundance",
+  vec = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{seqtab}{(Required). A sample by sequence matrix, the return of \code{\link{makeSequenceTable}}.}
 
 \item{minOverlap}{(Optional). \code{numeric(1)}. Default 20.
 The minimum amount of overlap between sequences required to collapse them together.}
+
+\item{orderBy}{(Optional). \code{character(1)}. Default "abundance".
+Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
+Valid values: "abundance", "nsamples", NULL.}
+
+\item{vec}{(Optional). \code{logical(1)}. Default TRUE.
+Use the vectorized aligner. Should be turned off if sequences exceed 2kb in length.}
 
 \item{verbose}{(Optional). \code{logical(1)}. Default FALSE.
 If TRUE, a summary of the function results are printed to standard output.}
