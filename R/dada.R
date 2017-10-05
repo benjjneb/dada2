@@ -149,23 +149,21 @@ dada <- function(derep,
 
   # Validate quals matrix(es)
   qmax <- 0
-  if(opts$USE_QUALS) {
-    for(i in seq_along(derep)) {
-      if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) {
-        stop("derep$quals matrices must have one row for each derep$unique sequence.")
-      }
-      if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) { ###ITS
-        stop("derep$quals matrices must have as many columns as the length of the derep$unique sequences.")
-      }
-      if(any(sapply(seq(nrow(derep[[i]]$quals)), 
-                    function(row) any(is.na(derep[[i]]$quals[row,1:nchar(names(derep[[i]]$uniques)[[row]])]))))) { ###ITS
-        stop("NAs in derep$quals matrix. Check that all input sequences had valid associated qualities assigned.")
-      }
-      if(min(derep[[i]]$quals, na.rm=TRUE) < 0) {
-        stop("Invalid derep$quals matrix. Quality values must be positive integers.")
-      }
-      qmax <- max(qmax, max(derep[[i]]$quals, na.rm=TRUE))
+  for(i in seq_along(derep)) {
+    if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) {
+      stop("derep$quals matrices must have one row for each derep$unique sequence.")
     }
+    if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) { ###ITS
+      stop("derep$quals matrices must have as many columns as the length of the derep$unique sequences.")
+    }
+    if(any(sapply(seq(nrow(derep[[i]]$quals)), 
+                  function(row) any(is.na(derep[[i]]$quals[row,1:nchar(names(derep[[i]]$uniques)[[row]])]))))) { ###ITS
+      stop("NAs in derep$quals matrix. Check that all input sequences had valid associated qualities assigned.")
+    }
+    if(min(derep[[i]]$quals, na.rm=TRUE) < 0) {
+      stop("Invalid derep$quals matrix. Quality values must be positive integers.")
+    }
+    qmax <- max(qmax, max(derep[[i]]$quals, na.rm=TRUE))
   }
 
   qmax <- ceiling(qmax) # Only getting averages from derep$quals
@@ -206,7 +204,7 @@ dada <- function(derep,
   # Validate errorEstimationFunction
   if(!opts$USE_QUALS) {
     if(!missing(errorEstimationFunction)) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
-    errorEstimationFunction <- NULL  # NULL error function has different meaning depending on USE_QUALS
+    errorEstimationFunction <- noqualErrfun  # NULL error function has different meaning depending on USE_QUALS
   } else {
     if(!is.function(errorEstimationFunction)) stop("Must provide a function for errorEstimationFunction.")
   }
@@ -261,8 +259,7 @@ dada <- function(derep,
     if(nconsist > 0) errs[[nconsist]] <- err
 
     for(i in seq_along(derep)) {
-      if(!opts$USE_QUALS) { qi <- matrix(0, nrow=0, ncol=0) }
-      else { qi <- unname(t(derep[[i]]$quals)) } # Need transpose so that sequences are columns
+      qi <- unname(t(derep[[i]]$quals)) # Need transpose so that sequences are columns
 
       if(nconsist == 1) {
         if(pool) {
@@ -279,14 +276,10 @@ dada <- function(derep,
       }
       # Initialize error matrix if necessary
       if(initializeErr) {
-        if(opts$USE_QUALS) {
-          err <- matrix(1, nrow=16, ncol=max(41,qmax+1))
-        } else {
-          err <- matrix(1, nrow=16, ncol=1)
-        }
+        err <- matrix(1, nrow=16, ncol=max(41,qmax+1))
       }
       res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), 
-                          err, ###!
+                          err,
                           qi, 
                           opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
@@ -294,7 +287,7 @@ dada <- function(derep,
                           opts[["OMEGA_A"]], 
                           if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] }, ###!
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
-                          opts[["USE_QUALS"]],
+                          TRUE, #opts[["USE_QUALS"]],
                           FALSE,
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
@@ -313,28 +306,20 @@ dada <- function(derep,
       map[[i]] <- res$map
 #      exp[[i]] <- res$exp
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
-      if(opts$USE_QUALS) colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
+      colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
     }
     # Accumulate the sub matrix
     cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient
     
     # Estimate the new error model (if applicable)
-    if(opts$USE_QUALS) {
-      if(is.null(errorEstimationFunction)) {
-        err <- NULL
-      } else {
-        err <- tryCatch(suppressWarnings(errorEstimationFunction(cur)),
-                error = function(cond) {
-                  message("Error rates could not be estimated.")
-                  return(NULL)
-        })
-      }
-    } else { # Not using quals, MLE estimate for each transition type
-      err <- cur + 1   # ADD ONE PSEUDOCOUNT TO EACH TRANSITION
-      err[1:4,1] <- err[1:4,1]/sum(err[1:4,1])
-      err[5:8,1] <- err[5:8,1]/sum(err[5:8,1])
-      err[9:12,1] <- err[9:12,1]/sum(err[9:12,1])
-      err[13:16,1] <- err[13:16,1]/sum(err[13:16,1])
+    if(is.null(errorEstimationFunction)) {
+      err <- NULL
+    } else {
+      err <- tryCatch(suppressWarnings(errorEstimationFunction(cur)),
+              error = function(cond) {
+                message("Error rates could not be estimated.")
+                return(NULL)
+      })
     }
     if(initializeErr) {
       initializeErr <- FALSE

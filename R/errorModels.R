@@ -76,6 +76,9 @@ loessErrfun <- function(trans) {
 #' @param trans (Required). A matrix of the observed transition counts. Must be 16 rows,
 #' with the rows named "A2A", "A2C", ...
 #' 
+#' @param pseudocount (Optional). Default 1. 
+#'  Added to each type of transition.
+#' 
 #' @return A numeric matrix with 16 rows and the same number of columns as trans.
 #'  The estimated error rates for each transition (row, eg. "A2C") are identical across
 #'  all columns (which correspond to quality scores).
@@ -86,16 +89,19 @@ loessErrfun <- function(trans) {
 #' fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
 #' err.noqual <- learnErrors(fl1, errorEstimationFunction=noqualErrfun)
 #' 
-noqualErrfun <- function(trans) {
+noqualErrfun <- function(trans, pseudocount=1) {
   # Init matrix to record the estimated transition probabilities
   est <- matrix(0, nrow=0, ncol=ncol(trans))
+  obs <- rowSums(trans) + pseudocount
   for(nti in c("A","C","G","T")) {
     for(ntj in c("A","C","G","T")) {
       if(nti != ntj) {
         row.name <- paste0(nti,"2",ntj)
         # Estimate transition rate by aggregating across all quality scores
-        tot.trans <- sum(trans[row.name,])
-        tot.init.nt <- sum(trans[paste0(nti,"2",c("A","C","G","T")),])
+        #        tot.trans <- sum(trans[row.name,])
+        #        tot.init.nt <- sum(trans[paste0(nti,"2",c("A","C","G","T")),])
+        tot.trans <- obs[row.name]
+        tot.init.nt <- sum(obs[paste0(nti,"2",c("A","C","G","T"))])
         est <- rbind(est, rep(tot.trans/tot.init.nt, ncol(trans)))
       } # if(nti != ntj)
     } # for(ntj in c("A","C","G","T"))

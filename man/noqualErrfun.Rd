@@ -4,11 +4,14 @@
 \alias{noqualErrfun}
 \title{Estimate error rates for each type of transition while ignoring quality scores.}
 \usage{
-noqualErrfun(trans)
+noqualErrfun(trans, pseudocount = 1)
 }
 \arguments{
 \item{trans}{(Required). A matrix of the observed transition counts. Must be 16 rows,
 with the rows named "A2A", "A2C", ...}
+
+\item{pseudocount}{(Optional). Default 1. 
+Added to each type of transition.}
 }
 \value{
 A numeric matrix with 16 rows and the same number of columns as trans.
