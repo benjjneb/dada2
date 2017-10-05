@@ -107,7 +107,7 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", vec=T
     for(ref in seqs.out) { # Loop over the reference sequences already added to output
       prefix.ref <- substr(ref, 1, minOverlap)
       # Prescreen to see if costly alignment worthwhile, this could all be moved C-side
-      if(grepl(prefix, ref) || grepl(prefix.ref, query)) { 
+      if(grepl(prefix, ref, fixed=TRUE) || grepl(prefix.ref, query, fixed=TRUE)) { 
         if(nwhamming(query,ref,vec=vec,band=16) == 0) {  # band is arbitrary since need exact match
           collapsed[,ref] <- collapsed[,ref] + seqtab[,query] 
           added=TRUE
