@@ -31,19 +31,10 @@ setMethod("show", "derep", function(object){
     cat("$map: Map from reads to unique sequences: ", object$map[1L:5L], "...", fill = TRUE)
   }
 })
-############################################################################
-#' method extensions to show for dada2 objects.
-#'
-#' See the general documentation of \code{\link[methods]{show}} method for
-#' expected behavior. 
-#'
-#' @seealso \code{\link[methods]{show}}
-#' 
+
 #' @inheritParams methods::show
-#' @return NULL.
 #' @rdname show-methods
 #' @include allClasses.R
-#' # @examples
 setMethod("show", "dada", function(object){
   cat("dada-class: object describing DADA2 denoising results", fill=TRUE)
   if( length(object$denoised) > 0 && length(object$map) > 0 ) {
@@ -59,7 +50,6 @@ setMethod("show", "dada", function(object){
 #'
 #' @inheritParams base::`names<-`
 #' @return NULL.
-#' @rdname show-methods
 #' @include allClasses.R
 #' # examples
 setMethod("names<-", "derep", function(x, value){
@@ -72,7 +62,6 @@ setMethod("names<-", "derep", function(x, value){
 #'
 #' @inheritParams base::`names<-`
 #' @return NULL.
-#' @rdname show-methods
 #' @include allClasses.R
 #' # examples
 setMethod("names<-", "dada", function(x, value){
@@ -84,8 +73,8 @@ setMethod("names<-", "dada", function(x, value){
 #' Change concatenation to list construction.
 #'
 #' @inheritParams base::c
+#' @param x A derep-class object
 #' @return list.
-#' @rdname show-methods
 #' @include allClasses.R
 #' # examples
 setMethod("c", signature("derep"), function(x,...,recursive=FALSE){
@@ -96,8 +85,8 @@ setMethod("c", signature("derep"), function(x,...,recursive=FALSE){
 #' Change concatenation to list construction.
 #'
 #' @inheritParams base::c
+#' @param x A dada-class object
 #' @return list.
-#' @rdname show-methods
 #' @include allClasses.R
 #' # examples
 setMethod("c", signature("dada"), function(x,...,recursive=FALSE){

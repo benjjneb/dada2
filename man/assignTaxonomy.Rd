@@ -62,9 +62,9 @@ replicates. Properly formatted reference files for several popular taxonomic dat
 are available \url{http://benjjneb.github.io/dada2/training.html}
 }
 \examples{
-\dontrun{
- taxa <- assignTaxonomy(dadaF, "gg_13_8_train_set_97.fa.gz")
- taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
-}
+seqs <- getSequences(system.file("extdata", "example_seqs.fa", package="dada2"))
+training_fasta <- system.file("extdata", "example_train_set.fa.gz", package="dada2")
+taxa <- assignTaxonomy(seqs, training_fasta)
+taxa80 <- assignTaxonomy(seqs, training_fasta, minBoot=80, multithread=2)
 
 }

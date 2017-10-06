@@ -1,6 +1,7 @@
 #include "dada.h"
 #include <Rcpp.h>
-#ifdef _WIN32 //  Windows
+///#ifdef _WIN32 //  Windows
+#if defined(_WIN32) && !defined(__MINGW32__) //  Windows and not MINGW
 #define cpuid(info, x)    __cpuidex(info, x, 0)
 #else //  GCC Intrinsics
 #include <cpuid.h>

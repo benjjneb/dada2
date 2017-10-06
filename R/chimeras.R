@@ -288,7 +288,7 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' out.nobim <- removeBimeraDenovo(dada1)
-#' out.nobim <- removeBimeraDenovo(dada1$clustering, method="pooled", minFoldParentOverAbundance = 2, allowOneOff=FALSE)
+#' out.nobim <- removeBimeraDenovo(dada1$clustering, method="pooled", minFoldParentOverAbundance = 2)
 #' 
 removeBimeraDenovo <- function(unqs, method = "consensus", tableMethod=NULL, ..., verbose=FALSE) {
   if(class(unqs)!="list") {

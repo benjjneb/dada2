@@ -223,7 +223,7 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
   anndf <- data.frame(minScore=numeric(0), label=character(0), rclabel=character(0), rc=numeric(0), file=character(0))
 
   FIRST <- TRUE
-  for(f in fl) {
+  for(f in fl[!is.na(fl)]) {
     srqa <- qa(f, n=n)
     df <- srqa[["perCycle"]]$quality
     rc <- srqa[["readCounts"]]$read

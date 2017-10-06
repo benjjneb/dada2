@@ -38,7 +38,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
   } else if(is.data.frame(object) && all(c("sequence", "abundance") %in% colnames(object))) {
     unqs <- as.integer(object$abundance)
     names(unqs) <- object$sequence
-  } else if(class(object) == "matrix" && !any(is.na(colnames(object)))) { # Tabled sequences
+  } else if(class(object) == "matrix" && is.numeric(object) && !any(is.na(colnames(object)))) { # Tabled sequences
     unqs <- as.integer(colSums(object))
     names(unqs) <- colnames(object)
   }
@@ -60,17 +60,17 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 ################################################################################
 #' Get vector of sequences from input object.
 #' 
-#' This function extracts the unique sequences from several different data objects, including
+#' This function extracts the sequences from several different data objects, including
 #'  including \code{\link{dada-class}} and \code{\link{derep-class}} objects, as well as 
 #'  \code{data.frame} objects that have both $sequence and $abundance columns. This function 
 #'  wraps the \code{\link{getUniques}} function, but return only the names (i.e. the sequences).
-#'  Can also be provided the file path to a fasta or fastq file. 
+#'  Can also be provided the file path to a fasta or fastq file or a taxonomy table. 
 #' 
 #' @param object (Required). The object from which to extract the sequences.
 #' 
 #' @param collapse (Optional). Default FALSE.
 #'  Should duplicate sequences detected in \code{object} be collapsed together, thereby
-#'   imposing uniqueness on non-unique input.
+#'  imposing uniqueness on non-unique input.
 #'  
 #' @param silence (Optional). Default TRUE.
 #'  Suppress reporting of the detection and merger of duplicated input sequences.
@@ -78,6 +78,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #' @return \code{character}. A character vector of the sequences.
 #' 
 #' @importFrom methods is
+#' @importFrom methods as
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead readFastq
 #' @importFrom ShortRead sread
@@ -96,7 +97,7 @@ getSequences <- function(object, collapse=FALSE, silence=TRUE) {
   if(is(object, "character")) {
     if(length(object)==1 && file.exists(object)) {
       sr <- tryCatch(readFasta(object), error=function(err) { readFastq(object) })
-      seqs <- as.character(sread(sr))
+      seqs <- toupper(as.character(sread(sr)))
       names(seqs) <- id(sr)
       return(seqs)
     } else if(collapse) {
@@ -105,8 +106,17 @@ getSequences <- function(object, collapse=FALSE, silence=TRUE) {
     } else {
       return(object)
     }
+  } else if(class(object) == "matrix" && is.character(object) && !any(is.na(rownames(object)))) { # Taxonomy table
+    seqs <- rownames(object)
+    if(any(duplicated(seqs))) {
+      if(collapse) seqs <- unique(seqs)
+      if(collapse && !silence) message("Duplicate sequences detected and merged.")
+      if(!collapse && !silence) message("Duplicate sequences detected.")
+    }
+    return(seqs)
+  } else {
+    return(names(getUniques(object, collapse=collapse, silence=silence)))
   }
-  return(names(getUniques(object, collapse=collapse, silence=silence)))
 }
 
 getAbund <- function(object) {
@@ -249,4 +259,10 @@ pfasta <- function(seqs, ids=seq(length(seqs))) {
 is.list.of <- function(x, ctype) {
   if(!is.list(x)) return(FALSE)
   else return(all(sapply(x, is, ctype)))
+}
+
+#' @keywords internal
+bcinstall <- function(pkg="dada2", suppressUpdates=TRUE) {
+  source("https://bioconductor.org/biocLite.R")
+  biocLite(pkg, suppressUpdates=suppressUpdates)
 }

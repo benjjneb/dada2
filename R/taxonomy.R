@@ -57,10 +57,10 @@
 #' @importFrom ShortRead id
 #' 
 #' @examples
-#' \dontrun{
-#'  taxa <- assignTaxonomy(dadaF, "gg_13_8_train_set_97.fa.gz")
-#'  taxa <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz", minBoot=80)
-#' }
+#' seqs <- getSequences(system.file("extdata", "example_seqs.fa", package="dada2"))
+#' training_fasta <- system.file("extdata", "example_train_set.fa.gz", package="dada2")
+#' taxa <- assignTaxonomy(seqs, training_fasta)
+#' taxa80 <- assignTaxonomy(seqs, training_fasta, minBoot=80, multithread=2)
 #' 
 assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootstraps=FALSE,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
@@ -220,9 +220,9 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' @importFrom methods as
 #' 
 #' @examples
-#' \dontrun{
-#'  taxa <- assignSpecies(dadaF, "rdp_species.fa.gz")
-#' }
+#' seqs <- getSequences(system.file("extdata", "example_seqs.fa", package="dada2"))
+#' species_fasta <- system.file("extdata", "example_species_assignment.fa.gz", package="dada2")
+#' spec <- assignSpecies(seqs, species_fasta)
 #' 
 assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verbose=FALSE) {
   # Define number of multiple species to return
@@ -283,6 +283,10 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verb
 #' of all exactly matched species is returned. If an integer is provided, multiple
 #' identifications up to that many are returned as a concatenated string.
 #'   
+#' @param tryRC (Optional). Default FALSE. 
+#' If TRUE, the reverse-complement of each sequences will be used for classification if it is a better match to the reference
+#' sequences than the forward sequence.
+#'   
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
 #' 
@@ -296,14 +300,17 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verb
 #' @export
 #' 
 #' @examples
-#' \dontrun{
-#'  taxtab <- assignTaxonomy(dadaF, "rdp_train_set_14.fa.gz")
-#'  taxtab <- addSpecies(taxtab, "rdp_species_assignment_14.fa.gz")
-#' }
 #' 
-addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, verbose=FALSE) {
+#' seqs <- getSequences(system.file("extdata", "example_seqs.fa", package="dada2"))
+#' training_fasta <- system.file("extdata", "example_train_set.fa.gz", package="dada2")
+#' taxa <- assignTaxonomy(seqs, training_fasta)
+#' species_fasta <- system.file("extdata", "example_species_assignment.fa.gz", package="dada2")
+#' taxa.spec <- addSpecies(taxa, species_fasta)
+#' taxa.spec.multi <- addSpecies(taxa, species_fasta, allowMultiple=TRUE)
+#' 
+addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, verbose=FALSE) {
   seqs <- rownames(taxtab)
-  binom <- assignSpecies(seqs, refFasta=refFasta, allowMultiple=allowMultiple, verbose=verbose)
+  binom <- assignSpecies(seqs, refFasta=refFasta, allowMultiple=allowMultiple, tryRC=tryRC, verbose=verbose)
   # Merge tables
   if("Genus" %in% colnames(taxtab)) gcol <- which(colnames(taxtab) == "Genus")
   else gcol <- ncol(taxtab)

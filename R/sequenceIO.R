@@ -246,18 +246,25 @@ derepFasta <- function(fls, ...){
   derepFastq(fastqs, ...)
 }
 
-##########
-#' Read a FASTA file into a named uppercase character vector.
+#' Writes a named character vector of DNA sequences to a fasta file.
+#' Values are the sequences, and names are used for the id lines.
+#'
+#' @seealso \code{\link[Biostrings]{writeXStringSet}}
+#'
+#' @param object (Required). A named \code{character} vector.
+#' @param file (Required). The output file.
+#' @param mode (Optional). Default "w". Append with "a".
+#' @param width (Optional). Default 20000L. Maximum line length before newline.
+#' @param ... (Optional). Additonal arguments passed to \code{\link[Biostrings]{writeXStringSet}}.
+#' @return NULL.
+#' @rdname writeFasta
+#' @importFrom Biostrings DNAStringSet
+#' @importFrom Biostrings writeXStringSet
 #' 
-#' A wrapper for readFasta in the ShortRead package.
-#' 
-#' @param fl (Required). The path to the fasta file.
-#' 
-#' @importFrom ShortRead readFasta
-#' 
-getFasta <- function(fl) {
-  sr <- readFasta(fl)
-  seqs <- toupper(as(sread(sr), "character"))
-  names(seqs) <- as(id(sr), "character")
-  seqs
-}
+setMethod("writeFasta", "character", function(object, file, mode="w", width=20000L, ...){
+  append = mode == "a"
+  seqs <- DNAStringSet(object)
+  if(is.null(names(seqs))) { names(seqs) <- as.character(seq(length(seqs))) }
+  writeXStringSet(seqs, file, ..., append = append, width=width, format = "fasta")
+})
+
