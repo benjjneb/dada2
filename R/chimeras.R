@@ -59,7 +59,7 @@ isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, 
 #' @param unqs (Required). A \code{\link{uniques-vector}} or any object that can be coerced
 #'  into one with \code{\link{getUniques}}.
 #'   
-#' @param minFoldParentOverAbundance (Optional). A \code{numeric(1)}. Default is 1.
+#' @param minFoldParentOverAbundance (Optional). A \code{numeric(1)}. Default is 2.
 #'   Only sequences greater than this-fold more abundant than a sequence can be its 
 #'   "parents".
 #'   
@@ -102,7 +102,7 @@ isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, 
 #' isBimeraDenovo(dada1)
 #' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=TRUE)
 #' 
-isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbundance = 8, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
+isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
   if(any(duplicated(getSequences(unqs)))) message("Duplicate sequences detected.")
   unqs.int <- getUniques(unqs, silence=TRUE) # Internal, keep input unqs for proper return value when duplications
   abunds <- unname(unqs.int)
@@ -176,7 +176,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 #'   of this parameter is to lower the threshold at which sequences found in few samples are
 #'   flagged as bimeras.
 #'   
-#' @param minFoldParentOverAbundance (Optional). Default is 1.
+#' @param minFoldParentOverAbundance (Optional). Default is 1.5.
 #'   Only sequences greater than this-fold more abundant than a sequence can be its 
 #'   "parents". Evaluated on a per-sample basis.
 #'   
@@ -217,7 +217,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 1, minParentAbunda
 #' isBimeraDenovoTable(seqtab)
 #' isBimeraDenovoTable(seqtab, allowOneOff=TRUE, minSampleFraction=0.5)
 #' 
-isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1, minParentAbundance = 2, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
+isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=1, minFoldParentOverAbundance = 1.5, minParentAbundance = 2, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
   sqs <- colnames(seqtab)
   if(!(is.matrix(seqtab) && is.integer(seqtab) &&  !is.null(sqs))) {
     stop("Input must be a valid sequence table.")
@@ -270,9 +270,8 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #'   If "per-sample": The samples in a sequence table are independently checked for bimeras,
 #'      and sequence variants are removed (zeroed-out) from samples independently (\code{\link{isBimeraDenovo}}).
 #'
-#' @param tableMethod (DEPRECATED).
-#'
 #' @param ... (Optional). Arguments to be passed to \code{\link{isBimeraDenovo}} or \code{\link{isBimeraDenovoTable}}.
+#'   The documentation of those methods detail the additional algorithmic parameters that can be adjusted.
 #'   
 #' @param verbose (Optional). Default FALSE. 
 #'  Print verbose text output.
@@ -290,13 +289,12 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' out.nobim <- removeBimeraDenovo(dada1)
 #' out.nobim <- removeBimeraDenovo(dada1$clustering, method="pooled", minFoldParentOverAbundance = 2)
 #' 
-removeBimeraDenovo <- function(unqs, method = "consensus", tableMethod=NULL, ..., verbose=FALSE) {
+removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
   if(class(unqs)!="list") {
     unqs <- list(unqs)
   }
-  if(!is.null(tableMethod)) {
-    warning("DEPRECATED: The tableMethod argument has been replaced by the method argument. Please update your code.")
-    method <- tableMethod
+  if("tableMethod" %in% names(list(...))) {
+    stop("DEFUNCT: The tableMethod argument has been replaced by the method argument. Please update your code.")
   }
   outs <- list()
   for(i in seq_along(unqs)) {

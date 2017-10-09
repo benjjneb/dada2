@@ -267,7 +267,7 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
   unsigned int index, cind;
   double lambda;
   Raw *raw;
-  Raw *center = b->bi[i]->center;
+//  Raw *center = b->bi[i]->center;
 //  uint8_t *center_kmer8 = center->kmer8; // Store original kmer8 pointer
   Sub *sub;
   Comparison comp;
@@ -636,7 +636,7 @@ void b_p_update(B *b) {
  Returns index of new cluster, or 0 if no new cluster added.
 */
 
-int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
+int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
   int i, r, ci;
   int mini, minr, minreads, hamming;
   double minp = 1.0;
@@ -651,6 +651,7 @@ int b_bud(B *b, double min_fold, int min_hamming, bool verbose) {
     for(r=0; r<b->bi[i]->nraw; r++) {
       raw = b->bi[i]->raw[r];
       if(b->bi[i]->center->index == raw->index) { continue; } // Don't bud centers
+      if(raw->reads < min_abund) { continue; }
       ci = b->bi[i]->comp_index[raw->index];
       hamming = b->bi[i]->comp[ci].hamming;
       lambda = b->bi[i]->comp[ci].lambda;

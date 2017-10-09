@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include "dada.h"
 #include "emmintrin.h"
+// #if _WIN32
+// #include <intrin.h>
+// #endif
 // [[Rcpp::interfaces(cpp)]]
 
 /************* KMERS *****************
@@ -89,7 +92,6 @@ double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
 // If different lengths, returns -1 (invalid)
 double kord_dist(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
   int i;
-  size_t n_kmer = 1 << (2*k); // 4^k kmers
   int16_t dotsum = 0;
   double dot = 0.0;
   
@@ -108,7 +110,6 @@ double kord_dist(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
 // If different lengths, returns -1 (invalid)
 double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
   int i;
-  size_t n_kmer = 1 << (2*k); // 4^k kmers
   int16_t dst[64];
   size_t STEP=8;
   uint16_t dotsum = 0;

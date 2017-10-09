@@ -144,7 +144,7 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
 void b_consensus_update(B *b);
 //void b_e_update(B *b);
 void b_p_update(B *b);
-int b_bud(B *b, double min_fold, int min_hamming, bool verbose);
+int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose);
 char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
 //void b_make_consensus(B *b);

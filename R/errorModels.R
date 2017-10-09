@@ -178,6 +178,7 @@ noqualErrfun <- function(trans, pseudocount=1) {
 learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, 
                         randomize=FALSE, MAX_CONSIST=10, ...) {
   NREADS <- 0
+  if(is(fls, "derep")) { fls <- list(fls) } # A single derep=class object
   drps <- vector("list", length(fls))
   if(randomize) { fls <- sample(fls) }
   for(i in seq_along(fls)) {

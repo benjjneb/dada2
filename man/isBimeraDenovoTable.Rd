@@ -5,7 +5,7 @@
 \title{Identify bimeras in a sequence table.}
 \usage{
 isBimeraDenovoTable(seqtab, minSampleFraction = 0.9, ignoreNNegatives = 1,
-  minFoldParentOverAbundance = 1, minParentAbundance = 2,
+  minFoldParentOverAbundance = 1.5, minParentAbundance = 2,
   allowOneOff = FALSE, minOneOffParentDistance = 4, maxShift = 16,
   multithread = FALSE, verbose = FALSE)
 }
@@ -23,7 +23,7 @@ in which a sequence was flagged as a bimera exceeds \code{minSampleFraction}. Th
 of this parameter is to lower the threshold at which sequences found in few samples are
 flagged as bimeras.}
 
-\item{minFoldParentOverAbundance}{(Optional). Default is 1.
+\item{minFoldParentOverAbundance}{(Optional). Default is 1.5.
 Only sequences greater than this-fold more abundant than a sequence can be its 
 "parents". Evaluated on a per-sample basis.}
 

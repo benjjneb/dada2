@@ -13,10 +13,11 @@ assign("VECTORIZED_ALIGNMENT", TRUE, envir = dada_opts)
 assign("MAX_CLUST", 0, envir=dada_opts)
 assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
+assign("MIN_ABUNDANCE", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("VERBOSE", FALSE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
-assign("SSE", 0L, envir = dada_opts)
+assign("SSE", 0, envir = dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -286,7 +287,7 @@ dada <- function(derep,
                           opts[["BAND_SIZE"]],
                           opts[["OMEGA_A"]], 
                           if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] }, ###!
-                          opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]],
+                          opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]], opts[["MIN_ABUNDANCE"]],
                           TRUE, #opts[["USE_QUALS"]],
                           FALSE,
                           opts[["VECTORIZED_ALIGNMENT"]],
@@ -469,6 +470,9 @@ dada <- function(derep,
 #'  criteria is ignored.
 #'  
 #' MIN_HAMMING: The minimum hamming-separation for sequences to form new clusters. Default value is 1, which means this
+#'  criteria is ignored.
+#'
+#' MIN_ABUNDANCE: The minimum abundance for unique sequences form new clusters. Default value is 1, which means this
 #'  criteria is ignored.
 #'
 #' MAX_CLUST: The maximum number of clusters. Once this many clusters have been created, the algorithm terminates regardless

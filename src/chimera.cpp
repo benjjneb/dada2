@@ -177,7 +177,6 @@ struct BimeraTableParallel : public RcppParallel::Worker
 
 // [[Rcpp::export]]
 Rcpp::DataFrame C_table_bimera2(Rcpp::IntegerMatrix mat, std::vector<std::string> seqs, double min_fold, int min_abund, bool allow_one_off, int min_one_off_par_dist, int match, int mismatch, int gap_p, int max_shift) {
-  int nrow = mat.nrow();
   int ncol = mat.ncol();
   // matrix stored in "column-major" order (so 1st col, then 2nd col...)
   // mat(i,j) --> vals[i+j*nrow]

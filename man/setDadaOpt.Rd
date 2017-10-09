@@ -54,6 +54,9 @@ MIN_FOLD: The minimum fold-overabundance for sequences to form new clusters. Def
 MIN_HAMMING: The minimum hamming-separation for sequences to form new clusters. Default value is 1, which means this
  criteria is ignored.
 
+MIN_ABUNDANCE: The minimum abundance for unique sequences form new clusters. Default value is 1, which means this
+ criteria is ignored.
+
 MAX_CLUST: The maximum number of clusters. Once this many clusters have been created, the algorithm terminates regardless
  of whether the statistical model suggests more real sequence variants exist. If set to 0 this argument is ignored. Default
  value is 0.
