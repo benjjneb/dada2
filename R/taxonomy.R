@@ -88,6 +88,14 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootst
     tax <- gsub(";s__(\\w+)_", ";s__", tax)
     tax <- gsub(";s__sp$", ";_DADA2_UNSPECIFIED", tax)
   }
+  # Crude format check
+  if(!grepl(";", tax[[1]])) {
+    if(length(unlist(strsplit(tax[[1]], "\\s")))==3) {
+      stop("Incorrect reference file format for assignTaxonomy (this looks like a file formatted for assignSpecies).")
+    } else {
+      stop("Incorrect reference file format for assignTaxonomy.")
+    }
+  }
   # Parse the taxonomies from the id string
   tax.depth <- sapply(strsplit(tax, ";"), length)
   td <- max(tax.depth)
@@ -148,7 +156,6 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootst
   } else {
     tax.out
   }
-
 }
 
 # Helper function for assignSpecies
@@ -237,6 +244,14 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verb
   # Read in the reference fasta
   refsr <- readFasta(refFasta)
   ids <- as(id(refsr), "character")
+  # Crude format check
+  if(!length(unlist(strsplit(ids[[1]], "\\s"))) >= 3) {
+    if(length(unlist(gregexpr(";", ids[[1]]))) >= 3) {
+      stop("Incorrect reference file format for assignSpecies (this looks like a file formatted for assignTaxonomy).")
+    } else {
+      stop("Incorrect reference file format for assignSpecies.")
+    }
+  }
   genus <- sapply(strsplit(ids, "\\s"), `[`, 2)
   species <- sapply(strsplit(ids, "\\s"), `[`, 3)
   # Identify the exact hits
