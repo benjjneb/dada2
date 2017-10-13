@@ -152,6 +152,14 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  The maximum number of times to step through the self-consistency loop. If convergence was not
 #'  reached in MAX_CONSIST steps, the estimated error rates in the last step are returned.
 #'  
+#' @param verbose (Optional). Default FALSE. 
+#'  Print verbose text output. More fine-grained control is available by providing an integer argument.
+#' \itemize{ 
+#'  \item{0: Silence. No text output}
+#'  \item{1: Minimal text output (same as FALSE). }
+#'  \item{2: Detailed output (same as TRUE). }
+#' }
+#'  
 #' @param ... (Optional). Additional arguments will be passed on to the \code{\link{dada}} function.
 #'  
 #' @return A named list with three entries:
@@ -176,7 +184,7 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE, MAX_CONSIST=20)
 #' 
 learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, 
-                        randomize=FALSE, MAX_CONSIST=10, ...) {
+                        randomize=FALSE, MAX_CONSIST=10, verbose=FALSE, ...) {
   NREADS <- 0
   if(is(fls, "derep")) { fls <- list(fls) } # A single derep=class object
   drps <- vector("list", length(fls))
@@ -193,8 +201,8 @@ learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, 
   drps <- drps[1:i]
   # Run dada in self-consist mode on those samples
   dds <- dada(drps, err=NULL, errorEstimationFunction=errorEstimationFunction, selfConsist=TRUE, 
-              multithread=multithread, MAX_CONSIST=MAX_CONSIST, ...)
-  cat("Total reads used: ", NREADS, "\n")
+              multithread=multithread, verbose=verbose, MAX_CONSIST=MAX_CONSIST, ...)
+  if(is.logical(verbose) || verbose > 0) cat("Total reads used: ", NREADS, "\n")
   return(getErrors(dds, detailed=TRUE))
 }
 

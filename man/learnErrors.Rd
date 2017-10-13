@@ -5,7 +5,8 @@
 \title{Learns the error rates from an input list, or vector, of file names or a list of \code{\link{derep-class}} objects.}
 \usage{
 learnErrors(fls, nreads = 1e+06, errorEstimationFunction = loessErrfun,
-  multithread = FALSE, randomize = FALSE, MAX_CONSIST = 10, ...)
+  multithread = FALSE, randomize = FALSE, MAX_CONSIST = 10,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
@@ -34,6 +35,14 @@ If TRUE, samples are picked at random from those provided.}
 \item{MAX_CONSIST}{(Optional). Default 10.
 The maximum number of times to step through the self-consistency loop. If convergence was not
 reached in MAX_CONSIST steps, the estimated error rates in the last step are returned.}
+
+\item{verbose}{(Optional). Default FALSE. 
+ Print verbose text output. More fine-grained control is available by providing an integer argument.
+\itemize{ 
+ \item{0: Silence. No text output}
+ \item{1: Minimal text output (same as FALSE). }
+ \item{2: Detailed output (same as TRUE). }
+}}
 
 \item{...}{(Optional). Additional arguments will be passed on to the \code{\link{dada}} function.}
 }

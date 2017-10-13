@@ -5,7 +5,7 @@
 \title{High resolution sample inference from amplicon data.}
 \usage{
 dada(derep, err, errorEstimationFunction = loessErrfun, selfConsist = FALSE,
-  pool = FALSE, multithread = FALSE, ...)
+  pool = FALSE, multithread = FALSE, verbose = FALSE, ...)
 }
 \arguments{
 \item{derep}{(Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
@@ -50,6 +50,14 @@ by assuming that all reads are errors away from one true sequence.}
 If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
 If an integer is provided, the number of threads to use is set by passing the argument on to
 \code{\link{setThreadOptions}}.}
+
+\item{verbose}{(Optional). Default FALSE. 
+ Print verbose text output. More fine-grained control is available by providing an integer argument.
+\itemize{ 
+ \item{0: Silence. No text output}
+ \item{1: Minimal text output (same as FALSE). }
+ \item{2: Detailed output (same as TRUE). }
+}}
 
 \item{...}{(Optional). All dada_opts can be passed in as arguments to the dada() function.
 See \code{\link{setDadaOpt}} for a full list and description of these options.}

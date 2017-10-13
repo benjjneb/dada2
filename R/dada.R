@@ -15,7 +15,6 @@ assign("MIN_FOLD", 1, envir=dada_opts)
 assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("MIN_ABUNDANCE", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
-assign("VERBOSE", FALSE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 assign("SSE", 0, envir = dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
@@ -72,6 +71,14 @@ assign("SSE", 0, envir = dada_opts)
 #'  If an integer is provided, the number of threads to use is set by passing the argument on to
 #'  \code{\link{setThreadOptions}}.
 #'   
+#' @param verbose (Optional). Default FALSE. 
+#'  Print verbose text output. More fine-grained control is available by providing an integer argument.
+#' \itemize{ 
+#'  \item{0: Silence. No text output}
+#'  \item{1: Minimal text output (same as FALSE). }
+#'  \item{2: Detailed output (same as TRUE). }
+#' }
+#'  
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
 #'  See \code{\link{setDadaOpt}} for a full list and description of these options. 
 #'
@@ -119,18 +126,31 @@ dada <- function(derep,
                  errorEstimationFunction = loessErrfun,
                  selfConsist = FALSE, 
                  pool = FALSE,
-                 multithread = FALSE, ...) {
+                 multithread = FALSE, 
+                 verbose=FALSE, ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
   opts <- getDadaOpt()
   args <- list(...)
+  # Catch the deprecated VERBOSE option
+  if("VERBOSE" %in% names(args)) {
+    stop("DEPRECATED: The VERBOSE option has been replaced by the verbose argument. Please update your code.")
+    verbose <- args[["VERBOSE"]]
+    args[["VERBOSE"]] <- NULL
+  }
   for(opnm in names(args)) {
     if(opnm %in% names(opts)) {
       opts[[opnm]] <- args[[opnm]]
     } else {
       warning(opnm, " is not a valid DADA option.")
     }
+  }
+  
+  # Parse verbose
+  if(is.logical(verbose)) {
+    if(verbose == FALSE) { verbose <- 1 }
+    else { verbose <- 2 }
   }
   
   # If a single derep object, make into a length 1 list
@@ -189,7 +209,7 @@ dada <- function(derep,
     initializeErr <- TRUE
   } else {
     err <- getErrors(err, enforce=TRUE)
-    if(ncol(err) < qmax+1) { # qmax = 0 if USE_QUALS = FALSE
+    if(ncol(err) < qmax+1 && verbose) { # qmax = 0 if USE_QUALS = FALSE
       message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
   Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err), ").
   In selfConsist mode this should converge to the proper error rates, otherwise this may not be what you want.")
@@ -204,7 +224,7 @@ dada <- function(derep,
   
   # Validate errorEstimationFunction
   if(!opts$USE_QUALS) {
-    if(!missing(errorEstimationFunction)) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
+    if(!missing(errorEstimationFunction) && verbose) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
     errorEstimationFunction <- noqualErrfun  # NULL error function has different meaning depending on USE_QUALS
   } else {
     if(!is.function(errorEstimationFunction)) stop("Must provide a function for errorEstimationFunction.")
@@ -223,11 +243,11 @@ dada <- function(derep,
   if(opts$VECTORIZED_ALIGNMENT) {
     if(length(unique(diag(opts$SCORE)))!=1 || 
            length(unique(opts$SCORE[upper.tri(opts$SCORE) | lower.tri(opts$SCORE)]))!=1) {
-      message("The vectorized aligner requires that the score matrix reduces to match/mismatch. Turning off vectorization.")
+      if(verbose) message("The vectorized aligner requires that the score matrix reduces to match/mismatch. Turning off vectorization.")
       opts$VECTORIZED_ALIGNMENT=FALSE
     }
     if(opts$BAND_SIZE > 0 && opts$BAND_SIZE<8) {
-      message("The vectorized aligner is slower for very small band sizes.")
+      if(verbose) message("The vectorized aligner is slower for very small band sizes.")
     }
     if(opts$BAND_SIZE == 0) opts$VECTORIZED_ALIGNMENT=FALSE
   }
@@ -239,7 +259,7 @@ dada <- function(derep,
     RcppParallel::setThreadOptions(numThreads = multithread)
     multithread <- TRUE
   } else {
-    warning("Invalid multithread parameter. Running as a single thread.")
+    if(verbose) message("Invalid multithread parameter. Running as a single thread.")
     multithread <- FALSE
   }
 
@@ -262,13 +282,15 @@ dada <- function(derep,
     for(i in seq_along(derep)) {
       qi <- unname(t(derep[[i]]$quals)) # Need transpose so that sequences are columns
 
-      if(nconsist == 1) {
+      if(nconsist == 1 && verbose) {
         if(pool) {
-          cat(length(derep.in), "samples were pooled:", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
+          cat(length(derep.in), "samples were pooled:", sum(derep[[i]]$uniques), "reads in", 
+              length(derep[[i]]$uniques), "unique sequences.\n")
         } else {
-          cat("Sample", i, "-", sum(derep[[i]]$uniques), "reads in", length(derep[[i]]$uniques), "unique sequences.\n")
+          cat("Sample", i, "-", sum(derep[[i]]$uniques), "reads in", 
+              length(derep[[i]]$uniques), "unique sequences.\n")
         }
-      } else if(i==1) {
+      } else if(i==1 && verbose) {
         if(nconsist == 0) {
           cat("Initializing error rates to maximum possible estimate.\n")
         } else {
@@ -293,7 +315,7 @@ dada <- function(derep,
                           opts[["VECTORIZED_ALIGNMENT"]],
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
                           multithread,
-                          opts[["VERBOSE"]],
+                          (verbose>=2),
                           opts[["SSE"]])
       
       # Augment the returns
@@ -318,7 +340,7 @@ dada <- function(derep,
     } else {
       err <- tryCatch(suppressWarnings(errorEstimationFunction(cur)),
               error = function(cond) {
-                message("Error rates could not be estimated.")
+                if(verbose) message("Error rates could not be estimated.")
                 return(NULL)
       })
     }
@@ -342,12 +364,11 @@ dada <- function(derep,
     nconsist <- nconsist+1
   } # repeat
 
-  cat("\n")
-  if(selfConsist) {
+  if(selfConsist && verbose) {
     if(nconsist >= opts$MAX_CONSIST) {
-      warning("Self-consistency loop terminated before convergence.")
+      message("Self-consistency loop terminated before convergence.")
     } else {
-      cat("\nConvergence after ", nconsist, " rounds.\n")
+      cat("Convergence after ", nconsist, " rounds.\n")
     }
   }
   
