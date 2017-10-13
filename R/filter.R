@@ -142,7 +142,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
   odirs <- unique(dirname(filt))
   for(odir in odirs) {
     if(!dir.exists(odir)) { 
-      message("Creating output directory:", odir)
+      message("Creating output directory: ", odir)
       dir.create(odir, recursive=TRUE, mode="0777")
     }
   }
@@ -175,6 +175,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
     ncores <- detectCores()
     if(is.numeric(multithread)) ncores <- multithread
     if(is.na(ncores)) ncores <- 1
+    if(ncores>1) verbose <- FALSE
   } else {
     ncores <- 1
     if (multithread && .Platform$OS.type=="windows") {
@@ -197,6 +198,18 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                                      maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, primer.fwd=primer.fwd,
                                      n=n, OMP=OMP, compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
+  }
+  # Check if expected matrix was returned, if not there are errors
+  if(!is(rval, "matrix")) {
+    if(is(rval, "list")) { # Mix of errors and not
+      rval <- unlist(rval[sapply(rval, is.character)])
+    }
+    if(length(rval)>5) rval <- rval[1:5]
+    stop("These are the errors (up to 5) encountered in individual cores...\n", rval)
+  }
+  # Check if all input files generated a return (to catch poorly behaving out-of-memory errors)
+  if(ncol(rval) != length(fwd)) {
+    stop("Some input files were not processed, perhaps due to memory issues. Consider lowering ncores.")
   }
   colnames(rval) <- basename(fwd)
   if(all(rval["reads.out",]==0)) {
@@ -267,7 +280,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  Whether the output fastq file should be gzip compressed.
 #' 
 #' @param verbose (Optional). Default FALSE.
-#'  Whether to output status messages.  
+#'  Whether to output status messages.
 #' 
 #' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}}.
 #' 

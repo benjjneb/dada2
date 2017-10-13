@@ -21,11 +21,11 @@ SIGNIFICANT USER-VISIBLE CHANGES
 
     o assignSpecies has been reimplemented to be much, much faster (>100x faster with enough query sequences).
 
-    o The allowOneOff flag has been set to FALSE by default in the xxxBimeraDenovo functions.SRR5295658 
+    o The allowOneOff flag has been set to FALSE by default in the xxxBimeraDenovo functions. 
 
 BUG FIXES
 
-    o The compress option is now respected by trimAndFilter.
+    o The compress option is now respected by filterAndTrim.
 
 CHANGES IN VERSION 1.5.1
 -----------------------
