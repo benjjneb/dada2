@@ -267,21 +267,18 @@ $(document).ready(function () {
 
 
 <hr />
-<p>The primary goal of the dada2 package is to infer the exact sequence variants in amplicon sequenced samples and their associated abundances. However, a common companion step, especially when sequencing taxonomic markers such as 16S or 18S rRNA gene or the ITS region in fungi, is to assign taxonomy to the inferred sequence variants (or OTUs) by comparing them to a reference database of sequences with known taxonomy.</p>
-<p>The dada2 package provides two taxonomic assignment methods.</p>
-<p><code>assignTaxonomy(...)</code> implements the RDP naive Bayesian classifier method described in <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/">Wang et al. 2007</a>. In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence assignment at each taxonomic level.</p>
-<p>If assignment down to the species level is desired, <code>assignSpecies(...)</code> uses exact string matching against a reference database to assign <em>Genus species</em> binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if sufficiently unambiguous.</p>
-<p>These two functions can be combined to produce taxonomic assignments from Kingdom down to Species with the <code>addSpecies(...)</code> convenience function. Consistent <a href="training.html">training fastas for this purpose are provided for the Silva and RDP databases</a>.</p>
+<p>The dada2 package provides two methods to assign taxonomy to phylogenetically informative marker-gene data, such as the 16S or 18S rRNA gene and the ITS region in fungi. The first and general-purpose method, <code>assignTaxonomy</code>, uses the naive Bayesian classifier method of <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/">Wang et al. 2007</a> to assign taxonomy across multiple ranks (e.g. Kingdom to Genus). The second method, <code>assignSpecies</code>, is intended for the more difficult task of taxonomic assignments at or near the resolution limit of the sequenced marker-gene, and was developed specifically for the task of making species-level assignments to 16S data.</p>
+<p>Both <code>assignTaxonomy</code> and <code>assignSpecies</code> make taxonomic assignments by comparing to a set of taxonomically assigned sequences in a provided reference fasta file. Appropriately <a href="training.html">formatted reference fasta files for several popular reference databases</a> are available, including Silva, GreenGenes, RDP and UNITE.</p>
 <div id="getting-started" class="section level2">
 <h2>Getting started</h2>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.4.0&#39;</code></pre>
-<p>Both <code>assignTaxonomy</code> and <code>assignSpecies</code> depend on training datasets of taxonomically assigned sequences. Appropriately <a href="training.html">formatted datasets for several popular reference databases</a> are available.</p>
+<pre><code>## [1] &#39;1.5.8&#39;</code></pre>
 <p>In order to follow along with the examples below, <a href="training.html">download</a> the <code>rdp_train_set_16.fa.gz</code> and <code>rdp_species_assignment_16.fa.gz</code> files to an appropriate location on your local machine.</p>
 <p> </p>
 </div>
 <div id="taxonomic-assignment" class="section level2">
 <h2>Taxonomic assignment</h2>
+<p><code>assignTaxonomy(...)</code> implements the RDP naive Bayesian classifier method described in <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/">Wang et al. 2007</a>. In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence assignment at each taxonomic level.</p>
 <p>Here we classify a handful of 16S sequences from the v4 region against the RDP training set. Our sequences of interest:</p>
 <pre class="r"><code>seqs &lt;- c(
 &quot;ACGGAGGGTCCGAGCGTTAATCGGAATTACTGGGCGTAAAGCGTGCGCAGGCGGTTTGTTAAGCGAGATGTGAAAGCCCCGGGCTCAACCTGGGAATTGCATTTCGAACTGGCGAACTAGAGTCTTGTAGAGGGGGGTAGAATTCCAGGTGTAGCGGTGAAATGCGTAGAGATCTGGAGGA&quot;,
@@ -351,8 +348,9 @@ unname(taxa.80)</code></pre>
 </div>
 <div id="species-assignment" class="section level2">
 <h2>Species assignment</h2>
+<p>Fast and appropriate species-level assignment from 16S data is provided by the <code>assignSpecies</code> method. <code>assignSpecies</code> uses exact string matching against a reference database to assign <em>Genus species</em> binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if it is unambiguous. <a href="https://www.biorxiv.org/content/early/2017/09/21/192211">Recent results</a> indicate that exact matching (or 100% identity) with amplicon sequence variants (ASVs) is the only appropriate method for species-level assignment to high-throughput 16S amplicon data.</p>
 <p>We now run the <code>assignSpecies</code> function against the RDP species-level training set. <em>To run the following on your local machine, modify the filename in the second argument to point to where the <code>rdp_species_assignment_14.fa.gz</code> file sits on your computer.</em></p>
-<p><strong><span style="color:red">As of version 1.5.2, assignSpecies has been reimplemented to be much faster – more than 100x faster for common use cases.</span></strong></p>
+<p><strong><span style="color:red">As of version 1.5.2, assignSpecies has been reimplemented to be much faster, and it now easily scales to handle even very large sets of sequences.</span></strong></p>
 <pre class="r"><code>genus.species &lt;- assignSpecies(seqs, &quot;Training/rdp_species_assignment_16.fa.gz&quot;)
 unname(genus.species)</code></pre>
 <pre><code>##       [,1]                   [,2]            
@@ -391,6 +389,10 @@ unname(genus.species)</code></pre>
 ##  [9,] NA                                                                                     
 ## [10,] &quot;marina&quot;</code></pre>
 <p>Several of these sequences exactly match multiple species. Setting <code>allowMultiple</code> to an integer value allows fine-grained control over this behavior. For example, <code>allowMultiple=3</code> returns up to 3 different matched species, but if 4 or more are matched it returns <code>NA</code>.</p>
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
+<strong><span style="color:red">If using this workflow on your own data:</span></strong> In many environments, few sequences will be assigned to species level. That is OK! Reference databases are incomplete, and species assignment is at the limit of what is possible from 16S amplicon data. Remember, even if the sequenced organism is in the reference database, if another species shares the same 16S gene sequence it is impossible to unambiguously assign that sequence to species-level.
+</div>
+<p> </p>
 </div>
 <div id="kingom-to-species" class="section level2">
 <h2>Kingom to Species</h2>
@@ -433,7 +435,7 @@ tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v128.fa.gz&
 ##  [8,] NA              
 ##  [9,] NA              
 ## [10,] &quot;marina&quot;</code></pre>
-<p>For human microbiome data and V4 sequencing, we typically see a bit under half of the abundant ribosomal sequence variants (RSVs) assigned unambiguously to species-level, and a bit under 2/3rds assigned ambiguously (ie. allowing multiple species assignment). This fraction drops off in less sampled environments and for rare RSVs.</p>
+<p>For human microbiome data and V4 sequencing, we typically see a bit under half of the abundant 16S amplicon sequence variants (ASVs) assigned unambiguously to species-level, and a bit under 2/3rds assigned ambiguously (ie. allowing multiple species assignment). This fraction drops off in less sampled environments and for rare ASVs.</p>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">

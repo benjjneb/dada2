@@ -4,15 +4,9 @@ title: "Taxonomic Assignment"
 
 --------------------------
 
-The primary goal of the dada2 package is to infer the exact sequence variants in amplicon sequenced samples and their associated abundances. However, a common companion step, especially when sequencing taxonomic markers such as 16S or 18S rRNA gene or the ITS region in fungi, is to assign taxonomy to the inferred sequence variants (or OTUs) by comparing them to a reference database of sequences with known taxonomy.
+The dada2 package provides two methods to assign taxonomy to phylogenetically informative marker-gene data, such as the 16S or 18S rRNA gene and the ITS region in fungi. The first and general-purpose method, `assignTaxonomy`, uses the naive Bayesian classifier method of [Wang et al. 2007](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/) to assign taxonomy across multiple ranks (e.g. Kingdom to Genus). The second method, `assignSpecies`, is intended for the more difficult task of taxonomic assignments at or near the resolution limit of the sequenced marker-gene, and was developed specifically for the task of making species-level assignments to 16S data.
 
-The dada2 package provides two taxonomic assignment methods.
-
-`assignTaxonomy(...)` implements the RDP naive Bayesian classifier method described in [Wang et al. 2007](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/). In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence assignment at each taxonomic level.
-
-If assignment down to the species level is desired, `assignSpecies(...)` uses exact string matching against a reference database to assign *Genus species* binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if sufficiently unambiguous.
-
-These two functions can be combined to produce taxonomic assignments from Kingdom down to Species with the `addSpecies(...)` convenience function. Consistent [training fastas for this purpose are provided for the Silva and RDP databases](training.html).
+Both `assignTaxonomy` and `assignSpecies` make taxonomic assignments by comparing to a set of taxonomically assigned sequences in a provided reference fasta file. Appropriately [formatted reference fasta files for several popular reference databases](training.html) are available, including Silva, GreenGenes, RDP and UNITE.
 
 ## Getting started
 
@@ -20,13 +14,13 @@ These two functions can be combined to produce taxonomic assignments from Kingdo
 library(dada2); packageVersion("dada2")
 ```
 
-Both `assignTaxonomy` and `assignSpecies` depend on training datasets of taxonomically assigned sequences. Appropriately [formatted datasets for several popular reference databases](training.html) are available.
-
 In order to follow along with the examples below, [download](training.html) the `rdp_train_set_16.fa.gz` and `rdp_species_assignment_16.fa.gz` files to an appropriate location on your local machine.
 
 &nbsp;
 
 ## Taxonomic assignment
+
+`assignTaxonomy(...)` implements the RDP naive Bayesian classifier method described in [Wang et al. 2007](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1950982/). In short, the kmer profile of the sequences to be classified are compared against the kmer profiles of all sequences in a training set of sequences with assigned taxonomies. The reference sequence with the most similar profile is used to assign taxonomy to the query sequence, and then a bootstrapping approach is used to assess the confidence assignment at each taxonomic level.
 
 Here we classify a handful of 16S sequences from the v4 region against the RDP training set. Our sequences of interest:
 ```{r seqs}
@@ -64,9 +58,11 @@ At this more stringent threshold, sequence 5 and 7 are not classified at the gen
 
 ## Species assignment
 
+Fast and appropriate species-level assignment from 16S data is provided by the `assignSpecies` method. `assignSpecies` uses exact string matching against a reference database to assign *Genus species* binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if it is unambiguous. [Recent results](https://www.biorxiv.org/content/early/2017/09/21/192211) indicate that exact matching (or 100% identity) with amplicon sequence variants (ASVs) is the only appropriate method for species-level assignment to high-throughput 16S amplicon data.
+
 We now run the `assignSpecies` function against the RDP species-level training set. *To run the following on your local machine, modify the filename in the second argument to point to where the `rdp_species_assignment_14.fa.gz` file sits on your computer.*
 
-**<span style="color:red">As of version 1.5.2, assignSpecies has been reimplemented to be much faster -- more than 100x faster for common use cases.</span>**
+**<span style="color:red">As of version 1.5.2, assignSpecies has been reimplemented to be much faster, and it now easily scales to handle even very large sets of sequences.</span>**
 
 ```{r assign-species}
 genus.species <- assignSpecies(seqs, "Training/rdp_species_assignment_16.fa.gz")
@@ -81,6 +77,10 @@ unname(assignSpecies(seqs, "Training/rdp_species_assignment_16.fa.gz", allowMult
 
 Several of these sequences exactly match multiple species. Setting `allowMultiple` to an integer value allows fine-grained control over this behavior. For example, `allowMultiple=3` returns up to 3 different matched species, but if 4 or more are matched it returns `NA`.
 
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">If using this workflow on your own data:</span>** In many environments, few sequences will be assigned to species level. That is OK! Reference databases are incomplete, and species assignment is at the limit of what is possible from 16S amplicon data. Remember, even if the sequenced organism is in the reference database, if another species shares the same 16S gene sequence it is impossible to unambiguously assign that sequence to species-level.</div>
+
+&nbsp;
+
 ## Kingom to Species
 
 In many cases it is desirable to link the species annotation in with the broader taxonomic annotation afforded by `assignTaxonomy`. The convenience function `addSpecies` serves this purpose, as it takes as input a taxonomy table, and outputs a table with an added species column. Only those genus-species binomials which are consistent with the genus assigned in the provided taxonomy table are retained in the output. *Note that we have switched to the silva training fastas here for demonstration purposes.*
@@ -91,4 +91,4 @@ tt.plus <- addSpecies(tt, "Training/silva_species_assignment_v128.fa.gz", verbos
 unname(tt.plus)
 ```
 
-For human microbiome data and V4 sequencing, we typically see a bit under half of the abundant ribosomal sequence variants (RSVs) assigned unambiguously to species-level, and a bit under 2/3rds assigned ambiguously (ie. allowing multiple species assignment). This fraction drops off in less sampled environments and for rare RSVs.
+For human microbiome data and V4 sequencing, we typically see a bit under half of the abundant 16S amplicon sequence variants (ASVs) assigned unambiguously to species-level, and a bit under 2/3rds assigned ambiguously (ie. allowing multiple species assignment). This fraction drops off in less sampled environments and for rare ASVs.
