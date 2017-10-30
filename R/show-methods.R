@@ -38,7 +38,7 @@ setMethod("show", "derep", function(object){
 setMethod("show", "dada", function(object){
   cat("dada-class: object describing DADA2 denoising results", fill=TRUE)
   if( length(object$denoised) > 0 && length(object$map) > 0 ) {
-    cat(length(object$denoised), "sample sequences were inferred from", length(object$map), "input unique sequences.", fill=TRUE)
+    cat(length(object$denoised), "sequence variants were inferred from", length(object$map), "input unique sequences.", fill=TRUE)
   }
   cat("Key parameters: OMEGA_A = ", object$opts$OMEGA_A, ", BAND_SIZE = ", 
       object$opts$BAND_SIZE, ", USE_QUALS = ", object$opts$USE_QUALS, 
