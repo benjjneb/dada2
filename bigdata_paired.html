@@ -11,7 +11,7 @@
 
 
 
-<title>A DADA2 workflow for Big Data: Paired-end (1.4)</title>
+<title>A DADA2 workflow for Big Data: Paired-end (1.4 or later)</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -196,7 +196,7 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="https://www.bioconductor.org/packages/3.5/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
     </li>
     <li>
       <a href="assign.html">Taxonomy</a>
@@ -222,13 +222,13 @@ $(document).ready(function () {
       <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
     </li>
     <li>
+      <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
       <a href="SMBS_DADA2.pdf">Symposium Slides</a>
     </li>
     <li>
       <a href="SotA.html">Benchmarking</a>
-    </li>
-    <li>
-      <a href="https://purl.stanford.edu/mh194vj6733">Manuscript code</a>
     </li>
   </ul>
 </li>
@@ -261,7 +261,7 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">A DADA2 workflow for Big Data: Paired-end (1.4)</h1>
+<h1 class="title toc-ignore">A DADA2 workflow for Big Data: Paired-end (1.4 or later)</h1>
 
 </div>
 
@@ -309,9 +309,9 @@ names(filtFs) &lt;- sample.names
 names(filtRs) &lt;- sample.names
 set.seed(100)
 # Learn forward error rates
-errF &lt;- learnErrors(filtFs, nread=2e6, multithread=TRUE)
+errF &lt;- learnErrors(filtFs, nread=1e6, multithread=TRUE)
 # Learn reverse error rates
-errR &lt;- learnErrors(filtRs, nread=2e6, multithread=TRUE)
+errR &lt;- learnErrors(filtRs, nread=1e6, multithread=TRUE)
 # Sample inference and merger of paired-end reads
 mergers &lt;- vector(&quot;list&quot;, length(sample.names))
 names(mergers) &lt;- sample.names
@@ -343,7 +343,7 @@ st.all &lt;- mergeSequenceTables(st1, st2, st3)
 # Remove chimeras
 seqtab &lt;- removeBimeraDenovo(st.all, method=&quot;consensus&quot;, multithread=TRUE)
 # Assign taxonomy
-tax &lt;- assignTaxonomy(seqtab, &quot;/path/to/silva_nr_v123_train_set.fa.gz&quot;, multithread=TRUE)
+tax &lt;- assignTaxonomy(seqtab, &quot;/path/to/silva_nr_v128_train_set.fa.gz&quot;, multithread=TRUE)
 # Write to disk
 saveRDS(seqtab, &quot;/path/to/study/seqtab_final.rds&quot;) # CHANGE ME to where you want sequence table saved
 saveRDS(tax, &quot;/pathto/study/tax_final.rds&quot;) # CHANGE ME ...</code></pre>
@@ -376,7 +376,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

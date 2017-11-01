@@ -196,7 +196,7 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="https://www.bioconductor.org/packages/3.5/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
     </li>
     <li>
       <a href="assign.html">Taxonomy</a>
@@ -222,13 +222,13 @@ $(document).ready(function () {
       <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
     </li>
     <li>
+      <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
       <a href="SMBS_DADA2.pdf">Symposium Slides</a>
     </li>
     <li>
       <a href="SotA.html">Benchmarking</a>
-    </li>
-    <li>
-      <a href="https://purl.stanford.edu/mh194vj6733">Manuscript code</a>
     </li>
   </ul>
 </li>
@@ -266,15 +266,13 @@ $(document).ready(function () {
 </div>
 
 
-<p>The <code>dada(...)</code> function implements the high-resolution sample-inference at the core of the dada2 package. Because <code>dada(...)</code> resolves sequence variants exactly, it is possible to analyze samples separately before combining them together in a final sequence table. However, the <code>dada(...)</code> function also allows samples to be pooled together for the error rate estimation and sample inference steps. Here we demonstrate that functionality, and discuss the pros and cons of pooling.</p>
+<p>The <code>dada(...)</code> function implements the high-resolution sample-inference at the core of the dada2 package. Because <code>dada(...)</code> resolves amplicon sequence variants (ASVs) exactly, it is possible to analyze samples separately before combining them together in a final sequence table. However, the <code>dada(...)</code> function also allows samples to be pooled together for the error rate estimation and sample inference steps. Here we demonstrate that functionality, and discuss the pros and cons of pooling.</p>
 <hr />
 <div id="getting-ready" class="section level1">
 <h1>Getting ready</h1>
 <p>Load the necessary libraries:</p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.4.0&#39;</code></pre>
-<pre class="r"><code>library(microbenchmark); packageVersion(&quot;microbenchmark&quot;)</code></pre>
-<pre><code>## [1] &#39;1.4.2.1&#39;</code></pre>
+<pre><code>## [1] &#39;1.6.0&#39;</code></pre>
 <p>We’ll be working with the same data used in <a href="tutorial.html">the tutorial</a>, so grab that data if you don’t have it already and then set your working directory to its location:</p>
 <pre class="r"><code>path &lt;- &quot;~/MiSeq_SOP&quot; # CHANGE ME to the directory containing the fastq files after unzipping.
 fns &lt;- list.files(path)
@@ -301,13 +299,8 @@ names(drps) &lt;- sample.names</code></pre>
 ##    selfConsist step 3 
 ##    selfConsist step 4 
 ##    selfConsist step 5 
-## 
-## 
 ## Convergence after  5  rounds.</code></pre>
 <pre class="r"><code>plotErrors(dd1, nominalQ=TRUE)</code></pre>
-<pre><code>## Warning: Transformation introduced infinite values in continuous y-axis
-
-## Warning: Transformation introduced infinite values in continuous y-axis</code></pre>
 <p><img src="pool_files/figure-html/estimate-1-1.png" width="672" /></p>
 <p>The two things to look for in the output of <code>plotErrors</code> are that the observed error rates (black dots) are reasonably well fit by the modeled error rates (black line), and that the error rates are sensible, in particular that they are mostly decreasing with quality score.</p>
 <p>Now let’s pool our samples while estimating error rates:</p>
@@ -337,13 +330,8 @@ names(drps) &lt;- sample.names</code></pre>
 ##    selfConsist step 3 
 ##    selfConsist step 4 
 ##    selfConsist step 5 
-## 
-## 
 ## Convergence after  5  rounds.</code></pre>
 <pre class="r"><code>plotErrors(dd, nominalQ=TRUE)</code></pre>
-<pre><code>## Warning: Transformation introduced infinite values in continuous y-axis
-
-## Warning: Transformation introduced infinite values in continuous y-axis</code></pre>
 <p><img src="pool_files/figure-html/estimate-pool-1.png" width="672" /></p>
 <p>The difference is not large, but the fit between the observed points and the modeled line has clearly improved by pooling together more data.</p>
 <p>There are two additional things to note here. First, it is not advised to pool samples that don’t share an “error history”, in particular samples that come from different sequencing runs or different PCR protocols. Samples from different runs should typically be run through the <code>dada(...)</code> function separately, so that the correct run-specific error rates can be learned.</p>
@@ -352,10 +340,10 @@ names(drps) &lt;- sample.names</code></pre>
 </div>
 <div id="pooling-for-sample-inference" class="section level1">
 <h1>Pooling for sample inference</h1>
-<p>De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won’t be the same. DADA2 resolves sequences exactly, and because exact sequences are consistent labels samples can be processed independently (and this is the default behavior).</p>
+<p>De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won’t be the same. DADA2 resolves sequence variants exactly, and because DNA sequences are consistent labels samples can be processed independently and then combined (and this is the default behavior).</p>
 <p>Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were seen just once or twice in one sample but many times across samples. Pooled sample inference is also supported by calling <code>dada(..., pool=TRUE)</code>.</p>
 <p>Let’s start by processing our samples using the default sample-by-sample inference:</p>
-<pre class="r"><code>microbenchmark(dd.sep &lt;- dada(drps, err=dd[[1]]$err_out), times=1)</code></pre>
+<pre class="r"><code>system.time(dd.sep &lt;- dada(drps, err=dd[[1]]$err_out))</code></pre>
 <pre><code>## Sample 1 - 7228 reads in 2014 unique sequences.
 ## Sample 2 - 5382 reads in 1667 unique sequences.
 ## Sample 3 - 5539 reads in 1501 unique sequences.
@@ -376,19 +364,13 @@ names(drps) &lt;- sample.names</code></pre>
 ## Sample 18 - 4935 reads in 1401 unique sequences.
 ## Sample 19 - 6586 reads in 1739 unique sequences.
 ## Sample 20 - 4377 reads in 920 unique sequences.</code></pre>
-<pre><code>## Unit: seconds
-##                                         expr      min       lq     mean
-##  dd.sep &lt;- dada(drps, err = dd[[1]]$err_out) 24.35027 24.35027 24.35027
-##    median       uq      max neval
-##  24.35027 24.35027 24.35027     1</code></pre>
+<pre><code>##    user  system elapsed 
+##  23.805   0.402  24.276</code></pre>
 <p>Now we pool the samples for sample inference:</p>
-<pre class="r"><code>microbenchmark(dd.pool &lt;- dada(drps, err=dd[[1]]$err_out, pool=TRUE), times=1)</code></pre>
+<pre class="r"><code>system.time(dd.pool &lt;- dada(drps, err=dd[[1]]$err_out, pool=TRUE))</code></pre>
 <pre><code>## 20 samples were pooled: 141735 reads in 23616 unique sequences.</code></pre>
-<pre><code>## Unit: seconds
-##                                                       expr      min
-##  dd.pool &lt;- dada(drps, err = dd[[1]]$err_out, pool = TRUE) 62.40344
-##        lq     mean   median       uq      max neval
-##  62.40344 62.40344 62.40344 62.40344 62.40344     1</code></pre>
+<pre><code>##    user  system elapsed 
+##  56.836   0.464  57.323</code></pre>
 <p>The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of multithreading) but sample-by-sample processing <a href="bigdata.html">remains computationally tractable out to any study size</a> (eg. 20 Hiseq runs).</p>
 <p>We’ll also take a quick look at the differences in output:</p>
 <pre class="r"><code>st &lt;- makeSequenceTable(dd.sep)
@@ -399,23 +381,23 @@ st.pool &lt;- removeBimeraDenovo(st, multithread=TRUE)</code></pre>
 <pre><code>## As of the 1.4 release, the default method changed to consensus (from pooled).</code></pre>
 <pre class="r"><code>dim(st.sep); dim(st.pool)</code></pre>
 <pre><code>## [1]  20 277</code></pre>
-<pre><code>## [1]  20 297</code></pre>
-<p>As expected, pooling detected a few more sequence variants, due to an increased power to detect rare variants.</p>
+<pre><code>## [1]  20 299</code></pre>
+<p>As expected, pooling detected a few more amplicon sequence variants (ASVs) due to an increased power to detect rare variants.</p>
 <pre class="r"><code>sq.sep &lt;- getSequences(st.sep)
 sq.pool &lt;- getSequences(st.pool)
 sum(!sq.sep %in% sq.pool);sum(sq.sep %in% sq.pool); sum(!sq.pool %in% sq.sep)</code></pre>
 <pre><code>## [1] 21</code></pre>
 <pre><code>## [1] 256</code></pre>
-<pre><code>## [1] 41</code></pre>
+<pre><code>## [1] 43</code></pre>
 <pre class="r"><code>sum(st.sep[,!sq.sep %in% sq.pool])</code></pre>
-<pre><code>## [1] 237</code></pre>
+<pre><code>## [1] 242</code></pre>
 <pre class="r"><code>sum(st.sep[,sq.sep %in% sq.pool])</code></pre>
-<pre><code>## [1] 135360</code></pre>
+<pre><code>## [1] 135355</code></pre>
 <pre class="r"><code>sum(st.pool[,sq.pool %in% sq.sep])</code></pre>
 <pre><code>## [1] 128010</code></pre>
 <pre class="r"><code>sum(st.pool[,!sq.pool %in% sq.sep])</code></pre>
-<pre><code>## [1] 1265</code></pre>
-<p>The large majority of sequences, and the vast majority of reads (&gt;99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities.</p>
+<pre><code>## [1] 1452</code></pre>
+<p>The large majority of ASVs, and the vast majority of reads (&gt;99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities.</p>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
@@ -445,7 +427,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

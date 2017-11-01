@@ -13,7 +13,7 @@ navbar:
       icon: fa-gear
       menu:
         - text: "Manual"
-          href: https://www.bioconductor.org/packages/3.5/bioc/manuals/dada2/man/dada2.pdf
+          href: https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf
         - text: "Taxonomy"
           href: assign.html
         - text: "Pooling"
@@ -25,12 +25,12 @@ navbar:
       menu:
         - text: "Manuscript"
           href: http://dx.doi.org/10.1038/nmeth.3869
+        - text: "Exact Sequence Variants"
+          href: http://dx.doi.org/10.1038/ismej.2017.119
         - text: "Symposium Slides"
           href: SMBS_DADA2.pdf
         - text: "Benchmarking"
           href: SotA.html
-        - text: "Manuscript code"
-          href: https://purl.stanford.edu/mh194vj6733
   right:
     - icon: ion-social-twitter
       href: https://www.twitter.com/bejcal

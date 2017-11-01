@@ -1,5 +1,5 @@
 ---
-title: 'A DADA2 workflow for Big Data: Paired-end (1.4)'
+title: 'A DADA2 workflow for Big Data: Paired-end (1.4 or later)'
 output: html_document
 ---
 
@@ -54,9 +54,9 @@ names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 set.seed(100)
 # Learn forward error rates
-errF <- learnErrors(filtFs, nread=2e6, multithread=TRUE)
+errF <- learnErrors(filtFs, nread=1e6, multithread=TRUE)
 # Learn reverse error rates
-errR <- learnErrors(filtRs, nread=2e6, multithread=TRUE)
+errR <- learnErrors(filtRs, nread=1e6, multithread=TRUE)
 # Sample inference and merger of paired-end reads
 mergers <- vector("list", length(sample.names))
 names(mergers) <- sample.names
@@ -92,7 +92,7 @@ st.all <- mergeSequenceTables(st1, st2, st3)
 # Remove chimeras
 seqtab <- removeBimeraDenovo(st.all, method="consensus", multithread=TRUE)
 # Assign taxonomy
-tax <- assignTaxonomy(seqtab, "/path/to/silva_nr_v123_train_set.fa.gz", multithread=TRUE)
+tax <- assignTaxonomy(seqtab, "/path/to/silva_nr_v128_train_set.fa.gz", multithread=TRUE)
 # Write to disk
 saveRDS(seqtab, "/path/to/study/seqtab_final.rds") # CHANGE ME to where you want sequence table saved
 saveRDS(tax, "/pathto/study/tax_final.rds") # CHANGE ME ...

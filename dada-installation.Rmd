@@ -6,7 +6,7 @@ title: "DADA2 Installation"
 
 ## **Install binaries from Bioconductor**
 
-Binary installation is available through the Bioconductor package repository. Binary installation of the current version of the dada2 package (1.4) requires R 3.4:
+Binary installation is available through the Bioconductor package repository. Binary installation of the current version of the dada2 package (1.6) requires R 3.4.2 and Bioconductor version 3.6:
 
 ```S
 ## try http:// if https:// URLs are not supported
@@ -16,19 +16,19 @@ biocLite("dada2")
 
 Allow installation of any additional packages requested. You are ready to start using dada2!
 
-*If the above installed an early version of dada2 (1.0 or 1.2) you can get the current dada2 release by updating your Bioconductor installation to version 3.5: `biocLite("BiocUpgrade")` then `biocLite()`*
+*If the above installed an early version of dada2 (1.2 or 1.4) you can get the current dada2 release by updating your Bioconductor installation to version 3.6: `biocLite("BiocUpgrade")` then `biocLite()`. This may require updating R as well.*
 
 -----------------------------
 
 ## **Install from source**
 
-Source installation is available for R3.2 or later, and the latest and greatest features will be available first through source installs of the development branch.
+Source installation is available for R 3.2 or later, and the latest and greatest features will be available first through source installs of the development branch.
 
 ### 0. Download
 
-* Current Release [(1.4)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.4.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.4.tar.gz).
+* Current Release [(1.6)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.6.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.6.tar.gz).
 
-* Development Branch [(1.5)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
+* Development Branch [(1.7)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
 
 ### 1. Install External Dependencies
 

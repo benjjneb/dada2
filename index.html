@@ -196,7 +196,7 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="https://www.bioconductor.org/packages/3.5/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
     </li>
     <li>
       <a href="assign.html">Taxonomy</a>
@@ -222,13 +222,13 @@ $(document).ready(function () {
       <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
     </li>
     <li>
+      <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
       <a href="SMBS_DADA2.pdf">Symposium Slides</a>
     </li>
     <li>
       <a href="SotA.html">Benchmarking</a>
-    </li>
-    <li>
-      <a href="https://purl.stanford.edu/mh194vj6733">Manuscript code</a>
     </li>
   </ul>
 </li>
@@ -266,31 +266,35 @@ $(document).ready(function () {
 </div>
 
 
-<div id="fast-accurate-single-nucleotide-resolution-for-amplicon-data" class="section level2">
-<h2>Fast, accurate, single-nucleotide resolution for amplicon data</h2>
+<div id="fast-and-accurate-sample-inference-from-amplicon-data-with-single-nucleotide-resolution" class="section level2">
+<h2>Fast and accurate, sample inference from amplicon data with single-nucleotide resolution</h2>
 <hr />
+<div id="nov-1-version-1.6-of-the-dada2-r-package-has-been-released-on-bioconductor" class="section level3">
+<h3><strong><span style="color:red">Nov 1: Version 1.6 of the dada2 R package has been released on Bioconductor!</span></strong></h3>
+<p> </p>
+</div>
 </div>
 <div id="installation" class="section level2">
 <h2>Installation</h2>
-<p>Binaries for the current release version of DADA2 (1.4) are available from Bioconductor (note that you must have R 3.4.0 or newer, and <a href="https://www.bioconductor.org/install/">Biocondcutor version 3.5</a>, to install the current release from Bioconductor):</p>
+<p>Binaries for the current release version of DADA2 (1.6) are available from Bioconductor. Note that you must have R 3.4.2 or newer, and <a href="https://www.bioconductor.org/install/">Biocondcutor version 3.6</a>, to install the current release from Bioconductor.</p>
 <pre class="s"><code>## try http:// if https:// URLs are not supported
 source(&quot;https://bioconductor.org/biocLite.R&quot;)
 biocLite(&quot;dada2&quot;)</code></pre>
-<p>If you wish to install the latest and greatest development version, or to install to R 3.3, see our <a href="dada-installation.html">from-source installation instructions</a>.</p>
+<p>If you wish to install the latest and greatest development version, or to install to earlier versions of R, see our <a href="dada-installation.html">from-source installation instructions</a>.</p>
 <p> </p>
 </div>
 <div id="tutorials" class="section level2">
 <h2>Tutorials</h2>
-<p><strong>Start here:</strong> The <a href="tutorial.html">DADA2 tutorial</a> goes through a typical workflow for paired end Illumina Miseq data: raw amplicon sequence data is processed into the table of biological sequence variants (SVs) present in each sample.</p>
+<p><strong><span style="color:red">Start here:</span></strong> The <a href="tutorial.html">DADA2 tutorial</a> goes through a typical workflow for paired end Illumina Miseq data: raw amplicon sequencing data is processed into the table of exact <strong>amplicon sequence variants (ASVs)</strong> present in each sample.</p>
 <p>The <a href="bigdata.html">DADA2 Workflow on Big Data</a> goes through workflow optimized to run on large datasets (10s of millions to billions of reads).</p>
 <p>Short demonstrations of <a href="assign.html">assigning taxonomy</a> and <a href="assign.html">assigning species</a> to sequences.</p>
 <p> </p>
 </div>
 <div id="benchmarking" class="section level2">
 <h2>Benchmarking</h2>
-<p>Our <a href="http://dx.doi.org/10.1038/nmeth.3869">manuscript</a> (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4927377/">OA link</a>) compares the accuracy of DADA2 and other methods on several mock community datasets.</p>
+<p>Our <a href="http://dx.doi.org/10.1038/nmeth.3869">manuscript introducing DADA2</a> (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4927377/">OA link</a>) compares the accuracy of DADA2 and other methods on several mock community datasets.</p>
+<p>We describe <a href="http://dx.doi.org/10.1038/ismej.2017.119">the broad advantages of exact sequence variants over OTUs in our recent open-access ISMEJ paper</a>.</p>
 <p>Further <a href="SotA.html">benchmarking of DADA2 against the methods evaluated in a recent QIIME1 benchmarking paper</a> is available.</p>
-<p>We describe <a href="http://www.biorxiv.org/content/early/2017/03/07/113597">the broad advantages of exact sequence variants over OTUs in a recent preprint</a>.</p>
 <p>And sometimes a picture says a thousand word:</p>
 <div class="figure">
 <img src="dada2_accuracy.jpg" />
@@ -301,8 +305,9 @@ biocLite(&quot;dada2&quot;)</code></pre>
 <div id="advantages" class="section level2">
 <h2>Advantages</h2>
 <ul>
-<li><p><strong>High Resolution</strong>: DADA2 infers exact sequence variants from amplicon data, resolving differences of even 1 or 2 nucleotides.</p></li>
+<li><p><strong>Resolution</strong>: DADA2 infers exact amplicon sequence variants (ASVs) from amplicon data, resolving biological differences of even 1 or 2 nucleotides.</p></li>
 <li><p><strong>Accuracy</strong>: DADA2 reports fewer false positive sequence variants than other methods report false OTUs.</p></li>
+<li><p><strong>Comparability</strong>: The ASVs output by DADA2 can be directly compared between studies, without the need to reprocess the pooled data.</p></li>
 <li><p><strong>Computational Scaling</strong>: The compute time of DADA2 scales linearly sample number, and memory requirements are essentially flat.</p></li>
 <li><p><strong>Open Source</strong>: DADA2 is licensed under the <a href="http://www.gnu.org/licenses/lgpl-3.0.en.html">LGPL version 3</a>.</p></li>
 </ul>
@@ -317,7 +322,7 @@ biocLite(&quot;dada2&quot;)</code></pre>
 <div id="how" class="section level2">
 <h2>How?</h2>
 <p><strong>Accuracy:</strong> DADA2’s crucial advantage is that it uses more of the data. The DADA2 error model incorporates quality information, which is ignored by all other methods after filtering. The DADA2 error model incorporates quantitative abundances, whereas most other methods use abundance ranks if they use abundance at all. The DADA2 error model identifies the differences between sequences, eg. A-&gt;C, whereas other methods merely count the mismatches. DADA2 can parameterize its error model from the data itself, rather than relying on previous datasets that may or may not reflect the PCR and sequencing protocols used in your study.</p>
-<p><strong>Performance:</strong> DADA2’s performance gains come from the fact that it infers sequences exactly rather than constructing OTUs. De novo OTUs cannot be compared across samples unless all samples were pooled during OTU construction. However, <a href="http://www.biorxiv.org/content/early/2017/03/07/113597">exact sequences <strong>are</strong> comparable across samples, as exact sequences are consistent labels</a>. Thus DADA2 can analyze each sample independently, resulting in linear scaling with sample number and trivial parallelization.</p>
+<p><strong>Performance:</strong> DADA2’s computational scaling gains come from the fact that it infers sequences exactly rather than constructing OTUs. De novo OTUs cannot be compared across samples unless all samples were pooled during OTU construction. However, <a href="http://dx.doi.org/10.1038/ismej.2017.119">exact sequences <strong>are</strong> comparable across samples, as exact sequences are consistent labels</a>. Thus DADA2 can analyze each sample independently, resulting in linear scaling with sample number and trivial parallelization.</p>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
@@ -347,7 +352,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

@@ -2,7 +2,7 @@
 title: "Pooling samples"
 ---
 
-The `dada(...)` function implements the high-resolution sample-inference at the core of the dada2 package. Because `dada(...)` resolves sequence variants exactly, it is possible to analyze samples separately before combining them together in a final sequence table. However, the `dada(...)` function also allows samples to be pooled together for the error rate estimation and sample inference steps. Here we demonstrate that functionality, and discuss the pros and cons of pooling.
+The `dada(...)` function implements the high-resolution sample-inference at the core of the dada2 package. Because `dada(...)` resolves amplicon sequence variants (ASVs) exactly, it is possible to analyze samples separately before combining them together in a final sequence table. However, the `dada(...)` function also allows samples to be pooled together for the error rate estimation and sample inference steps. Here we demonstrate that functionality, and discuss the pros and cons of pooling.
 
 -----------------------
 
@@ -11,7 +11,6 @@ The `dada(...)` function implements the high-resolution sample-inference at the 
 Load the necessary libraries:
 ```{r libraries, message=FALSE, warning=FALSE}
 library(dada2); packageVersion("dada2")
-library(microbenchmark); packageVersion("microbenchmark")
 ```
 
 We'll be working with the same data used in [the tutorial](tutorial.html), so grab that data if you don't have it already and then set your working directory to its location:
@@ -45,7 +44,7 @@ names(drps) <- sample.names
 
 The first type of pooling we'll consider is pooling samples for error rate estimation. This is the default functionality of the `dada(...)` function when passed a list of samples, but for comparison purposes we'll first look at what happens if we estimate error rates using just one sample alone:
 
-```{r estimate-1}
+```{r estimate-1, warning=FALSE}
 dd1 <- dada(drps[[1]], err=NULL, selfConsist=TRUE, multithread=TRUE)
 plotErrors(dd1, nominalQ=TRUE)
 ```
@@ -53,7 +52,7 @@ plotErrors(dd1, nominalQ=TRUE)
 The two things to look for in the output of `plotErrors` are that the observed error rates (black dots) are reasonably well fit by the modeled error rates (black line), and that the error rates are sensible, in particular that they are mostly decreasing with quality score.
 
 Now let's pool our samples while estimating error rates:
-```{r estimate-pool}
+```{r estimate-pool, warning=FALSE}
 dd <- dada(drps, err=NULL, selfConsist=TRUE, multithread=TRUE)
 plotErrors(dd, nominalQ=TRUE)
 ```
@@ -68,18 +67,18 @@ Second, it is generally not necessary to estimate error rates across an entire s
 
 # Pooling for sample inference
 
-De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won't be the same. DADA2 resolves sequences exactly, and because exact sequences are consistent labels samples can be processed independently (and this is the default behavior).
+De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won't be the same. DADA2 resolves sequence variants exactly, and because DNA sequences are consistent labels samples can be processed independently and then combined (and this is the default behavior).
 
 Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were seen just once or twice in one sample but many times across samples. Pooled sample inference is also supported by calling `dada(..., pool=TRUE)`.
 
 Let's start by processing our samples using the default sample-by-sample inference:
 ```{r}
-microbenchmark(dd.sep <- dada(drps, err=dd[[1]]$err_out), times=1)
+system.time(dd.sep <- dada(drps, err=dd[[1]]$err_out))
 ```
 
 Now we pool the samples for sample inference:
 ```{r}
-microbenchmark(dd.pool <- dada(drps, err=dd[[1]]$err_out, pool=TRUE), times=1)
+system.time(dd.pool <- dada(drps, err=dd[[1]]$err_out, pool=TRUE))
 ```
 
 The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of multithreading) but sample-by-sample processing [remains computationally tractable out to any study size](bigdata.html) (eg. 20 Hiseq runs).
@@ -95,7 +94,7 @@ st.pool <- removeBimeraDenovo(st, multithread=TRUE)
 dim(st.sep); dim(st.pool)
 ```
 
-As expected, pooling detected a few more sequence variants, due to an increased power to detect rare variants.
+As expected, pooling detected a few more amplicon sequence variants (ASVs) due to an increased power to detect rare variants.
 
 ```{r}
 sq.sep <- getSequences(st.sep)
@@ -108,4 +107,4 @@ sum(st.pool[,sq.pool %in% sq.sep])
 sum(st.pool[,!sq.pool %in% sq.sep])
 ```
 
-The large majority of sequences, and the vast majority of reads (>99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities. 
+The large majority of ASVs, and the vast majority of reads (>99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities. 
