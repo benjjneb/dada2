@@ -2,11 +2,11 @@
 title: "The DADA2 R package"
 ---
 
-## Fast and accurate, sample inference from amplicon data with single-nucleotide resolution
+## Fast and accurate sample inference from amplicon data with single-nucleotide resolution
 
 --------------------------
 
-###**<span style="color:red">Nov 1: Version 1.6 of the dada2 R package has been released on Bioconductor!</span>**
+####**<span style="color:red">Nov 1: Version 1.6 of the dada2 R package has been released on Bioconductor!</span>**
 
 &nbsp;
 
