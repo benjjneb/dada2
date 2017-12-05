@@ -20,7 +20,7 @@
 #'  The \code{\link{derep-class}} object(s) used as input to the the \code{\link{dada}} function
 #'  when denoising the reverse reads.
 #'
-#' @param minOverlap (Optional). Default 20.
+#' @param minOverlap (Optional). Default 12.
 #'  The minimum length of the overlap required for merging the forward and reverse reads. 
 #'
 #' @param maxMismatch (Optional). Default 0. 
@@ -46,6 +46,10 @@
 #' @param verbose (Optional). Default FALSE. 
 #'  If TRUE, a summary of the function results are printed to standard output.
 #'
+#' @param ... (Optional). Further arguments to pass on to \code{\link{nwalign}}.
+#'  By default, \code{mergePairs} uses alignment parameters that hevaily penalizes mismatches and gaps
+#'  when aligning the forward and reverse sequences.
+#' 
 #' @return A \code{data.frame}, or a list of \code{data.frames}. 
 #' 
 #' The return \code{data.frame}(s) has a row for each unique pairing of forward/reverse denoised sequences, 
@@ -79,7 +83,7 @@
 #' mergePairs(dadaF, derepF, dadaR, derepR, returnRejects=TRUE, propagateCol=c("n0", "birth_ham"))
 #' mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 #' 
-mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatch=0, returnRejects=FALSE, propagateCol=character(0), justConcatenate=FALSE, trimOverhang=FALSE, verbose=FALSE) {
+mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatch=0, returnRejects=FALSE, propagateCol=character(0), justConcatenate=FALSE, trimOverhang=FALSE, verbose=FALSE, ...) {
   if(is(dadaF, "dada")) dadaF <- list(dadaF)
   if(is(derepF, "derep")) derepF <- list(derepF)
   if(is(dadaR, "dada")) dadaR <- list(dadaR)
@@ -115,14 +119,21 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 20, maxMismatc
     } else {
       # Align forward and reverse reads.
       # Use unbanded N-W align to compare forward/reverse
-      # May want to adjust align params here, but for now just using dadaOpt
-      alvecs <- mapply(function(x,y) nwalign(x,y,band=-1), Funqseq, Runqseq, SIMPLIFY=FALSE)
+      # Adjusting align params to prioritize zero-mismatch merges
+      tmp <- getDadaOpt(c("MATCH", "MISMATCH", "GAP_PENALTY"))
+      if(maxMismatch==0) {
+        setDadaOpt(MATCH=1L, MISMATCH=-64L, GAP_PENALTY=-64L)
+      } else {
+        setDadaOpt(MATCH=1L, MISMATCH=-8L, GAP_PENALTY=-8L)
+      }
+      alvecs <- mapply(function(x,y) nwalign(x,y,band=-1,...), Funqseq, Runqseq, SIMPLIFY=FALSE)
+      setDadaOpt(tmp)
       outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
       ups$nmatch <- outs[,1]
       ups$nmismatch <- outs[,2]
       ups$nindel <- outs[,3]
       ups$prefer <- 1 + (dadaR[[i]]$clustering$n0[ups$reverse] > dadaF[[i]]$clustering$n0[ups$forward])
-      ups$accept <- (ups$nmatch > minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
+      ups$accept <- (ups$nmatch >= minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
       # Make the sequence
       ups$sequence <- mapply(C_pair_consensus, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer, trimOverhang);
       # Additional param to indicate whether 1:forward or 2:reverse takes precedence
@@ -579,7 +590,7 @@ mergePairsByID = function(dadaF, derepF, srF,
     upiddt[, allMismatch := mismatch + indel,
            by = list(seqF, seqR)]
     # (3) Define Acceptance
-    upiddt[, accept := (match > minOverlap) & (allMismatch <= maxMismatch),
+    upiddt[, accept := (match >= minOverlap) & (allMismatch <= maxMismatch),
            by = list(seqF, seqR)]
     # (4) Make the consensus sequence, 
     #     but only for the pairs that passed (accepted merges)

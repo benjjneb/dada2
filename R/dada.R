@@ -522,6 +522,9 @@ dada <- function(derep,
 setDadaOpt <- function(...) {
   opts <- getDadaOpt()
   args <- list(...)
+  if(length(args)==1 && class(args[[1]]) == "list") { # Arguments were passed in as a list, as returned by getDadaOpt
+    args <- args[[1]]
+  }
   for(opnm in names(args)) {
     if(opnm %in% names(opts)) {
       if(class(getDadaOpt(opnm)) != class(args[[opnm]])) {
