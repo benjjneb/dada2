@@ -64,7 +64,8 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #'  including \code{\link{dada-class}} and \code{\link{derep-class}} objects, as well as 
 #'  \code{data.frame} objects that have both $sequence and $abundance columns. This function 
 #'  wraps the \code{\link{getUniques}} function, but return only the names (i.e. the sequences).
-#'  Can also be provided the file path to a fasta or fastq file or a taxonomy table. 
+#'  Can also be provided the file path to a fasta or fastq file, a taxonomy table, or a
+#'  DNAStringSet object. 
 #' 
 #' @param object (Required). The object from which to extract the sequences.
 #' 
@@ -106,6 +107,8 @@ getSequences <- function(object, collapse=FALSE, silence=TRUE) {
     } else {
       return(object)
     }
+  } else if(class(object) == "DNAStringSet") {
+    return(as.character(object))
   } else if(class(object) == "matrix" && is.character(object) && !any(is.na(rownames(object)))) { # Taxonomy table
     seqs <- rownames(object)
     if(any(duplicated(seqs))) {
