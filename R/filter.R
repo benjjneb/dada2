@@ -820,73 +820,82 @@ isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE) {
   hits.rc <- C_matchRef(seqs, rc.phix, wordSize, nonOverlapping)
   return((hits >= minMatches) | (hits.rc >= minMatches))
 }
-#' ################################################################################
-#' #' Determine if input sequence(s) are low complexity.
-#' #' 
-#' #' This function calculates the oligonucleotide
-#' #' complexity of input sequences. Complexity is quantified as the Shannon
-#' #' richness of oligonucleotides, which can be thought of as the
-#' #' effective number of oligonucleotides if they were all
-#' #' at equal frequencies. If a window size is provided, the minimum Shannon
-#' #' richness observed over sliding window along the sequence is returned.
-#' #' 
-#' #' @param seqs (Required). A \code{character} vector of A/C/G/T sequences, or
-#' #' any object coercible by \code{\link{getSequences}}.
-#' #' 
-#' #' @param wordSize (Optional). Default 2.
-#' #'  The size of the oligonucleotides (or "words" or "kmers") to use.
-#' #'   
-#' #' @param window (Optional). Default NULL.
-#' #' The width in nucleotides of the moving window. If NULL the whole sequence is used.
-#' #' 
-#' #' @param by (Optional). Default 5.
-#' #' The step size in nucleotides between each moving window tested.
-#' #' 
-#' #' @return \code{numeric}.
-#' #'  A vector of minimum olignucleotide complexities for each sequence.
-#' #'
-#' #' @seealso 
-#' #'  \code{\link[Biostrings]{oligonucleotideFrequency}}
-#' #'  
-#' #' @export
-#' #' 
-#' #' @importFrom Biostrings oligonucleotideFrequency
-#' #' @importFrom Biostrings DNAStringSet
-#' #' @importFrom Biostrings narrow
-#' #' @importFrom Biostrings width
-#' #' @importFrom methods is
-#' #' 
-#' #' @examples
-#' #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-#' #' sqs1 <- getSequences(derep1)
-#' #' seqComplexity(sqs1)
-#' #' seqComplexity(sqs1, wordSize=3, window=25)
-#' #' 
-#' seqComplexity <- function(seqs, wordSize=2, window=NULL, by=5) {
-#'   if(!is.null(window) && wordSize >= window) stop("The window over which oligonucleotide frequency is calculated must be larger than the wordSize.")
-#'   if(!is(seqs, "DNAStringSet")) {
-#'     seqs <- getSequences(seqs)
-#'     if(!(all(C_isACGT(seqs)))) warning("Not all sequences were A/C/G/T only, which can interfere with the calculation of the Shannont richness.")
-#'     seqs <- DNAStringSet(seqs)
-#'   }
-#'   si.max <- 4**wordSize
-#'   if(is.null(window)) {
-#'     si <- apply(oligonucleotideFrequency(seqs, width=wordSize), 1, sindex)
-#'   } else {
-#'     si <- rep(si.max, length(seqs))
-#'     for(i in seq(1, max(width(seqs))-window, by=by)) {
-#'       keep <- (width(seqs) >= (i+window-1))
-#'       wind <- narrow(seqs[keep],i,i+window-1)
-#'       si.i <- apply(oligonucleotideFrequency(wind, width=wordSize), 1, sindex)
-#'       si[keep] <- pmin(si[keep], si.i)
-#'     }
-#'   }
-#'   si
-#' }
-#' ## Helper function to calculate the effective shannon richness
-#' ## Which is basically the exponential of the usual Shannon diversity
-#' sindex <- function(x) {
-#'   y <- x/sum(x)
-#'   y <- y[y>0]
-#'   exp(sum(-y*log(y)))
-#' }
+################################################################################
+#' Determine if input sequence(s) are low complexity.
+#'
+#' This function calculates the oligonucleotide
+#' complexity of input sequences. Complexity is quantified as the Shannon
+#' richness of oligonucleotides, which can be thought of as the
+#' effective number of oligonucleotides if they were all
+#' at equal frequencies. If a window size is provided, the minimum Shannon
+#' richness observed over sliding window along the sequence is returned.
+#'
+#' This function can be used to identify potentially artefactual or undesirable
+#' low-complexity sequences, or sequences with low-complexity regions, as are
+#' sometimes observed in Illumina sequencing runs. When such artefactual
+#' sequences are present, a simple plot of the Shannon oligonucleotide
+#' richness values returned by this function will typically show a clear
+#' bimodal signal.
+#'
+#' @param seqs (Required). A \code{character} vector of A/C/G/T sequences, or
+#' any object coercible by \code{\link{getSequences}}.
+#'
+#' @param wordSize (Optional). Default 2.
+#'  The size of the oligonucleotides (or "words" or "kmers") to use.
+#'
+#' @param window (Optional). Default NULL.
+#' The width in nucleotides of the moving window. If NULL the whole sequence is used.
+#'
+#' @param by (Optional). Default 5.
+#' The step size in nucleotides between each moving window tested.
+#'
+#' @return \code{numeric}.
+#'  A vector of minimum olignucleotide complexities for each sequence.
+#'
+#' @seealso
+#'  \code{\link[Biostrings]{oligonucleotideFrequency}}
+#'
+#' @export
+#'
+#' @importFrom Biostrings oligonucleotideFrequency
+#' @importFrom Biostrings DNAStringSet
+#' @importFrom Biostrings narrow
+#' @importFrom Biostrings width
+#' @importFrom methods is
+#'
+#' @examples
+#' sq.norm <- "TACGGAAGGTCCGGGCGTTATCCGGATTTATTGGGTTTAAAGGGAGCGTAGGCCGGAGATTAAGCGTGTTGTGA"
+#' sq.lowc <- "TCCTTCTTCTCCTCTCTTTCTCCTTCTTTCTTTTTTTTCCCTTTCTCTTCTTCTTTTTCTTCCTTCCTTTTTTC"
+#' sq.part <- "TTTTTCTTCTCCCCCTTCCCCTTTCCTTTTCTCCTTTTTTCCTTTAGTGCAGTTGAGGCAGGCGGAATTCGTGG"
+#' sqs <- c(sq.norm, sq.lowc, sq.part)
+#' seqComplexity(sqs)
+#' seqComplexity(sqs, window=25)
+#'
+seqComplexity <- function(seqs, wordSize=2, window=NULL, by=5) {
+  if(!is.null(window) && wordSize >= window) stop("The window over which oligonucleotide frequency is calculated must be larger than the wordSize.")
+  if(!is(seqs, "DNAStringSet")) {
+    seqs <- getSequences(seqs)
+    if(!(all(C_isACGT(seqs)))) warning("Not all sequences were A/C/G/T only, which can interfere with the calculation of the Shannon richness.")
+    seqs <- DNAStringSet(seqs)
+  }
+  si.max <- 4**wordSize
+  if(is.null(window)) {
+    si <- apply(oligonucleotideFrequency(seqs, width=wordSize), 1, sindex)
+  } else {
+    si <- rep(si.max, length(seqs))
+    for(i in seq(1, max(width(seqs))-window, by=by)) {
+      keep <- (width(seqs) >= (i+window-1))
+      wind <- narrow(seqs[keep],i,i+window-1)
+      si.i <- apply(oligonucleotideFrequency(wind, width=wordSize), 1, sindex)
+      si[keep] <- pmin(si[keep], si.i)
+    }
+  }
+  si
+}
+## Helper function to calculate the effective shannon richness
+## Which is basically the exponential of the usual Shannon diversity
+sindex <- function(x) {
+  y <- x/sum(x)
+  y <- y[y>0]
+  exp(sum(-y*log(y)))
+}
