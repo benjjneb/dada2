@@ -16,7 +16,7 @@ assign("MIN_HAMMING", 1, envir=dada_opts)
 assign("MIN_ABUNDANCE", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
-assign("SSE", 0, envir = dada_opts)
+assign("SSE", 2, envir = dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -505,8 +505,8 @@ dada <- function(derep,
 #'  
 #' VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
 #' 
-#' SSE: Controls the level of explicit SSE vectorization (versus auto-vectorization). Default 0.
-#'  0: No explicit vectorization (but modern compilers will auto-vectorized the code).
+#' SSE: Controls the level of explicit SSE vectorization for kmer calculations. Default 2.
+#'  0: No explicit vectorization (but modern compilers will auto-vectorize the code).
 #'  1: SSE2.
 #'  2: SSE2 + 8-bit integers.
 #' 

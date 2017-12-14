@@ -74,7 +74,6 @@ Bi *bi_new(unsigned int totraw) {
   bi->totraw = totraw;
   bi->center = NULL;
   strcpy(bi->seq, "");
-  bi->update_lambda = true;
   bi->update_e = true;
   bi->shuffle = true;
   
@@ -181,6 +180,7 @@ unsigned int bi_add_raw(Bi *bi, Raw *raw) {
   // Add raw and update reads/nraw
   bi->raw[bi->nraw] = raw;
   bi->reads += raw->reads;
+  bi->update_e = true;
   return(bi->nraw++);
 }
 
@@ -238,7 +238,6 @@ void bi_census(Bi *bi) {
 
 // Takes a Bi object, and calculates and assigns its center Raw.
 // Currently this is done trivially by choosing the most abundant raw.
-// Flags update_lambda.
 // This function also currently assigns the cluster sequence (equal to center->seq).
 void bi_assign_center(Bi *bi) {
   unsigned int r, max_reads;
@@ -251,9 +250,8 @@ void bi_assign_center(Bi *bi) {
        max_reads = bi->center->reads;
     }
   }
-  // Assign bi->seq and flag
+  // Assign center sequence to bi->seq
   if(bi->center) { strcpy(bi->seq, bi->center->seq); }
-  bi->update_lambda = true;
 }
 
 /********* ALGORITHM LOGIC *********/
@@ -428,22 +426,6 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   free(comps);
 }
 
-
-/*
-void b_e_update(B *b) {
-  unsigned int i, index;
-
-  for(i=0; i < b->nclust; i++) {
-    if(b->bi[i]->update_e) {
-      for(index=0; index < b->nraw; index++) {
-        b->bi[i]->e[index] = b->bi[i]->lambda[index]*b->bi[i]->reads;
-      }
-      b->bi[i]->shuffle = true;
-    }
-    b->bi[i]->update_e = false;
-  }
-} */
-
 /* b_shuffle2:
  move each sequence to the bi that produces the highest expected
  number of that sequence. The center of a Bi cannot leave.
@@ -514,10 +496,13 @@ void b_p_update(B *b) {
   unsigned int i, r;
   Raw *raw;
   for(i=0;i<b->nclust;i++) {
-    for(r=0;r<b->bi[i]->nraw;r++) {
-      raw = b->bi[i]->raw[r];
-      raw->p = get_pA(raw, b->bi[i]);
-    } // for(r=0;r<b->bi[i]->nraw;r++)
+    if(b->bi[i]->update_e) {
+      for(r=0;r<b->bi[i]->nraw;r++) {
+        raw = b->bi[i]->raw[r];
+        raw->p = get_pA(raw, b->bi[i]);
+      } // for(r=0;r<b->bi[i]->nraw;r++)
+      b->bi[i]->update_e = false;
+    }
   } // for(i=0;i<b->nclust;i++)
 }
 

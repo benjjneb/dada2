@@ -91,7 +91,6 @@ typedef struct {
   unsigned int i;       // the cluster number in the total clustering
   Raw **raw;   // Array of pointers to child fams.
   unsigned int maxraw;  // number of fams currently allocated for in **fam
-  bool update_lambda; // set to true when consensus changes
   bool update_e; // set to true when consensus changes and when raws are shuffled
   bool shuffle; // set to true when e-values are updated
   double self; // self-production genotype error probability

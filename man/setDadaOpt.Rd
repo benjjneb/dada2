@@ -66,8 +66,8 @@ MAX_CONSIST: The maximum number of steps when selfConsist=TRUE. If convergence i
  
 VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
 
-SSE: Controls the level of explicit SSE vectorization (versus auto-vectorization). Default 0.
- 0: No explicit vectorization (but modern compilers will auto-vectorized the code).
+SSE: Controls the level of explicit SSE vectorization for kmer calculations. Default 2.
+ 0: No explicit vectorization (but modern compilers will auto-vectorize the code).
  1: SSE2.
  2: SSE2 + 8-bit integers.
 }
