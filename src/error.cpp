@@ -238,32 +238,39 @@ Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_qua
 // Make output data.frame of birth_subs
 Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals) {
   Sub *sub;
-  unsigned int i, s;
+  unsigned int i, j, s;
+  unsigned int tot_subs=0;
   char buf[2] = {'\0','\0'};
-  // Initialize the columns
-  Rcpp::IntegerVector bs_pos;
-  Rcpp::CharacterVector bs_nt0;
-  Rcpp::CharacterVector bs_nt1;
-  Rcpp::NumericVector bs_qual;
-  Rcpp::IntegerVector bs_clust;
-  // Record data for each birth substitution
+  // Count total number of subs
   for(i=0;i<b->nclust;i++) {
+    sub = birth_subs[i];
+    if(sub) { tot_subs += sub->nsubs; }
+  }
+  // Initialize the columns
+  Rcpp::IntegerVector bs_pos(tot_subs);
+  std::vector<std::string> bs_nt0(tot_subs);
+  std::vector<std::string> bs_nt1(tot_subs);
+  Rcpp::NumericVector bs_qual(tot_subs);
+  Rcpp::IntegerVector bs_clust(tot_subs);
+  // Record data for each birth substitution
+  for(i=0,j=0;i<b->nclust;i++) {
     sub = birth_subs[i];
     if(sub) {
       for(s=0;s<sub->nsubs;s++) {
-        bs_pos.push_back(sub->pos[s]+1); // R 1 indexing
+        bs_pos[j] = sub->pos[s]+1; // R 1 indexing
         buf[0] = sub->nt0[s];
         int2nt(buf, buf);
-        bs_nt0.push_back(std::string(buf));
+        bs_nt0[j].assign(std::string(buf));
         buf[0] = sub->nt1[s];
         int2nt(buf, buf);
-        bs_nt1.push_back(std::string(buf));
+        bs_nt1[j].assign(std::string(buf));
         if(has_quals) {
-          bs_qual.push_back(sub->q1[s]);
+          bs_qual[j] = sub->q1[s];
         } else {
-          bs_qual.push_back(Rcpp::NumericVector::get_na());
+          bs_qual[j] = Rcpp::NumericVector::get_na();
         }
-        bs_clust.push_back(i+1); // R 1 indexing
+        bs_clust[j] = i+1; // R 1 indexing
+        j++;
       }
     }
   }
