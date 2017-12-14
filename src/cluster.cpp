@@ -131,7 +131,7 @@ B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, int homo_g
   return b;
 }
 
-// Initializion B object by placing all Raws into one Bi
+// Initialize B object by placing all Raws into one Bi
 // Called on B construction
 void b_init(B *b) {
   unsigned int i, index;
@@ -322,132 +322,14 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
       comp.lambda = lambda;
       comp.hamming = sub->nsubs;
       b->bi[i]->comp.push_back(comp);
-      b->bi[i]->comp_index.insert(std::make_pair(index, cind++));
+      if(i==0 || raw == b->bi[i]->center) { // Update on init (i=0) or if the center (as b_bud doesn't update raw->comp)
+        raw->comp = comp;
+      } /// Handle init better?
     }
     sub_free(sub);
   }
 }
 
-/***********************************************
- * SUPPLANTED BY RcppParallel IMPLEMENTATION
- ***********************************************
-
-typedef struct {
-  unsigned int start;
-  unsigned int end;
-  B *b;
-  unsigned int i;
-  bool use_kmers;
-  double kdist_cutoff;
-  Comparison *comps;
-  unsigned int ncol;
-  double *err_mat;
-} tc_input;
-
-void *t_compare(void *tc_in) {
-  tc_input *inp = (tc_input *) tc_in;
-  unsigned int index, j;
-  Raw *raw;
-  Sub *sub;
-  B *b = inp->b;
-  unsigned int i = inp->i;
-  Comparison *comps = inp->comps;
-
-  for(index=inp->start, j=0; index<inp->end; index++, j++) {
-    // Make sub object
-    raw = b->raw[index];
-    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, inp->use_kmers, inp->kdist_cutoff, b->band_size, b->vectorized_alignment, SSE);
-
-    // Make comparison object
-    comps[j].i = i;
-    comps[j].index = index;
-    comps[j].lambda = compute_lambda_ts(raw, sub, inp->ncol, inp->err_mat, b->use_quals);
-    if(sub) {
-      comps[j].hamming = sub->nsubs;
-    } else {
-      comps[j].hamming = -1;
-    }
-
-    // Free sub
-    sub_free(sub);
-  }
-  
-  return(NULL);
-}
-
-// compare_threaded:
-// Performs alignments and computes lambda for all raws to the specified Bi
-// Stores only those that can possibly be recruited to this Bi
-// MULTITHREADED
-
-void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose, int SSE) {
-  unsigned int index, cind, thr, row, col, ncol;
-  double lambda;
-  Raw *raw;
-  Comparison comp;
-  pthread_t threads[nthreads-1];
-  tc_input inp[nthreads];
-  Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
-  if(comps==NULL) Rcpp::stop("Memory allocation failed.");
-  
-  // Make thread-safe simple array for the error rate matrix
-  double *err_mat = (double *) malloc(sizeof(double) * errMat.ncol() * errMat.nrow());
-  if(err_mat==NULL) Rcpp::stop("Memory allocation failed.");
-  ncol = errMat.ncol();
-  if(errMat.nrow() != 16) { Rcpp::stop("Error matrix doesn't have 16 rows."); }
-  for(row=0;row<errMat.nrow();row++) {
-    for(col=0;col<errMat.ncol();col++) {
-      err_mat[row*ncol + col] = errMat(row, col);
-    }
-  }
-  
-  // Threaded loop to perform all comparisons
-  for(thr=0;thr<nthreads;thr++) {
-    inp[thr].start = (b->nraw*thr)/nthreads;
-    inp[thr].end = (b->nraw*(thr+1))/nthreads;
-    inp[thr].b = b;
-    inp[thr].i = i;
-    inp[thr].use_kmers = use_kmers;
-    inp[thr].kdist_cutoff = kdist_cutoff;
-    inp[thr].comps = &comps[inp[thr].start];
-    inp[thr].ncol = ncol;
-    inp[thr].err_mat = err_mat;
-    if(thr == nthreads-1) { break; } // run in this thread
-    pthread_create(&threads[thr], NULL, t_compare, (void *) &inp[thr]);
-  }
-  t_compare((void *) &inp[nthreads-1]);
-  
-  // Join the threads into a final vector of comparisons (and free stuff)  
-  for(thr=0; thr<(nthreads-1); thr++) {
-    pthread_join(threads[thr], NULL);
-  }
-  
-  // Selectively store
-  for(index=0, cind=0; index<b->nraw; index++) {
-    b->nalign++; ///t
-    raw = b->raw[index];
-    comp = comps[index];
-    lambda = comp.lambda;
-    
-    // Store self-lambda
-    if(index == b->bi[i]->center->index) { 
-      b->bi[i]->self = lambda; 
-    }
-    
-    // Store comparison if potentially useful
-    if(lambda * b->reads > raw->E_minmax) { // This cluster could attract this raw
-      if(lambda * b->bi[i]->center->reads > raw->E_minmax) { // Better E_minmax, set
-        raw->E_minmax = lambda * b->bi[i]->center->reads;
-      }
-      b->bi[i]->comp.push_back(comp);
-      b->bi[i]->comp_index.insert(std::make_pair(index, cind++));
-    }
-  }
-  free(err_mat);
-  free(comps);
-}
-***********************************************/
- 
 struct CompareParallel : public RcppParallel::Worker
 {
   // source data
@@ -537,7 +419,9 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
         raw->E_minmax = lambda * b->bi[i]->center->reads;
       }
       b->bi[i]->comp.push_back(comp);
-      b->bi[i]->comp_index.insert(std::make_pair(index, cind++));
+      if(i==0 || raw == b->bi[i]->center) { // Update on init (i=0) or if the center (as b_bud doesn't update raw->comp)
+        raw->comp = comp;
+      } // Handle init better?
     }
   }
   free(err_mat);
@@ -565,27 +449,32 @@ void b_e_update(B *b) {
  number of that sequence. The center of a Bi cannot leave.
 */
 bool b_shuffle2(B *b) {
-  unsigned int i, j, index;
+  unsigned int i, cind, index;
+  double e;
   bool shuffled = false;
+  Comparison *comp;
   Raw *raw;
   
-  double *emax = (double *) malloc(b->nraw * sizeof(double));
-  unsigned int *imax = (unsigned int *) malloc(b->nraw * sizeof(unsigned int));
-  if(emax==NULL || imax==NULL) Rcpp::stop("Memory allocation failed.");
+  double *emax = (double *) malloc(b->nraw * sizeof(double)); //E
+  Comparison **compmax = (Comparison **) malloc(b->nraw * sizeof(Comparison *)); //E
+  if(emax==NULL || compmax==NULL) Rcpp::stop("Memory allocation failed.");
 
   // Initialize emax/imax off of cluster 0
   // Comparisons to all raws exist in cluster 0, in index order
   for(index=0;index<b->nraw;index++) {
-    emax[index] = b->bi[0]->comp[index].lambda * b->bi[0]->reads;
-    imax[index] = 0;
+    compmax[index] = &b->bi[0]->comp[index];
+    emax[index] = compmax[index]->lambda * b->bi[0]->reads;
   }
   
-  // Iterate over remaining comparisons, find best E/i for each raw
+  // Iterate over comparisons, find comparison with best E for each raw
   for(i=1;i<b->nclust;i++) {
-    for(j=0;j<b->bi[i]->comp.size();j++) {
-      if(b->bi[i]->comp[j].lambda * b->bi[i]->reads > emax[b->bi[i]->comp[j].index]) { // better E
-        emax[b->bi[i]->comp[j].index] = b->bi[i]->comp[j].lambda * b->bi[i]->reads;
-        imax[b->bi[i]->comp[j].index] = b->bi[i]->comp[j].i;
+    for(cind=0;cind<b->bi[i]->comp.size();cind++) {
+      comp = &b->bi[i]->comp[cind];
+      index = comp->index;
+      e = comp->lambda * b->bi[i]->reads;
+      if(e > emax[index]) { // better E
+        compmax[index] = comp;
+        emax[index] = e;
       }
     }
   }
@@ -596,21 +485,23 @@ bool b_shuffle2(B *b) {
     for(int r=b->bi[i]->nraw-1; r>=0; r--) {
       raw = b->bi[i]->raw[r];
       // If a better cluster was found, move the raw to the new bi
-      if(imax[raw->index] != i) {
+      if(compmax[raw->index]->i != i) {
         if(raw->index == b->bi[i]->center->index) {  // Check if center
           if(VERBOSE) { Rprintf("Warning: Shuffle blocked the center of a Bi from leaving."); }
           continue;
         }
         // Moving raw
         bi_pop_raw(b->bi[i], r);
-        bi_add_raw(b->bi[imax[raw->index]], raw);
+        bi_add_raw(b->bi[compmax[raw->index]->i], raw);
+        // Assign raw the Comparison of its new cluster
+        raw->comp = *compmax[raw->index];
         shuffled = true;  
       }  
     } // for(r=0;r<b->bi[i]->nraw;r++)
   }
 
+  free(compmax);
   free(emax);
-  free(imax);
   
   return shuffled;
 }
@@ -637,7 +528,7 @@ void b_p_update(B *b) {
 */
 
 int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
-  int i, r, ci;
+  int i, r;
   int mini, minr, minreads, hamming;
   double minp = 1.0;
   double pA=1.0;
@@ -652,9 +543,8 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
       raw = b->bi[i]->raw[r];
       if(b->bi[i]->center->index == raw->index) { continue; } // Don't bud centers
       if(raw->reads < min_abund) { continue; }
-      ci = b->bi[i]->comp_index[raw->index];
-      hamming = b->bi[i]->comp[ci].hamming;
-      lambda = b->bi[i]->comp[ci].lambda;
+      hamming = raw->comp.hamming;
+      lambda = raw->comp.lambda;
 
       // Calculate the fold over-abundance and the hamming distance to this raw
       if(hamming >= min_hamming) { // Only those passing the hamming/fold screens can be budded
@@ -664,7 +554,7 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
             mini = i; minr = r;
             minp = raw->p;
             mine = lambda * b->bi[i]->reads;
-            mincomp = b->bi[i]->comp[ci];
+            mincomp = raw->comp;
             minreads = raw->reads;
           }
         }
@@ -686,7 +576,6 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
     
     // Add raw to new cluster.
     bi_add_raw(b->bi[i], raw);
-
 /*
     if(verbose) { 
       Rprintf("\nNew cluster from Raw %i in C%iR%i: ", raw->index, mini, minr);

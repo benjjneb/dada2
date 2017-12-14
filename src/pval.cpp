@@ -33,10 +33,9 @@ double get_pA(Raw *raw, Bi *bi) {
   unsigned int hamming;
   double lambda, E_reads, pval = 1.;
   
-  unsigned int ci = bi->comp_index[raw->index];
-  lambda = bi->comp[ci].lambda;
-  hamming = bi->comp[ci].hamming;
-  
+  lambda = raw->comp.lambda;
+  hamming = raw->comp.hamming;
+
   if(raw->reads == 1) {   // Singleton. No abundance pval.
     pval=1.;
   } 
@@ -167,3 +166,144 @@ double compute_lambda_ts(Raw *raw, Sub *sub, unsigned int ncol, double *err_mat,
   return lambda;
 }
 
+/*
+ *  Code below is modified from the R source code...
+ *  https://github.com/wch/r-source/blob/af7f52f70101960861e5d995d3a4bec010bc89e6/src/nmath/ppois.c
+ *  https://github.com/wch/r-source/blob/af7f52f70101960861e5d995d3a4bec010bc89e6/src/nmath/pgamma.c
+ * 
+ *  Mathlib : A C Library of Special Functions
+ *  Copyright (C) 2005-6 Morten Welinder <terra@gnome.org>
+ *  Copyright (C) 2005-10 The R Foundation
+ *  Copyright (C) 2006-2015 The R Core Team
+ *  Copyright (C) 1998 Ross Ihaka
+ *  Copyright (C) 2000 The R Core Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, a copy is available at
+ *  https://www.R-project.org/Licenses/
+ *
+ *  DESCRIPTION
+ *
+ *    The distribution function of the Poisson distribution.
+ */
+
+/*
+#include "nmath.h"
+#include "dpq.h"
+
+// Rcpp::ppois(n_repeats, E_reads, false);
+// Can assume...
+// x is an integer and >= 1
+// lambda is > 0
+// lower_tail is false
+// log_p is false
+double ppois(double x, double lambda, int lower_tail, int log_p)
+{
+  if(lambda <= 0.) Rcpp::stop("Lambda must be > 0.");
+  if (x < 0) Rcpp::stop("x must be >= 0.");
+  x = floor(x + 1e-7); // Why?
+  
+  return pgamma(lambda, x + 1, 1., !lower_tail, log_p);
+}
+
+// x > 0, alph is an integer and >=2, scale=1., lower_tail=true, log_p=false
+double pgamma(double x, double alph, double scale, int lower_tail, int log_p)
+{
+  if(alph <= 0. || scale <= 0.) Rcpp::stop("alph > 0 and scale > 0 are required.")
+  x /= scale;
+  return pgamma_raw (x, alph, lower_tail, log_p);
+}
+
+// x>0 (the original lambda), alph is an integer and >=2, lower_tail=true, log_p=false
+double pgamma_raw (double x, double alph, int lower_tail, int log_p)
+{
+  // Here, assume that  (x,alph) are not NA  &  alph > 0 .
+  
+  double res;
+  
+///?  R_P_bounds_01(x, 0., ML_POSINF);
+  
+  if (x < 1) {
+    res = pgamma_smallx (x, alph, lower_tail, log_p);
+  } else if (x <= alph - 1 && x < 0.8 * (alph + 50)) {
+    // incl. large alph compared to x 
+    double sum = pd_upper_series (x, alph, log_p);// = x/alph + o(x/alph) 
+    double d = dpois_wrap (alph, x, log_p);
+    
+    if (!lower_tail)
+      res = log_p
+      ? R_Log1_Exp (d + sum)
+        : 1 - d * sum;
+    else
+      res = log_p ? sum + d : sum * d;
+  } else if (alph - 1 < x && alph < 0.8 * (x + 50)) {
+    // incl. large x compared to alph 
+    double sum;
+    double d = dpois_wrap (alph, x, log_p);
+
+    if (alph < 1) {
+      if (x * DBL_EPSILON > 1 - alph)
+        sum = R_D__1;
+      else {
+        double f = pd_lower_cf (alph, x - (alph - 1)) * x / alph;
+        // = [alph/(x - alph+1) + o(alph/(x-alph+1))] * x/alph = 1 + o(1) 
+        sum = log_p ? log (f) : f;
+      }
+    } else {
+      sum = pd_lower_series (x, alph - 1);// = (alph-1)/x + o((alph-1)/x) 
+        sum = log_p ? log1p (sum) : 1 + sum;
+    }
+    
+    if (!lower_tail)
+      res = log_p ? sum + d : sum * d;
+    else
+      res = log_p
+      ? R_Log1_Exp (d + sum)
+        : 1 - d * sum;
+  } else { // x >= 1 and x fairly near alph. 
+    res = ppois_asymp (alph - 1, x, !lower_tail, log_p);
+  }
+  
+  //
+  // We lose a fair amount of accuracy to underflow in the cases
+  // where the final result is very close to DBL_MIN.	 In those
+  // cases, simply redo via log space.
+  //
+  if (!log_p && res < DBL_MIN / DBL_EPSILON) {
+    // with(.Machine, double.xmin / double.eps) #|-> 1.002084e-292
+    return exp (pgamma_raw (x, alph, lower_tail, 1));
+  } else
+    return res;
+}
+
+/// dpois_wrap (x__1, lambda) := dpois(x__1 - 1, lambda);  where
+ // dpois(k, L) := exp(-L) L^k / gamma(k+1)  {the usual Poisson probabilities}
+ //
+ // and  dpois*(.., give_log = TRUE) :=  log( dpois*(..) )
+ //
+static double
+  dpois_wrap (double x_plus_1, double lambda, int give_log)
+  {
+    if (x_plus_1 > 1)
+      return dpois_raw (x_plus_1 - 1, lambda, give_log);
+    if (lambda > fabs(x_plus_1 - 1) * M_cutoff)
+      return R_D_exp(-lambda - lgammafn(x_plus_1));
+    else {
+      double d = dpois_raw (x_plus_1, lambda, give_log);
+
+      return give_log
+        ? d + log (x_plus_1 / lambda)
+          : d * (x_plus_1 / lambda);
+    }
+  }
+*/

@@ -77,7 +77,7 @@ typedef struct {
   unsigned int index;   // The index of this Raw in b->raw[index]
   double p;    // abundance pval relative to the current Bi
   double E_minmax;
-  Comparison comp;
+  Comparison comp;  // the comparison between this Raw and...
 } Raw;
 
 // Bi: This is one cluster or partition. Contains raws grouped in fams.
@@ -101,8 +101,7 @@ typedef struct {
   double birth_fold; // the multiple of expectations at birth
   double birth_e; // the expected number of reads at birth
   Comparison birth_comp; // the Comparison object at birth
-  std::vector<Comparison> comp;
-  std::unordered_map<unsigned int, unsigned int> comp_index;
+  std::vector<Comparison> comp; // all Comparisons with raws that could potentially join this Bi
 } Bi;
 
 // B: holds all the clusters. The full clustering (or partition).

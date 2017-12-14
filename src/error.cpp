@@ -92,10 +92,11 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
     // This is not as exhaustive anymore
     tot_e = 0.0;
     for(j=0;j<b->nclust;j++) {
-      if(i != j && b->bi[j]->comp_index.count(b->bi[i]->center->index) > 0) {
-        cind = b->bi[j]->comp_index[b->bi[i]->center->index];
-        tot_e += b->bi[j]->comp[cind].lambda * b->bi[j]->reads;
-//        b->bi[j]->e[b->bi[i]->center->index];
+      if(i==j) continue;
+      for(cind=0;cind<b->bi[j]->comp.size();cind++) {
+        if(b->bi[j]->comp[cind].index == b->bi[i]->center->index) {
+          tot_e += b->bi[j]->comp[cind].lambda * b->bi[j]->reads;
+        }
       }
     }
     Rpvals[i] = calc_pA(1+b->bi[i]->reads, tot_e); // Add 1 because calc_pA subtracts 1 (conditional p-val)
