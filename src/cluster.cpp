@@ -44,9 +44,9 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
   raw->reads = reads;
   // Allocate and copy quals (quals downgraded to floats here for memory savings)
   if(qual) { 
-    raw->qual = (float *) malloc(raw->length * sizeof(float)); //E
+    raw->qual = (uint8_t *) malloc(raw->length * sizeof(uint8_t)); //E
     if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed.");
-    for(size_t i=0;i<raw->length;i++) { raw->qual[i] = (float) qual[i]; }
+    for(size_t i=0;i<raw->length;i++) { raw->qual[i] = (uint8_t) round(qual[i]); }
   } else {
     raw->qual = NULL;
   }
@@ -576,77 +576,3 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
   if(verbose) { Rprintf("\nNo significant pval, no new cluster.\n"); }
   return 0;
 }
-
-/* Bi_make_consensus:
-  Uses the alignments to the cluster center to construct a consensus sequence, which
-  is then assigned to bi->seq
-
-void bi_make_consensus(Bi *bi, bool use_quals) {
-  int i,r,s,nti0,nti1,pos;
-  double counts[4][SEQLEN] = {{0.0}};
-  Sub *sub = NULL;
-  Raw *raw;
-  
-  if(!bi->center) { return; }
-  int len = bi->center->length;
-  if(len >= SEQLEN) { return; }
-  
-  for(r=0;r<bi->nraw;r++) {
-    raw = bi->raw[r];
-    sub = bi->sub[raw->index];
-    // Assign all counts to center sequence
-    for(i=0;i<len;i++) {
-      nti0 = ((int) bi->center->seq[i]) - 1;
-      if(use_quals) {
-        counts[nti0][i] += (raw->reads * (double) raw->qual[i]);  // NEED TO EXCEPT THIS IF NOT USING QUALS!!
-      } else {
-        counts[nti0][i] += raw->reads;
-      }
-    }
-    // Move counts at all subs to proper nt
-    if(sub) {
-      for(s=0;s<sub->nsubs;s++) {
-        nti0 = ((int) sub->nt0[s]) - 1;
-        nti1 = ((int) sub->nt1[s]) - 1;
-        pos = sub->pos[s];
-        if(use_quals) {
-          counts[nti0][pos] -= (raw->reads * (double) raw->qual[pos]);
-          counts[nti1][pos] += (raw->reads * (double) raw->qual[pos]);
-        } else {
-          counts[nti0][pos] -= raw->reads;
-          counts[nti1][pos] += raw->reads;
-        }
-      }
-    }
-  } // for(r=0;r<bi->nraw;r++)
-  
-  // Use counts to write consensus
-  strcpy(bi->seq, bi->center->seq);
-  for(i=0;i<len;i++) {
-    if(counts[0][i] > counts[1][i] && counts[0][i] > counts[2][i] && counts[0][i] > counts[3][i]) {
-      bi->seq[i] = 1;
-    } 
-    else if(counts[1][i] > counts[0][i] && counts[1][i] > counts[2][i] && counts[1][i] > counts[3][i]) {
-      bi->seq[i] = 2;
-    }
-    else if(counts[2][i] > counts[0][i] && counts[2][i] > counts[1][i] && counts[2][i] > counts[3][i]) {
-      bi->seq[i] = 3;
-    }
-    else if(counts[3][i] > counts[0][i] && counts[3][i] > counts[1][i] && counts[3][i] > counts[2][i]) {
-      bi->seq[i] = 4;
-    } else { // TIES! These are not properly dealt with currently!
-      bi->seq[i] = bi->center->seq[i];
-    }
-  }
-  bi->seq[len] = '\0';
-} */
-
-/* B_make_consensus:
-  Makes consensus sequences for all Bi.
-
-void b_make_consensus(B *b) {
-  for (int i=0; i<b->nclust; i++) {
-    bi_make_consensus(b->bi[i], b->use_quals);
-  }
-}
-*/

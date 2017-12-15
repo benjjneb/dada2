@@ -659,13 +659,13 @@ Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, b
     sub->q0 = NULL;
     sub->q1 = NULL;
     if(raw0->qual && raw1->qual) {
-      sub->q0 = (double *) malloc(sub->nsubs * sizeof(double)); //E
-      sub->q1 = (double *) malloc(sub->nsubs * sizeof(double)); //E
+      sub->q0 = (uint8_t *) malloc(sub->nsubs * sizeof(uint8_t)); //E
+      sub->q1 = (uint8_t *) malloc(sub->nsubs * sizeof(uint8_t)); //E
       if (sub->q0 == NULL || sub->q1 == NULL) { Rcpp::stop("Memory allocation failed."); }
       
       for(s=0;s<sub->nsubs;s++) {
-        sub->q0[s] = raw0->qual[sub->pos[s]];
-        sub->q1[s] = raw1->qual[sub->map[sub->pos[s]]];
+        sub->q0[s] = raw0->qual[sub->pos[s]]; // allocated uint8_t
+        sub->q1[s] = raw1->qual[sub->map[sub->pos[s]]]; // allocated uint8_t
       }
     }
   }
@@ -707,11 +707,11 @@ Sub *sub_copy(Sub *sub) {
   memcpy(rsub->key, sub->key, (6*nsubs) + 1);
 
   if(sub->q0 && sub->q1) {
-    rsub->q0 = (double *) malloc(nsubs * sizeof(double)); //E
-    rsub->q1 = (double *) malloc(nsubs * sizeof(double)); //E
+    rsub->q0 = (uint8_t *) malloc(nsubs * sizeof(uint8_t)); //E
+    rsub->q1 = (uint8_t *) malloc(nsubs * sizeof(uint8_t)); //E
     if (rsub->q0 == NULL || rsub->q1 == NULL) { Rcpp::stop("Memory allocation failed."); }
-    memcpy(rsub->q0, sub->q0, nsubs * sizeof(double));
-    memcpy(rsub->q1, sub->q1, nsubs * sizeof(double));
+    memcpy(rsub->q0, sub->q0, nsubs * sizeof(uint8_t)); // allocated double
+    memcpy(rsub->q1, sub->q1, nsubs * sizeof(uint8_t)); // allocated double
   } else {
     rsub->q0 = NULL;
     rsub->q1 = NULL;

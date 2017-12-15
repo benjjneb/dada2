@@ -78,7 +78,7 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
         sub = birth_subs[i];
         if(sub && sub->q1) {
           for(s=0;s<sub->nsubs;s++) {
-            q_ave += (sub->q1[s]);
+            q_ave += (sub->q1[s]); // Numeric vector for output
           }
           q_ave = q_ave/((double)sub->nsubs);
         }
@@ -134,7 +134,7 @@ Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool h
         }
         nti0 = (int) (center->seq[pos0] - 1);
         nti1 = (int) (raw->seq[pos1] - 1);
-        qual = round(raw->qual[pos1]);
+        qual = raw->qual[pos1]; // qual=unsigned int
         // And record these counts
         t_ij = (4*nti0)+nti1;
         if(has_quals) {
@@ -183,7 +183,7 @@ Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int
           // Add expected error count
           if(use_quals) {
             // Turn quality into the index in the array
-            qind = round(raw->qual[pos1]);
+            qind = raw->qual[pos1];  // qind = unsigned int
           } else {
             qind = 0;
           }
@@ -224,7 +224,7 @@ Rcpp::NumericMatrix b_make_cluster_quality_matrix(B *b, Sub **subs, bool has_qua
               continue;
             }
             nreads[pos0] += raw_reads;
-            Rquals(pos0,i) += (raw->qual[pos1] * raw_reads);
+            Rquals(pos0,i) += (raw->qual[pos1] * raw_reads);  // Output qual construction
           }
         }
       } // for(pos0=0;pos0<len1;pos0++)
@@ -266,7 +266,7 @@ Rcpp::DataFrame b_make_birth_subs_df(B *b, Sub **birth_subs, bool has_quals) {
         int2nt(buf, buf);
         bs_nt1[j].assign(std::string(buf));
         if(has_quals) {
-          bs_qual[j] = sub->q1[s];
+          bs_qual[j] = sub->q1[s];  // NumericVector, making birth sub quals from sub object
         } else {
           bs_qual[j] = Rcpp::NumericVector::get_na();
         }

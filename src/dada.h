@@ -60,15 +60,15 @@ typedef struct {
   uint16_t *pos;    // sequence position of the substitition: index in the reference seq
   char *nt0;   // nt in reference seq
   char *nt1;   // different nt in aligned seq
-  double *q0;  // quality in reference seq
-  double *q1;  // quality in aligned seq
+  uint8_t *q0;  // quality score in reference seq
+  uint8_t *q1;  // quality score in aligned seq
   char *key;   // string of all subs: concatenation of "%c%d%c," % nt0,pos,nt1
 } Sub;
 
 // Raw: Container for each unique sequence/abundance
 typedef struct {
   char *seq;   // the sequence, stored as C-string with A=1,C=2,G=3,T=4
-  float *qual; // the average qualities at each position for this unique
+  uint8_t *qual; // the rounded average qualities at each position for this unique
   uint16_t *kmer;   // the kmer vector of this sequence
   uint8_t *kmer8;   // the kmer vector of this sequence
   uint16_t *kord;   // the kmers in order of this sequence

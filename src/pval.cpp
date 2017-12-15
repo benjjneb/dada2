@@ -55,11 +55,10 @@ double get_pA(Raw *raw, Bi *bi) {
 
 // This calculates lambda from a lookup table index by transition (row) and rounded quality (col)
 double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int ncol) {
-  // use_quals does nothing in this function, just here for backwards compatability for now
   int s, pos0, pos1, nti0, nti1, len1;
   double lambda;
   int tvec[SEQLEN];
-  int qind[SEQLEN];
+  unsigned int qind[SEQLEN];
   
   if(!sub) { // NULL Sub, outside Kmer threshold
     return 0.0;
@@ -77,13 +76,9 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
     }
     if(use_quals) {
       // Turn quality into the index in the array
-      qind[pos1] = round(raw->qual[pos1]);
+      qind[pos1] = raw->qual[pos1]; // unsigned int
     } else {
-      qind[pos1] = 0;
-    }
-    
-    if( qind[pos1] > (ncol-1) ) {
-      Rcpp::stop("Rounded quality exceeded range of err lookup table.");
+      qind[pos1] = 0; // unsigned int
     }
   }
   
@@ -114,8 +109,8 @@ double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_q
 double compute_lambda_ts(Raw *raw, Sub *sub, unsigned int ncol, double *err_mat, bool use_quals) {
   int s, pos0, pos1, nti0, nti1, len1;
   double lambda;
-  int tvec[SEQLEN];
-  int qind[SEQLEN];
+  unsigned int tvec[SEQLEN];
+  unsigned int qind[SEQLEN];
   
   if(!sub) { // NULL Sub, outside Kmer threshold
     return 0.0;
@@ -133,7 +128,7 @@ double compute_lambda_ts(Raw *raw, Sub *sub, unsigned int ncol, double *err_mat,
     }
     if(use_quals) {
       // Turn quality into the index in the array
-      qind[pos1] = round(raw->qual[pos1]);
+      qind[pos1] = raw->qual[pos1]; // qind = unsigned int
     } else {
       qind[pos1] = 0;
     }
