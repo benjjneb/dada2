@@ -139,98 +139,6 @@ double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int 
   return (1. - dot);
 }
 
-uint16_t *get_kmer(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
-  int i, j, nti;
-  size_t len = strlen(seq);
-  if(len <= 0 || len > SEQLEN) { Rcpp::stop("Unexpected sequence length."); }
-  if(k >= len || k < 3 || k > 8) { Rcpp::stop("Invalid kmer-size."); }
-  size_t klen = len - k + 1; // The number of kmers in this sequence
-  size_t kmer = 0;
-  size_t n_kmers = (1 << (2*k));  // 4^k kmers
-  uint16_t *kvec = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
-  if (kvec == NULL)  Rcpp::stop("Memory allocation failed.");
-  for(kmer=0;kmer<n_kmers;kmer++) { kvec[kmer] = 0; }
-  
-  if(len <=0 || len > SEQLEN) {
-    Rcpp::stop("Unexpected sequence length.");
-  }
-  
-  for(i=0; i<klen; i++) {
-    kmer = 0;
-    for(j=i; j<i+k; j++) {
-      nti = ((int) seq[j]) - 1; // Change 1s, 2s, 3s, 4s, to 0/1/2/3
-      if(nti != 0 && nti != 1 && nti != 2 && nti != 3) {
-        Rcpp::stop("Unexpected nucleotide.");
-        kmer = 999999;
-        break;
-      }
-      kmer = 4*kmer + nti;
-    }
-    
-    // Make sure kmer index is valid. This doesn't solve the N's/-'s
-    // issue though, as the "length" of the string (# of kmers) needs
-    // to also reflect the reduction from the N's/-'s
-    if(kmer == 999999) { ; } 
-    else if(kmer >= n_kmers) {
-      Rcpp::stop("Kmer index out of range.");
-    } else { // Valid kmer
-      kvec[kmer]++;
-    }
-  }
-  return kvec;
-}
-
-uint8_t *get_kmer8(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
-  int i, j, nti;
-  size_t len = strlen(seq);
-  if(len <= 0 || len > SEQLEN) { Rcpp::stop("Unexpected sequence length."); }
-  if(k >= len || k < 3 || k > 8) { Rcpp::stop("Invalid kmer-size."); }
-  size_t klen = len - k + 1; // The number of kmers in this sequence
-  size_t kmer = 0;
-  size_t n_kmers = (1 << (2*k));  // 4^k kmers
-  uint16_t *kvec = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
-  if (kvec == NULL)  Rcpp::stop("Memory allocation failed.");
-  for(kmer=0;kmer<n_kmers;kmer++) { kvec[kmer] = 0; }
-  
-  if(len <=0 || len > SEQLEN) {
-    Rcpp::stop("Unexpected sequence length.");
-  }
-  
-  for(i=0; i<klen; i++) {
-    kmer = 0;
-    for(j=i; j<i+k; j++) {
-      nti = ((int) seq[j]) - 1; // Change 1s, 2s, 3s, 4s, to 0/1/2/3
-      if(nti != 0 && nti != 1 && nti != 2 && nti != 3) {
-        Rcpp::stop("Unexpected nucleotide.");
-        kmer = 999999;
-        break;
-      }
-      kmer = 4*kmer + nti;
-    }
-    
-    // Make sure kmer index is valid. This doesn't solve the N's/-'s
-    // issue though, as the "length" of the string (# of kmers) needs
-    // to also reflect the reduction from the N's/-'s
-    if(kmer == 999999) { ; } 
-    else if(kmer >= n_kmers) {
-      Rcpp::stop("Kmer index out of range.");
-    } else { // Valid kmer
-      kvec[kmer]++;
-    }
-  }
-  uint8_t *kvec8 = (uint8_t *) malloc(n_kmers * sizeof(uint8_t)); //E
-  if (kvec8 == NULL)  Rcpp::stop("Memory allocation failed.");
-  for(kmer=0;kmer<n_kmers;kmer++) { 
-    if(kvec[kmer]<255) {
-      kvec8[kmer] = (uint8_t)kvec[kmer];
-    } else {
-      kvec8[kmer] = 255;
-    }
-  }
-  free(kvec);
-  return(kvec8);
-}
-
 void assign_kmer8(uint8_t *kvec8, const char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
   int i, j, nti;
   size_t len = strlen(seq);
@@ -319,7 +227,7 @@ void assign_kmer(uint16_t *kvec, const char *seq, int k) {  // Assumes a clean s
 }
 
 // Returns the vector of the kmers in order
-uint16_t *get_kmer_order(char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
+void assign_kmer_order(uint16_t *kord, char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
   int i, j, nti;
   size_t len = strlen(seq);
   if(len <=0 || len > SEQLEN) { Rcpp::stop("Unexpected sequence length."); }
@@ -327,7 +235,6 @@ uint16_t *get_kmer_order(char *seq, int k) {  // Assumes a clean seq (just 1s,2s
   size_t klen = len - k + 1; // The number of kmers in this sequence
   size_t kmer = 0;
   size_t n_kmers = (1 << (2*k));  // 4^k kmers
-  uint16_t *kord = (uint16_t *) malloc(klen * sizeof(uint16_t)); //E
   if (kord == NULL)  Rcpp::stop("Memory allocation failed.");
   for(i=0;i<klen;i++) { kord[i] = 0; }
   
@@ -353,6 +260,5 @@ uint16_t *get_kmer_order(char *seq, int k) {  // Assumes a clean seq (just 1s,2s
       kord[i] = kmer;
     }
   }
-  return kord;
 }
 

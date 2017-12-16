@@ -11,7 +11,7 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
   char **al;
   double kdist = 0.0;
 /// Commented lines relate to testing of add'l speedups
-///  double kodist = -1.0; // Needs to be different than kdist for fall-back when use_kmers=FALSE
+  double kodist = -1.0; // Needs to be different than kdist for fall-back when use_kmers=FALSE
 ///  static size_t nnw=0;
 ///  static size_t ngl=0;
 ///  static size_t nkm=0;
@@ -23,7 +23,7 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
       if(kdist<0) { // Overflow
         kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
       }
-///      kodist = kord_dist_SSEi(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
+      kodist = kord_dist_SSEi(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
     } else if(SSE==1) { // 16-bit explicit SSE
       kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
 ///      kodist = kord_dist(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
@@ -35,8 +35,8 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
 ///    nkm++;
-///  } else if(kodist == kdist) {
-///    al = nwalign_gapless(raw1->seq, raw2->seq);
+  } else if(kodist == kdist) {
+    al = nwalign_gapless(raw1->seq, raw2->seq);
 ///    ngl++;
   } else if(vectorized_alignment) { // ASSUMES SCORE MATRIX REDUCES TO MATCH/MISMATCH
     al = nwalign_vectorized2(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, 0, band);

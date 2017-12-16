@@ -38,11 +38,8 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
   // Assign sequence and associated properties
   strcpy(raw->seq, seq);
   raw->length = strlen(seq);
-///  raw->kmer = get_kmer(seq, KMER_SIZE);
-///  raw->kmer8 = get_kmer8(seq, KMER_SIZE);
-  raw->kord = get_kmer_order(seq, KMER_SIZE);
   raw->reads = reads;
-  // Allocate and copy quals (quals downgraded to floats here for memory savings)
+  // Allocate and copy quals (quals downgraded to uint8_t here for memory savings)
   if(qual) { 
     raw->qual = (uint8_t *) malloc(raw->length * sizeof(uint8_t)); //E
     if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed.");
@@ -58,9 +55,6 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
 void raw_free(Raw *raw) {
   free(raw->seq);
   if(raw->qual) { free(raw->qual); }
-///  free(raw->kmer);
-///  free(raw->kmer8);
-  free(raw->kord);
   free(raw);  
 }
 

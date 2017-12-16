@@ -129,7 +129,7 @@ typedef struct {
    -------- METHODS METHODS METHODS ----------
    ------------------------------------------- */
 
-// methods implemented in cluster.c
+// methods implemented in cluster.cpp
 B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, int homo_gap_pen, double omegaA, int band_size, bool vectorized_alignment, bool use_quals);
 Raw *raw_new(char *seq, double *qual, unsigned int reads);
 void raw_free(Raw *raw);
@@ -147,7 +147,7 @@ char **b_get_seqs(B *b);
 int *b_get_abunds(B *b);
 //void b_make_consensus(B *b);
 
-// methods implemented in misc.c
+// methods implemented in misc.cpp
 void nt2int(char *oseq, const char *iseq);
 void int2nt(char *oseq, const char *iseq);
 void ntcpy(char *oseq, const char *iseq);
@@ -157,17 +157,17 @@ void align_print(char **al);
 void err_print(double err[4][4]);
 void test_fun(int i);
 
-// method implemented in nwalign_endsfree.c
+// method implemented in nwalign_endsfree.cpp
 char **nwalign(const char *s1, const char *s2, int score[4][4], int gap_p, int band);
 char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap_p, int band);
 char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], int gap_p, int gap_homo_p, int band);
 char **nwalign_vectorized2(const char *s1, const char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band);
 char **nwalign_gapless(const char *s1, const char *s2);
 char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmer, double kdist_cutoff, int band, bool vectorized_alignment, int SSE);
-uint16_t *get_kmer(char *seq, int k);
+
+// methods implemented in kmers.cpp
 void assign_kmer(uint16_t *kvec, const char *seq, int k);
-uint16_t *get_kmer_order(char *seq, int k);
-uint8_t *get_kmer8(char *seq, int k);
+void assign_kmer_order(uint16_t *kord, char *seq, int k);
 void assign_kmer8(uint8_t *kvec8, const char *seq, int k);
 double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
 double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);

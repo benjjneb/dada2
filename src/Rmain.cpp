@@ -143,6 +143,16 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     assign_kmer(raw->kmer, raw->seq, KMER_SIZE);
   }
   
+  /// Add uint16_t ordered kmer record in contiguous memory block
+  uint16_t *kord = (uint16_t *) malloc(nraw * maxlen * sizeof(uint16_t)); //E
+  if (kord == NULL)  Rcpp::stop("Memory allocation failed.");
+  // Construct a raw for each input sequence, store in raws[index]
+  for(index=0;index<nraw;index++) {
+    raw = raws[index];
+    raw->kord = &kord[index*maxlen];
+    assign_kmer_order(raw->kord, raw->seq, KMER_SIZE);
+  }
+  
   /********** RUN DADA *********/
   B *bb = run_dada(raws, nraw, err, c_score, gap, homo_gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, min_abund, use_quals, final_consensus, vectorized_alignment, multithread, verbose, SSE);
 
@@ -193,6 +203,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   free(raws);
   free(k8);
   free(k16);
+  free(kord);
   
   // Organize return List  
   return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap);
