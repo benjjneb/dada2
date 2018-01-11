@@ -193,7 +193,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   free(raws);
   free(k8);
   free(k16);
-  
   // Organize return List  
   return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap);
 }
