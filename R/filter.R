@@ -723,10 +723,10 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     fqF <- fqF[keep]; fqR <- fqR[keep]
     keep <- rep(TRUE, length(fqF))
     qmat <- as(quality(fqF), "matrix")
-    if(minQ[[1]] > truncQ[[1]]) suppressWarnings(keep <- keep & (apply(qmat, 1, min)>minQ[[1]]))
+    if(minQ[[1]] > truncQ[[1]]) suppressWarnings(keep <- keep & (apply(qmat, 1, min, na.rm=TRUE)>minQ[[1]]))
     if(maxEE[[1]] < Inf) keep <- keep & C_matrixEE(qmat) <= maxEE[[1]]
     qmat <- as(quality(fqR), "matrix")
-    if(minQ[[2]] > truncQ[[2]]) suppressWarnings(keep <- keep & (apply(qmat, 1, min)>minQ[[2]]))
+    if(minQ[[2]] > truncQ[[2]]) suppressWarnings(keep <- keep & (apply(qmat, 1, min, na.rm=TRUE)>minQ[[2]]))
     if(maxEE[[2]] < Inf) keep <- keep & C_matrixEE(qmat) <= maxEE[[2]]
     fqF <- fqF[keep]; fqR <- fqR[keep]
     rm(qmat)
