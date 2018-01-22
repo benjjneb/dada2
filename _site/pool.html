@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>Pooling samples</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+
+.section h2 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h3 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h4 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h5 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h6 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">dada2</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="dada-installation.html">Install</a>
+</li>
+<li>
+  <a href="tutorial.html">Tutorial</a>
+</li>
+<li>
+  <a href="bigdata.html">Big Data</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+    </li>
+    <li>
+      <a href="assign.html">Taxonomy</a>
+    </li>
+    <li>
+      <a href="pool.html">Pooling</a>
+    </li>
+    <li>
+      <a href="faq.html">FAQ</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Evaluation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+    </li>
+    <li>
+      <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="SMBS_DADA2.pdf">Symposium Slides</a>
+    </li>
+    <li>
+      <a href="SotA.html">Benchmarking</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://www.twitter.com/bejcal">
+    <span class="ion ion-social-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2/issues">
+    <span class="fa fa-question fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Pooling samples</h1>
+
+</div>
+
+
+<p>The <code>dada(...)</code> function implements the high-resolution sample-inference at the core of the dada2 package. Because <code>dada(...)</code> resolves amplicon sequence variants (ASVs) exactly, it is possible to analyze samples separately before combining them together in a final sequence table. However, the <code>dada(...)</code> function also allows samples to be pooled together for the error rate estimation and sample inference steps. Here we demonstrate that functionality, and discuss the pros and cons of pooling.</p>
+<hr />
+<div id="getting-ready" class="section level1">
+<h1>Getting ready</h1>
+<p>Load the necessary libraries:</p>
+<pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
+<pre><code>## [1] &#39;1.6.0&#39;</code></pre>
+<p>We’ll be working with the same data used in <a href="tutorial.html">the tutorial</a>, so grab that data if you don’t have it already and then set your working directory to its location:</p>
+<pre class="r"><code>path &lt;- &quot;~/MiSeq_SOP&quot; # CHANGE ME to the directory containing the fastq files after unzipping.
+fns &lt;- list.files(path)
+fnFs &lt;- fns[grepl(&quot;_R1_001.fastq$&quot;, fns)]
+sample.names &lt;- sapply(strsplit(fnFs, &quot;_&quot;), `[`, 1)</code></pre>
+<p>We’ll trim and filter just the forward reads for simplicity:</p>
+<pre class="r"><code>filtFs &lt;- paste0(sample.names, &quot;_filtered.fq.gz&quot;)
+for(i in seq_along(fnFs)) {
+  fastqFilter(file.path(path, fnFs[[i]]), file.path(path, filtFs[[i]]),
+              maxEE=2, truncLen=240, truncQ=2, rm.phix=TRUE)
+}</code></pre>
+<p>Dereplicate and name our samples:</p>
+<pre class="r"><code>drps &lt;- derepFastq(file.path(path,filtFs))
+names(drps) &lt;- sample.names</code></pre>
+<p> </p>
+</div>
+<div id="pooling-for-error-rate-estimation" class="section level1">
+<h1>Pooling for error rate estimation</h1>
+<p>The first type of pooling we’ll consider is pooling samples for error rate estimation. This is the default functionality of the <code>dada(...)</code> function when passed a list of samples, but for comparison purposes we’ll first look at what happens if we estimate error rates using just one sample alone:</p>
+<pre class="r"><code>dd1 &lt;- dada(drps[[1]], err=NULL, selfConsist=TRUE, multithread=TRUE)</code></pre>
+<pre><code>## Initializing error rates to maximum possible estimate.
+## Sample 1 - 7228 reads in 2014 unique sequences.
+##    selfConsist step 2 
+##    selfConsist step 3 
+##    selfConsist step 4 
+##    selfConsist step 5 
+## Convergence after  5  rounds.</code></pre>
+<pre class="r"><code>plotErrors(dd1, nominalQ=TRUE)</code></pre>
+<p><img src="pool_files/figure-html/estimate-1-1.png" width="672" /></p>
+<p>The two things to look for in the output of <code>plotErrors</code> are that the observed error rates (black dots) are reasonably well fit by the modeled error rates (black line), and that the error rates are sensible, in particular that they are mostly decreasing with quality score.</p>
+<p>Now let’s pool our samples while estimating error rates:</p>
+<pre class="r"><code>dd &lt;- dada(drps, err=NULL, selfConsist=TRUE, multithread=TRUE)</code></pre>
+<pre><code>## Initializing error rates to maximum possible estimate.
+## Sample 1 - 7228 reads in 2014 unique sequences.
+## Sample 2 - 5382 reads in 1667 unique sequences.
+## Sample 3 - 5539 reads in 1501 unique sequences.
+## Sample 4 - 2970 reads in 922 unique sequences.
+## Sample 5 - 2977 reads in 955 unique sequences.
+## Sample 6 - 4417 reads in 1314 unique sequences.
+## Sample 7 - 6870 reads in 1799 unique sequences.
+## Sample 8 - 4635 reads in 1460 unique sequences.
+## Sample 9 - 15934 reads in 3680 unique sequences.
+## Sample 10 - 11554 reads in 2803 unique sequences.
+## Sample 11 - 12171 reads in 3079 unique sequences.
+## Sample 12 - 5100 reads in 1590 unique sequences.
+## Sample 13 - 18312 reads in 3772 unique sequences.
+## Sample 14 - 6329 reads in 1502 unique sequences.
+## Sample 15 - 4116 reads in 1213 unique sequences.
+## Sample 16 - 7480 reads in 1859 unique sequences.
+## Sample 17 - 4823 reads in 1207 unique sequences.
+## Sample 18 - 4935 reads in 1401 unique sequences.
+## Sample 19 - 6586 reads in 1739 unique sequences.
+## Sample 20 - 4377 reads in 920 unique sequences.
+##    selfConsist step 2 
+##    selfConsist step 3 
+##    selfConsist step 4 
+##    selfConsist step 5 
+## Convergence after  5  rounds.</code></pre>
+<pre class="r"><code>plotErrors(dd, nominalQ=TRUE)</code></pre>
+<p><img src="pool_files/figure-html/estimate-pool-1.png" width="672" /></p>
+<p>The difference is not large, but the fit between the observed points and the modeled line has clearly improved by pooling together more data.</p>
+<p>There are two additional things to note here. First, it is not advised to pool samples that don’t share an “error history”, in particular samples that come from different sequencing runs or different PCR protocols. Samples from different runs should typically be run through the <code>dada(...)</code> function separately, so that the correct run-specific error rates can be learned.</p>
+<p>Second, it is generally not necessary to estimate error rates across an entire sequencing run. Because error rate estimation requires multiple loops through the <code>dada(...)</code> algorithm, it increases compute time significantly. Therefore it is often desirable to estimate error rates on a subset of the samples, and then use those error rates to process all of the samples with <code>selfConsist=FALSE</code>.</p>
+<p> </p>
+</div>
+<div id="pooling-for-sample-inference" class="section level1">
+<h1>Pooling for sample inference</h1>
+<p>De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won’t be the same. DADA2 resolves sequence variants exactly, and because DNA sequences are consistent labels samples can be processed independently and then combined (and this is the default behavior).</p>
+<p>Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were seen just once or twice in one sample but many times across samples. Pooled sample inference is also supported by calling <code>dada(..., pool=TRUE)</code>.</p>
+<p>Let’s start by processing our samples using the default sample-by-sample inference:</p>
+<pre class="r"><code>system.time(dd.sep &lt;- dada(drps, err=dd[[1]]$err_out))</code></pre>
+<pre><code>## Sample 1 - 7228 reads in 2014 unique sequences.
+## Sample 2 - 5382 reads in 1667 unique sequences.
+## Sample 3 - 5539 reads in 1501 unique sequences.
+## Sample 4 - 2970 reads in 922 unique sequences.
+## Sample 5 - 2977 reads in 955 unique sequences.
+## Sample 6 - 4417 reads in 1314 unique sequences.
+## Sample 7 - 6870 reads in 1799 unique sequences.
+## Sample 8 - 4635 reads in 1460 unique sequences.
+## Sample 9 - 15934 reads in 3680 unique sequences.
+## Sample 10 - 11554 reads in 2803 unique sequences.
+## Sample 11 - 12171 reads in 3079 unique sequences.
+## Sample 12 - 5100 reads in 1590 unique sequences.
+## Sample 13 - 18312 reads in 3772 unique sequences.
+## Sample 14 - 6329 reads in 1502 unique sequences.
+## Sample 15 - 4116 reads in 1213 unique sequences.
+## Sample 16 - 7480 reads in 1859 unique sequences.
+## Sample 17 - 4823 reads in 1207 unique sequences.
+## Sample 18 - 4935 reads in 1401 unique sequences.
+## Sample 19 - 6586 reads in 1739 unique sequences.
+## Sample 20 - 4377 reads in 920 unique sequences.</code></pre>
+<pre><code>##    user  system elapsed 
+##  23.805   0.402  24.276</code></pre>
+<p>Now we pool the samples for sample inference:</p>
+<pre class="r"><code>system.time(dd.pool &lt;- dada(drps, err=dd[[1]]$err_out, pool=TRUE))</code></pre>
+<pre><code>## 20 samples were pooled: 141735 reads in 23616 unique sequences.</code></pre>
+<pre><code>##    user  system elapsed 
+##  56.836   0.464  57.323</code></pre>
+<p>The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of multithreading) but sample-by-sample processing <a href="bigdata.html">remains computationally tractable out to any study size</a> (eg. 20 Hiseq runs).</p>
+<p>We’ll also take a quick look at the differences in output:</p>
+<pre class="r"><code>st &lt;- makeSequenceTable(dd.sep)
+st.sep &lt;- removeBimeraDenovo(st, multithread=TRUE)</code></pre>
+<pre><code>## As of the 1.4 release, the default method changed to consensus (from pooled).</code></pre>
+<pre class="r"><code>st &lt;- makeSequenceTable(dd.pool)
+st.pool &lt;- removeBimeraDenovo(st, multithread=TRUE)</code></pre>
+<pre><code>## As of the 1.4 release, the default method changed to consensus (from pooled).</code></pre>
+<pre class="r"><code>dim(st.sep); dim(st.pool)</code></pre>
+<pre><code>## [1]  20 277</code></pre>
+<pre><code>## [1]  20 299</code></pre>
+<p>As expected, pooling detected a few more amplicon sequence variants (ASVs) due to an increased power to detect rare variants.</p>
+<pre class="r"><code>sq.sep &lt;- getSequences(st.sep)
+sq.pool &lt;- getSequences(st.pool)
+sum(!sq.sep %in% sq.pool);sum(sq.sep %in% sq.pool); sum(!sq.pool %in% sq.sep)</code></pre>
+<pre><code>## [1] 21</code></pre>
+<pre><code>## [1] 256</code></pre>
+<pre><code>## [1] 43</code></pre>
+<pre class="r"><code>sum(st.sep[,!sq.sep %in% sq.pool])</code></pre>
+<pre><code>## [1] 242</code></pre>
+<pre class="r"><code>sum(st.sep[,sq.sep %in% sq.pool])</code></pre>
+<pre><code>## [1] 135355</code></pre>
+<pre class="r"><code>sum(st.pool[,sq.pool %in% sq.sep])</code></pre>
+<pre><code>## [1] 128010</code></pre>
+<pre class="r"><code>sum(st.pool[,!sq.pool %in% sq.sep])</code></pre>
+<pre><code>## [1] 1452</code></pre>
+<p>The large majority of ASVs, and the vast majority of reads (&gt;99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities.</p>
+</div>
+
+<div class="container" style="width: 100%;color:grey;text-align:right">
+  <hr>
+  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+</div>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

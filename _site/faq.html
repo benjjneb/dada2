@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>Frequently Asked Questions</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+
+.section h2 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h3 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h4 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h5 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h6 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">dada2</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="dada-installation.html">Install</a>
+</li>
+<li>
+  <a href="tutorial.html">Tutorial</a>
+</li>
+<li>
+  <a href="bigdata.html">Big Data</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+    </li>
+    <li>
+      <a href="assign.html">Taxonomy</a>
+    </li>
+    <li>
+      <a href="pool.html">Pooling</a>
+    </li>
+    <li>
+      <a href="faq.html">FAQ</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Evaluation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+    </li>
+    <li>
+      <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="SMBS_DADA2.pdf">Symposium Slides</a>
+    </li>
+    <li>
+      <a href="SotA.html">Benchmarking</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://www.twitter.com/bejcal">
+    <span class="ion ion-social-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2/issues">
+    <span class="fa fa-question fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Frequently Asked Questions</h1>
+
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#how-can-i-demultiplex-my-fastq-files">How can I demultiplex my fastq files?</a></li>
+<li><a href="#how-can-i-remove-primersadaptersetc-from-my-amplicon-reads">How can I remove primers/adapters/etc from my amplicon reads?</a></li>
+<li><a href="#what-if-my-forward-and-reverse-reads-arent-in-matching-order">What if my forward and reverse reads aren’t in matching order?</a></li>
+<li><a href="#can-i-use-dada2-with-my-454-or-ion-torrent-data">Can I use dada2 with my 454 or Ion Torrent data?</a></li>
+<li><a href="#can-i-use-dada2-if-my-reads-dont-overlap">Can I use DADA2 if my reads don’t overlap?</a></li>
+<li><a href="#what-if-the-self-consistency-loop-terminated-before-convergence">What if the self-consistency loop terminated before convergence?</a></li>
+<li><a href="#why-arent-any-of-my-reads-being-successfully-merged">Why aren’t any of my reads being successfully merged?</a></li>
+<li><a href="#why-are-so-many-of-my-reads-being-removed-as-chimeras">Why are so many of my reads being removed as chimeras?</a></li>
+<li><a href="#what-about-insert-other-question">What about [INSERT OTHER QUESTION]?</a></li>
+</ul>
+</div>
+
+<div id="how-can-i-demultiplex-my-fastq-files" class="section level2">
+<h2>How can I demultiplex my fastq files?</h2>
+<p>The dada2 workflow assumes that you are starting with demultiplexed fastq files. That is, there is one fastq (or one forward and one reverse) for each sample. This is commonly the format in which sequencing data is received from sequencing centers, but especially when using single-index barcoding it is also fairly common to receive un-demultiplexed data alongside an “index” fastq.</p>
+<p>There are multiple methods to demultiplex such data. We use <a href="https://github.com/yhwu/idemp">the idemp tool</a>. The <a href="http://hannonlab.cshl.edu/fastx_toolkit/">fastx-toolkit</a> performs demultiplexing.</p>
+<p>You can also demultiplex using <a href="http://qiime.org/">QIIME1</a> by running <code>split_libraries_fastq.py</code> followed by <code>split_sequence_file_on_sample_ids.py</code>. If using QIIME1 to demultiplex paired-end data, we recommend turning off filtering as the QIIME filtering causes the forward/reverse reads to be in mismatched order. You can do this by passing <code>split_libraries_fastq.py</code> the following arguments: <code>-r 999 -n 999 -q 0 -p 0.0001</code>. The <a href="https://docs.qiime2.org/">QIIME2 platform</a> also supports demultiplexing for the EMP indexing format.</p>
+<p> </p>
+</div>
+<div id="how-can-i-remove-primersadaptersetc-from-my-amplicon-reads" class="section level2">
+<h2>How can I remove primers/adapters/etc from my amplicon reads?</h2>
+<p>We recommend the <a href="http://cutadapt.readthedocs.io/en/stable/index.html">cutadapt tool</a> or the <a href="http://www.usadellab.org/cms/?page=trimmomatic">trimmomatic tool</a> for this purpose. Provided the primers are at the start of your reads and are a constant length, you can also use the <code>trimLeft</code> argument of dada2’s filtering functions to remove the primer nucleotides. <strong>Please double-check that your primers have been removed!</strong> The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.</p>
+<p> </p>
+</div>
+<div id="what-if-my-forward-and-reverse-reads-arent-in-matching-order" class="section level2">
+<h2>What if my forward and reverse reads aren’t in matching order?</h2>
+<p>This situation commonly arises when external filtering methods, like the QIIME demultiplexing script, are used and filter the forward and reverse reads independently. This can be remedied by using adding <code>matchIDs=TRUE</code> flag to the <code>filterAndTrim</code> or <code>fastqPairedFilter</code> functions. For example, if no more filtering is required, the following will retain just those reads that match between the forward and reverse fastq files (assumes Illumina fastq headers):</p>
+<pre class="s"><code>filterAndTrim(..., matchIDs=TRUE)</code></pre>
+<p> </p>
+</div>
+<div id="can-i-use-dada2-with-my-454-or-ion-torrent-data" class="section level2">
+<h2>Can I use dada2 with my 454 or Ion Torrent data?</h2>
+<p>Yes. We recommend the following 454-specific parameters for best results:</p>
+<pre class="s"><code>filterAndTrim(..., maxLen=XXX) # XXX depends on the chemistry
+dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)</code></pre>
+<p>We recommend the following IT-specific parameters when filtering Ion Torrent data for best results:</p>
+<pre class="s"><code>filterAndTrim(..., trimLeft=15)</code></pre>
+<p> </p>
+</div>
+<div id="can-i-use-dada2-if-my-reads-dont-overlap" class="section level2">
+<h2>Can I use DADA2 if my reads don’t overlap?</h2>
+<p>Yes, although we strongly recommend using primers that allow your paired-end reads to overlap significantly.</p>
+<p>The <code>mergePairs(..., justConcatenate=TRUE)</code> option allows the paired reads to be joined without any overlap, but with 10Ns inserted in between the forward and reverse reads. The chimera removal and <code>assignTaxonomy</code> functions will handle such merged reads, although some other functions may fail (eg. <code>addSpecies</code>).</p>
+<p> </p>
+</div>
+<div id="what-if-the-self-consistency-loop-terminated-before-convergence" class="section level2">
+<h2>What if the self-consistency loop terminated before convergence?</h2>
+<p>In almost all cases, just proceed with the learned error rates. While in most cases convergence is reached within the <code>MAX_CONSIST=10</code> rounds of self-consistent looping allowed by default, the error model is suitable to use as long as it is close to convergence. The estimation of the error rates is important primarily because of the huge difference in error rates that can exist between different runs and sequencing technologies. The small fluctuations in slow-converging datasets are minor relative to those major differences, and are often smaller than the uncertainty in the estimation methods anyway.</p>
+<p>For those who want to be sure the non-converged error model is reasonable, there are two ways to inspect the error rates and diagnose any potential issues. The first is to use <code>plotErrors(err, nominalQ=TRUE</code>). Do the fitted error rates (black line) reasonably fit the observations (black points) and generally decrease with increasing Q? Second, inspect the output of <code>dada2:::checkConvergence(err)</code>, which gives the sum of absolute differences between error rate parameters at each step. Are the final values much lower (multiple orders of magnitude) than the first two values? If the answers to both questions are yes, then it is appropriate to use the error rates as is. The perfectionist can try increasing the allowed number of self-consistency steps with e.g. <code>learnErrors(..., MAX_CONSIST=20)</code> and see if the error model improves further.</p>
+<p> </p>
+</div>
+<div id="why-arent-any-of-my-reads-being-successfully-merged" class="section level2">
+<h2>Why aren’t any of my reads being successfully merged?</h2>
+<p>Do your reads overlap after the trimming and filtering you performed? In the tutorial we analyzed 2x250 Miseq reads using the 515F and 805R primers, meaning the reads strongly overlap and we could trim as dictated by the quality scores. However, if you are using a less-overlapping sequencing/primer-set combination, you must retain enough sequence for the reads to healthily overlap (<code>mergePairs</code> requires 20 nts of overlap by default).</p>
+<p>Another possibility is that you have bad data. One quick way to test this is to simply look at the forward reads alone. If it’s 16S data, does <code>assignTaxonomy</code> identify any of the, say, top 20 output sequences? If not, or if you are using non-16S data, try BLAST-ing the top output sequences against nt. Are they hitting what you expect? If not, you probably have a bad sequencing run on your hands.</p>
+<p> </p>
+</div>
+<div id="why-are-so-many-of-my-reads-being-removed-as-chimeras" class="section level2">
+<h2>Why are so many of my reads being removed as chimeras?</h2>
+<p>It is common for chimeric sequences to be a majority (even large majority) of the total number of unique sequence variants inferred by the <code>dada(...)</code> algorithm, but they should not be a majority of the sequencing reads. That is, there may be many chimeras, but they are relatively low abundance.</p>
+<p>The most common reason that far too many reads are flagged as chimeric is that primer sequences were not removed prior to starting the dada2 workflow. The ambiguous nucleotides in universal primer sequences will be interpreted as real variation by the dada2 pipeline, and this interferes with the chimera algorithm. In most cases, if you see over <code>25%</code> of your sequencing reads being flagged chimeric, remove the primers from your reads and restart the workflow with the clean data.</p>
+<p> </p>
+</div>
+<div id="what-about-insert-other-question" class="section level2">
+<h2>What about [INSERT OTHER QUESTION]?</h2>
+<p>We actively support the dada2 package through the <a href="https://github.com/benjjneb/dada2/issues">issues tracker</a> on github. You can search previously posted topics using the search box at the top of the page (delete the “is:issue is:open” text and put in your search keywords). If you don’t find an answer for your issue in a previous post, please open a new issue and we will be happy to help.</p>
+<p> </p>
+</div>
+
+<div class="container" style="width: 100%;color:grey;text-align:right">
+  <hr>
+  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+</div>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

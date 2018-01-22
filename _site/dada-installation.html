@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>DADA2 Installation</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+
+.section h2 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h3 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h4 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h5 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h6 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">dada2</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="dada-installation.html">Install</a>
+</li>
+<li>
+  <a href="tutorial.html">Tutorial</a>
+</li>
+<li>
+  <a href="bigdata.html">Big Data</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+    </li>
+    <li>
+      <a href="assign.html">Taxonomy</a>
+    </li>
+    <li>
+      <a href="pool.html">Pooling</a>
+    </li>
+    <li>
+      <a href="faq.html">FAQ</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Evaluation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+    </li>
+    <li>
+      <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="SMBS_DADA2.pdf">Symposium Slides</a>
+    </li>
+    <li>
+      <a href="SotA.html">Benchmarking</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://www.twitter.com/bejcal">
+    <span class="ion ion-social-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2/issues">
+    <span class="fa fa-question fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">DADA2 Installation</h1>
+
+</div>
+
+
+<hr />
+<div id="install-binaries-from-bioconductor" class="section level2">
+<h2><strong>Install binaries from Bioconductor</strong></h2>
+<p>Binary installation is available through the Bioconductor package repository. Binary installation of the current version of the dada2 package (1.6) requires R 3.4.2 and Bioconductor version 3.6:</p>
+<pre class="s"><code>## try http:// if https:// URLs are not supported
+source(&quot;https://bioconductor.org/biocLite.R&quot;)
+biocLite(&quot;dada2&quot;)</code></pre>
+<p>Allow installation of any additional packages requested. You are ready to start using dada2!</p>
+<p><em>If the above installed an early version of dada2 (1.2 or 1.4) you can get the current dada2 release by updating your Bioconductor installation to version 3.6: <code>biocLite(&quot;BiocUpgrade&quot;)</code> then <code>biocLite()</code>. This may require updating R as well.</em></p>
+<hr />
+</div>
+<div id="install-from-source" class="section level2">
+<h2><strong>Install from source</strong></h2>
+<p>Source installation is available for R 3.2 or later, and the latest and greatest features will be available first through source installs of the development branch.</p>
+<div id="download" class="section level3">
+<h3>0. Download</h3>
+<ul>
+<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.6)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.6.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.6.tar.gz">tarball</a>.</p></li>
+<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.7)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+</ul>
+</div>
+<div id="install-external-dependencies" class="section level3">
+<h3>1. Install External Dependencies</h3>
+<p>The following instructions assume that you have installed R and have installed <a href="https://developer.apple.com/xcode/downloads/">Xcode</a> (Mac) or <a href="http://cran.r-project.org/bin/windows/Rtools/">Rtools</a> (Windows); as well as <a href="http://bioconductor.org/install/">Bioconductor</a>.</p>
+<p>For Bioconductor, start a fresh R session, and enter the following.</p>
+<pre class="r"><code>source(&quot;http://bioconductor.org/biocLite.R&quot;)
+biocLite(suppressUpdates = FALSE)
+biocLite(&quot;ShortRead&quot;, suppressUpdates = FALSE)</code></pre>
+</div>
+<div id="install-using-devtools" class="section level3">
+<h3>2. Install using devtools</h3>
+<p>The easiest method is to use the devtools package to install from github:</p>
+<pre class="r"><code>biocLite(&quot;devtools&quot;)
+library(&quot;devtools&quot;)
+devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
+<p>If that worked you’re done (see step 4)! If it failed on missing dependencies, goto step 2.</p>
+</div>
+<div id="a.-install-manually-from-source" class="section level3">
+<h3>2a. Install manually from source</h3>
+<p>Alternatively, you can install from the source by hand. First <a href="download.html">download the zipped package</a> and unzip it (or expand the tarball).</p>
+<p>Start a fresh R session, and enter the following.</p>
+<pre class="r"><code>install.packages(&quot;path/to/dada2&quot;,
+                 repos = NULL,
+                 type = &quot;source&quot;,
+                 dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
+<p>For example, if the dada2 source code directory was in <code>~/github/dada2</code>, then the following would work.</p>
+<pre class="r"><code>install.packages(&quot;~/github/dada2&quot;,
+                 repos = NULL,
+                 type = &quot;source&quot;,
+                 dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
+<p>Check Package Version</p>
+<pre class="r"><code>packageVersion(&quot;dada2&quot;)</code></pre>
+<pre><code>## [1] &#39;1.6.0&#39;</code></pre>
+</div>
+<div id="troubleshoot-dependencies-optional" class="section level3">
+<h3>3. Troubleshoot Dependencies (Optional)</h3>
+<p>At this point, there may be complaints about missing dependencies. To install missing dependencies on either <a href="http://cran.r-project.org/">CRAN</a> or <a href="http://bioconductor.org/install/">Bioconductor</a>, start a fresh R session, and enter the following.</p>
+<pre class="r"><code>source(&quot;http://bioconductor.org/biocLite.R&quot;)
+biocLite(&quot;missing_package_1&quot;)
+biocLite(&quot;missing_package_2&quot;)
+# ... and so on</code></pre>
+</div>
+<div id="re-attempt-dada2-installation" class="section level3">
+<h3>4. Re-attempt dada2 Installation</h3>
+<p>Install again, after dependencies have been installed.</p>
+<p>Devtools method:</p>
+<pre class="r"><code>library(&quot;devtools&quot;)
+devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
+<p>Manual install from source method:</p>
+<pre class="r"><code>install.packages(&quot;path/to/dada2&quot;,
+                 repos = NULL,
+                 type = &quot;source&quot;,
+                 dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
+<p>You should now be done, if installation was successful. If not, do not panic, and post a message to <a href="https://github.com/benjjneb/dada2/issues">the issue tracker</a>.</p>
+</div>
+<div id="load-package-explore-function-documentation" class="section level3">
+<h3>5. Load Package, Explore Function Documentation</h3>
+<pre class="r"><code>library(&quot;dada2&quot;)</code></pre>
+<pre><code>## Warning: package &#39;Rcpp&#39; was built under R version 3.4.2</code></pre>
+<p>Now that the package is loaded, you can explore the documentation using the R help system.</p>
+<pre class="r"><code>help(package=&quot;dada2&quot;)
+?derepFastq
+?dada</code></pre>
+<p>You are ready to use dada2!</p>
+</div>
+</div>
+
+<div class="container" style="width: 100%;color:grey;text-align:right">
+  <hr>
+  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+</div>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
