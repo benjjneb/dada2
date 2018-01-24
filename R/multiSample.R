@@ -181,7 +181,6 @@ is.sequence.table <- function(tab) {
   rval <- is.matrix(tab) && all(tab>=0) && 
     !is.null(colnames(tab)) && !is.null(colnames(tab)) &&
     all(sapply(colnames(tab), nchar)>0) &&
-    all(sapply(colnames(tab), C_isACGT)) &&
     all(sapply(rownames(tab), nchar)>0)
   rval
 }
