@@ -63,7 +63,7 @@ double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
   uint8_t dst[64];
   size_t STEP=16;
   int i;
-  uint8_t dotsum = 0;
+  uint16_t dotsum = 0;
   double dot = 0.0;
   
   __m128i vsum_a = _mm_set1_epi8(0x00);
@@ -92,7 +92,7 @@ double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
 // If different lengths, returns -1 (invalid)
 double kord_dist(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
   int i;
-  int16_t dotsum = 0;
+  uint16_t dotsum = 0;
   double dot = 0.0;
   
   if(len1 != len2 || kord1 == NULL || kord2 == NULL) { return(-1.0); } // Exit if different lengths
@@ -115,8 +115,8 @@ double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int 
   uint16_t dotsum = 0;
   double dot = 0.0;
   
-  if(len1 != len2 || kord1 == NULL || kord2 == NULL) { return(-1.0); } // Exit if different lengths
-  size_t klen = len1 - k + 1;
+  if(kord1 == NULL || kord2 == NULL) { return(-1.0); }
+  size_t klen = (len1 < len2 ? len1 : len2) - k + 1;
   size_t n_vec = klen - (klen % STEP); // Vectorize over this many
   
   __m128i vsum = _mm_set1_epi16(0);
