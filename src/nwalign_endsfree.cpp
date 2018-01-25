@@ -7,7 +7,7 @@
  * Banded Needleman Wunsch
  */
 
-char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE) {
+char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless) {
   char **al;
   double kdist = 0.0;
 /// Commented lines relate to testing of add'l speedups
@@ -23,19 +23,22 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
       if(kdist<0) { // Overflow
         kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
       }
-      kodist = kord_dist_SSEi(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
     } else if(SSE==1) { // 16-bit explicit SSE
       kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
 ///      kodist = kord_dist(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
     } else { // implicit vectorization
       kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
     }
+    if(gapless) {
+      kodist = kord_dist_SSEi(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
+    }    
   }
+  
   
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
 ///    nkm++;
-  } else if(kodist == kdist) {
+  } else if(gapless && kodist == kdist) {
     al = nwalign_gapless(raw1->seq, raw2->seq);
 ///    ngl++;
   } else if(vectorized_alignment) { // ASSUMES SCORE MATRIX REDUCES TO MATCH/MISMATCH
@@ -647,12 +650,12 @@ Sub *al2subs(char **al) {
 }
 
 // Wrapper for al2subs(raw_align(...)) that manages memory and qualities
-Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE) {
+Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless) {
   int s;
   char **al;
   Sub *sub;
 
-  al = raw_align(raw0, raw1, score, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment, SSE);
+  al = raw_align(raw0, raw1, score, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment, SSE, gapless);
   sub = al2subs(al);
 
   if(sub) {
