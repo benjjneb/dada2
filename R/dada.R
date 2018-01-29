@@ -136,9 +136,7 @@ dada <- function(derep,
   args <- list(...)
   # Catch the deprecated VERBOSE option
   if("VERBOSE" %in% names(args)) {
-    stop("DEPRECATED: The VERBOSE option has been replaced by the verbose argument. Please update your code.")
-    verbose <- args[["VERBOSE"]]
-    args[["VERBOSE"]] <- NULL
+    stop("DEFUNCT: The VERBOSE option has been replaced by the verbose argument. Please update your code.")
   }
   for(opnm in names(args)) {
     if(opnm %in% names(opts)) {
