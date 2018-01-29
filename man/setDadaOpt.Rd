@@ -40,8 +40,9 @@ BAND_SIZE: When set, banded Needleman-Wunsch alignments are performed. Banding r
  of indels, such as the ITS region in fungi, the BAND_SIZE parameter should be increased. Setting BAND_SIZE to a negative number
  turns off banding (i.e. full Needleman-Wunsch).
 
-SCORE_MATRIX: The score matrix for the Needleman-Wunsch alignment. This is a 4x4 matrix as no ambiguous nucleotides
- are allowed. Default is nuc44: -4 for mismatches, +5 for matches.
+MATCH: The score of a match in the Needleman-Wunsch alignment. Default is 4.
+ 
+MISMATCH: The score of a mismatch in the Needleman-Wunsch alignment. Default is -5.
  
 GAP_PENALTY: The cost of gaps in the Needleman-Wunsch alignment. Default is -8.
  

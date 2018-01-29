@@ -14,7 +14,7 @@ using namespace Rcpp;
 //' @useDynLib dada2
 //' @importFrom Rcpp evalCpp
 
-B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, int min_abund, bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, int SSE, bool gapless);
+B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, int min_abund, bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, int SSE, bool gapless);
 
 //------------------------------------------------------------------
 // C interface to run DADA on the provided unique sequences/abundance pairs. 
@@ -23,7 +23,7 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], i
 Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abundances,
                         Rcpp::NumericMatrix err,
                         Rcpp::NumericMatrix quals,
-                        Rcpp::NumericMatrix score, int gap,
+                        int match, int mismatch, int gap,
                         bool use_kmers, double kdist_cutoff,
                         int band_size,
                         double omegaA, 
@@ -38,7 +38,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
                         int SSE,
                         bool gapless) {
 
-  unsigned int i, j, r, index, pos, nraw, maxlen, minlen;
+  unsigned int i, r, index, pos, nraw, maxlen, minlen;
   Raw *raw;
   
   /********** INPUT VALIDATION *********/
@@ -65,16 +65,6 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     has_quals = true;
     if(quals.nrow() != maxlen) {
       Rcpp::stop("Sequence must have associated qualities for each nucleotide position.");
-    }
-  }
-  // Copy score matrix into a C style array
-  if(score.nrow() != 4 || score.ncol() != 4) {
-    Rcpp::stop("Score matrix must be 4x4.");
-  }
-  int c_score[4][4];
-  for(i=0;i<4;i++) {
-    for(j=0;j<4;j++) {
-      c_score[i][j] = (int) score(i,j);
     }
   }
   // Check error matrix
@@ -155,7 +145,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   }
   
   /********** RUN DADA *********/
-  B *bb = run_dada(raws, nraw, err, c_score, gap, homo_gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, min_abund, use_quals, final_consensus, vectorized_alignment, multithread, verbose, SSE, gapless);
+  B *bb = run_dada(raws, nraw, err, match, mismatch, gap, homo_gap, use_kmers, kdist_cutoff, band_size, omegaA, max_clust, min_fold, min_hamming, min_abund, use_quals, final_consensus, vectorized_alignment, multithread, verbose, SSE, gapless);
 
   /********** MAKE OUTPUT *********/
   // Create subs for all the relevant alignments
@@ -166,12 +156,12 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     // Make subs for members of that cluster
     for(r=0;r<bb->bi[i]->nraw;r++) {
       raw = bb->bi[i]->raw[r];
-      subs[raw->index] = sub_new(bb->bi[i]->center, raw, c_score, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+      subs[raw->index] = sub_new(bb->bi[i]->center, raw, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
     }
     // Make birth sub for that cluster
     if(i==0) { birth_subs[i] = NULL; }
     else {
-      birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, c_score, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+      birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
     }
   }
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
@@ -210,23 +200,23 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap);
 }
 
-B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int score[4][4], int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, int min_abund, bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, int SSE, bool gapless) {
+B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, double omegaA, int max_clust, double min_fold, int min_hamming, int min_abund, bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, int SSE, bool gapless) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
 
   B *bb;
-  bb = b_new(raws, nraw, score, gap_pen, homo_gap_pen, omegaA, band_size, vectorized_alignment, use_quals); // New cluster with all sequences in 1 bi
+  bb = b_new(raws, nraw, omegaA, use_quals); // New cluster with all sequences in 1 bi
   // Everyone gets aligned within the initial cluster, no KMER screen
-  if(multithread) { b_compare_parallel(bb, 0, FALSE, 1.0, errMat, verbose, SSE, gapless); }
-  else { b_compare(bb, 0, FALSE, 1.0, errMat, verbose, SSE, gapless); }
+  if(multithread) { b_compare_parallel(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, verbose); }
+  else { b_compare(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, verbose); }
   b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, min_abund, verbose)) ) {
     if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
-    if(multithread) { b_compare_parallel(bb, newi, use_kmers, kdist_cutoff, errMat, verbose, SSE, gapless); }
-    else { b_compare(bb, newi, use_kmers, kdist_cutoff, errMat, verbose, SSE, gapless); }
+    if(multithread) { b_compare_parallel(bb, newi, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, verbose); }
+    else { b_compare(bb, newi, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, verbose); }
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {

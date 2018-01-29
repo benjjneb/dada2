@@ -109,13 +109,8 @@ typedef struct {
   unsigned int nraw;
   unsigned int reads;
   unsigned int maxclust;
-  int band_size;
   unsigned int nalign;
   unsigned int nshroud;
-  int score[4][4];
-  int gap_pen;
-  int homo_gap_pen;
-  bool vectorized_alignment;
   double omegaA;
   bool use_quals;
   double *lams;
@@ -130,15 +125,14 @@ typedef struct {
    ------------------------------------------- */
 
 // methods implemented in cluster.cpp
-B *b_new(Raw **raws, unsigned int nraw, int score[4][4], int gap_pen, int homo_gap_pen, double omegaA, int band_size, bool vectorized_alignment, bool use_quals);
+B *b_new(Raw **raws, unsigned int nraw, double omegaA, bool use_quals);
 Raw *raw_new(char *seq, double *qual, unsigned int reads);
 void raw_free(Raw *raw);
 void b_free(B *b);
 void b_init(B *b);
 bool b_shuffle2(B *b);
-void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, int SSE, bool gapless);
-//void b_compare_threaded(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, unsigned int nthreads, bool verbose);
-void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, int SSE, bool gapless);
+void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool verbose);
+void b_compare_parallel(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool verbose);
 void b_consensus_update(B *b);
 //void b_e_update(B *b);
 void b_p_update(B *b);
@@ -163,10 +157,10 @@ char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap
 char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], int gap_p, int gap_homo_p, int band);
 char **nwalign_vectorized2(const char *s1, const char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band);
 char **nwalign_gapless(const char *s1, const char *s2);
-char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmer, 
+char **raw_align(Raw *raw1, Raw *raw2, int match, int mismatch, int gap_p, int homo_gap_p, bool use_kmers, 
                  double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless);
-Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, 
-             double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless);
+Sub *sub_new(Raw *raw0, Raw *raw1, int match, int mismatch, int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, 
+             int band, bool vectorized_alignment, int SSE, bool gapless);
 Sub *al2subs(char **al);
 Sub *sub_copy(Sub *sub);
 void sub_free(Sub *sub);

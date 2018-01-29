@@ -3,8 +3,8 @@ assign("OMEGA_A", 1e-40, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
-assign("SCORE_MATRIX", matrix(c(5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L),
-                              nrow=4, byrow=TRUE), envir = dada_opts)
+#assign("SCORE_MATRIX", matrix(c(5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L, -4L, -4L, -4L, -4L, 5L),
+#                              nrow=4, byrow=TRUE), envir = dada_opts)
 assign("MATCH", 5L, envir = dada_opts)
 assign("MISMATCH", -4L, envir = dada_opts)
 assign("GAP_PENALTY", -8L, envir = dada_opts)
@@ -134,7 +134,11 @@ dada <- function(derep,
   # Read in default opts and then replace with any that were passed in to the function
   opts <- getDadaOpt()
   args <- list(...)
-  # Catch the deprecated VERBOSE option
+  # Catch the deprecated SCORE_MATRIX option
+  if("SCORE_MATRIX" %in% names(args)) {
+    stop("DEFUNCT: The SCORE_MATRIX option has been replaced by the MATCH/MISMATCH arguments. Please update your code.")
+  }
+  # Catch the defunct VERBOSE option
   if("VERBOSE" %in% names(args)) {
     stop("DEFUNCT: The VERBOSE option has been replaced by the verbose argument. Please update your code.")
   }
@@ -240,11 +244,6 @@ dada <- function(derep,
     opts$VECTORIZED_ALIGNMENT <- FALSE # No homopolymer gapping in vectorized aligner
   }
   if(opts$VECTORIZED_ALIGNMENT) {
-    if(length(unique(diag(opts$SCORE)))!=1 || 
-           length(unique(opts$SCORE[upper.tri(opts$SCORE) | lower.tri(opts$SCORE)]))!=1) {
-      if(verbose) message("The vectorized aligner requires that the score matrix reduces to match/mismatch. Turning off vectorization.")
-      opts$VECTORIZED_ALIGNMENT=FALSE
-    }
     if(opts$BAND_SIZE > 0 && opts$BAND_SIZE<8) {
       if(verbose) message("The vectorized aligner is slower for very small band sizes.")
     }
@@ -303,7 +302,7 @@ dada <- function(derep,
       res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), 
                           err,
                           qi, 
-                          opts[["SCORE_MATRIX"]], opts[["GAP_PENALTY"]],
+                          opts[["MATCH"]], opts[["MISMATCH"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
                           opts[["OMEGA_A"]], 
@@ -479,8 +478,9 @@ dada <- function(derep,
 #'  of indels, such as the ITS region in fungi, the BAND_SIZE parameter should be increased. Setting BAND_SIZE to a negative number
 #'  turns off banding (i.e. full Needleman-Wunsch).
 #' 
-#' SCORE_MATRIX: The score matrix for the Needleman-Wunsch alignment. This is a 4x4 matrix as no ambiguous nucleotides
-#'  are allowed. Default is nuc44: -4 for mismatches, +5 for matches.
+#' MATCH: The score of a match in the Needleman-Wunsch alignment. Default is 4.
+#'  
+#' MISMATCH: The score of a mismatch in the Needleman-Wunsch alignment. Default is -5.
 #'  
 #' GAP_PENALTY: The cost of gaps in the Needleman-Wunsch alignment. Default is -8.
 #'  
@@ -542,17 +542,6 @@ setDadaOpt <- function(...) {
     }
   }
 }
-
-# Should add in more sanity checking here??
-# matrix dimensions, general structure of score matrix
-#  if(!(is.numeric(score) && dim(err) == c(4,4))) {
-#    stop("dada: Invalid score matrix.")
-#  }
-#  
-#  if(!(is.numeric(gap_penalty) && gap_penalty <=0)) {
-#    stop("dada: Invalid gap penalty.")
-#  }
-#  if(gap_penalty > -1) warning("dada: Very small gap penalty.")
 
 ################################################################################
 #' Get DADA options

@@ -7,11 +7,11 @@
  * Banded Needleman Wunsch
  */
 
-char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless) {
+char **raw_align(Raw *raw1, Raw *raw2, int match, int mismatch, int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless) {
   char **al;
   double kdist = 0.0;
-/// Commented lines relate to testing of add'l speedups
   double kodist = -1.0; // Needs to be different than kdist for fall-back when use_kmers=FALSE
+/// Commented lines relate to testing of add'l speedups
 ///  static size_t nnw=0;
 ///  static size_t ngl=0;
 ///  static size_t nkm=0;
@@ -25,7 +25,6 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
       }
     } else if(SSE==1) { // 16-bit explicit SSE
       kdist = kmer_dist_SSEi(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
-///      kodist = kord_dist(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
     } else { // implicit vectorization
       kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
     }
@@ -34,21 +33,28 @@ char **raw_align(Raw *raw1, Raw *raw2, int score[4][4], int gap_p, int homo_gap_
     }    
   }
   
+  // Make deprecated score matrix. To be removed in the future.
+  int score[4][4];
+  for(int i=0;i<4;i++) {
+    for(int j=0;j<4;j++) {
+      score[i][j] = i==j ? match : mismatch;
+    }
+  }
   
   if(use_kmers && kdist > kdist_cutoff) {
     al = NULL;
 ///    nkm++;
-  } else if(gapless && kodist == kdist) {
+  } else if(band == 0 || (gapless && kodist == kdist)) {
     al = nwalign_gapless(raw1->seq, raw2->seq);
 ///    ngl++;
-  } else if(vectorized_alignment) { // ASSUMES SCORE MATRIX REDUCES TO MATCH/MISMATCH
-    al = nwalign_vectorized2(raw1->seq, raw2->seq, (int16_t) score[0][0], (int16_t) score[0][1], (int16_t) gap_p, 0, band);
+  } else if(vectorized_alignment) { 
+    al = nwalign_vectorized2(raw1->seq, raw2->seq, (int16_t) match, (int16_t) mismatch, (int16_t) gap_p, 0, band);
 ///    nnw++;
   } else if(homo_gap_p != gap_p && homo_gap_p <= 0) {
-    al = nwalign_endsfree_homo(raw1->seq, raw2->seq, score, gap_p, homo_gap_p, band);
+    al = nwalign_endsfree_homo(raw1->seq, raw2->seq, score, gap_p, homo_gap_p, band); // USES OLD SCORE_MATRIX FORMAT
 ///    nnw++;
   } else {
-    al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band);
+    al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band); // USES OLD SCORE_MATRIX FORMAT
 ///    nnw++;
   }
 
@@ -650,12 +656,12 @@ Sub *al2subs(char **al) {
 }
 
 // Wrapper for al2subs(raw_align(...)) that manages memory and qualities
-Sub *sub_new(Raw *raw0, Raw *raw1, int score[4][4], int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless) {
+Sub *sub_new(Raw *raw0, Raw *raw1, int match, int mismatch, int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless) {
   int s;
   char **al;
   Sub *sub;
 
-  al = raw_align(raw0, raw1, score, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment, SSE, gapless);
+  al = raw_align(raw0, raw1, match, mismatch, gap_p, homo_gap_p, use_kmers, kdist_cutoff, band, vectorized_alignment, SSE, gapless);
   sub = al2subs(al);
 
   if(sub) {
