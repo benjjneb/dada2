@@ -17,6 +17,7 @@ assign("MIN_ABUNDANCE", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 assign("SSE", 2, envir = dada_opts)
+assign("GAPLESS", FALSE, envir=dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -135,9 +136,7 @@ dada <- function(derep,
   args <- list(...)
   # Catch the deprecated VERBOSE option
   if("VERBOSE" %in% names(args)) {
-    stop("DEPRECATED: The VERBOSE option has been replaced by the verbose argument. Please update your code.")
-    verbose <- args[["VERBOSE"]]
-    args[["VERBOSE"]] <- NULL
+    stop("DEFUNCT: The VERBOSE option has been replaced by the verbose argument. Please update your code.")
   }
   for(opnm in names(args)) {
     if(opnm %in% names(opts)) {
@@ -316,7 +315,8 @@ dada <- function(derep,
                           opts[["HOMOPOLYMER_GAP_PENALTY"]],
                           multithread,
                           (verbose>=2),
-                          opts[["SSE"]])
+                          opts[["SSE"]],
+                          opts[["GAPLESS"]])
       
       # Augment the returns
       res$clustering$sequence <- as.character(res$clustering$sequence)
@@ -508,7 +508,11 @@ dada <- function(derep,
 #' SSE: Controls the level of explicit SSE vectorization for kmer calculations. Default 2.
 #'  0: No explicit vectorization (but modern compilers will auto-vectorize the code).
 #'  1: SSE2.
-#'  2: SSE2 + 8-bit integers.
+#'  2: Packed SSE2 using 8-bit integers. Slightly faster than SSE=1.
+#' 
+#' GAPLESS: If TRUE, the ordered kmer identity between pairs of sequences is compared to their unordered
+#'  overlap. If equal, the optimal alignment is assumed to be gapless. Default iS FALSE.
+#'  Only relevant if USE_KMERS is TRUE.
 #' 
 #' @seealso 
 #'  \code{\link{getDadaOpt}}

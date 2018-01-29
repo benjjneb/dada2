@@ -234,7 +234,8 @@ Rcpp::LogicalVector C_isACGT(std::vector<std::string> seqs) {
 Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, unsigned int max_aligns) {
   int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
   char *seq1, *seq2;
-
+  size_t n_kmers = (1 << (2*kmer_size));  // 4^k kmers
+  
   int c_score[4][4];
   for(i=0;i<4;i++) {
     for(j=0;j<4;j++) {
@@ -258,17 +259,18 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
   Rcpp::NumericVector adist(max_aligns);
   Rcpp::NumericVector kdist(max_aligns);
   Sub *sub;
-  uint16_t *kv1;
-  uint16_t *kv2;
+  uint16_t *kv1 = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
+  uint16_t *kv2 = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
+  if(kv1 == NULL || kv2 == NULL) Rcpp::stop("Memory allocation failed.");
 
   for(i=0;i<nseqs;i=i+stride) {
     seq1 = intstr(seqs[i].c_str());
     len1 = strlen(seq1);
-    kv1 = get_kmer(seq1, kmer_size);
+    assign_kmer(kv1, seq1, kmer_size);
     for(j=i+1;j<nseqs;j=j+stride) {
       seq2 = intstr(seqs[j].c_str());
       len2 = strlen(seq2);
-      kv2 = get_kmer(seq2, kmer_size);
+      assign_kmer(kv2, seq2, kmer_size);
 
       minlen = (len1 < len2 ? len1 : len2);
 
@@ -277,15 +279,15 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
       
       kdist[npairs] = kmer_dist(kv1, len1, kv2, len2, kmer_size);
       npairs++;
-      free(kv2);
       free(seq2);
       if(npairs >= max_aligns) { break; }
     }
-    free(kv1);
     free(seq1);
     if(npairs >= max_aligns) { break; }
   }
   
+  free(kv1);
+  free(kv2);
   if(npairs != max_aligns) {
     Rcpp::Rcout << "Warning: Failed to reach requested number of alignments.\n";
   }
@@ -296,88 +298,104 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
 Rcpp::NumericVector kmer_dist(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size) {
   size_t len1 = 0, len2 = 0;
   char *seq1, *seq2;
+  size_t n_kmers = (1 << (2*kmer_size));  // 4^k kmers
   
   size_t nseqs = s1.size();
   if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
   
   Rcpp::NumericVector kdist(nseqs);
-  uint16_t *kv1;
-  uint16_t *kv2;
+  uint16_t *kv1 = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
+  uint16_t *kv2 = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
+  if(kv1 == NULL || kv2 == NULL) Rcpp::stop("Memory allocation failed.");
   
   for(int i=0;i<nseqs;i++) {
     seq1 = intstr(s1[i].c_str());
     len1 = s1[i].size();
-    kv1 = get_kmer(seq1, kmer_size);
+    assign_kmer(kv1, seq1, kmer_size);
     seq2 = intstr(s2[i].c_str());
     len2 = s2[i].size();
-    kv2 = get_kmer(seq2, kmer_size);
+    assign_kmer(kv2, seq2, kmer_size);
     kdist[i] = kmer_dist(kv1, len1, kv2, len2, kmer_size);
-    free(kv2);
     free(seq2);
-    free(kv1);
     free(seq1);
   }
   
+  free(kv1);
+  free(kv2);
   return(kdist);
 }
 
 // [[Rcpp::export]]
 Rcpp::NumericVector kord_dist(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size, int SSE) {
-  size_t len1 = 0, len2 = 0;
+  size_t len1 = 0, len2 = 0, maxlen=0;
   char *seq1, *seq2;
   
   size_t nseqs = s1.size();
   if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
+  for(int i=0;i<nseqs;i++) {
+    len1 = s1[i].size();
+    len2 = s2[i].size();
+    if(len1 > maxlen) { maxlen = len1; }
+    if(len2 > maxlen) { maxlen = len2; }
+  }
   
   Rcpp::NumericVector kdist(nseqs);
-  uint16_t *kord1;
-  uint16_t *kord2;
-  
+  uint16_t *kord1 = (uint16_t *) malloc(maxlen * sizeof(uint16_t)); //E
+  uint16_t *kord2 = (uint16_t *) malloc(maxlen * sizeof(uint16_t)); //E
+  if(kord1 == NULL || kord2 == NULL) Rcpp::stop("Memory allocation failed.");
+
   for(int i=0;i<nseqs;i++) {
     seq1 = intstr(s1[i].c_str());
     len1 = s1[i].size();
-    kord1 = get_kmer_order(seq1, kmer_size);
+    assign_kmer_order(kord1, seq1, kmer_size);
     seq2 = intstr(s2[i].c_str());
     len2 = s2[i].size();
-    kord2 = get_kmer_order(seq2, kmer_size);
+    assign_kmer_order(kord2, seq2, kmer_size);
     if(SSE==1) {
       kdist[i] = kord_dist_SSEi(kord1, len1, kord2, len2, kmer_size);
     } else {
       kdist[i] = kord_dist(kord1, len1, kord2, len2, kmer_size);
     }
-    free(kord2);
     free(seq2);
-    free(kord1);
     free(seq1);
   }
   
+  free(kord1);
+  free(kord2);
   return(kdist);
 }
 
 // [[Rcpp::export]]
 Rcpp::IntegerVector kmer_matches(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size) {
   int i,j;
-  size_t len1 = 0, len2 = 0;
+  size_t len1 = 0, len2 = 0, maxlen=0;
   size_t klen1 = 0, klen2 = 0, klen_min = 0;
   int matches=0;
   char *seq1, *seq2;
   
   size_t nseqs = s1.size();
   if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
+  for(int i=0;i<nseqs;i++) {
+    len1 = s1[i].size();
+    len2 = s2[i].size();
+    if(len1 > maxlen) { maxlen = len1; }
+    if(len2 > maxlen) { maxlen = len2; }
+  }
   
   Rcpp::IntegerVector kmatch(nseqs);
-  uint16_t *kord1;
-  uint16_t *kord2;
+  uint16_t *kord1 = (uint16_t *) malloc(maxlen * sizeof(uint16_t)); //E
+  uint16_t *kord2 = (uint16_t *) malloc(maxlen * sizeof(uint16_t)); //E
+  if(kord1 == NULL || kord2 == NULL) Rcpp::stop("Memory allocation failed.");
   
   for(i=0;i<nseqs;i++) {
     seq1 = intstr(s1[i].c_str());
     len1 = s1[i].size();
     klen1 = len1 - kmer_size + 1;
-    kord1 = get_kmer_order(seq1, kmer_size);
+    assign_kmer_order(kord1, seq1, kmer_size);
     seq2 = intstr(s2[i].c_str());
     len2 = s2[i].size();
     klen2 = len2 - kmer_size + 1;
-    kord2 = get_kmer_order(seq2, kmer_size);
+    assign_kmer_order(kord2, seq2, kmer_size);
     // Calculate matches
     matches=0;
     klen_min = klen1 < klen2 ? klen1 : klen2;
@@ -385,12 +403,12 @@ Rcpp::IntegerVector kmer_matches(std::vector< std::string > s1, std::vector< std
       if(kord1[j] == kord2[j]) { matches++; }
     }
     kmatch[i] = matches;
-    free(kord2);
     free(seq2);
-    free(kord1);
     free(seq1);
   }
   
+  free(kord1);
+  free(kord2);
   return(kmatch);
 }
 
@@ -400,34 +418,35 @@ Rcpp::IntegerVector kdist_matches(std::vector< std::string > s1, std::vector< st
   uint16_t dotsum = 0;
   size_t len1 = 0, len2 = 0;
   char *seq1, *seq2;
-  int n_kmer = 1 << (2*kmer_size); // 4^k kmers
-
+  size_t n_kmers = (1 << (2*kmer_size));  // 4^k kmers
+  
   size_t nseqs = s1.size();
   if(nseqs != s2.size()) { Rcpp::stop("Mismatched numbers of sequences."); }
   
   Rcpp::IntegerVector kdist_match(nseqs);
-  uint16_t *kv1;
-  uint16_t *kv2;
+  uint16_t *kv1 = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
+  uint16_t *kv2 = (uint16_t *) malloc(n_kmers * sizeof(uint16_t)); //E
+  if(kv1 == NULL || kv2 == NULL) Rcpp::stop("Memory allocation failed.");
   
   for(i=0;i<nseqs;i++) {
     seq1 = intstr(s1[i].c_str());
     len1 = s1[i].size();
-    kv1 = get_kmer(seq1, kmer_size);
+    assign_kmer(kv1, seq1, kmer_size);
     seq2 = intstr(s2[i].c_str());
     len2 = s2[i].size();
-    kv2 = get_kmer(seq2, kmer_size);
+    assign_kmer(kv2, seq2, kmer_size);
     // code from kmer_dist
     dotsum = 0;
-    for(j=0;j<n_kmer;j++) {
+    for(j=0;j<n_kmers;j++) {
       dotsum += (kv1[j] < kv2[j] ? kv1[j] : kv2[j]);
     }
     kdist_match[i] = dotsum;
-    free(kv2);
     free(seq2);
-    free(kv1);
     free(seq1);
   }
   
+  free(kv1);
+  free(kv2);
   return(kdist_match);
 }
 

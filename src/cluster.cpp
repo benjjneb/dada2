@@ -38,11 +38,8 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
   // Assign sequence and associated properties
   strcpy(raw->seq, seq);
   raw->length = strlen(seq);
-///  raw->kmer = get_kmer(seq, KMER_SIZE);
-///  raw->kmer8 = get_kmer8(seq, KMER_SIZE);
-  raw->kord = get_kmer_order(seq, KMER_SIZE);
   raw->reads = reads;
-  // Allocate and copy quals (quals downgraded to floats here for memory savings)
+  // Allocate and copy quals (quals downgraded to uint8_t here for memory savings)
   if(qual) { 
     raw->qual = (uint8_t *) malloc(raw->length * sizeof(uint8_t)); //E
     if (raw->qual == NULL)  Rcpp::stop("Memory allocation failed.");
@@ -58,9 +55,6 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads) {
 void raw_free(Raw *raw) {
   free(raw->seq);
   if(raw->qual) { free(raw->qual); }
-///  free(raw->kmer);
-///  free(raw->kmer8);
-  free(raw->kord);
   free(raw);  
 }
 
@@ -261,7 +255,7 @@ void bi_assign_center(Bi *bi) {
 Performs alignments and computes lambda for all raws to the specified Bi
 Stores only those that can possibly be recruited to this Bi
 */
-void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, int SSE) {
+void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, int SSE, bool gapless) {
   unsigned int index, cind;
   double lambda;
   Raw *raw;
@@ -300,7 +294,7 @@ void b_compare(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::
 } */
 
     // get sub object
-    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment, SSE);
+    sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment, SSE, gapless);
     b->nalign++;
     if(!sub) { b->nshroud++; }
     
@@ -341,13 +335,14 @@ struct CompareParallel : public RcppParallel::Worker
   bool use_kmers;
   double kdist_cutoff;
   int SSE;
+  bool gapless;
   unsigned int ncol;
   double *err_mat;
   
   // initialize with source and destination
-  CompareParallel(B *b, unsigned int i, Comparison *output, bool use_kmers, double kdist_cutoff, int SSE,
+  CompareParallel(B *b, unsigned int i, Comparison *output, bool use_kmers, double kdist_cutoff, int SSE, bool gapless,
                   unsigned int ncol, double *err_mat) 
-    : b(b), i(i), output(output), use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), SSE(SSE), ncol(ncol), err_mat(err_mat) {}
+    : b(b), i(i), output(output), use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), SSE(SSE), gapless(gapless), ncol(ncol), err_mat(err_mat) {}
   
   // Perform sequence comparison
   void operator()(std::size_t begin, std::size_t end) {
@@ -356,7 +351,7 @@ struct CompareParallel : public RcppParallel::Worker
     
     for(std::size_t index=begin;index<end;index++) {
       raw = b->raw[index];
-      sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment, SSE);
+      sub = sub_new(b->bi[i]->center, raw, b->score, b->gap_pen, b->homo_gap_pen, use_kmers, kdist_cutoff, b->band_size, b->vectorized_alignment, SSE, gapless);
       
       // Make comparison object
       output[index].i = i;
@@ -375,7 +370,7 @@ struct CompareParallel : public RcppParallel::Worker
 };
 
 
-void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, int SSE) {
+void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutoff, Rcpp::NumericMatrix errMat, bool verbose, int SSE, bool gapless) {
   unsigned int index, cind, row, col, ncol;
   double lambda;
   Raw *raw;
@@ -395,7 +390,7 @@ void b_compare_parallel(B *b, unsigned int i, bool use_kmers, double kdist_cutof
   // Parallelize for loop to perform all comparisons
   Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
   if(comps==NULL) Rcpp::stop("Memory allocation failed.");
-  CompareParallel compareParallel(b, i, comps, use_kmers, kdist_cutoff, SSE, ncol, err_mat);
+  CompareParallel compareParallel(b, i, comps, use_kmers, kdist_cutoff, SSE, gapless, ncol, err_mat);
   RcppParallel::parallelFor(0, b->nraw, compareParallel, GRAIN_SIZE);
   
   // Selectively store
