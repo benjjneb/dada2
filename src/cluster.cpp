@@ -268,20 +268,19 @@ void b_p_update(B *b) {
 */
 
 int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
-  int i, r;
-  int mini, minr, minreads, hamming;
-  double minp = 1.0;
-  double pA=1.0;
-  double lambda, mine;
-  Comparison mincomp;
-  Raw *raw;
-
+  int i, r, hamming;
+  int mini = -1, minr = -1, mini_prior = -1, minr_prior = -1; // Negative initialization
+  double pA, pP;
+  double lambda, expected;
+  Raw *raw, *minraw, *minraw_prior;
+  minraw = b->bi[0]->center; // Assumes that complete alignment/pval calcs were performed in the init cluster
+  minraw_prior = b->bi[0]->center; // Assumes that complete alignment/pval calcs were performed in the init cluster
+  
   // Find i, r indices and value of minimum pval.
-  mini=-999; minr=-999; minreads=0; minp=1.0;
   for(i=0;i<b->nclust;i++) {
-    for(r=0; r<b->bi[i]->nraw; r++) {
+    for(r=1; r<b->bi[i]->nraw; r++) { // r=0 is the center
       raw = b->bi[i]->raw[r];
-      if(b->bi[i]->center->index == raw->index) { continue; } // Don't bud centers
+///      if(b->bi[i]->center->index == raw->index) { continue; } // Don't bud centers
       if(raw->reads < min_abund) { continue; }
       hamming = raw->comp.hamming;
       lambda = raw->comp.lambda;
@@ -289,13 +288,15 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
       // Calculate the fold over-abundance and the hamming distance to this raw
       if(hamming >= min_hamming) { // Only those passing the hamming/fold screens can be budded
         if(min_fold <= 1 || ((double) raw->reads) >= min_fold * lambda * b->bi[i]->reads) {  
-          if((raw->p < minp) ||
-            ((raw->p == minp && raw->reads > minreads))) { // Most significant
+          if((raw->p < minraw->p) ||
+             ((raw->p == minraw->p && raw->reads > minraw->reads))) { // Most significant
             mini = i; minr = r;
-            minp = raw->p;
-            mine = lambda * b->bi[i]->reads;
-            mincomp = raw->comp;
-            minreads = raw->reads;
+            minraw = raw;
+          }
+          if(raw->prior && ((raw->p < minraw_prior->p) ||
+             (raw->p == minraw_prior->p && raw->reads > minraw_prior->reads))) { // Most significant
+            mini_prior = i; minr_prior = r;
+            minraw_prior = raw;
           }
         }
       }
@@ -304,15 +305,31 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
 
   // Bonferoni correct the abundance pval by the number of raws and compare to OmegaA
   // (quite conservative, although probably unimportant given the abundance model issues)
-  pA = minp*b->nraw;
-  if(pA < b->omegaA && mini >= 0 && minr >= 0) {  // A significant abundance pval
+  pA = minraw->p * b->nraw;
+  pP = minraw_prior->p;
+  if(pA < b->omegaA && mini >= 0) {  // A significant abundance pval
+    expected = minraw->comp.lambda * b->bi[mini]->reads;
     raw = bi_pop_raw(b->bi[mini], minr);
     i = b_add_bi(b, bi_new(b->nraw));
     strcpy(b->bi[i]->birth_type, "A");
     b->bi[i]->birth_pval = pA;
-    b->bi[i]->birth_fold = raw->reads/mine;
-    b->bi[i]->birth_e = mine;
-    b->bi[i]->birth_comp = mincomp;
+    b->bi[i]->birth_fold = raw->reads/expected;
+    b->bi[i]->birth_e = expected;
+    b->bi[i]->birth_comp = minraw->comp;
+    
+    // Add raw to new cluster.
+    bi_add_raw(b->bi[i], raw);
+    bi_assign_center(b->bi[i]);
+    return i;
+  } else if (pP < b->omegaP && mini_prior >= 0) {  // A significant prior-abundance pval
+    expected = minraw_prior->comp.lambda * b->bi[mini_prior]->reads;
+    raw = bi_pop_raw(b->bi[mini_prior], minr_prior);
+    i = b_add_bi(b, bi_new(b->nraw));
+    strcpy(b->bi[i]->birth_type, "P");
+    b->bi[i]->birth_pval = pP;
+    b->bi[i]->birth_fold = raw->reads/expected;
+    b->bi[i]->birth_e = expected;
+    b->bi[i]->birth_comp = minraw_prior->comp;
     
     // Add raw to new cluster.
     bi_add_raw(b->bi[i], raw);
