@@ -10,7 +10,8 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
   unsigned int i, j, r, s, cind, max_reads;
   Raw *max_raw;
   Sub *sub;
-  double q_ave, tot_e;
+  double q_ave;
+  size_t index;
   
   // Create output character-vector of representative sequences for each partition (Bi)
   Rcpp::CharacterVector Rseqs;
@@ -87,19 +88,28 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
         Rbirth_qaves[i] = Rcpp::NumericVector::get_na();
       }
     }
-    
-    // Calculate post-hoc pval
-    // This is not as exhaustive anymore
-    tot_e = 0.0;
-    for(j=0;j<b->nclust;j++) {
-      if(i==j) continue;
-      for(cind=0;cind<b->bi[j]->comp.size();cind++) {
-        if(b->bi[j]->comp[cind].index == b->bi[i]->center->index) {
-          tot_e += b->bi[j]->comp[cind].lambda * b->bi[j]->reads;
+  }
+  
+  // Calculate post-hoc pval
+  // This is not as exhaustive anymore
+  std::unordered_map<unsigned int, unsigned int> center_of;
+  for(i=0;i<b->nclust;i++) {
+    center_of[b->bi[i]->center->index] = i;
+  }
+  std::vector<double> tot_e(b->nclust);
+  for(i=0;i<b->nclust;i++) {
+    for(cind=0;cind<b->bi[i]->comp.size();cind++) {
+      index = b->bi[i]->comp[cind].index;
+      if(center_of.count(index)) { // This is the center of a Bi
+        j = center_of[index];
+        if(i != j) { // Only add from other Bis
+          tot_e[j] += b->bi[i]->comp[cind].lambda * b->bi[i]->reads;
         }
       }
     }
-    Rpvals[i] = calc_pA(1+b->bi[i]->reads, tot_e); // Add 1 because calc_pA subtracts 1 (conditional p-val)
+  }
+  for(i=0;i<b->nclust;i++) {
+    Rpvals[i] = calc_pA(1+b->bi[i]->reads, tot_e[i]); // Add 1 because calc_pA subtracts 1 (conditional p-val)
   }
   
   return(Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves));
