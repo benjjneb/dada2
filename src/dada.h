@@ -13,7 +13,6 @@
 
 #define VERBOSE 0
 #define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
-// SEQLEN MAY NOT BE INCREASED BEYOND 1000 WITHOUT REVISITING AL2SUBS
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 #define DBL_PRECISION 1e-15 // precision of doubles
 #define KMER_SIZE 5
@@ -51,7 +50,6 @@ typedef struct {
   char *nt1;   // different nt in aligned seq
   uint8_t *q0;  // quality score in reference seq
   uint8_t *q1;  // quality score in aligned seq
-  char *key;   // string of all subs: concatenation of "%c%d%c," % nt0,pos,nt1
 } Sub;
 
 // Raw: Container for each unique sequence/abundance

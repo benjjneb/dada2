@@ -565,9 +565,6 @@ Sub *al2subs(char **al) {
   bool is_nt0, is_nt1;
   char *al0, *al1; // dummy pointers to the sequences in the alignment
   
-  // define dummy pointer to key string
-  char *pkey;
-  
   if(!al) { // Null alignment (outside kmer thresh) -> Null sub
     Sub *sub = NULL;
     return sub;
@@ -598,15 +595,12 @@ Sub *al2subs(char **al) {
   sub->pos = (uint16_t *) malloc(nsubs * sizeof(uint16_t)); //E
   sub->nt0 = (char *) malloc(nsubs); //E
   sub->nt1 = (char *) malloc(nsubs); //E
-  sub->key = (char *) malloc((6*nsubs) + 1); // Must be modified if SEQLEN > 1000 //E
-  if (sub->map == NULL || sub->pos == NULL || sub->nt0 == NULL || sub->nt1 == NULL || sub->key == NULL) {
+  if (sub->map == NULL || sub->pos == NULL || sub->nt0 == NULL || sub->nt1 == NULL) {
     Rcpp::stop("Memory allocation failed.");
   }
   sub->nsubs=0;
     
-  // traverse the alignment and record substitutions while building the hash key
-  pkey = sub->key;
-  
+  // traverse the alignment and record substitutions
   i0 = -1; i1 = -1;
   al0 = al[0]; al1 = al[1];
   for(i=0;i<align_length;i++) {
@@ -629,20 +623,10 @@ Sub *al2subs(char **al) {
         sub->pos[sub->nsubs] = i0;
         sub->nt0[sub->nsubs] = al0[i];
         sub->nt1[sub->nsubs] = al1[i];
-        
-        // Assuming space is available
-        // Assuming sequences are <1000 nts long (3 digit positions)
-        *pkey++ = al0[i];
-        *pkey++ = '0' + i0/100;
-        *pkey++ = '0' + (i0 % 100)/10;
-        *pkey++ = '0' + (i0 % 10);
-        *pkey++ = al1[i];
-        *pkey++ = ',';
         sub->nsubs++;
       }
     }
   } // for(i=0;i<align_length;i++)
-  *pkey = '\0';
 
   return sub;
 }
@@ -694,8 +678,7 @@ Sub *sub_copy(Sub *sub) {
   rsub->pos = (uint16_t *) malloc(nsubs * sizeof(uint16_t)); //E
   rsub->nt0 = (char *) malloc(nsubs); //E
   rsub->nt1 = (char *) malloc(nsubs); //E
-  rsub->key = (char *) malloc((6*nsubs) + 1); // Must be modified if SEQLEN > 1000 //E
-  if (rsub->map == NULL || rsub->pos == NULL || rsub->nt0 == NULL || rsub->nt1 == NULL || rsub->key == NULL) {
+  if (rsub->map == NULL || rsub->pos == NULL || rsub->nt0 == NULL || rsub->nt1 == NULL) {
     Rcpp::stop("Memory allocation failed.");
   }
   
@@ -705,7 +688,6 @@ Sub *sub_copy(Sub *sub) {
   memcpy(rsub->pos, sub->pos, nsubs * sizeof(uint16_t));
   memcpy(rsub->nt0, sub->nt0, nsubs);
   memcpy(rsub->nt1, sub->nt1, nsubs);
-  memcpy(rsub->key, sub->key, (6*nsubs) + 1);
 
   if(sub->q0 && sub->q1) {
     rsub->q0 = (uint8_t *) malloc(nsubs * sizeof(uint8_t)); //E
@@ -724,7 +706,6 @@ Sub *sub_copy(Sub *sub) {
 // Destructor for sub object
 void sub_free(Sub *sub) {
   if(sub) { // not a NULL sub
-    free(sub->key);
     free(sub->nt1);
     free(sub->nt0);
     free(sub->pos);
