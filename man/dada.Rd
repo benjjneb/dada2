@@ -5,7 +5,8 @@
 \title{High resolution sample inference from amplicon data.}
 \usage{
 dada(derep, err, errorEstimationFunction = loessErrfun, selfConsist = FALSE,
-  pool = FALSE, multithread = FALSE, verbose = FALSE, ...)
+  pool = FALSE, priors = NULL, multithread = FALSE, verbose = FALSE,
+  ...)
 }
 \arguments{
 \item{derep}{(Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
@@ -45,6 +46,12 @@ by assuming that all reads are errors away from one true sequence.}
  
  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
   error rates, which are always estimated from pooled observations across samples.}
+
+\item{priors}{(Optional). \code{character}. Default is NULL.
+ 
+The priors argument provides a set of sequences for which there is prior information suggesting they may
+ truly exist, i.e. are not errors. Dereplicatred sequences that exactly match one of the priors face a reduced 
+ threshold `OMEGA_P` for forming a new partition.}
 
 \item{multithread}{(Optional). Default is FALSE.
 If TRUE, multithreading is enabled and the number of available threads is automatically determined.   

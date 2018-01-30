@@ -8,23 +8,26 @@ Pval.cpp contains the functions related to calculating the abundance pval in DAD
 // [[Rcpp::interfaces(r, cpp)]]
 
 // Calculate abundance pval for given reads and expected number of reads
-double calc_pA(int reads, double E_reads) {
+// Pval is conditional on sequnce being present, unless prior evidence is true
+double calc_pA(int reads, double E_reads, bool prior) {
   double norm, pval=1.;
-  
-  // Calculate norm (since conditioning on sequence being present).
-  norm = (1.0 - exp(-E_reads));
-  if(norm < TAIL_APPROX_CUTOFF) {
-    norm = E_reads - 0.5*E_reads*E_reads; 
-    // Assumption: TAIL_APPROX_CUTOFF is small enough to terminate taylor expansion at 2nd order
-  }
   
   // Calculate pval from poisson cdf.
   Rcpp::IntegerVector n_repeats(1);
-  n_repeats(0) = reads-1;
-  Rcpp::NumericVector res = Rcpp::ppois(n_repeats, E_reads, false);  // lower.tail = false
+  n_repeats(0) = reads-1; // -1 since strict > being calculated, and want to include the observed count
+  Rcpp::NumericVector res = Rcpp::ppois(n_repeats, E_reads, false);  // lower.tail = false: P(X > x)
   pval = Rcpp::as<double>(res);
+
+  if(!prior) {
+    // Calculate norm (since conditioning on sequence being present).
+    norm = (1.0 - exp(-E_reads));
+    if(norm < TAIL_APPROX_CUTOFF) {
+      norm = E_reads - 0.5*E_reads*E_reads; 
+      // Assumption: TAIL_APPROX_CUTOFF is small enough to terminate taylor expansion at 2nd order
+    }
+    pval = pval/norm;
+  }
   
-  pval = pval/norm;
   return pval;
 }
 
@@ -36,7 +39,7 @@ double get_pA(Raw *raw, Bi *bi) {
   lambda = raw->comp.lambda;
   hamming = raw->comp.hamming;
 
-  if(raw->reads == 1) {   // Singleton. No abundance pval.
+  if(raw->reads == 1 && !raw->prior) {   // Singleton. No abundance pval.
     pval=1.;
   } 
   else if(hamming == 0) { // Cluster center (or no mismatch to center)
@@ -48,7 +51,7 @@ double get_pA(Raw *raw, Bi *bi) {
   else { // Calculate abundance pval.
     // E_reads is the expected number of reads for this raw
     E_reads = lambda * bi->reads;
-    pval = calc_pA(raw->reads, E_reads);
+    pval = calc_pA(raw->reads, E_reads, raw->prior);
   }
   return pval;
 }

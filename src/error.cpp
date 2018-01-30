@@ -109,7 +109,7 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
     }
   }
   for(i=0;i<b->nclust;i++) {
-    Rpvals[i] = calc_pA(1+b->bi[i]->reads, tot_e[i]); // Add 1 because calc_pA subtracts 1 (conditional p-val)
+    Rpvals[i] = calc_pA(b->bi[i]->reads, tot_e[i], true); // prior=true to get non-conditional p-val
   }
   
   return(Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves));

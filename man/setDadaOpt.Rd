@@ -21,8 +21,10 @@ setDadaOpt sets the default options used by the dada(...) function for your curr
 The various dada options...
 
 OMEGA_A: This parameter sets the threshold for when DADA2 calls unique sequences significantly overabundant, and therefore creates a
- new cluster with that sequence as the center. Default is 1e-40, which is a conservative setting to avoid making false
+ new partition with that sequence as the center. Default is 1e-40, which is a conservative setting to avoid making false
  positive inferences, but which comes at the cost of reducing the ability to identify some rare variants.
+
+OMEGA_P: The threshold for unique sequences with prior evidence of existence (see `priors` argument). Default is 1e-4.
 
 USE_QUALS: If TRUE, the dada(...) error model takes into account the consensus quality score of the dereplicated unique sequences.
  If FALSE, quality scores are ignored. Default is TRUE.

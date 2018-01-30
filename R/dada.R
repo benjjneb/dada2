@@ -1,5 +1,6 @@
 dada_opts <- new.env()
 assign("OMEGA_A", 1e-40, envir = dada_opts)
+assign("OMEGA_P", 1e-4, envir = dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
@@ -67,6 +68,12 @@ assign("GAPLESS", FALSE, envir=dada_opts)
 #'  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
 #'   error rates, which are always estimated from pooled observations across samples.
 #'   
+#' @param priors (Optional). \code{character}. Default is NULL.
+#'  
+#' The priors argument provides a set of sequences for which there is prior information suggesting they may
+#'  truly exist, i.e. are not errors. Dereplicatred sequences that exactly match one of the priors face a reduced 
+#'  threshold `OMEGA_P` for forming a new partition.
+#'   
 #' @param multithread (Optional). Default is FALSE.
 #'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
 #'  If an integer is provided, the number of threads to use is set by passing the argument on to
@@ -127,6 +134,7 @@ dada <- function(derep,
                  errorEstimationFunction = loessErrfun,
                  selfConsist = FALSE, 
                  pool = FALSE,
+                 priors = NULL,
                  multithread = FALSE, 
                  verbose=FALSE, ...) {
   
@@ -299,14 +307,14 @@ dada <- function(derep,
       if(initializeErr) {
         err <- matrix(1, nrow=16, ncol=max(41,qmax+1))
       }
-      res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), 
+      res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), names(derep[[i]]$uniques) %in% priors,
                           err,
                           qi, 
                           opts[["MATCH"]], opts[["MISMATCH"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
-                          opts[["OMEGA_A"]], 
-                          if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] }, ###!
+                          opts[["OMEGA_A"]], opts[["OMEGA_P"]],
+                          if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] },
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]], opts[["MIN_ABUNDANCE"]],
                           TRUE, #opts[["USE_QUALS"]],
                           FALSE,
@@ -459,8 +467,10 @@ dada <- function(derep,
 #' @details The various dada options...
 #' 
 #' OMEGA_A: This parameter sets the threshold for when DADA2 calls unique sequences significantly overabundant, and therefore creates a
-#'  new cluster with that sequence as the center. Default is 1e-40, which is a conservative setting to avoid making false
+#'  new partition with that sequence as the center. Default is 1e-40, which is a conservative setting to avoid making false
 #'  positive inferences, but which comes at the cost of reducing the ability to identify some rare variants.
+#' 
+#' OMEGA_P: The threshold for unique sequences with prior evidence of existence (see `priors` argument). Default is 1e-4.
 #' 
 #' USE_QUALS: If TRUE, the dada(...) error model takes into account the consensus quality score of the dereplicated unique sequences.
 #'  If FALSE, quality scores are ignored. Default is TRUE.

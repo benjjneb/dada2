@@ -9,30 +9,20 @@
 #include <RcppParallel.h>
 #include <unordered_map>
 #include <unordered_set>
-#include <pthread.h>
 //#include <gsl/gsl_cdf.h>
 
-#define TRACKING 0
-#define ALIGN_SQUAWK 100000
-#define TESTING 0
 #define VERBOSE 0
 #define SEQLEN 1000 // Buffer size for DNA sequences read in from uniques files
 // SEQLEN MAY NOT BE INCREASED BEYOND 1000 WITHOUT REVISITING AL2SUBS
-#define MIN_BUCKETS 10
-#define BUCKET_SCALE 0.5
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 #define DBL_PRECISION 1e-15 // precision of doubles
 #define KMER_SIZE 5
-#define NERRS 12
 #define TRUE  1
 #define FALSE 0
 #define MAX_SHUFFLE 10
-#define QMIN 0
-#define QSTEP 1
 #define GAP_GLYPH 9999
 #define GRAIN_SIZE 10
 #define CACHE_STRIDE 64 // up to 64kb of distance between compared kmer8 vectors
-
 
 
 /* -------------------------------------------
@@ -68,6 +58,7 @@ typedef struct {
 typedef struct {
   char *seq;   // the sequence, stored as C-string with A=1,C=2,G=3,T=4
   uint8_t *qual; // the rounded average qualities at each position for this unique
+  bool prior;  // there are (not) prior reasons to expect this sequence to exist
   uint16_t *kmer;   // the kmer vector of this sequence
   uint8_t *kmer8;   // the kmer vector of this sequence
   uint16_t *kord;   // the kmers in order of this sequence
@@ -111,6 +102,7 @@ typedef struct {
   unsigned int nalign;
   unsigned int nshroud;
   double omegaA;
+  double omegaP;
   bool use_quals;
   double *lams;
   double *cdf;
@@ -123,22 +115,26 @@ typedef struct {
    -------- METHODS METHODS METHODS ----------
    ------------------------------------------- */
 
-// methods implemented in cluster.cpp
-B *b_new(Raw **raws, unsigned int nraw, double omegaA, bool use_quals);
-Raw *raw_new(char *seq, double *qual, unsigned int reads);
-void raw_free(Raw *raw);
+// methods implemented in containers.cpp
+B *b_new(Raw **raws, unsigned int nraw, double omegaA, double omegaP, bool use_quals);
 void b_free(B *b);
 void b_init(B *b);
-bool b_shuffle2(B *b);
+Raw *raw_new(char *seq, double *qual, unsigned int reads, bool prior);
+void raw_free(Raw *raw);
+Bi *bi_new(unsigned int totraw);
+void bi_free(Bi *bi);
+unsigned int b_add_bi(B *b, Bi *bi);
+Raw *bi_pop_raw(Bi *bi, unsigned int r);
+unsigned int bi_add_raw(Bi *bi, Raw *raw);
+
+// methods implemented in cluster.cpp
 void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool verbose);
 void b_compare_parallel(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool verbose);
-void b_consensus_update(B *b);
-//void b_e_update(B *b);
+bool b_shuffle2(B *b);
 void b_p_update(B *b);
 int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose);
-char **b_get_seqs(B *b);
-int *b_get_abunds(B *b);
-//void b_make_consensus(B *b);
+void bi_census(Bi *bi);
+void bi_assign_center(Bi *bi);
 
 // methods implemented in misc.cpp
 void nt2int(char *oseq, const char *iseq);
@@ -176,7 +172,7 @@ double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int 
 ///TEST uint16_t kmer_dist2(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
 
 // methods implemented in pval.cpp
-double calc_pA(int reads, double E_reads);
+double calc_pA(int reads, double E_reads, bool prior);
 double get_pA(Raw *raw, Bi *bi);
 double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int ncol);
 double compute_lambda_ts(Raw *raw, Sub *sub, unsigned int ncol, double *err_mat, bool use_quals);
