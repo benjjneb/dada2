@@ -11,7 +11,6 @@
 #include <unordered_set>
 #include <pthread.h>
 //#include <gsl/gsl_cdf.h>
-#include "strmap.h" // an ANSI C hash table
 
 #define TRACKING 0
 #define ALIGN_SQUAWK 100000
@@ -152,11 +151,11 @@ void err_print(double err[4][4]);
 void test_fun(int i);
 
 // method implemented in nwalign_endsfree.cpp
-char **nwalign(const char *s1, const char *s2, int score[4][4], int gap_p, int band);
-char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap_p, int band);
-char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], int gap_p, int gap_homo_p, int band);
-char **nwalign_vectorized2(const char *s1, const char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band);
-char **nwalign_gapless(const char *s1, const char *s2);
+char **nwalign(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int band);
+char **nwalign_endsfree(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int band);
+char **nwalign_endsfree_homo(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int gap_homo_p, int band);
+char **nwalign_vectorized2(const char *s1, size_t len1, const char *s2, size_t len2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band);
+char **nwalign_gapless(const char *s1, size_t len1, const char *s2, size_t len2);
 char **raw_align(Raw *raw1, Raw *raw2, int match, int mismatch, int gap_p, int homo_gap_p, bool use_kmers, 
                  double kdist_cutoff, int band, bool vectorized_alignment, int SSE, bool gapless);
 Sub *sub_new(Raw *raw0, Raw *raw1, int match, int mismatch, int gap_p, int homo_gap_p, bool use_kmers, double kdist_cutoff, 

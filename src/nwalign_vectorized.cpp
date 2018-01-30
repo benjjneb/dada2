@@ -68,10 +68,9 @@ void parr(int16_t *arr, int nrow, int ncol) {
   }
 }
 
-char **nwalign_vectorized2(const char *s1, const char *s2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
+char **nwalign_vectorized2(const char *s1, size_t len1, const char *s2, size_t len2, int16_t match, int16_t mismatch, int16_t gap_p, int16_t end_gap_p, int band) {
   size_t row, col, ncol, nrow, foo;
   size_t i,j;
-  size_t len1, len2;
   int16_t d_free;
   size_t start_col, end_col;
   size_t col_min, col_max, even;
@@ -82,8 +81,6 @@ char **nwalign_vectorized2(const char *s1, const char *s2, int16_t match, int16_
   const char *ptr_const_char;
   char *ptr_char;
 
-  len1 = strlen(s1);
-  len2 = strlen(s2);
   if(len1 > len2) { // Ensure s1 is the shorter sequences
     ptr_const_char = s1;
     s1 = s2;
@@ -332,9 +329,9 @@ Rcpp::CharacterVector C_nwvec(std::vector<std::string> s1, std::vector<std::stri
   
   for(i=0;i<s1.size();i++) {
     if(endsfree) {
-      al = nwalign_vectorized2(s1[i].c_str(), s2[i].c_str(), match, mismatch, gap_p, 0, (size_t) band);
+      al = nwalign_vectorized2(s1[i].c_str(), s1[i].length(), s2[i].c_str(), s2[i].length(), match, mismatch, gap_p, 0, (size_t) band);
     } else {
-      al = nwalign_vectorized2(s1[i].c_str(), s2[i].c_str(), match, mismatch, gap_p, gap_p, (size_t) band);
+      al = nwalign_vectorized2(s1[i].c_str(), s1[i].length(), s2[i].c_str(), s2[i].length(), match, mismatch, gap_p, gap_p, (size_t) band);
     }
 
     rval[2*i] = std::string(al[0]);

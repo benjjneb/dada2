@@ -19,8 +19,8 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, int match, int m
   int i, j;
   char **al;
   // Make integer-ized c-style sequence strings
-  char *seq1 = (char *) malloc(s1.size()+1); //E
-  char *seq2 = (char *) malloc(s2.size()+1); //E
+  char *seq1 = (char *) malloc(s1.length()+1); //E
+  char *seq2 = (char *) malloc(s2.length()+1); //E
   if (seq1 == NULL || seq2 == NULL)  Rcpp::stop("Memory allocation failed.");
   nt2int(seq1, s1.c_str());
   nt2int(seq2, s2.c_str());
@@ -35,15 +35,15 @@ Rcpp::CharacterVector C_nwalign(std::string s1, std::string s2, int match, int m
   // Perform alignment and convert back to ACGT
   if(endsfree) {
     if(gap_p == homo_gap_p) {
-      al = nwalign_endsfree(seq1, seq2, c_score, gap_p, band);
+      al = nwalign_endsfree(seq1, s1.length(), seq2, s2.length(), c_score, gap_p, band);
     } else {
-      al = nwalign_endsfree_homo(seq1, seq2, c_score, gap_p, homo_gap_p, band);
+      al = nwalign_endsfree_homo(seq1, s1.length(), seq2, s2.length(), c_score, gap_p, homo_gap_p, band);
     }
   } else {
     if(gap_p != homo_gap_p) {
       Rprintf("Warning: A separate homopolymer gap penalty isn't implemented when endsfree=FALSE.\n\tAll gaps will be penalized by the regular gap penalty.\n");
     }
-    al = nwalign(seq1, seq2, c_score, gap_p, band);
+    al = nwalign(seq1, s1.length(), seq2, s2.length(), c_score, gap_p, band);
   }
   int2nt(al[0], al[0]);
   int2nt(al[1], al[1]);
@@ -232,7 +232,8 @@ Rcpp::LogicalVector C_isACGT(std::vector<std::string> seqs) {
 //' 
 // [[Rcpp::export]]
 Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, unsigned int max_aligns) {
-  int i, j, n_iters, stride, minlen, nseqs, len1 = 0, len2 = 0;
+  int i, j, n_iters, stride, minlen, nseqs;
+  size_t len1 = 0, len2 = 0;
   char *seq1, *seq2;
   size_t n_kmers = (1 << (2*kmer_size));  // 4^k kmers
   
@@ -265,16 +266,16 @@ Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, R
 
   for(i=0;i<nseqs;i=i+stride) {
     seq1 = intstr(seqs[i].c_str());
-    len1 = strlen(seq1);
+    len1 = seqs[i].length();
     assign_kmer(kv1, seq1, kmer_size);
     for(j=i+1;j<nseqs;j=j+stride) {
       seq2 = intstr(seqs[j].c_str());
-      len2 = strlen(seq2);
+      len2 = seqs[j].length();
       assign_kmer(kv2, seq2, kmer_size);
 
       minlen = (len1 < len2 ? len1 : len2);
 
-      sub = al2subs(nwalign_endsfree(seq1, seq2, c_score, gap, band));
+      sub = al2subs(nwalign_endsfree(seq1, len1, seq2, len2, c_score, gap, band));
       adist[npairs] = ((double) sub->nsubs)/((double) minlen);
       
       kdist[npairs] = kmer_dist(kv1, len1, kv2, len2, kmer_size);

@@ -45,16 +45,16 @@ char **raw_align(Raw *raw1, Raw *raw2, int match, int mismatch, int gap_p, int h
     al = NULL;
 ///    nkm++;
   } else if(band == 0 || (gapless && kodist == kdist)) {
-    al = nwalign_gapless(raw1->seq, raw2->seq);
+    al = nwalign_gapless(raw1->seq, raw1->length, raw2->seq, raw2->length);
 ///    ngl++;
   } else if(vectorized_alignment) { 
-    al = nwalign_vectorized2(raw1->seq, raw2->seq, (int16_t) match, (int16_t) mismatch, (int16_t) gap_p, 0, band);
+    al = nwalign_vectorized2(raw1->seq, raw1->length, raw2->seq, raw2->length, (int16_t) match, (int16_t) mismatch, (int16_t) gap_p, 0, band);
 ///    nnw++;
   } else if(homo_gap_p != gap_p && homo_gap_p <= 0) {
-    al = nwalign_endsfree_homo(raw1->seq, raw2->seq, score, gap_p, homo_gap_p, band); // USES OLD SCORE_MATRIX FORMAT
+    al = nwalign_endsfree_homo(raw1->seq, raw1->length, raw2->seq, raw2->length, score, gap_p, homo_gap_p, band); // USES OLD SCORE_MATRIX FORMAT
 ///    nnw++;
   } else {
-    al = nwalign_endsfree(raw1->seq, raw2->seq, score, gap_p, band); // USES OLD SCORE_MATRIX FORMAT
+    al = nwalign_endsfree(raw1->seq, raw1->length, raw2->seq, raw2->length, score, gap_p, band); // USES OLD SCORE_MATRIX FORMAT
 ///    nnw++;
   }
 
@@ -66,12 +66,10 @@ char **raw_align(Raw *raw1, Raw *raw2, int match, int mismatch, int gap_p, int h
 }
 
 /* note: input sequence must end with string termination character, '\0' */
-char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap_p, int band) {
+char **nwalign_endsfree(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int band) {
   static size_t nnw = 0;
   int i, j;
   int l, r;
-  unsigned int len1 = strlen(s1);
-  unsigned int len2 = strlen(s2);
   int diag, left, up;
   
   unsigned int nrow = len1+1;
@@ -212,12 +210,10 @@ char **nwalign_endsfree(const char *s1, const char *s2, int score[4][4], int gap
 
 /* note: input sequence must end with string termination character, '\0' */
 /* 08-17-15: MJR homopolymer free gapping version of ends-free alignment */
-char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], int gap_p, int homo_gap_p, int band) {
+char **nwalign_endsfree_homo(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int homo_gap_p, int band) {
   static size_t nnw = 0;
   int i, j, k;
   int l, r;
-  unsigned int len1 = strlen(s1);
-  unsigned int len2 = strlen(s2);
   int diag, left, up;
   
   //find locations where s1 has homopolymer and put 1s in homo1
@@ -397,12 +393,10 @@ char **nwalign_endsfree_homo(const char *s1, const char *s2, int score[4][4], in
 // Not used within the dada method
 // Separate function to avoid if statement within performance critical nwalign_endsfree
 /* note: input sequence must end with string termination character, '\0' */
-char **nwalign(const char *s1, const char *s2, int score[4][4], int gap_p, int band) {
+char **nwalign(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int band) {
   static size_t nnw = 0;
   int i, j;
   int l, r;
-  unsigned int len1 = strlen(s1);
-  unsigned int len2 = strlen(s2);
   int diag, left, up;
   
   unsigned int nrow = len1+1;
@@ -535,9 +529,7 @@ char **nwalign(const char *s1, const char *s2, int score[4][4], int gap_p, int b
   return al;
 }
 
-char **nwalign_gapless(const char *s1, const char *s2) {
-  size_t len1 = strlen(s1);
-  size_t len2 = strlen(s2);
+char **nwalign_gapless(const char *s1, size_t len1, const char *s2, size_t len2) {
   size_t len_al = len1 > len2 ? len1 : len2;
   // Allocate memory to alignment strings.
   char **al = (char **) malloc( 2 * sizeof(char *) ); //E

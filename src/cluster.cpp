@@ -84,7 +84,7 @@ void bi_free(Bi *bi) {
 
 // The constructor for the B object. Takes in array of Raws.
 B *b_new(Raw **raws, unsigned int nraw, double omegaA, bool use_quals) {
-  unsigned int i, j, index;
+  unsigned int index;
 
   // Allocate memory
   B *b = (B *) malloc(sizeof(B)); //E
@@ -321,14 +321,15 @@ struct CompareParallel : public RcppParallel::Worker
   Comparison *output;
   
   // parameters
+  double *err_mat;
+  unsigned int ncol;
   int match, mismatch, gap_pen, homo_gap_pen;
-  int band_size;
-  bool use_kmers, vectorized_alignment;
+  bool use_kmers;
   double kdist_cutoff;
+  int band_size;
+  bool vectorized_alignment;
   int SSE;
   bool gapless;
-  unsigned int ncol;
-  double *err_mat;
   
   // initialize with source and destination
   CompareParallel(B *b, unsigned int i, double *err_mat, unsigned int ncol, Comparison *output,
