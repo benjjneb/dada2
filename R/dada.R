@@ -20,7 +20,7 @@ assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 assign("SSE", 2, envir = dada_opts)
 assign("GAPLESS", FALSE, envir=dada_opts)
 assign("PSEUDO_PREVALENCE", 2, envir=dada_opts)
-assign("PSEUDO_ABUNDANCE", 0, envir=dada_opts)
+assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -385,7 +385,7 @@ dada <- function(derep,
     # Get pseudo priors
     if(pseudo && nconsist >= 1) { # Don't bother if nconsist=0, i.e. max error init
       st <- makeSequenceTable(clustering)
-      pseudo_priors <- colnames(st)[colSums(st>0) >= opts$PSEUDO_PREVALENCE || colSums(st) >= opts$PSEUDO_ABUNDANCE]
+      pseudo_priors <- colnames(st)[colSums(st>0) >= opts$PSEUDO_PREVALENCE | colSums(st) >= opts$PSEUDO_ABUNDANCE]
       rm(st)
     }
     
@@ -544,9 +544,14 @@ dada <- function(derep,
 #'  overlap. If equal, the optimal alignment is assumed to be gapless. Default is FALSE.
 #'  Only relevant if USE_KMERS is TRUE.
 #' 
-#' PSEUDO_PREVALENCE: TODO. Default is 2.
+#' PSEUDO_PREVALENCE: When performing pseudo-pooling, all sequence variants found in at least two
+#'  samples are used as priors for a subsequent round of sample inference. 
+#'  Only relevant if `pool="pseudo"`. Default is 2.
 #' 
-#' PSEUDO_ABUNDANCE: TODO. Default is 0.
+#' PSEUDO_ABUNDANCE: When performing pseudo-pooling, all denoised sequence variants with total
+#'  abundance (over all samples) greater than this are used as priors for a subsequent round 
+#'  of sample inference.
+#'  Only relevant if `pool="pseudo"`. Default is Inf (i.e. abundance ignored for this purpose).
 #' 
 #' @seealso 
 #'  \code{\link{getDadaOpt}}

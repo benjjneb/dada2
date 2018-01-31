@@ -78,9 +78,14 @@ GAPLESS: If TRUE, the ordered kmer identity between pairs of sequences is compar
  overlap. If equal, the optimal alignment is assumed to be gapless. Default is FALSE.
  Only relevant if USE_KMERS is TRUE.
 
-PSEUDO_PREVALENCE: TODO. Default is 2.
+PSEUDO_PREVALENCE: When performing pseudo-pooling, all sequence variants found in at least two
+ samples are used as priors for a subsequent round of sample inference. 
+ Only relevant if `pool="pseudo"`. Default is 2.
 
-PSEUDO_ABUNDANCE: TODO. Default is 0.
+PSEUDO_ABUNDANCE: When performing pseudo-pooling, all denoised sequence variants with total
+ abundance (over all samples) greater than this are used as priors for a subsequent round 
+ of sample inference.
+ Only relevant if `pool="pseudo"`. Default is Inf (i.e. abundance ignored for this purpose).
 }
 \examples{
 setDadaOpt(OMEGA_A = 1e-20)
