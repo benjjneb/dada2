@@ -136,22 +136,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// evaluate_kmers
-Rcpp::DataFrame evaluate_kmers(std::vector< std::string > seqs, int kmer_size, Rcpp::NumericMatrix score, int gap, int band, unsigned int max_aligns);
-RcppExport SEXP _dada2_evaluate_kmers(SEXP seqsSEXP, SEXP kmer_sizeSEXP, SEXP scoreSEXP, SEXP gapSEXP, SEXP bandSEXP, SEXP max_alignsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector< std::string > >::type seqs(seqsSEXP);
-    Rcpp::traits::input_parameter< int >::type kmer_size(kmer_sizeSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type score(scoreSEXP);
-    Rcpp::traits::input_parameter< int >::type gap(gapSEXP);
-    Rcpp::traits::input_parameter< int >::type band(bandSEXP);
-    Rcpp::traits::input_parameter< unsigned int >::type max_aligns(max_alignsSEXP);
-    rcpp_result_gen = Rcpp::wrap(evaluate_kmers(seqs, kmer_size, score, gap, band, max_aligns));
-    return rcpp_result_gen;
-END_RCPP
-}
 // kmer_dist
 Rcpp::NumericVector kmer_dist(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size);
 RcppExport SEXP _dada2_kmer_dist(SEXP s1SEXP, SEXP s2SEXP, SEXP kmer_sizeSEXP) {
@@ -202,18 +186,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector< std::string > >::type s2(s2SEXP);
     Rcpp::traits::input_parameter< int >::type kmer_size(kmer_sizeSEXP);
     rcpp_result_gen = Rcpp::wrap(kdist_matches(s1, s2, kmer_size));
-    return rcpp_result_gen;
-END_RCPP
-}
-// C_subpos
-Rcpp::DataFrame C_subpos(std::string s1, std::string s2);
-RcppExport SEXP _dada2_C_subpos(SEXP s1SEXP, SEXP s2SEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type s1(s1SEXP);
-    Rcpp::traits::input_parameter< std::string >::type s2(s2SEXP);
-    rcpp_result_gen = Rcpp::wrap(C_subpos(s1, s2));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -316,12 +288,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dada2_C_eval_pair", (DL_FUNC) &_dada2_C_eval_pair, 2},
     {"_dada2_C_pair_consensus", (DL_FUNC) &_dada2_C_pair_consensus, 4},
     {"_dada2_C_isACGT", (DL_FUNC) &_dada2_C_isACGT, 1},
-    {"_dada2_evaluate_kmers", (DL_FUNC) &_dada2_evaluate_kmers, 6},
     {"_dada2_kmer_dist", (DL_FUNC) &_dada2_kmer_dist, 3},
     {"_dada2_kord_dist", (DL_FUNC) &_dada2_kord_dist, 4},
     {"_dada2_kmer_matches", (DL_FUNC) &_dada2_kmer_matches, 3},
     {"_dada2_kdist_matches", (DL_FUNC) &_dada2_kdist_matches, 3},
-    {"_dada2_C_subpos", (DL_FUNC) &_dada2_C_subpos, 2},
     {"_dada2_C_matchRef", (DL_FUNC) &_dada2_C_matchRef, 4},
     {"_dada2_C_matrixEE", (DL_FUNC) &_dada2_C_matrixEE, 1},
     {"_dada2_C_nwvec", (DL_FUNC) &_dada2_C_nwvec, 7},

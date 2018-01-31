@@ -33,37 +33,6 @@ C_isACGT <- function(seqs) {
     .Call('_dada2_C_isACGT', PACKAGE = 'dada2', seqs)
 }
 
-#' Generate the kmer-distance and the alignment distance from the
-#'   given set of sequences. 
-#'
-#' @param seqs (Required). Character.
-#'  A vector containing all unique sequences in the data set.
-#'  Only A/C/G/T allowed.
-#'  
-#' @param kmer_size (Required). A \code{numeric(1)}. The size of the kmer to test (eg. 5-mer).
-#' 
-#' @param score (Required). Numeric matrix (4x4).
-#' The score matrix used during the alignment. Coerced to integer.
-#'
-#' @param gap (Required). A \code{numeric(1)} giving the gap penalty for alignment. Coerced to integer.
-#'
-#' @param band (Required). A \code{numeric(1)} giving the band-size for the NW alignments.
-#'
-#' @param max_aligns (Required). A \code{numeric(1)} giving the (maximum) number of
-#' pairwise alignments to do.
-#'
-#' @return data.frame
-#'
-#' @examples
-#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-#' kmerdf <- dada2:::evaluate_kmers(getSequences(derep1), 5, getDadaOpt("SCORE_MATRIX"),
-#'                                  getDadaOpt("GAP_PENALTY"), 16, 1000)
-#' plot(kmerdf$kmer, kmerdf$align)
-#' 
-evaluate_kmers <- function(seqs, kmer_size, score, gap, band, max_aligns) {
-    .Call('_dada2_evaluate_kmers', PACKAGE = 'dada2', seqs, kmer_size, score, gap, band, max_aligns)
-}
-
 kmer_dist <- function(s1, s2, kmer_size) {
     .Call('_dada2_kmer_dist', PACKAGE = 'dada2', s1, s2, kmer_size)
 }
@@ -78,10 +47,6 @@ kmer_matches <- function(s1, s2, kmer_size) {
 
 kdist_matches <- function(s1, s2, kmer_size) {
     .Call('_dada2_kdist_matches', PACKAGE = 'dada2', s1, s2, kmer_size)
-}
-
-C_subpos <- function(s1, s2) {
-    .Call('_dada2_C_subpos', PACKAGE = 'dada2', s1, s2)
 }
 
 C_matchRef <- function(seqs, ref, word_size, non_overlapping) {
