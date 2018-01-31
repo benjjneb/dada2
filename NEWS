@@ -1,3 +1,44 @@
+CHANGES IN VERSION 1.7.5
+-----------------------
+
+NEW FEATURES
+
+    o The dada(...) function now accepts a list of "priors", i.e. sequences for which there is prior evidence they might be real. Input sequences that match one of the priors are evaluated against a relaxed threshold of statistical evidence (OMEGA_P instead of OMEGA_A), and can be detected even as singletons.
+
+    o The dada(...) function can perform "pseudo-pooling" with dada(..., pool="pseudo"). In pseudo-pooling, the input samples are denoised independently, then a set of sequences that appear in at least MIN_PREVALENCE samples are used as priors for a second and final round of sample inference. MIN_PREVALENCE=2 by default.
+
+CHANGES IN VERSION 1.7.4
+-----------------------
+
+NEW FEATURES
+
+    o A new fast screen for optimal gapless alignments in the core denoising algorithm was added, and can be turned on by setting the DADA2 option GAPLESS=TRUE. This provides some speedup in the core denoising algorithm.
+    
+CHANGES IN VERSION 1.7.3
+-----------------------
+
+BUG FIXES
+
+    o Fixed an overflow bug on sequences 260nts or longer in the SSE=2 code.
+
+CHANGES IN VERSION 1.7.2
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The DADA2 option enabling explicit 8-bit SSE vectorization in the C code was turned on by default (SSE=2). Some speedup in the core denoising algorithm.
+
+CHANGES IN VERSION 1.7.1
+-----------------------
+
+NEW FEATURES
+
+    o seqComplexity calculates the complexity of input sequences, and can be used to identify and filter out low-complexity sequences.
+    
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The default minOverlap parameter of mergePairs was reduced from 20 to 12, and the alignment parameters used during merging were altered to more strongly penalize mismatches and gaps, which improves merging performance in repetitive sequences.
+
 CHANGES IN VERSION 1.5.6
 -----------------------
 
