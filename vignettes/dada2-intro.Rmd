@@ -3,7 +3,7 @@ title: "Introduction to dada2"
 author: "Benjamin J Callahan, Joey McMurdie, Susan Holmes"
 
 output: 
-  BiocStyle::html_document2
+  BiocStyle::html_document
 vignette: >
   %\VignetteIndexEntry{Introduction to dada2}
   %\VignetteEngine{knitr::rmarkdown}
