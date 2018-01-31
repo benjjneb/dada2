@@ -46,13 +46,10 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   
   /********** INPUT VALIDATION *********/
   // Check lengths of seqs and abundances vectors
-  if(seqs.size() != abundances.size()) {
-    Rcpp::stop("Sequence and abundance vectors had different lengths.");
-  }
   nraw = seqs.size();
-  if(nraw == 0) {
-    Rcpp::stop("Zero input sequences.");
-  }
+  if(nraw == 0) { Rcpp::stop("Zero input sequences."); }
+  if(nraw != abundances.size()) { Rcpp::stop("Sequence and abundance vectors had different lengths."); }
+  if(nraw != priors.size()) { Rcpp::stop("Sequence and priors vectors had different lengths."); }
   maxlen=0;
   minlen=SEQLEN;
   for(index=0;index<nraw;index++) {

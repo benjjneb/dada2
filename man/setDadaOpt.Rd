@@ -75,8 +75,12 @@ SSE: Controls the level of explicit SSE vectorization for kmer calculations. Def
  2: Packed SSE2 using 8-bit integers. Slightly faster than SSE=1.
 
 GAPLESS: If TRUE, the ordered kmer identity between pairs of sequences is compared to their unordered
- overlap. If equal, the optimal alignment is assumed to be gapless. Default iS FALSE.
+ overlap. If equal, the optimal alignment is assumed to be gapless. Default is FALSE.
  Only relevant if USE_KMERS is TRUE.
+
+PSEUDO_PREVALENCE: TODO. Default is 2.
+
+PSEUDO_ABUNDANCE: TODO. Default is 0.
 }
 \examples{
 setDadaOpt(OMEGA_A = 1e-20)

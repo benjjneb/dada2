@@ -312,9 +312,6 @@ removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
       bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]][!bim,]
     } else if(class(unqs[[i]]) == "matrix" && !any(is.na(colnames(unqs[[i]])))) { # Tabled sequences
-      if(missing(method) && i==1) {
-        message("As of the 1.4 release, the default method changed to consensus (from pooled).")
-      }
       if(method == "pooled") {
         bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       } else if(method == "consensus") {

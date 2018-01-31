@@ -303,6 +303,7 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
     }
   }
 
+///!  Rprintf("Prior... index: %i, i:%i, r:%i, p:%.2e\n", minraw_prior->index, mini_prior, minr_prior, minraw_prior->p); ///!
   // Bonferoni correct the abundance pval by the number of raws and compare to OmegaA
   // (quite conservative, although probably unimportant given the abundance model issues)
   pA = minraw->p * b->nraw;

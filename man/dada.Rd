@@ -5,8 +5,8 @@
 \title{High resolution sample inference from amplicon data.}
 \usage{
 dada(derep, err, errorEstimationFunction = loessErrfun, selfConsist = FALSE,
-  pool = FALSE, priors = NULL, multithread = FALSE, verbose = FALSE,
-  ...)
+  pool = FALSE, priors = character(0), multithread = FALSE,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{derep}{(Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
@@ -43,15 +43,17 @@ by assuming that all reads are errors away from one true sequence.}
 
  If pool = TRUE, the algorithm will pool together all samples prior to sample inference.
  If pool = FALSE, sample inference is performed on each sample individually.
+ If pool = "pseudo", the algorithm will perform pseudo-pooling between individually processed samples.
  
  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
   error rates, which are always estimated from pooled observations across samples.}
 
-\item{priors}{(Optional). \code{character}. Default is NULL.
+\item{priors}{(Optional). \code{character}. Default is character(0), i.e. no prior sequences.
  
 The priors argument provides a set of sequences for which there is prior information suggesting they may
- truly exist, i.e. are not errors. Dereplicatred sequences that exactly match one of the priors face a reduced 
- threshold `OMEGA_P` for forming a new partition.}
+ truly exist, i.e. are not errors. The abundance p-value of dereplicated sequences that exactly match one
+ of the priors are calculated without conditioning on presence, allowing singletons to be detected,
+ and are compared to a reduced threshold `OMEGA_P` when forming new partitions.}
 
 \item{multithread}{(Optional). Default is FALSE.
 If TRUE, multithreading is enabled and the number of available threads is automatically determined.   

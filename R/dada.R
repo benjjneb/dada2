@@ -19,6 +19,8 @@ assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 assign("SSE", 2, envir = dada_opts)
 assign("GAPLESS", FALSE, envir=dada_opts)
+assign("PSEUDO_PREVALENCE", 2, envir=dada_opts)
+assign("PSEUDO_ABUNDANCE", 0, envir=dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -64,15 +66,17 @@ assign("GAPLESS", FALSE, envir=dada_opts)
 #' 
 #'  If pool = TRUE, the algorithm will pool together all samples prior to sample inference.
 #'  If pool = FALSE, sample inference is performed on each sample individually.
+#'  If pool = "pseudo", the algorithm will perform pseudo-pooling between individually processed samples.
 #'  
 #'  This argument has no effect if only 1 sample is provided, and \code{pool} does not affect
 #'   error rates, which are always estimated from pooled observations across samples.
 #'   
-#' @param priors (Optional). \code{character}. Default is NULL.
+#' @param priors (Optional). \code{character}. Default is character(0), i.e. no prior sequences.
 #'  
 #' The priors argument provides a set of sequences for which there is prior information suggesting they may
-#'  truly exist, i.e. are not errors. Dereplicatred sequences that exactly match one of the priors face a reduced 
-#'  threshold `OMEGA_P` for forming a new partition.
+#'  truly exist, i.e. are not errors. The abundance p-value of dereplicated sequences that exactly match one
+#'  of the priors are calculated without conditioning on presence, allowing singletons to be detected,
+#'  and are compared to a reduced threshold `OMEGA_P` when forming new partitions.
 #'   
 #' @param multithread (Optional). Default is FALSE.
 #'  If TRUE, multithreading is enabled and the number of available threads is automatically determined.   
@@ -134,7 +138,7 @@ dada <- function(derep,
                  errorEstimationFunction = loessErrfun,
                  selfConsist = FALSE, 
                  pool = FALSE,
-                 priors = NULL,
+                 priors = character(0),
                  multithread = FALSE, 
                  verbose=FALSE, ...) {
   
@@ -206,12 +210,21 @@ dada <- function(derep,
     warning("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.")
   }
   
+  # Get prior sequences
+  priors <- getSequences(priors)
+  
   # Pool the derep objects if so indicated
+  pseudo <- FALSE; pseudo_priors <- character(0)
   if(length(derep) <= 1) { pool <- FALSE }
-  if(pool) { # Make derep a length 1 list of pooled derep object
-    derep.in <- derep
-    derep <- list(combineDereps2(derep))
-  }
+  if(is.logical(pool)) {
+    if(pool) { # Make derep a length 1 list of pooled derep object
+      derep.in <- derep
+      derep <- list(combineDereps2(derep))
+    }
+  } else if(is.character(pool) && pool == "pseudo") {
+    pool <- FALSE
+    pseudo <- TRUE
+  } else { stop("Invalid pool argument.") }
   
   # Validate err matrix
   initializeErr <- FALSE
@@ -231,8 +244,6 @@ dada <- function(derep,
     }
   }
 
-  # Might want to check for summed transitions from NT < 1 also.
-  
   # Validate errorEstimationFunction
   if(!opts$USE_QUALS) {
     if(!missing(errorEstimationFunction) && verbose) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
@@ -307,7 +318,7 @@ dada <- function(derep,
       if(initializeErr) {
         err <- matrix(1, nrow=16, ncol=max(41,qmax+1))
       }
-      res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), names(derep[[i]]$uniques) %in% priors,
+      res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), names(derep[[i]]$uniques) %in% c(priors, pseudo_priors),
                           err,
                           qi, 
                           opts[["MATCH"]], opts[["MISMATCH"]], opts[["GAP_PENALTY"]],
@@ -366,8 +377,18 @@ dada <- function(derep,
     
     # Termination condition for selfConsist loop
     if((!selfConsist) || any(sapply(errs, identical, err)) || (nconsist >= opts$MAX_CONSIST)) {
-      break
-    } 
+      if(!pseudo || (pseudo && nconsist >= 2)) { # If pseudo, must go through first (full) loop to get pseudo priors
+        break
+      }
+    }
+    
+    # Get pseudo priors
+    if(pseudo && nconsist >= 1) { # Don't bother if nconsist=0, i.e. max error init
+      st <- makeSequenceTable(clustering)
+      pseudo_priors <- colnames(st)[colSums(st>0) >= opts$PSEUDO_PREVALENCE || colSums(st) >= opts$PSEUDO_ABUNDANCE]
+      rm(st)
+    }
+    
     nconsist <- nconsist+1
   } # repeat
 
@@ -383,7 +404,7 @@ dada <- function(derep,
   # A single dada-class object if one derep object provided.
   # A list of dada-class objects if multiple derep objects provided.
   rval2 = replicate(length(derep), list(denoised=NULL, clustering=NULL, sequence=NULL, quality=NULL, birth_subs=NULL, trans=NULL, map=NULL,
-                                        err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
+                                        err_in=NULL, err_out=NULL, opts=NULL), simplify=FALSE)
   for(i in seq_along(derep)) {
     rval2[[i]]$denoised <- getUniques(clustering[[i]])
     rval2[[i]]$clustering <- clustering[[i]]
@@ -401,9 +422,8 @@ dada <- function(derep,
     }
     rval2[[i]]$err_out <- err
     
-    # Store the call and the options that were used in the return object
+    # Store the options that were used in the return object
     rval2[[i]]$opts <- opts
-    rval2[[i]]$call <- call
   }
 
   # If pool=TRUE, expand the rval and prune the individual return objects
@@ -411,7 +431,7 @@ dada <- function(derep,
     # Expand rval into a list of the proper length
     rval1 <- rval2[[1]]
     rval2 = replicate(length(derep.in), list(denoised=NULL, clustering=NULL, sequence=NULL, quality=NULL, birth_subs=NULL, trans=NULL, map=NULL,
-                                          err_in=NULL, err_out=NULL, opts=NULL, call=NULL), simplify=FALSE)
+                                          err_in=NULL, err_out=NULL, opts=NULL), simplify=FALSE)
     # Make map named by the pooled unique sequence
     map <- map[[1]]
     names(map) <- names(derep[[1]]$uniques)
@@ -521,8 +541,12 @@ dada <- function(derep,
 #'  2: Packed SSE2 using 8-bit integers. Slightly faster than SSE=1.
 #' 
 #' GAPLESS: If TRUE, the ordered kmer identity between pairs of sequences is compared to their unordered
-#'  overlap. If equal, the optimal alignment is assumed to be gapless. Default iS FALSE.
+#'  overlap. If equal, the optimal alignment is assumed to be gapless. Default is FALSE.
 #'  Only relevant if USE_KMERS is TRUE.
+#' 
+#' PSEUDO_PREVALENCE: TODO. Default is 2.
+#' 
+#' PSEUDO_ABUNDANCE: TODO. Default is 0.
 #' 
 #' @seealso 
 #'  \code{\link{getDadaOpt}}
