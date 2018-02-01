@@ -63,7 +63,7 @@ as bimeric by this consensus procedure.
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
-dd <- dada(list(derep1,derep2), err=NULL, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+dd <- dada(list(derep1,derep2), err=NULL, selfConsist=TRUE)
 seqtab <- makeSequenceTable(dd)
 isBimeraDenovoTable(seqtab)
 isBimeraDenovoTable(seqtab, allowOneOff=TRUE, minSampleFraction=0.5)

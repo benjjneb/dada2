@@ -42,9 +42,10 @@ Use DADA2's vectorized aligner instead of standard DP matrix. Not intended for l
 This function performs a Needleman-Wunsch alignment between two sequences.
 }
 \examples{
- sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
- sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
- nwalign(sq1, sq2)
- nwalign(sq1, sq2, band=16)
+sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
+sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
+nwalign(sq1, sq2)
+nwalign(sq1, sq2, band=16, vec=TRUE)
+nwalign(sq1, sq2, match=1, mismatch=-2, gap=-2)
 
 }

@@ -40,9 +40,10 @@ This function is a convenience interface for chimera removal. Two methods to ide
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+dada1 <- dada(derep1, err=tperr1)
 out.nobim <- removeBimeraDenovo(dada1)
-out.nobim <- removeBimeraDenovo(dada1$clustering, method="pooled", minFoldParentOverAbundance = 2)
+out.nobim <- removeBimeraDenovo(dada1, multithread=TRUE, verbose=TRUE)
+out.nobim <- removeBimeraDenovo(dada1, method="pooled", minFoldParentOverAbundance = 2)
 
 }
 \seealso{

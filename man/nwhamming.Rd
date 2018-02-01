@@ -7,24 +7,25 @@
 nwhamming(s1, s2, ...)
 }
 \arguments{
-\item{s1}{(Required). \code{character(1)}. The first sequence to align. A/C/G/T only.}
+\item{s1}{(Required). \code{character}. The first sequence(s) to align. A/C/G/T only.}
 
-\item{s2}{(Required). \code{character(1)}. The second sequence to align. A/C/G/T only.}
+\item{s2}{(Required). \code{character}. The second sequence(s) to align. A/C/G/T only.}
 
 \item{...}{(Optional). Further arguments to pass on to \code{\link{nwalign}}.}
 }
 \value{
 \code{integer(1)}. The total number of mismatches and gaps, excluding gaps at the beginning
- and end of the alignment.
+ and end of the alignment. If multiple sequences are provided to one argument, the hamming distances
+ between the single sequence argument and all the multiple sequences will be returned.
 }
 \description{
 This function performs a Needleman-Wunsch alignment between two sequences, and then counts
 the number of mismatches and indels in that alignment. End gaps are not included in this count.
 }
 \examples{
- sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
- sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
+sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
+sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
 nwhamming(sq1, sq2)
-nwhamming(sq1, sq2, band=16)
+nwhamming(sq1, sq2, band=16, vec=TRUE)
 
 }

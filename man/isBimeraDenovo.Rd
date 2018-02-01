@@ -54,6 +54,7 @@ being a bimera of those more abundant "parents".
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 isBimeraDenovo(dada1)
+isBimeraDenovo(dada1, multithread=2)
 isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=TRUE)
 
 }

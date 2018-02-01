@@ -10,7 +10,9 @@ dada(derep, err, errorEstimationFunction = loessErrfun, selfConsist = FALSE,
 }
 \arguments{
 \item{derep}{(Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
-A list of such objects can be provided, in which case each will be denoised with a shared error model.}
+A list of such objects can be provided, in which case each will be denoised with a shared error model.
+Alternatively, a \code{character} vector of valid filenames can be provided, which will then be
+initially processed with \code{\link{derepFastq}} in streaming fashion.}
 
 \item{err}{(Required). 16xN numeric matrix, or an object coercible by \code{\link{getErrors}} 
 such as the output of the \code{\link{learnErrors}} function.

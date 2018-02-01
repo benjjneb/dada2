@@ -88,11 +88,14 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #' @export
 #' 
 #' @examples
-#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' # Objects with sequences
+#' fn <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' derep1 = derepFastq(fn)
 #' dada1 <- dada(derep1, err=tperr1)
+#' # Coerce to character vector
+#' getSequences(fn)
 #' getSequences(derep1)
 #' getSequences(dada1)
-#' getSequences(dada1$clustering)
 #' 
 getSequences <- function(object, collapse=FALSE, silence=TRUE) {
   if(is(object, "character")) {
@@ -107,7 +110,7 @@ getSequences <- function(object, collapse=FALSE, silence=TRUE) {
     } else {
       return(object)
     }
-  } else if(class(object) == "DNAStringSet") {
+  } else if(class(object) %in% c("DNAStringSet", "DNAString")) {
     return(as.character(object))
   } else if(class(object) == "matrix" && is.character(object) && !any(is.na(rownames(object)))) { # Taxonomy table
     seqs <- rownames(object)
@@ -166,13 +169,14 @@ getNseq <- function(object) {
 #' @export
 #' 
 #' @examples
-#'  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
-#'  sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
-#'  nwalign(sq1, sq2)
-#'  nwalign(sq1, sq2, band=16)
+#' sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
+#' sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
+#' nwalign(sq1, sq2)
+#' nwalign(sq1, sq2, band=16, vec=TRUE)
+#' nwalign(sq1, sq2, match=1, mismatch=-2, gap=-2)
 #' 
 nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISMATCH"), gap=getDadaOpt("GAP_PENALTY"), homo_gap=NULL, band=-1, endsfree=TRUE, vec=FALSE) {
-  if(!is.character(s1) || !is.character(s2)) stop("Can only align character sequences.")
+  s1 <- getSequences(s1); s2 <- getSequences(s2)
   if(is.null(homo_gap)) { homo_gap <- gap }
   if(vec) {
     if(homo_gap != gap) stop("Homopolymer gap penalties are not implemented in the vectorized aligner.")
@@ -191,22 +195,23 @@ nwalign <- function(s1, s2, match=getDadaOpt("MATCH"), mismatch=getDadaOpt("MISM
 #' This function performs a Needleman-Wunsch alignment between two sequences, and then counts
 #' the number of mismatches and indels in that alignment. End gaps are not included in this count.
 #' 
-#' @param s1 (Required). \code{character(1)}. The first sequence to align. A/C/G/T only.
+#' @param s1 (Required). \code{character}. The first sequence(s) to align. A/C/G/T only.
 #' 
-#' @param s2 (Required). \code{character(1)}. The second sequence to align. A/C/G/T only.
+#' @param s2 (Required). \code{character}. The second sequence(s) to align. A/C/G/T only.
 #' 
 #' @param ... (Optional). Further arguments to pass on to \code{\link{nwalign}}.
 #' 
 #' @return \code{integer(1)}. The total number of mismatches and gaps, excluding gaps at the beginning
-#'  and end of the alignment.
+#'  and end of the alignment. If multiple sequences are provided to one argument, the hamming distances
+#'  between the single sequence argument and all the multiple sequences will be returned.
 #' 
 #' @export
 #' 
 #' @examples
-#'  sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
-#'  sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
+#' sq1 <- "CTAATACATGCAAGTCGAGCGAGTCTGCCTTGAAGATCGGAGTGCTTGCACTCTGTGAAACAAGATA"
+#' sq2 <- "TTAACACATGCAAGTCGAACGGAAAGGCCAGTGCTTGCACTGGTACTCGAGTGGCGAACGGGTGAGT"
 #' nwhamming(sq1, sq2)
-#' nwhamming(sq1, sq2, band=16)
+#' nwhamming(sq1, sq2, band=16, vec=TRUE)
 #' 
 nwhamming <- Vectorize(function(s1, s2, ...) {
   al <- nwalign(s1, s2, ...)

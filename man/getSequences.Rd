@@ -28,10 +28,13 @@ This function extracts the sequences from several different data objects, includ
  DNAStringSet object.
 }
 \examples{
-derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+# Objects with sequences
+fn <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+derep1 = derepFastq(fn)
 dada1 <- dada(derep1, err=tperr1)
+# Coerce to character vector
+getSequences(fn)
 getSequences(derep1)
 getSequences(dada1)
-getSequences(dada1$clustering)
 
 }

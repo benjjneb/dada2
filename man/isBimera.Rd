@@ -42,7 +42,7 @@ the allowOneOff argument is TRUE.
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 sqs1 <- getSequences(derep1)
-isBimera(sqs1[[20]], sqs1[1:10])
+isBimera(sqs1[[20]], parents = sqs1[1:10])
 
 }
 \seealso{

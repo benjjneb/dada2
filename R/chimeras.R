@@ -38,7 +38,7 @@
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' sqs1 <- getSequences(derep1)
-#' isBimera(sqs1[[20]], sqs1[1:10])
+#' isBimera(sqs1[[20]], parents = sqs1[1:10])
 #' 
 isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16) {
   rval <- C_is_bimera(sq, parents, allowOneOff, minOneOffParentDistance, 
@@ -100,6 +100,7 @@ isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, 
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 #' isBimeraDenovo(dada1)
+#' isBimeraDenovo(dada1, multithread=2)
 #' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=TRUE)
 #' 
 isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
@@ -212,7 +213,7 @@ isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbunda
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
-#' dd <- dada(list(derep1,derep2), err=NULL, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' dd <- dada(list(derep1,derep2), err=NULL, selfConsist=TRUE)
 #' seqtab <- makeSequenceTable(dd)
 #' isBimeraDenovoTable(seqtab)
 #' isBimeraDenovoTable(seqtab, allowOneOff=TRUE, minSampleFraction=0.5)
@@ -285,9 +286,10 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-#' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' dada1 <- dada(derep1, err=tperr1)
 #' out.nobim <- removeBimeraDenovo(dada1)
-#' out.nobim <- removeBimeraDenovo(dada1$clustering, method="pooled", minFoldParentOverAbundance = 2)
+#' out.nobim <- removeBimeraDenovo(dada1, multithread=TRUE, verbose=TRUE)
+#' out.nobim <- removeBimeraDenovo(dada1, method="pooled", minFoldParentOverAbundance = 2)
 #' 
 removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
   if(class(unqs)!="list") {
@@ -371,7 +373,7 @@ removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
 #' 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-#' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
+#' dada1 <- dada(derep1, err=tperr1)
 #' isShiftDenovo(dada1)
 #' isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
 #' 
