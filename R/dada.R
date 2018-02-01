@@ -150,7 +150,7 @@ dada <- function(derep,
   args <- list(...)
   # Catch the deprecated SCORE_MATRIX option
   if("SCORE_MATRIX" %in% names(args)) {
-    stop("DEFUNCT: The SCORE_MATRIX option has been replaced by the MATCH/MISMATCH arguments. Please update your code.")
+    stop("DEFUNCT: The SCORE_MATRIX option has been replaced by the MATCH/MISMATCH options. Please update your code.")
   }
   # Catch the defunct VERBOSE option
   if("VERBOSE" %in% names(args)) {
@@ -183,7 +183,7 @@ dada <- function(derep,
   # Get prior sequences
   priors <- getSequences(priors)
   
-  # Pool the derep objects if so indicated
+  # Pool the derep objects if so indicated, or setup pseudo-pooling
   pseudo <- FALSE; pseudo_priors <- character(0)
   if(length(derep) <= 1) { pool <- FALSE }
   if(is.logical(pool)) {
@@ -246,17 +246,20 @@ dada <- function(derep,
 
   # Initialize
   cur <- NULL
-  if(initializeErr) { nconsist <- 0 } else { nconsist <- 1 }
+  if(initializeErr) {
+    err <- matrix(1, nrow=16, ncol=max(41,qmax+1))
+    nconsist <- 0 
+  } else { nconsist <- 1 }
   errs <- list()
-  # The main loop, run once, or repeat until err repeats if selfConsist=T
 
+  # The main loop: Run once, or twice if pool="psuedo", or until err repeats if selfConsist=T
   repeat{
     clustering <- list()
     clusterquals <- list()
     birth_subs <- list()
     trans <- list()
     map <- list()
-    if(derep.input == "filename") { derep_map <- list() } # Must keep derep_map
+    if(derep.input == "filename") { derep_map <- list() } # Must store derep_map on dada-class object
     prev <- cur
     if(nconsist > 0) errs[[nconsist]] <- err
 
@@ -266,25 +269,27 @@ dada <- function(derep,
         derep[[i]] <- derepFastq(derep.fn)
       }
       # Validate derep-class object
-      if(!(is.integer(derep[[i]]$uniques))) { stop("Malformed non-integer derep$uniques vector.") }
-      if(!(all(C_isACGT(getSequences(derep[[i]]))))) { stop("Sequences must contain only A/C/G/T characters.") }
-      # Validate quals matrix(es)
-      if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) { stop("derep$quals matrices must have one row for each derep$unique sequence.") }
-      if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) {
-          stop("derep$quals matrices must have as many columns as the length of the derep$unique sequences.")
-      }
-      if(any(sapply(seq(nrow(derep[[i]]$quals)), 
-                      function(row) any(is.na(derep[[i]]$quals[row,1:nchar(names(derep[[i]]$uniques)[[row]])]))))) {
-          stop("NAs in derep$quals matrix. Check that all input sequences had valid associated qualities assigned.")
-      }
-      if(min(derep[[i]]$quals, na.rm=TRUE) < 0) { stop("Negative quality score detected.") }
-
-      qmax <- max(qmax, ceiling(max(derep[[i]]$quals, na.rm=TRUE)))
-#      if(qmax > 45) { message("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.") }
-      if(qmax > 250) { stop("derep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) }
+      if(is.null(cur)) { # First time through the loop
+        if(!(is.integer(derep[[i]]$uniques))) { stop("Non-integer derep$uniques vector.") }
+        if(!(all(C_isACGT(getSequences(derep[[i]]))))) { stop("Dereplicated sequences must be A/C/G/T only.") }
+        # Validate quals matrix(es)
+        if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) { stop("derep$quals matrices must have one row for each derep$unique sequence.") }
+        if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) {
+            stop("derep$quals matrices must have as many columns as the maximum length of the derep$unique sequences.")
+        }
+        if(any(sapply(seq(nrow(derep[[i]]$quals)), 
+                        function(row) any(is.na(derep[[i]]$quals[row,1:nchar(names(derep[[i]]$uniques)[[row]])]))))) {
+            stop("NAs in derep$quals matrix. Check that all input sequences had valid associated qualities assigned.")
+        }
+        if(min(derep[[i]]$quals, na.rm=TRUE) < 0) { stop("Negative quality score detected.") }
+  
+        if(ceiling(max(derep[[i]]$quals, na.rm=TRUE)) > qmax) {
+          qmax <- ceiling(max(derep[[i]]$quals, na.rm=TRUE))
+          if(qmax > 45) { message("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.") }
+          if(qmax > 250) { stop("derep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) }
+        }
+      } # if(is.null(cur)) { # First time through the loop
       
-      qi <- unname(t(derep[[i]]$quals)) # Need transpose so that sequences are columns
-
       if(nconsist == 1 && verbose) {
         if(pool) {
           cat(length(derep.in), "samples were pooled:", sum(derep[[i]]$uniques), "reads in", 
@@ -300,14 +305,11 @@ dada <- function(derep,
           cat("   selfConsist step", nconsist, "\n")
         }
       }
-      # Initialize and extend error matrix if necessary
-      if(initializeErr) {
-        err <- matrix(1, nrow=16, ncol=max(41,qmax+1))
-      }
+      # Extend error matrix if necessary
       if(ncol(err) < qmax+1) { # qmax = 0 if USE_QUALS = FALSE
-#        message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
-#  Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err), ").
-#  In selfConsist mode this should converge to the proper error rates, otherwise this may not be what you want.")
+        message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
+  Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err), ").
+  In learnErrors or selfConsist mode this should converge to the proper error rates, otherwise this may not be what you want.")
         for (q in seq(ncol(err), qmax)) { 
           err <- cbind(err, err[1:16, q])
           colnames(err)[q+1] <- q
@@ -315,7 +317,7 @@ dada <- function(derep,
       }
       res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), names(derep[[i]]$uniques) %in% c(priors, pseudo_priors),
                           err,
-                          qi, 
+                          unname(t(derep[[i]]$quals)), 
                           opts[["MATCH"]], opts[["MISMATCH"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
@@ -343,10 +345,19 @@ dada <- function(derep,
       if(derep.input == "filename") { derep_map[[i]] <- derep[[i]]$map }
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
       colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
-      # Revert derep if filename provided
+      # Revert derep[[i]] to a filename if provided in that form
       if(derep.input == "filename") { derep[[i]] <- derep.fn }
     }
     # Accumulate the sub matrix
+    # Extend out any trans matrices that don't extend to qmax with zeros
+    for(i in seq_along(trans)) {
+      if(ncol(trans[[i]]) < qmax+1) {
+        for (q in seq(ncol(trans[[i]]), qmax)) { 
+          trans[[i]] <- cbind(trans[[i]], matrix(0L, ncol=1, nrow=16))
+          colnames(trans[[i]])[q+1] <- q
+        }
+      }
+    }
     cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient
     
     # Estimate the new error model (if applicable)
@@ -401,7 +412,7 @@ dada <- function(derep,
   # A single dada-class object if one derep object provided.
   # A list of dada-class objects if multiple derep objects provided.
   rval2 = replicate(length(derep), list(denoised=NULL, clustering=NULL, sequence=NULL, quality=NULL, birth_subs=NULL, trans=NULL, map=NULL,
-                                        err_in=NULL, err_out=NULL, opts=NULL), simplify=FALSE)
+                                        derep_map=NULL, err_in=NULL, err_out=NULL, opts=NULL), simplify=FALSE)
   for(i in seq_along(derep)) {
     rval2[[i]]$denoised <- getUniques(clustering[[i]])
     rval2[[i]]$clustering <- clustering[[i]]
@@ -411,7 +422,6 @@ dada <- function(derep,
     rval2[[i]]$trans <- trans[[i]]
     rval2[[i]]$map <- map[[i]]
     if(derep.input == "filename") { rval2[[i]]$derep_map <- derep_map[[i]] }
-    else { rval2[[i]]$derep_map <- integer(0) }
     # Return the error rate(s) used as well as the final estimated error matrix
     if(selfConsist) { # Did a self-consist loop
       rval2[[i]]$err_in <- errs
@@ -451,7 +461,6 @@ dada <- function(derep,
       # Remap $map
       rval2[[i]]$map <- newBi[map[names(derep.in[[i]]$uniques)]]
       rval2[[i]]$derep_map <- rval2[[i]]$derep_map
-      if(derep.input == "filename") warning("Pooling with filenames as input may not give correct $derep_map.")
       # Recalculate abundances (both $denoised and $clustering$abundance)
       rval2[[i]]$denoised[] <- tapply(derep.in[[i]]$uniques, rval2[[i]]$map, sum)
       rval2[[i]]$clustering$abundance <- rval2[[i]]$denoised
@@ -460,8 +469,11 @@ dada <- function(derep,
     rm(derep.in)
   }
 
-  names(rval2) <- names(derep)
-  if(length(rval2) == 1) {  # Unlist if just a single derep object provided
+  # Assign names
+  if(derep.input == "derep-class") names(rval2) <- names(derep)
+  else if(derep.input == "filename") names(rval2) <- derep
+  # Make dada-class, unlist if just a single input sample
+  if(length(rval2) == 1) {  
     rval2 <- rval2[[1]]
     rval2 <- as(rval2, "dada")
   } else {
