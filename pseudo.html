@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="BJC" />
+
+
+<title>Pseudo</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+
+.section h2 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h3 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h4 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h5 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h6 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">dada2</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="dada-installation.html">Install</a>
+</li>
+<li>
+  <a href="tutorial.html">Tutorial</a>
+</li>
+<li>
+  <a href="bigdata.html">Big Data</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+    </li>
+    <li>
+      <a href="assign.html">Taxonomy</a>
+    </li>
+    <li>
+      <a href="pool.html">Pooling</a>
+    </li>
+    <li>
+      <a href="faq.html">FAQ</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Evaluation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+    </li>
+    <li>
+      <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="SMBS_DADA2.pdf">Symposium Slides</a>
+    </li>
+    <li>
+      <a href="SotA.html">Benchmarking</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://www.twitter.com/bejcal">
+    <span class="ion ion-social-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2/issues">
+    <span class="fa fa-question fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Priors and Pseudo-Pooling in DADA2</h1>
+</div>
+
+
+<div id="increasing-the-sensitivity-of-dada2-with-prior-information" class="section level1">
+<h3>Increasing the sensitivity of DADA2 with prior information</h3>
+<div id="short-version" class="section level2">
+<p><em><b>Short Version:</b>You can now tell the DADA2 method about “prior” sequence variants that you expect might be present. This increases sensitivity to those sequences and allows detection of singletons, without an increase in spurious output. The “priors” feature enables a new “pseudo”-pooling mode that gives results similar to fully pooling all samples, while maintaining the fast linear-scaling processing time of independent sample processing.</em></p>
+</div>
+<div id="preamble" class="section level2">
+<h2>Preamble</h2>
+<p>The core DADA2 denoising method attempts to provide the most accurate possible reconstruction of the exact amplicon sequence variants (ASVs) truly present in a sample from the noisy amplicon sequencing reads. This task can be thought of as consisting of two parts: (1) Classification of reads as error-free or not, and (2) mapping of error-containing reads to the appropriate error-free ASV.</p>
+<p>As in any classification problem, achieving high accuracy in DADA2 consists of achieving high rates of sensitivity (i.e. reporting as many real ASVs as possible) and specificity (i.e. not reporting out spurious amplicon errors). Also as in any classification problem, after the advances from improved approaches and using more data are exhausted, a balance must be struck between sensitivity and specificity.</p>
+<p>In DADA2 this balance manifests itself primarily in two ways. The <code>OMEGA_A</code> parameter sets the level of “statistical evidence” (think p-value) required for inferences of a new ASV, and is set at <code>OMEGA_A=1e-40</code> by default. And the p-values calculated by dada2 are conditional on observation, which effectively “doesn’t count” the first read from each unique sequence. This approach increases the accuracy of DADA2 by dramatically reduce the number of spurious ASVs output, which is often one of the most notable features for users transitioning to DADA2 from older OTU methods that were plagued by very high false-positive rates (e.g. <a href="https://peerj.com/articles/3889/">hundreds or thousands of OTUs from mock communities with tens of bacterial strains</a>).</p>
+<p>However, the tradeoff for that high specificity is that sensitivity, in particular to very rare variants, is somewhat reduced by the relatively conservative default <code>OMEGA_A</code> threshold, and singletons are not detected at all. This is usually the right tradeoff (although changing <code>OMEGA_A</code> to get higher sensitivity when desired is a massively underused feature in practice) because of the massive numbers of spurious sequences generated by amplicon sequencing, but could we do a bit better if we could incorporate a little bit of prior inforomation into the de novo <code>dada(...)</code> method?</p>
+</div>
+<div id="priors" class="section level2">
+<h1>Priors</h1>
+<p>Priors are a set of sequences that the user expects might be present in their samples due to some prior knowledge, and are passed into the denoising method as the <code>dada(..., priors=my.prior.seqs)</code> argument. The basic concept is inspired by Bayesian priors in statistics: The set of prior sequences is considered to have pre-existing statistical evidence that they exist. This is implemented in the DADA2 algorithm by requiring unique sequences matching the priors to reach a lower level of statistical evidence to be inferred as true ASVs (<code>OMEGA_P</code>, set to <code>OMEGA_P=1-e4</code> by default), and by calculating an unconditional p-value, that does not effecitively ignore the first read (roughly similar to adding a pseudo-count to each unique sequence matching the priors).</p>
+<p>The purpose of priors is that by providing a restricted list of prior sequences, sensitivity to those particular sequences can be increased, including by detecting singletons, without reducing false-positives generated by the unrestricted set of all possible amplicon sequences that must be considered by the naive algorithm. But let’s see how they really work in practice…</p>
+</div>
+<div id="data-setup-and-preliminaries" class="section level2">
+<h2>Data setup and preliminaries</h2>
+<p>Load the dada2 library and turn on GAPLESS speedup:</p>
+<pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
+<pre><code>## [1] &#39;1.7.5&#39;</code></pre>
+<pre class="r"><code>library(ggplot2)
+library(vegan)</code></pre>
+<pre class="r"><code>setDadaOpt(GAPLESS=TRUE) # Fast screen for optimal gapless alignments
+theme_set(theme_bw())</code></pre>
+<p>From our F1000Research paper [Bioconductor Workflow for Microbiome Data Analysis: from raw reads to community analyses](<a href="https://f1000research.com/articles/5-1492/v2" class="uri">https://f1000research.com/articles/5-1492/v2</a> in which we analyze the same dataset.</p>
+<blockquote>The data we will analyze here are highly-overlapping Illumina Miseq 2×250 amplicon sequences from the V4 region of the 16S gene6. These 360 fecal samples were collected from 12 mice longitudinally over the first year of life, to investigate the development and stabilization of the murine microbiome7. These data are downloaded from the following location: <a href="http://www.mothur.org/MiSeqDevelopmentData/StabilityNoMetaG.tar" class="uri">http://www.mothur.org/MiSeqDevelopmentData/StabilityNoMetaG.tar</a>.</blockquote>
+<p></p>If you wish to follow the rest of this document in R yourself, pause now to download the data from the above link and unpack it into the <code>~/full/</code> directory.</p>
+<p>We now perform the standard data-processing preliminaries as in <a href="https://benjjneb.github.io/dada2/tutorial.html">the DADA2 Tutorial</a>: Visualize quality, filter and trim, learn error rates, dereplicate. Here we’ll use just the forward reads from this paired-read dataset, in the interests of slightly simplifying the presentation.</p>
+<pre class="r"><code># Get forward files and visualize quality profile
+fnF &lt;- list.files(&quot;~/full/&quot;, pattern=&quot;_R1&quot;, full.names = TRUE)
+plotQualityProfile(fnF[c(3,13,33)])
+# Filter and truncate to 240 based on quality profile
+filtF &lt;- file.path(&quot;~/full/filtered&quot;, basename(fnF))
+track &lt;- filterAndTrim(fnF, filtF, truncLen=240, maxEE=2, multithread=TRUE)
+# Learn error rates
+err &lt;- learnErrors(filtF, multithread=TRUE, verbose=0)
+plotErrors(err, nominalQ=TRUE) # sanity check
+# Sanity check looks normal, so go ahead and read in dereplicatd sequences
+drp &lt;- derepFastq(filtF)
+# Parse sample names out of filenames, and add to drp
+sams &lt;- sapply(strsplit(basename(fnF), &quot;_&quot;), `[`, 1)
+names(drp) &lt;- sams</code></pre>
+</div>
+<div id="using-priors-to-increase-sensitivity-and-detect-singletons" class="section level2">
+<h2>Using priors to increase sensitivity and detect singletons</h2>
+<p>First we run the naive <code>dada</code> denosing algorithm, in its standard fully de novo mode without prior information.</p>
+<pre class="r"><code>dd &lt;- dada(drp, err=err, multithread=TRUE, verbose=0)
+st &lt;- removeBimeraDenovo(makeSequenceTable(dd), multithread=TRUE, verbose=TRUE)</code></pre>
+<pre><code>## Identified 390 bimeras out of 917 input sequences.</code></pre>
+<p>Now we run the <code>dada</code> method again, but this time we tell it about an E. coli sequence we have some prior reason to believe might be present in these samples:</p>
+<pre class="r"><code>sq.ec &lt;- &quot;TACGGAGGGTGCAAGCGTTAATCGGAATTACTGGGCGTAAAGCGCACGCAGGCGGTTTGTTAAGTCAGATGTGAAATCCCCGGGCTCAACCTGGGAACTGCATCTGATACTGGCAAGCTTGAGTCTCGTAGAGGGGGGTAGAATTCCAGGTGTAGCGGTGAAATGCGTAGAGATCTGGAGGAATACCGGTGGCGAAGGCGGCCCCCTGGACGAAGACTGACGCTCAGGTGCGAAAGCGTG&quot;
+dd.ec &lt;- dada(drp, err=err, multithread=TRUE, priors = sq.ec, verbose=0)
+st.ec &lt;- removeBimeraDenovo(makeSequenceTable(dd.ec), multithread=TRUE, verbose=TRUE)</code></pre>
+<pre><code>## Identified 390 bimeras out of 917 input sequences.</code></pre>
+<p>Compare the total set of ASVs inferred by each method:</p>
+<pre class="r"><code>identical(sort(getSequences(st)), sort(getSequences(st.ec))) # TRUE</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<p>They found the exact same total set of ASVs.</p>
+<p>Compare the number of samples in which the E. coli sequence was detected by both methods:</p>
+<pre class="r"><code>c(naive=sum(st[,sq.ec]&gt;0), prior=sum(st.ec[,sq.ec]&gt;0))</code></pre>
+<pre><code>## naive prior 
+##   159   238</code></pre>
+<p>There are significantly more samples in which the E. coli sequence variant was detected when the prior was provided!</p>
+<p>To get a better picture of those additional samples in which E. coli was detected, we plot the abundances of E. coli in each sample, as detected by the naive <code>dada</code> method, and by <code>dada(..., priors=sq.ec)</code>:</p>
+<pre class="r"><code>df.ecoli &lt;- data.frame(naive=st[,sq.ec], prior=st.ec[,sq.ec])
+df.ecoli$prior.only &lt;- df.ecoli$naive == 0 &amp; df.ecoli$prior &gt; 0
+ggplot(data=df.ecoli, aes(x=naive, y=prior, color=prior.only)) + geom_jitter(alpha=0.5, width=0.2, height=0.2) +
+  scale_color_manual(values=c(&quot;TRUE&quot;=&quot;red&quot;, &quot;FALSE&quot;=&quot;black&quot;)) + guides(color=FALSE) + coord_fixed(ratio=1) +
+  xlim(0,20) + ylim(0,20) + xlab(&quot;E.coli Reads (naive)&quot;) + ylab(&quot;E. coli reads (prior)&quot;)</code></pre>
+<p><img src="pseudo_files/figure-html/e-coli-prior-1.png" width="672" /></p>
+<p>As expected, the prior is allowing DADA2 to detect the E. coli ASV in samples where it is represented in just a few (1-4) reads and where the naive method failed to detect it (points in red). This includes detecting singletons! Outside of samples with those very low reads counts, all other reported E. coli abundances are identical between the methods, and remember there was no price paid in specificity for this increase in E. coli sensitivity (the naive and prior methods output the same total set of ASVs, so no new false positives).</p>
+</div>
+<div id="does-it-matter" class="section level2">
+<h2>Does it matter?</h2>
+<p>How much does this matter, really? In many cases, not much. The naive method does a very good job, and is returning identical results for every sample in which E. coli is supported by 5 or more reads (and in many supported by less). In practice, the naive method requires that there be 2 error-free reads of an ASV for it to be detected (or a few more if very close to another more abundant ASV), while prior ASVs can be detected if present in just one error-free read. Those detection limits are not qualitatively different, and not that different quantitatively.</p>
+<p>However, when detection at very low levels is desired for known variants, setting the prior effectively reduces the detection limit to the lowest possible level (1 error free read), and maximizes sensitivity without sacrificing specificity. I’ve found this feature particularly useful when dealing with time-course datasets, especially when we are particularly interested in certain bacterial species that are important to health but a minor part of the total samples population, such as infectious agents like E. coli and Campylobacter in time-course data from cattle dosed with antibiotics.</p>
+<p>The example here used a single sequence, but a much larger set of priors can be provided to the method, such as all ASVs detected in your pilot data or all known sequence variants from the Lactobacillus genus. Or, perhaps, datasets could generate their own priors for subsequent processing…</p>
+</div>
+<div id="independence-pooling-and-now-pseudo-pooling" class="section level2">
+<h1>Pseudo-pooling</h1>
+<p>From <a href="https://benjjneb.github.io/dada2/pool.html#pooling-for-sample-inference">our documentation on pooling for sample inference</a>:</p>
+<blockquote>
+<p>De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won’t be the same. DADA2 resolves sequence variants exactly, and because DNA sequences are consistent labels samples can be processed independently and then combined (and this is the default behavior).</p>
+<p>Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were seen just once or twice in one sample but many times across samples. Pooled sample inference is also supported by calling dada(…, pool=TRUE).</p>
+</blockquote>
+<p>The linear scaling of independent sample inference allows ASV methods like dada2 to be applied to almost arbitrarily large samples, with the most notable example perhaps being <a href="https://www.nature.com/articles/nature24621">the Earth Microbiome Project</a> where the adoption of ASVs over OTUs reduced data processing time from months to about a week.</p>
+<p>That said, how can the data be shared across samples to increase sensitivity to rare variants, without losing the fast linear-scaling of processing time? Our idea is to implement “pseudo-pooling”, a two step process in which independent processing is performed twice: First on the raw data alone, and then on the raw data again but this time informed by priors generated from the first round of processing.</p>
+<div class="figure">
+<img src="pseudo_480.png" alt="pseudo-pooling schematic" />
+<p class="caption">pseudo-pooling schematic</p>
+</div>
+<p>This pseudo-pooling can be performed easily by hand using the <code>priors</code> argument, but an easy-to-use implementation is also provided with the <code>dada(..., pool=&quot;pseudo&quot;)</code> option. By default, all ASVs detected in at least two samples in the first sample processing step are input as priors to the second step, but that condition can be changed with the <code>PSEUDO_PREVALENCE</code> and <code>PSEUDO_ABUNDANCE</code> dada options.</p>
+</div>
+<div id="profiling-pseudo-pooling" class="section level2">
+<h2>Profiling pseudo-pooling</h2>
+<p>Let’s go ahead and run each mode of inference (independent: <code>pool=FALSE</code>, pseudo-pooling: <code>pool=&quot;pseudo&quot;</code>, and pooled samples: <code>pool=TRUE</code>) on this dataset, and track the execution time of each.</p>
+<pre class="r"><code>system.time(dd &lt;- dada(drp, err=err, multithread=TRUE, verbose=0))</code></pre>
+<pre><code>##     user   system  elapsed 
+## 1210.230   26.887  225.026</code></pre>
+<pre class="r"><code>system.time(dd.pseudo &lt;- dada(drp, err=err, multithread=TRUE, pool=&quot;pseudo&quot;, verbose=0))</code></pre>
+<pre><code>##     user   system  elapsed 
+## 3953.034   80.229  656.918</code></pre>
+<pre class="r"><code>system.time(dd.pool &lt;- dada(drp, err=err, multithread=TRUE, pool=TRUE, verbose=0))</code></pre>
+<pre><code>##     user   system  elapsed 
+## 7086.101   43.659 1178.597</code></pre>
+<p>As expected, pooled inference takes longer than independent processing, while pseudo-pooling is intermediate. In general, pseudo-pooling will take very close to twice the time of independent processing, as it is effectively running independent processing twice. Note that all processing modes are easily tractable on this data on a laptop. Full pooling is usually tractable on Miseq dataset sizes, and it is only for larger dataset sizes that the quadratic increase in computation time with total depth becomes too onerous.</p>
+<p>Now let’s compare the results from each mode:</p>
+<pre class="r"><code>st &lt;- removeBimeraDenovo(makeSequenceTable(dd), multithread=TRUE, verbose=TRUE)</code></pre>
+<pre><code>## Identified 390 bimeras out of 917 input sequences.</code></pre>
+<pre class="r"><code>st.pseudo &lt;- removeBimeraDenovo(makeSequenceTable(dd.pseudo), multithread=TRUE, verbose=TRUE)</code></pre>
+<pre><code>## Identified 622 bimeras out of 1191 input sequences.</code></pre>
+<pre class="r"><code>st.pool &lt;- removeBimeraDenovo(makeSequenceTable(dd.pool), multithread=TRUE, verbose=TRUE)</code></pre>
+<pre><code>## Identified 1876 bimeras out of 2458 input sequences.</code></pre>
+<p>Note the increasing numbers of chimeras identified by pooling! Chimeras (and contaminants) are often rare and spread across lots of samples, making them much more effectively detected when pooling samples.</p>
+<p>Let’s take a look at the number of observed ASVs in each sample for each processing mode:</p>
+<pre class="r"><code>nsam &lt;- length(filtF)
+df.obs &lt;- data.frame(observed=c(rowSums(st&gt;0), rowSums(st.pseudo&gt;0), rowSums(st.pool&gt;0)),
+                     mode=rep(c(&quot;independent&quot;, &quot;pseudo&quot;, &quot;pooled&quot;), each=nsam),
+                     rank=rank(rowSums(st.pool&gt;0)), times=3)</code></pre>
+<pre><code>## Warning in data.frame(observed = c(rowSums(st &gt; 0), rowSums(st.pseudo &gt; :
+## row names were found from a short variable and have been discarded</code></pre>
+<pre class="r"><code>keep &lt;- !grepl(&quot;Mock&quot;, sams) &amp; rowSums(st)&gt;1000
+ggplot(data=df.obs, aes(x=rank, y=observed, color=mode)) + geom_point() +
+  xlab(&quot;Samples&quot;) + ylab(&quot;Observed ASVs&quot;)</code></pre>
+<p><img src="pseudo_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>More ASVs are observed per-sample when pooling samples together, and pseudo-pooling is intermediate between independent and pooled processing, and a bit closer to the pooled per-sample observed ASV counts.</p>
+<p>Now let’s look how this plays out when looking at the total community distances between the same samples processed in the independent, pseudo-pooled and pooled modes. We’ll do that by calculating Bray-curtis distances between samples processed in each mode, and then making “triangle” plots in a 2-D space that represent those distances, and where the pooled sample is fixed to lie at the origin (this is equivalent to a 2D PCoA ordination, which is exact when their is just 3 samples).</p>
+<pre class="r"><code># Give unique sample names to each mode
+rownames(st) &lt;- paste0(sams, &quot;.ind&quot;)
+rownames(st.pseudo) &lt;- paste0(sams, &quot;.pseudo&quot;)
+rownames(st.pool) &lt;- paste0(sams, &quot;.pool&quot;)
+# Merge into one big sequence table
+sta &lt;- mergeSequenceTables(st, st.pseudo, st.pool) # 
+# Calculate distances
+get.dists &lt;- function(i, sta) {
+  dists &lt;- as(vegdist(sta[c(i,i+nsam,i+nsam+nsam),]), &quot;matrix&quot;)
+  c(ind.pseudo=dists[1,2], ind.pool=dists[1,3], pseudo.pool=dists[2,3])
+}
+dists &lt;- as.data.frame(t(sapply(seq(nsam), get.dists, sta=sta)))
+# Calculate MDS positions by hand, fixing the pooled point to lie at (0,0)
+x.pool &lt;- rep(0, nrow(dists)); y.pool &lt;- rep(0, nrow(dists))
+x.ind &lt;- -dists$ind.pool; y.ind &lt;- rep(0, nrow(dists))
+# Trig
+x.pseudo &lt;- (-dists$ind.pool^2 + dists$ind.pseudo^2 - dists$pseudo.pool^2)/(2*dists$ind.pool)
+y.pseudo &lt;- sqrt(dists$pseudo.pool^2 - x.pseudo^2)
+# Check our arithmetic
+all.equal(sqrt(x.pseudo^2 + y.pseudo^2), dists$pseudo.pool) # TRUE</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code>all.equal(sqrt((x.pseudo-x.ind)^2 + (y.pseudo-y.ind)^2), dists$ind.pseudo) # TRUE</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code># Make plotting data.frame
+df &lt;- data.frame(x = c(x.ind, x.pseudo, x.pool), y=c(y.ind, y.pseudo, y.pool),
+                 mode=rep(c(&quot;independent&quot;, &quot;pseudo&quot;, &quot;pooled&quot;), each=nsam), 
+                 type=&quot;all&quot;, include=&quot;all&quot;, sample=c(sams, sams, sams),
+                 stringsAsFactors=FALSE)
+plotdf &lt;- df[!grepl(&quot;Mock&quot;, sams) &amp; rowSums(st)&gt;1000,] # Recyling the values 3x here
+# Randomly pick 3 example samples to plot separately
+set.seed(100); NEX &lt;- 3
+examples &lt;- sample(unique(plotdf$sample), NEX)
+plotdf &lt;- rbind(plotdf, plotdf[plotdf$sample %in% examples,])
+example.rows &lt;- seq(nrow(plotdf)-3*NEX+1,nrow(plotdf))
+plotdf$type[example.rows] &lt;- &quot;single&quot;
+plotdf$include[example.rows] &lt;- plotdf$sample[example.rows]
+# Plot!
+library(ggplot2)
+ggplot(data=plotdf, aes(x=x, y=y, color=mode, alpha=type)) + geom_point() + 
+  facet_grid(include~.) + scale_alpha_manual(values=c(&quot;all&quot;=0.2, &quot;single&quot;=1)) +
+  theme_bw() + coord_fixed(ratio=1) + guides(alpha=FALSE) + theme(panel.grid=element_blank()) +
+  xlab(&quot;Distance (Bray-Curtis)&quot;) + ylab(&quot;Distance&quot;)</code></pre>
+<p><img src="pseudo_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p>The closer the points in this plot are, the more similar the sample composition as inferred in these different modes was. This plot shows that samples inferred by pseudo-pooling are much more similar to samples inferred by full pooling than are samples inferred by independent sample processing, as was our goal!</p>
+</div>
+<div id="pseudo-conclusions" class="section level2">
+<h2>Pseudo-conclusions</h2>
+<p>Pseudo-pooling provides a computationally efficient and scalable method to approximate the results from full pooling in linear time. In many cases, especially when samples are repeatedly drawn from the same source such as in longitudinal experiments, pseudo-pooling can provide a more accurate description of ASVs at very low frequencies (e.g. present in 1-5 reads per sample). However, we note that independent sample inference is still very accurate, and is less prone to reporting certain types of false-positives, such as contaminants, that are present at very low frequencies across many samples and that the pooling mode tends to detect. So use what works for your study!</p>
+</div>
+</div>
+
+<div class="container" style="width: 100%;color:grey;text-align:right">
+  <hr>
+  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+</div>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

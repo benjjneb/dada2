@@ -6,7 +6,7 @@ title: "The DADA2 R package"
 
 --------------------------
 
-####**<span style="color:red">Nov 1: Version 1.6 of the dada2 R package has been released on Bioconductor!</span>**
+####**<span style="color:red">Higher sensitivity to rare variants via [priors and pseudo-pooling](pseudo.html) introduced in dada2 version 1.7.5.</span>**
 
 &nbsp;
 

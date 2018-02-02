@@ -20,8 +20,8 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
@@ -32,10 +32,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -269,8 +271,8 @@ $(document).ready(function () {
 <div id="fast-and-accurate-sample-inference-from-amplicon-data-with-single-nucleotide-resolution" class="section level2">
 <h2>Fast and accurate sample inference from amplicon data with single-nucleotide resolution</h2>
 <hr />
-<div id="nov-1-version-1.6-of-the-dada2-r-package-has-been-released-on-bioconductor" class="section level4">
-<h4><strong><span style="color:red">Nov 1: Version 1.6 of the dada2 R package has been released on Bioconductor!</span></strong></h4>
+<div id="higher-sensitivity-to-rare-variants-via-priors-and-pseudo-pooling-introduced-in-dada2-version-1.7.5." class="section level4">
+<h4><strong><span style="color:red">Higher sensitivity to rare variants via <a href="pseudo.html">priors and pseudo-pooling</a> introduced in dada2 version 1.7.5.</span></strong></h4>
 <p> </p>
 </div>
 </div>
