@@ -11,7 +11,7 @@ Performs alignments and computes lambda for all raws to the specified Bi
 Stores only those that can possibly be recruited to this Bi
 */
 void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool verbose) {
-  unsigned int index, cind;
+  unsigned int index, cind, center_reads;
   double lambda;
   Raw *raw;
 //  Raw *center = b->bi[i]->center;
@@ -33,6 +33,7 @@ void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int 
   } */
 
   // align all raws to this sequence and compute corresponding lambda
+  center_reads = b->bi[i]->center->reads;
   if(verbose) { Rprintf("C%iLU:", i); }
   for(index=0, cind=0; index<b->nraw; index++) {
     raw = b->raw[index];
@@ -49,9 +50,15 @@ void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int 
 } */
 
     // get sub object
-    sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
-    b->nalign++;
-    if(!sub) { b->nshroud++; }
+    if(raw->reads > center_reads) {
+      sub = NULL;
+    } else if(raw->p > 0.5) {
+      sub = NULL;
+    } else {
+      sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
+      b->nalign++;
+      if(!sub) { b->nshroud++; }
+    }
     
     // Calculate lambda for that sub
     lambda = compute_lambda(raw, sub, errMat, b->use_quals, errMat.ncol());
@@ -111,7 +118,13 @@ struct CompareParallel : public RcppParallel::Worker
     
     for(std::size_t index=begin;index<end;index++) {
       raw = b->raw[index];
-      sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
+      if(raw->reads > b->bi[i]->center->reads) {
+        sub = NULL;
+      } else if(raw->p > 0.5) {
+        sub = NULL;
+      } else {
+        sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
+      }  
 
       // Make comparison object
       output[index].i = i;

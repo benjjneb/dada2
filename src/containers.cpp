@@ -35,6 +35,7 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads, bool prior) {
   } else {
     raw->qual = NULL;
   }
+  raw->p = 0.0;
   raw->E_minmax = -999.0;
   return raw;
 }
