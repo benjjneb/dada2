@@ -300,8 +300,9 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #' @importFrom ShortRead trimTails
 #' @importFrom ShortRead nFilter
 #' @importFrom ShortRead encoding
+#' @importFrom ShortRead narrow
+#' @importFrom IRanges narrow
 #' @importFrom Biostrings quality
-#' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' @importFrom Biostrings end
 #' @importFrom methods as
@@ -522,8 +523,9 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' @importFrom ShortRead encoding
 #' @importFrom ShortRead append
 #' @importFrom ShortRead ShortReadQ
+#' @importFrom ShortRead narrow
+#' @importFrom IRanges narrow
 #' @importFrom Biostrings quality
-#' @importFrom Biostrings narrow
 #' @importFrom Biostrings width
 #' @importFrom Biostrings end
 #' @importFrom methods as
@@ -859,7 +861,7 @@ isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE) {
 #'
 #' @importFrom Biostrings oligonucleotideFrequency
 #' @importFrom Biostrings DNAStringSet
-#' @importFrom Biostrings narrow
+#' @importFrom IRanges narrow
 #' @importFrom Biostrings width
 #' @importFrom methods is
 #'

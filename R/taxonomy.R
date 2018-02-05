@@ -346,6 +346,10 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, verbo
 #'     file.path(path, "trainset16_db_taxid.txt"), 
 #'     "~/tax/rdp_train_set_16.fa.gz")
 #' 
+#' @importFrom ShortRead readFasta
+#' @importFrom ShortRead writeFasta
+#' @importFrom ShortRead sread
+#' @importFrom Biostrings BStringSet
 #' @keywords internal
 makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
   # Read in the fasta and pull out the taxonomy entries
@@ -377,6 +381,12 @@ makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
 #' ## RDP Trainset 16/Release 11.5
 #' dada2:::makeSpeciesFasta_RDP("~/Desktop/RDP/current_Bacteria_unaligned.fa", "~/tax/rdp_species_assignment_16.fa.gz")
 #' 
+#' @importFrom ShortRead readFasta
+#' @importFrom ShortRead writeFasta
+#' @importFrom ShortRead sread
+#' @importFrom ShortRead narrow
+#' @importFrom IRanges narrow
+#' @importFrom Biostrings BStringSet
 #' @keywords internal
 makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
   # Read in and remove records not assigned to species
@@ -444,6 +454,10 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
 #'     file.path(path, "silva.nr_v128.tax"), 
 #'     "~/tax/silva_nr_v128_train_set.fa.gz")
 #' 
+#' @importFrom ShortRead readFasta
+#' @importFrom ShortRead writeFasta
+#' @importFrom ShortRead sread
+#' @importFrom Biostrings BStringSet
 #' @keywords internal
 makeTaxonomyFasta_Silva <- function(fin, ftax, fout, compress=TRUE) {
   # Read in the fasta and pull out the taxonomy entries
@@ -478,6 +492,11 @@ makeTaxonomyFasta_Silva <- function(fin, ftax, fout, compress=TRUE) {
 #' dada2:::makeSpeciesFasta_Silva("~/Desktop/Silva/SILVA_128_SSURef_tax_silva.fasta.gz", 
 #'     "~/tax/silva_species_assignment_v128.fa.gz")
 #' 
+#' @importFrom ShortRead readFasta
+#' @importFrom ShortRead writeFasta
+#' @importFrom ShortRead sread
+#' @importFrom Biostrings BStringSet
+#' @importFrom Biostrings DNAStringSet
 #' @keywords internal
 makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
   # Read in and remove records not assigned to species and non-bacteria
