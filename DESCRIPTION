@@ -26,7 +26,8 @@ Imports:
     reshape2 (>= 1.4.1),
     ShortRead (>= 1.32.0),
     RcppParallel (>= 4.3.0),
-    parallel (>= 3.2.0)
+    parallel (>= 3.2.0),
+    IRanges (>= 2.6.0),
 Suggests:
     BiocStyle,
     knitr,
