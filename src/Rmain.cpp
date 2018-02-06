@@ -152,18 +152,67 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   Sub **subs = (Sub **) malloc(bb->nraw * sizeof(Sub *)); //E
   Sub **birth_subs = (Sub **) malloc(bb->nclust * sizeof(Sub *)); //E
   if(!subs || !birth_subs) Rcpp::stop("Memory allocation failed.");
-  for(i=0;i<bb->nclust;i++) {
-    // Make subs for members of that cluster
-    for(r=0;r<bb->bi[i]->nraw;r++) {
-      raw = bb->bi[i]->raw[r];
-      subs[raw->index] = sub_new(bb->bi[i]->center, raw, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+  
+  // Parallelize over clusters
+  struct FinalSubsParallel : public RcppParallel::Worker
+  {
+    // source data
+    B *b;
+
+    // destination Sub arrays
+    Sub **subs;
+    Sub **birth_subs;
+    
+    // parameters
+    int match, mismatch, gap, homo_gap;
+    int band_size;
+    bool vectorized_alignment;
+    int SSE;
+    bool gapless;
+    
+    // initialize with source and destination
+    FinalSubsParallel(B *b, Sub **subs, Sub **birth_subs,
+                    int match, int mismatch, int gap, int homo_gap,
+                    int band_size, bool vectorized_alignment, int SSE, bool gapless) 
+      : b(b), subs(subs), birth_subs(birth_subs), match(match), mismatch(mismatch), gap(gap), homo_gap(homo_gap), 
+        band_size(band_size), vectorized_alignment(vectorized_alignment), SSE(SSE), gapless(gapless) {}
+    
+    // Perform sequence comparison
+    void operator()(std::size_t begin, std::size_t end) {
+      Raw *raw;
+
+      for(std::size_t i=begin;i<end;i++) {
+        for(unsigned int r=0;r<b->bi[i]->nraw;r++) {
+          raw = b->bi[i]->raw[r];
+          subs[raw->index] = sub_new(b->bi[i]->center, raw, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+        }
+        // Make birth sub for that cluster
+        if(i==0) { birth_subs[i] = NULL; }
+        else {
+          birth_subs[i] = sub_new(b->bi[b->bi[i]->birth_comp.i]->center, b->bi[i]->center, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+        }
+      } // for(std::size_t i=begin;i<end;i++)
     }
-    // Make birth sub for that cluster
-    if(i==0) { birth_subs[i] = NULL; }
-    else {
-      birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+  };
+  
+  FinalSubsParallel finalSubsParallel(bb, subs, birth_subs, match, mismatch, gap, homo_gap, band_size, vectorized_alignment, SSE, gapless);
+  RcppParallel::parallelFor(0, bb->nclust, finalSubsParallel, GRAIN_SIZE);
+    
+/* Non-Parallel implementation
+    for(i=0;i<bb->nclust;i++) {
+      // Make subs for members of that cluster
+      for(r=0;r<bb->bi[i]->nraw;r++) {
+        raw = bb->bi[i]->raw[r];
+        subs[raw->index] = sub_new(bb->bi[i]->center, raw, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+      }
+      // Make birth sub for that cluster
+      if(i==0) { birth_subs[i] = NULL; }
+      else {
+        birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+      }
     }
-  }
+*/
+  
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
   Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, err.ncol());
   Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, maxlen);
