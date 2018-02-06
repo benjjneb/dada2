@@ -17,6 +17,7 @@ char **raw_align(Raw *raw1, Raw *raw2, int match, int mismatch, int gap_p, int h
 ///  static size_t nkm=0;
 ///  static size_t REPORT=1000;
 
+  // KMER SCREEN
   if(use_kmers) {
     if(SSE==2) { // 8-bit explicit SSE
       kdist = kmer_dist_SSEi_8(raw1->kmer8, raw1->length, raw2->kmer8, raw2->length, KMER_SIZE);
@@ -28,9 +29,15 @@ char **raw_align(Raw *raw1, Raw *raw2, int match, int mismatch, int gap_p, int h
     } else { // implicit vectorization
       kdist = kmer_dist(raw1->kmer, raw1->length, raw2->kmer, raw2->length, KMER_SIZE);
     }
-    if(gapless) {
+  }
+  
+  // GAPLESS SCREEN (using KMERs)
+  if(use_kmers && gapless) {
+    if(SSE >= 1) {
       kodist = kord_dist_SSEi(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
-    }    
+    } else {
+      kodist = kord_dist(raw1->kord, raw1->length, raw2->kord, raw2->length, KMER_SIZE);
+    }
   }
   
   // Make deprecated score matrix. To be removed in the future.
