@@ -21,6 +21,7 @@ assign("SSE", 2, envir = dada_opts)
 assign("GAPLESS", FALSE, envir=dada_opts)
 assign("PSEUDO_PREVALENCE", 2, envir=dada_opts)
 assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
+assign("GREEDY", FALSE, envir=dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -334,7 +335,8 @@ dada <- function(derep,
                           multithread,
                           (verbose>=2),
                           opts[["SSE"]],
-                          opts[["GAPLESS"]])
+                          opts[["GAPLESS"]],
+                          opts[["GREEDY"]])
       
       # Augment the returns
       res$clustering$sequence <- as.character(res$clustering$sequence)
