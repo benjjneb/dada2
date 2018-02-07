@@ -19,9 +19,9 @@ assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 assign("SSE", 2, envir = dada_opts)
 assign("GAPLESS", FALSE, envir=dada_opts)
+assign("GREEDY", FALSE, envir=dada_opts)
 assign("PSEUDO_PREVALENCE", 2, envir=dada_opts)
 assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
-assign("GREEDY", FALSE, envir=dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -101,7 +101,7 @@ assign("GREEDY", FALSE, envir=dada_opts)
 #' 
 #' Briefly, \code{dada} implements a statistical test for the notion that a specific sequence was seen too many times
 #'  to have been caused by amplicon errors from currently inferred sample sequences. Overly-abundant
-#'  sequences are used as the seeds of new clusters of sequencing reads, and the final set of clusters
+#'  sequences are used as the seeds of new partitions of sequencing reads, and the final set of partitions
 #'  is taken to represent the denoised composition of the sample. A more detailed explanation of the algorithm
 #'  is found in two publications:
 #' 
@@ -486,7 +486,9 @@ dada <- function(derep,
 #'  
 #' @return NULL.  
 #'  
-#' @details The various dada options...
+#' @details
+#' 
+#' **Sensitivity**
 #' 
 #' OMEGA_A: This parameter sets the threshold for when DADA2 calls unique sequences significantly overabundant, and therefore creates a
 #'  new partition with that sequence as the center. Default is 1e-40, which is a conservative setting to avoid making false
@@ -494,21 +496,7 @@ dada <- function(derep,
 #' 
 #' OMEGA_P: The threshold for unique sequences with prior evidence of existence (see `priors` argument). Default is 1e-4.
 #' 
-#' USE_QUALS: If TRUE, the dada(...) error model takes into account the consensus quality score of the dereplicated unique sequences.
-#'  If FALSE, quality scores are ignored. Default is TRUE.
-#' 
-#' USE_KMERS: If TRUE, a 5-mer distance screen is performed prior to performing each pairwise alignment, and if the 5mer-distance
-#'  is greater than KDIST_CUTOFF, no alignment is performed. Default is TRUE.
-#' 
-#' KDIST_CUTOFF: The default value of 0.42 was chosen to screen pairs of sequences that differ by >10\%, and was
-#'  calibrated on Illumina sequenced 16S amplicon data. The assumption is that sequences that differ by such a large
-#'  amount cannot be linked by amplicon errors (i.e. if you sequence one, you won't get a read of other) and so
-#'  careful (and costly) alignment is unnecessary.
-#' 
-#' BAND_SIZE: When set, banded Needleman-Wunsch alignments are performed. Banding restricts the net cumulative number of insertion
-#'  of one sequence relative to the other. The default value of BAND_SIZE is 16. If DADA is applied to marker genes with high rates
-#'  of indels, such as the ITS region in fungi, the BAND_SIZE parameter should be increased. Setting BAND_SIZE to a negative number
-#'  turns off banding (i.e. full Needleman-Wunsch).
+#' **Alignment**
 #' 
 #' MATCH: The score of a match in the Needleman-Wunsch alignment. Default is 4.
 #'  
@@ -519,33 +507,52 @@ dada <- function(derep,
 #' HOMOPOLYMER_GAP_PENALTY: The cost of gaps in homopolymer regions (>=3 repeated bases). Default is NULL, which causes homopolymer
 #'  gaps to be treated as normal gaps.  
 #'  
-#' MIN_FOLD: The minimum fold-overabundance for sequences to form new clusters. Default value is 1, which means this
-#'  criteria is ignored.
-#'  
-#' MIN_HAMMING: The minimum hamming-separation for sequences to form new clusters. Default value is 1, which means this
-#'  criteria is ignored.
-#'
-#' MIN_ABUNDANCE: The minimum abundance for unique sequences form new clusters. Default value is 1, which means this
-#'  criteria is ignored.
-#'
-#' MAX_CLUST: The maximum number of clusters. Once this many clusters have been created, the algorithm terminates regardless
-#'  of whether the statistical model suggests more real sequence variants exist. If set to 0 this argument is ignored. Default
-#'  value is 0.
-#'  
-#' MAX_CONSIST: The maximum number of steps when selfConsist=TRUE. If convergence is not reached in MAX_CONSIST steps,
-#'  the algorithm will terminate with a warning message. Default value is 10.
-#'  
-#' VERBOSE: If TRUE progress messages from the algorithm are printed. Warning: There is a lot of output. Default is FALSE.
+#' BAND_SIZE: When set, banded Needleman-Wunsch alignments are performed. Banding restricts the net cumulative number of insertion
+#'  of one sequence relative to the other. The default value of BAND_SIZE is 16. If DADA is applied to sequencing technologies with 
+#'  high rates of indels, such as 454 sequencing, the BAND_SIZE parameter should be increased. Setting BAND_SIZE to a negative number
+#'  turns off banding (i.e. full Needleman-Wunsch).
 #' 
-#' SSE: Controls the level of explicit SSE vectorization for kmer calculations. Default 2.
-#'  0: No explicit vectorization (but modern compilers will auto-vectorize the code).
-#'  1: SSE2.
-#'  2: Packed SSE2 using 8-bit integers. Slightly faster than SSE=1.
+#' **Sequence Comparison Heuristics**
+#' 
+#' USE_KMERS: If TRUE, a 5-mer distance screen is performed prior to performing each pairwise alignment, and if the 5mer-distance
+#'  is greater than KDIST_CUTOFF, no alignment is performed. Default is TRUE.
+#' 
+#' KDIST_CUTOFF: The default value of 0.42 was chosen to screen pairs of sequences that differ by >10\%, and was
+#'  calibrated on Illumina sequenced 16S amplicon data. The assumption is that sequences that differ by such a large
+#'  amount cannot be linked by amplicon errors (i.e. if you sequence one, you won't get a read of other) and so
+#'  careful (and costly) alignment is unnecessary.
 #' 
 #' GAPLESS: If TRUE, the ordered kmer identity between pairs of sequences is compared to their unordered
 #'  overlap. If equal, the optimal alignment is assumed to be gapless. Default is FALSE.
 #'  Only relevant if USE_KMERS is TRUE.
 #' 
+#' GREEDY: The DADA2 algorithm is not greedy, but a very restricted form of greediness can be turned
+#'  on via this option. If TRUE, unique sequences with reads less than those expected to be generated
+#'  by resequencing just the central unique in their partition are "locked" to that partition.
+#'  Modest (~30%) speedup, and almost no impact on output. Default is FALSE.
+#' 
+#' **New Partition Conditions**
+#' 
+#' MIN_FOLD: The minimum fold-overabundance for sequences to form new partitions. Default value is 1, which means this
+#'  criteria is ignored.
+#'  
+#' MIN_HAMMING: The minimum hamming-separation for sequences to form new partitions. Default value is 1, which means this
+#'  criteria is ignored.
+#'
+#' MIN_ABUNDANCE: The minimum abundance for unique sequences form new partitions. Default value is 1, which means this
+#'  criteria is ignored.
+#'
+#' MAX_CLUST: The maximum number of partitions. Once this many partitions have been created, the algorithm terminates regardless
+#'  of whether the statistical model suggests more real sequence variants exist. If set to 0 this argument is ignored. Default
+#'  value is 0.
+#'
+#' **Self Consistency**
+#' 
+#' MAX_CONSIST: The maximum number of steps when selfConsist=TRUE. If convergence is not reached in MAX_CONSIST steps,
+#'  the algorithm will terminate with a warning message. Default value is 10.
+#'  
+#' **Pseudo-pooling Behavior**
+#'  
 #' PSEUDO_PREVALENCE: When performing pseudo-pooling, all sequence variants found in at least two
 #'  samples are used as priors for a subsequent round of sample inference. 
 #'  Only relevant if `pool="pseudo"`. Default is 2.
@@ -555,6 +562,22 @@ dada <- function(derep,
 #'  of sample inference.
 #'  Only relevant if `pool="pseudo"`. Default is Inf (i.e. abundance ignored for this purpose).
 #' 
+#' **Error Model**
+#' 
+#' USE_QUALS: If TRUE, the dada(...) error model takes into account the consensus quality score of the dereplicated unique sequences.
+#'  If FALSE, quality scores are ignored. Default is TRUE.
+#' 
+#' **Technical**
+#' 
+#' SSE: Controls the level of explicit SSE vectorization for kmer calculations. Default 2. Maintained for development reasons,
+#'    should have no impact on output.   
+#'      
+#' \itemize{ 
+#'  \item{0: No explicit vectorization (but modern compilers will auto-vectorize the code).}
+#'  \item{1: Explicit SSE2. }
+#'  \item{2: Explicit, packed SSE2 using 8-bit integers. Slightly faster than SSE=1. }
+#' }
+#' 
 #' @seealso 
 #'  \code{\link{getDadaOpt}}
 #'
@@ -562,7 +585,8 @@ dada <- function(derep,
 #'
 #' @examples
 #' setDadaOpt(OMEGA_A = 1e-20)
-#' setDadaOpt(OMEGA_A = 1e-20, VERBOSE = TRUE)
+#' setDadaOpt(MATCH=1, MISMATCH=-4, GAP_PENALTY=-6)
+#' setDadaOpt(GREEDY=TRUE, GAPLESS=TRUE)
 #'   
 setDadaOpt <- function(...) {
   opts <- getDadaOpt()
