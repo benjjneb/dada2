@@ -10,8 +10,11 @@
 Performs alignments and computes lambda for all raws to the specified Bi
 Stores only those that can possibly be recruited to this Bi
 */
-void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool verbose) {
-  unsigned int index, cind;
+void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, 
+               int match, int mismatch, int gap_pen, int homo_gap_pen, 
+               bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, 
+               int SSE, bool gapless, bool greedy, bool verbose) {
+  unsigned int index, cind, center_reads;
   double lambda;
   Raw *raw;
 //  Raw *center = b->bi[i]->center;
@@ -33,6 +36,7 @@ void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int 
   } */
 
   // align all raws to this sequence and compute corresponding lambda
+  center_reads = b->bi[i]->center->reads;
   if(verbose) { Rprintf("C%iLU:", i); }
   for(index=0, cind=0; index<b->nraw; index++) {
     raw = b->raw[index];
@@ -49,9 +53,15 @@ void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int 
 } */
 
     // get sub object
-    sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
-    b->nalign++;
-    if(!sub) { b->nshroud++; }
+    if(greedy && (raw->reads > center_reads)) {
+      sub = NULL;
+    } else if(greedy && raw->lock) { // was (raw->p > 0.5)
+      sub = NULL;
+    } else {
+      sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
+      b->nalign++;
+      if(!sub) { b->nshroud++; }
+    }
     
     // Calculate lambda for that sub
     lambda = compute_lambda(raw, sub, errMat, b->use_quals, errMat.ncol());
@@ -95,14 +105,17 @@ struct CompareParallel : public RcppParallel::Worker
   int band_size;
   bool vectorized_alignment;
   int SSE;
-  bool gapless;
+  bool gapless, greedy;
   
   // initialize with source and destination
   CompareParallel(B *b, unsigned int i, double *err_mat, unsigned int ncol, Comparison *output,
                   int match, int mismatch, int gap_pen, int homo_gap_pen,
-                  bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless) 
-    : b(b), i(i), err_mat(err_mat), ncol(ncol), output(output), match(match), mismatch(mismatch), gap_pen(gap_pen), homo_gap_pen(homo_gap_pen), 
-      use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), band_size(band_size), vectorized_alignment(vectorized_alignment), SSE(SSE), gapless(gapless) {}
+                  bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, 
+                  int SSE, bool gapless, bool greedy) 
+    : b(b), i(i), err_mat(err_mat), ncol(ncol), output(output), 
+      match(match), mismatch(mismatch), gap_pen(gap_pen), homo_gap_pen(homo_gap_pen), 
+      use_kmers(use_kmers), kdist_cutoff(kdist_cutoff), band_size(band_size), vectorized_alignment(vectorized_alignment), 
+      SSE(SSE), gapless(gapless), greedy(greedy) {}
   
   // Perform sequence comparison
   void operator()(std::size_t begin, std::size_t end) {
@@ -111,7 +124,13 @@ struct CompareParallel : public RcppParallel::Worker
     
     for(std::size_t index=begin;index<end;index++) {
       raw = b->raw[index];
-      sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
+      if(greedy && (raw->reads > b->bi[i]->center->reads)) {
+        sub = NULL;
+      } else if(greedy && raw->lock) { // was (raw->p > 0.5)
+        sub = NULL;
+      } else {
+        sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
+      }  
 
       // Make comparison object
       output[index].i = i;
@@ -130,7 +149,10 @@ struct CompareParallel : public RcppParallel::Worker
 };
 
 
-void b_compare_parallel(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool verbose) {
+void b_compare_parallel(B *b, unsigned int i, Rcpp::NumericMatrix errMat, 
+                        int match, int mismatch, int gap_pen, int homo_gap_pen, 
+                        bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, 
+                        int SSE, bool gapless, bool greedy, bool verbose) {
   unsigned int index, cind, row, col, ncol;
   double lambda;
   Raw *raw;
@@ -150,7 +172,7 @@ void b_compare_parallel(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int ma
   // Parallelize for loop to perform all comparisons
   Comparison *comps = (Comparison *) malloc(sizeof(Comparison) * b->nraw);
   if(comps==NULL) Rcpp::stop("Memory allocation failed.");
-  CompareParallel compareParallel(b, i, err_mat, ncol, comps, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
+  CompareParallel compareParallel(b, i, err_mat, ncol, comps, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, greedy);
   RcppParallel::parallelFor(0, b->nraw, compareParallel, GRAIN_SIZE);
   
   // Selectively store
@@ -241,24 +263,6 @@ bool b_shuffle2(B *b) {
   free(emax);
   
   return shuffled;
-}
-
-/* b_p_update:
- Calculates the abundance p-value for each raw in the clustering.
- Depends on the lambda between the raw and its cluster, and the reads of each.
-*/
-void b_p_update(B *b) {
-  unsigned int i, r;
-  Raw *raw;
-  for(i=0;i<b->nclust;i++) {
-    if(b->bi[i]->update_e) {
-      for(r=0;r<b->bi[i]->nraw;r++) {
-        raw = b->bi[i]->raw[r];
-        raw->p = get_pA(raw, b->bi[i]);
-      } // for(r=0;r<b->bi[i]->nraw;r++)
-      b->bi[i]->update_e = false;
-    }
-  } // for(i=0;i<b->nclust;i++)
 }
 
 /* This crashes w/ >1 thread. R code not thread-safe?
@@ -354,6 +358,7 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
     // Add raw to new cluster.
     bi_add_raw(b->bi[i], raw);
     bi_assign_center(b->bi[i]);
+    if(verbose) { Rprintf(", Division (naive): Raw %i from Bi %i, pA=%.2e", raw->index, mini, pA); }
     return i;
   } else if (pP < b->omegaP && mini_prior >= 0) {  // A significant prior-abundance pval
     expected = minraw_prior->comp.lambda * b->bi[mini_prior]->reads;
@@ -368,9 +373,11 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
     // Add raw to new cluster.
     bi_add_raw(b->bi[i], raw);
     bi_assign_center(b->bi[i]);
+    if(verbose) { Rprintf(", Division (prior): Raw %i from Bi %i, pP=%.2e", raw->index, mini_prior, pP); }
     return i;
   }
 
+  if(verbose) { Rprintf(", No Division. Minimum pA=%.2e (Raw %i w/ %i reads in Bi %i).", pA, minraw->index, minraw->reads, mini); }
   return 0;
 }
 
@@ -399,12 +406,14 @@ void bi_assign_center(Bi *bi) {
   // Assign the raw with the most reads as the center
   bi->center = NULL;
   for(r=0,max_reads=0;r<bi->nraw;r++) {
+    bi->raw[r]->lock = false; // Unlock everything as center is changing
     if(bi->raw[r]->reads > max_reads) { // Most abundant
       bi->center = bi->raw[r];
       max_reads = bi->center->reads;
     }
   }
-  // Assign center sequence to bi->seq
+  // Assign center sequence to bi->seq and flag check_locks
   if(bi->center) { strcpy(bi->seq, bi->center->seq); }
+  bi->check_locks = true;
 }
 

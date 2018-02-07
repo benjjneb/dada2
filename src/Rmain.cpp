@@ -17,7 +17,8 @@ using namespace Rcpp;
 B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, 
             int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, 
             double omegaA, double omegaP, int max_clust, double min_fold, int min_hamming, int min_abund, 
-            bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, int SSE, bool gapless);
+            bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, 
+            int SSE, bool gapless, bool greedy);
 
 //------------------------------------------------------------------
 // C interface to run DADA on the provided unique sequences/abundance pairs. 
@@ -39,7 +40,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
                         bool multithread,
                         bool verbose,
                         int SSE,
-                        bool gapless) {
+                        bool gapless,
+                        bool greedy) {
 
   unsigned int i, r, index, pos, nraw, maxlen, minlen;
   Raw *raw;
@@ -113,39 +115,51 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     raws[index]->index = index;
   }
   
-  /// Add uint8_t kmer index in contiguous memory block
-  size_t n_kmer = 1 << (2*KMER_SIZE);
-  uint8_t *k8 = (uint8_t *) malloc(nraw * n_kmer * sizeof(uint8_t)); //E
-  if (k8 == NULL)  Rcpp::stop("Memory allocation failed.");
-  // Construct a raw for each input sequence, store in raws[index]
-  for(index=0;index<nraw;index++) {
-    raw = raws[index];
-    raw->kmer8 = &k8[index*n_kmer];
-    assign_kmer8(raw->kmer8, raw->seq, KMER_SIZE);
-  }
-  
-  /// Add uint16_t kmer index in contiguous memory block
-  uint16_t *k16 = (uint16_t *) malloc(nraw * n_kmer * sizeof(uint16_t)); //E
-  if (k16 == NULL)  Rcpp::stop("Memory allocation failed.");
-  // Construct a raw for each input sequence, store in raws[index]
-  for(index=0;index<nraw;index++) {
-    raw = raws[index];
-    raw->kmer = &k16[index*n_kmer];
-    assign_kmer(raw->kmer, raw->seq, KMER_SIZE);
-  }
-  
-  /// Add uint16_t ordered kmer record in contiguous memory block
-  uint16_t *kord = (uint16_t *) malloc(nraw * maxlen * sizeof(uint16_t)); //E
-  if (kord == NULL)  Rcpp::stop("Memory allocation failed.");
-  // Construct a raw for each input sequence, store in raws[index]
-  for(index=0;index<nraw;index++) {
-    raw = raws[index];
-    raw->kord = &kord[index*maxlen];
-    assign_kmer_order(raw->kord, raw->seq, KMER_SIZE);
+  uint8_t *k8;
+  uint16_t *k16;
+  uint16_t *kord;
+  if(use_kmers) {
+    /// Add uint8_t kmer index in contiguous memory block
+    size_t n_kmer = 1 << (2*KMER_SIZE);
+    k8 = (uint8_t *) malloc(nraw * n_kmer * sizeof(uint8_t)); //E
+    if (k8 == NULL)  Rcpp::stop("Memory allocation failed.");
+    // Construct a raw for each input sequence, store in raws[index]
+    for(index=0;index<nraw;index++) {
+      raw = raws[index];
+      raw->kmer8 = &k8[index*n_kmer];
+      assign_kmer8(raw->kmer8, raw->seq, KMER_SIZE);
+    }
+    
+    /// Add uint16_t kmer index in contiguous memory block
+    k16 = (uint16_t *) malloc(nraw * n_kmer * sizeof(uint16_t)); //E
+    if (k16 == NULL)  Rcpp::stop("Memory allocation failed.");
+    // Construct a raw for each input sequence, store in raws[index]
+    for(index=0;index<nraw;index++) {
+      raw = raws[index];
+      raw->kmer = &k16[index*n_kmer];
+      assign_kmer(raw->kmer, raw->seq, KMER_SIZE);
+    }
+    
+    /// Add uint16_t ordered kmer record in contiguous memory block
+    kord = (uint16_t *) malloc(nraw * maxlen * sizeof(uint16_t)); //E
+    if (kord == NULL)  Rcpp::stop("Memory allocation failed.");
+    // Construct a raw for each input sequence, store in raws[index]
+    for(index=0;index<nraw;index++) {
+      raw = raws[index];
+      raw->kord = &kord[index*maxlen];
+      assign_kmer_order(raw->kord, raw->seq, KMER_SIZE);
+    }
+  } else {
+    for(index=0;index<nraw;index++) {
+      raw = raws[index];
+      raw->kmer8 = NULL;
+      raw->kmer = NULL;
+      raw->kord = NULL;
+    }
   }
   
   /********** RUN DADA *********/
-  B *bb = run_dada(raws, nraw, err, match, mismatch, gap, homo_gap, use_kmers, kdist_cutoff, band_size, omegaA, omegaP, max_clust, min_fold, min_hamming, min_abund, use_quals, final_consensus, vectorized_alignment, multithread, verbose, SSE, gapless);
+  B *bb = run_dada(raws, nraw, err, match, mismatch, gap, homo_gap, use_kmers, kdist_cutoff, band_size, omegaA, omegaP, max_clust, min_fold, min_hamming, min_abund, use_quals, final_consensus, vectorized_alignment, multithread, verbose, SSE, gapless, greedy);
 
   /********** MAKE OUTPUT *********/
   // Create subs for all the relevant alignments
@@ -241,9 +255,11 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     raw_free(raws[index]);
   }
   free(raws);
-  free(k8);
-  free(k16);
-  free(kord);
+  if(use_kmers) {
+    free(k8);
+    free(k16);
+    free(kord);
+  }
   
   // Organize return List  
   return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap);
@@ -252,24 +268,25 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
 B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, 
             int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, 
             double omegaA, double omegaP, int max_clust, double min_fold, int min_hamming, int min_abund, 
-            bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, int SSE, bool gapless) {
+            bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, 
+            int SSE, bool gapless, bool greedy) {
   int newi=0, nshuffle = 0;
   bool shuffled = false;
 
   B *bb;
   bb = b_new(raws, nraw, omegaA, omegaP, use_quals); // New cluster with all sequences in 1 bi
   // Everyone gets aligned within the initial cluster, no KMER screen
-  if(multithread) { b_compare_parallel(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, verbose); }
-  else { b_compare(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, verbose); }
+  if(multithread) { b_compare_parallel(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
+  else { b_compare(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
 //  if(multithread) { b_p_update_parallel(bb); }
-  b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
+  b_p_update(bb, greedy);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, min_abund, verbose)) ) {
-    if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
-    if(multithread) { b_compare_parallel(bb, newi, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, verbose); }
-    else { b_compare(bb, newi, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, verbose); }
+    if(verbose) Rprintf("\nNew Cluster C%i:", newi);
+    if(multithread) { b_compare_parallel(bb, newi, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
+    else { b_compare(bb, newi, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
     // Keep shuffling and updating until no more shuffles
     nshuffle = 0;
     do {
@@ -279,7 +296,7 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat,
     if(verbose && nshuffle >= MAX_SHUFFLE) { Rprintf("Warning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
 
 //    if(multithread) { b_p_update_parallel(bb); }
-    b_p_update(bb);
+    b_p_update(bb, greedy);
     Rcpp::checkUserInterrupt();
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, min_abund, verbose)) )
   
