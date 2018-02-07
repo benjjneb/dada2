@@ -37,6 +37,7 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads, bool prior) {
   }
   raw->p = 0.0;
   raw->E_minmax = -999.0;
+  raw->lock = false;
   return raw;
 }
 
@@ -59,6 +60,7 @@ Bi *bi_new(unsigned int totraw) {
   strcpy(bi->seq, "");
   bi->update_e = true;
   bi->shuffle = true;
+  bi->check_locks = true;
   
   bi->reads = 0;
   bi->nraw = 0;

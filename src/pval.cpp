@@ -7,6 +7,38 @@ Pval.cpp contains the functions related to calculating the abundance pval in DAD
 
 // [[Rcpp::interfaces(r, cpp)]]
 
+/* b_p_update:
+ Calculates the abundance p-value for each raw in the clustering.
+ Depends on the lambda between the raw and its cluster, and the reads of each.
+ */
+void b_p_update(B *b, bool greedy) {
+  unsigned int i, r;
+  Raw *raw;
+  Bi *bi;
+  double E_reads_center;
+  for(i=0;i<b->nclust;i++) {
+    bi = b->bi[i];
+    if(bi->update_e) {
+      for(r=0;r<bi->nraw;r++) {
+        raw = bi->raw[r];
+        raw->p = get_pA(raw, bi);
+      } // for(r=0;r<b->bi[i]->nraw;r++)
+      bi->update_e = false;
+    } // if(bi->update_e)
+    
+    if(greedy && bi->check_locks) { // Lock raw if its reads are less than the expected reads from just the center 
+      for(r=0;r<bi->nraw;r++) {
+        raw = bi->raw[r];
+        E_reads_center = b->bi[i]->center->reads * raw->comp.lambda;
+        if(E_reads_center > raw->reads) { raw->lock = true; }
+///!          if(raw->lock) { Rprintf("Raw %i (%i reads): E_Center = %.2f, P = %.2f\n", raw->index, raw->reads, E_reads_center, raw->p); }
+        if(raw == bi->center) { raw->lock = true; }
+      }
+      bi->check_locks = false; // Locking can only happen first time around
+    } // if(greedy && bi->check_locks)
+  } // for(i=0;i<b->nclust;i++)
+}
+
 // Calculate abundance pval for given reads and expected number of reads
 // Pval is conditional on sequnce being present, unless prior evidence is true
 double calc_pA(int reads, double E_reads, bool prior) {

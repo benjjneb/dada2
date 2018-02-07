@@ -229,12 +229,12 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat,
   // Everyone gets aligned within the initial cluster, no KMER screen
   if(multithread) { b_compare_parallel(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
   else { b_compare(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
-  b_p_update(bb);       // Calculates abundance p-value for each raw in its cluster (consensuses)
+  b_p_update(bb, greedy);       // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
   while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, min_abund, verbose)) ) {
-    if(verbose) Rprintf("----------- New Cluster C%i -----------\n", newi);
+    if(verbose) Rprintf("\nNew Cluster C%i:", newi);
     if(multithread) { b_compare_parallel(bb, newi, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
     else { b_compare(bb, newi, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
     // Keep shuffling and updating until no more shuffles
@@ -245,7 +245,7 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat,
     } while(shuffled && ++nshuffle < MAX_SHUFFLE);
     if(verbose && nshuffle >= MAX_SHUFFLE) { Rprintf("Warning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
 
-    b_p_update(bb);
+    b_p_update(bb, greedy);
     Rcpp::checkUserInterrupt();
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, min_abund, verbose)) )
   

@@ -55,7 +55,7 @@ void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat,
     // get sub object
     if(greedy && (raw->reads > center_reads)) {
       sub = NULL;
-    } else if(greedy && (raw->p > 0.5)) {
+    } else if(greedy && raw->lock) { // was (raw->p > 0.5)
       sub = NULL;
     } else {
       sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
@@ -126,7 +126,7 @@ struct CompareParallel : public RcppParallel::Worker
       raw = b->raw[index];
       if(greedy && (raw->reads > b->bi[i]->center->reads)) {
         sub = NULL;
-      } else if(greedy && (raw->p > 0.5)) {
+      } else if(greedy && raw->lock) { // was (raw->p > 0.5)
         sub = NULL;
       } else {
         sub = sub_new(b->bi[i]->center, raw, match, mismatch, gap_pen, homo_gap_pen, use_kmers, kdist_cutoff, band_size, vectorized_alignment, SSE, gapless);
@@ -265,24 +265,6 @@ bool b_shuffle2(B *b) {
   return shuffled;
 }
 
-/* b_p_update:
- Calculates the abundance p-value for each raw in the clustering.
- Depends on the lambda between the raw and its cluster, and the reads of each.
-*/
-void b_p_update(B *b) {
-  unsigned int i, r;
-  Raw *raw;
-  for(i=0;i<b->nclust;i++) {
-    if(b->bi[i]->update_e) {
-      for(r=0;r<b->bi[i]->nraw;r++) {
-        raw = b->bi[i]->raw[r];
-        raw->p = get_pA(raw, b->bi[i]);
-      } // for(r=0;r<b->bi[i]->nraw;r++)
-      b->bi[i]->update_e = false;
-    }
-  } // for(i=0;i<b->nclust;i++)
-}
-
 /* b_bud:
  Finds the minimum p-value. If significant, creates a new cluster and moves the
  raws from the raw with the minimum p-value to the new cluster.
@@ -343,6 +325,7 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
     // Add raw to new cluster.
     bi_add_raw(b->bi[i], raw);
     bi_assign_center(b->bi[i]);
+    if(verbose) { Rprintf(", Division (naive): Raw %i from Bi %i, pA=%.2e", raw->index, mini, pA); }
     return i;
   } else if (pP < b->omegaP && mini_prior >= 0) {  // A significant prior-abundance pval
     expected = minraw_prior->comp.lambda * b->bi[mini_prior]->reads;
@@ -357,9 +340,11 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
     // Add raw to new cluster.
     bi_add_raw(b->bi[i], raw);
     bi_assign_center(b->bi[i]);
+    if(verbose) { Rprintf(", Division (prior): Raw %i from Bi %i, pP=%.2e", raw->index, mini_prior, pP); }
     return i;
   }
 
+  if(verbose) { Rprintf(", No Division. Minimum pA=%.2e (Raw %i w/ %i reads in Bi %i).", pA, minraw->index, minraw->reads, mini); }
   return 0;
 }
 
@@ -388,12 +373,14 @@ void bi_assign_center(Bi *bi) {
   // Assign the raw with the most reads as the center
   bi->center = NULL;
   for(r=0,max_reads=0;r<bi->nraw;r++) {
+    bi->raw[r]->lock = false; // Unlock everything as center is changing
     if(bi->raw[r]->reads > max_reads) { // Most abundant
       bi->center = bi->raw[r];
       max_reads = bi->center->reads;
     }
   }
-  // Assign center sequence to bi->seq
+  // Assign center sequence to bi->seq and flag check_locks
   if(bi->center) { strcpy(bi->seq, bi->center->seq); }
+  bi->check_locks = true;
 }
 

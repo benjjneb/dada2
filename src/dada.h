@@ -66,6 +66,7 @@ typedef struct {
   double p;    // abundance pval relative to the current Bi
   double E_minmax;
   Comparison comp;  // the comparison between this Raw and...
+  bool lock;   // "Locks" the raw to its current Bi in greedy-mode
 } Raw;
 
 // Bi: This is one cluster or partition. Contains raws grouped in fams.
@@ -81,6 +82,7 @@ typedef struct {
   unsigned int maxraw;  // number of fams currently allocated for in **fam
   bool update_e; // set to true when consensus changes and when raws are shuffled
   bool shuffle; // set to true when e-values are updated
+  bool check_locks; // set to true when raws should be checked for locking to that Bi
   double self; // self-production genotype error probability
   unsigned int totraw; // number of total raws in the clustering
   char birth_type[2]; // encoding of how this Bi was created: "I": Initial cluster, "A": Abundance pval, "S": Singleton pval
@@ -129,7 +131,6 @@ unsigned int bi_add_raw(Bi *bi, Raw *raw);
 void b_compare(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool greedy, bool verbose);
 void b_compare_parallel(B *b, unsigned int i, Rcpp::NumericMatrix errMat, int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, bool vectorized_alignment, int SSE, bool gapless, bool greedy, bool verbose);
 bool b_shuffle2(B *b);
-void b_p_update(B *b);
 int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose);
 void bi_census(Bi *bi);
 void bi_assign_center(Bi *bi);
@@ -170,6 +171,7 @@ double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int 
 ///TEST uint16_t kmer_dist2(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
 
 // methods implemented in pval.cpp
+void b_p_update(B *b, bool greedy);
 double calc_pA(int reads, double E_reads, bool prior);
 double get_pA(Raw *raw, Bi *bi);
 double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int ncol);
