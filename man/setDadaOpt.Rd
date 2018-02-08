@@ -53,13 +53,13 @@ KDIST_CUTOFF: The default value of 0.42 was chosen to screen pairs of sequences 
  careful (and costly) alignment is unnecessary.
 
 GAPLESS: If TRUE, the ordered kmer identity between pairs of sequences is compared to their unordered
- overlap. If equal, the optimal alignment is assumed to be gapless. Default is FALSE.
+ overlap. If equal, the optimal alignment is assumed to be gapless. Default is TRUE.
  Only relevant if USE_KMERS is TRUE.
 
 GREEDY: The DADA2 algorithm is not greedy, but a very restricted form of greediness can be turned
  on via this option. If TRUE, unique sequences with reads less than those expected to be generated
  by resequencing just the central unique in their partition are "locked" to that partition.
- Modest (~30%) speedup, and almost no impact on output. Default is FALSE.
+ Modest (~30%) speedup, and almost no impact on output. Default is TRUE.
 
 **New Partition Conditions**
 

@@ -209,10 +209,10 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     }
   };
   
-  FinalSubsParallel finalSubsParallel(bb, subs, birth_subs, match, mismatch, gap, homo_gap, band_size, vectorized_alignment, SSE, gapless);
-  RcppParallel::parallelFor(0, bb->nclust, finalSubsParallel, GRAIN_SIZE);
-    
-/* Non-Parallel implementation
+  if(multithread) {
+    FinalSubsParallel finalSubsParallel(bb, subs, birth_subs, match, mismatch, gap, homo_gap, band_size, vectorized_alignment, SSE, gapless);
+    RcppParallel::parallelFor(0, bb->nclust, finalSubsParallel, GRAIN_SIZE);
+  } else { // Non-Parallel implementation
     for(i=0;i<bb->nclust;i++) {
       // Make subs for members of that cluster
       for(r=0;r<bb->bi[i]->nraw;r++) {
@@ -225,8 +225,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
         birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
       }
     }
-*/
-  
+  }
+
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
   Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, err.ncol());
   Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, maxlen);

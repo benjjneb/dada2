@@ -18,8 +18,8 @@ assign("MIN_ABUNDANCE", 1, envir=dada_opts)
 assign("USE_QUALS", TRUE, envir=dada_opts)
 assign("HOMOPOLYMER_GAP_PENALTY", NULL, envir = dada_opts)
 assign("SSE", 2, envir = dada_opts)
-assign("GAPLESS", FALSE, envir=dada_opts)
-assign("GREEDY", FALSE, envir=dada_opts)
+assign("GAPLESS", TRUE, envir=dada_opts)
+assign("GREEDY", TRUE, envir=dada_opts)
 assign("PSEUDO_PREVALENCE", 2, envir=dada_opts)
 assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
@@ -523,13 +523,13 @@ dada <- function(derep,
 #'  careful (and costly) alignment is unnecessary.
 #' 
 #' GAPLESS: If TRUE, the ordered kmer identity between pairs of sequences is compared to their unordered
-#'  overlap. If equal, the optimal alignment is assumed to be gapless. Default is FALSE.
+#'  overlap. If equal, the optimal alignment is assumed to be gapless. Default is TRUE.
 #'  Only relevant if USE_KMERS is TRUE.
 #' 
 #' GREEDY: The DADA2 algorithm is not greedy, but a very restricted form of greediness can be turned
 #'  on via this option. If TRUE, unique sequences with reads less than those expected to be generated
 #'  by resequencing just the central unique in their partition are "locked" to that partition.
-#'  Modest (~30%) speedup, and almost no impact on output. Default is FALSE.
+#'  Modest (~30%) speedup, and almost no impact on output. Default is TRUE.
 #' 
 #' **New Partition Conditions**
 #' 
