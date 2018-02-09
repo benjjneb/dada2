@@ -293,7 +293,7 @@ dada <- function(derep,
     birth_subs <- list()
     trans <- list()
     map <- list()
-#    exp <- list()
+    pval <- list()
     prev <- cur
     if(nconsist > 0) errs[[nconsist]] <- err
 
@@ -347,7 +347,7 @@ dada <- function(derep,
       birth_subs[[i]] <- res$birth_subs
       trans[[i]] <- res$subqual
       map[[i]] <- res$map
-#      exp[[i]] <- res$exp
+      pval[[i]] <- res$pval
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
       colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
     }
@@ -415,7 +415,7 @@ dada <- function(derep,
     rval2[[i]]$birth_subs <- birth_subs[[i]]
     rval2[[i]]$trans <- trans[[i]]
     rval2[[i]]$map <- map[[i]]
-#    rval2[[i]]$exp <- exp[[i]]
+    rval2[[i]]$pval <- pval[[i]]
     # Return the error rate(s) used as well as the final estimated error matrix
     if(selfConsist) { # Did a self-consist loop
       rval2[[i]]$err_in <- errs
@@ -454,6 +454,7 @@ dada <- function(derep,
       rval2[[i]]$birth_subs$clust <- newBi[rval2[[i]]$birth_subs$clust]      
       # Remap $map
       rval2[[i]]$map <- newBi[map[names(derep.in[[i]]$uniques)]]
+      # Would need to add $pval back in here
       # Recalculate abundances (both $denoised and $clustering$abundance)
       rval2[[i]]$denoised[] <- tapply(derep.in[[i]]$uniques, rval2[[i]]$map, sum)
       rval2[[i]]$clustering$abundance <- rval2[[i]]$denoised

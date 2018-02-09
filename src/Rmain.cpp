@@ -248,6 +248,16 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
       Rmap(bb->bi[i]->raw[r]->index) = i+1; // +1 for R 1-indexing
     }
   }
+  
+  // Make vector of final w/in cluster P
+  Rcpp::NumericVector Rpraw(nraw);
+  for(i=0;i<bb->nclust;i++) {
+    for(r=0;r<bb->bi[i]->nraw;r++) {
+      raw = bb->bi[i]->raw[r];
+      index = raw->index;
+      Rpraw[index] = calc_pA(raw->reads, raw->comp.lambda * bb->bi[i]->reads, true);
+    }
+  }
 
   // Free memory
   b_free(bb);
@@ -262,7 +272,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   }
   
   // Organize return List  
-  return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap);
+  return Rcpp::List::create(_["clustering"] = df_clustering, _["birth_subs"] = df_birth_subs, _["subqual"] = mat_trans, _["clusterquals"] = mat_quals, _["map"] = Rmap, _["pval"] = Rpraw);
 }
 
 B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, 
