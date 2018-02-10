@@ -196,6 +196,9 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' show positional summary statistics: green is the mean, orange is the median, and
 #' the dashed orange lines are the 25th and 75th quantiles.
 #' 
+#' If the sequences vary in length, a red line will be plotted showing the proportion
+#' of reads that extend to at least that position.
+#' 
 #' @param fl (Required). \code{character}.
 #'  File path(s) to fastq or fastq.gz file(s).
 #' 
@@ -272,7 +275,7 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
 		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) + 
       facet_wrap(~label) + ylim(c(0,NA))
     if(length(unique(statdf$Cum))>1) {
-      p <- p + geom_line(data=statdf.summary, aes(y=Cum), color="red", size=0.25, linetype="solid")
+      p <- p + geom_line(data=statdf.summary, aes(y=Cum/nrow(anndf)), color="red", size=0.25, linetype="solid")
     }
   } else {
   	p <- ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
