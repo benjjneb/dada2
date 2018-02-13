@@ -454,6 +454,12 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
 #'     file.path(path, "silva.nr_v128.tax"), 
 #'     "~/tax/silva_nr_v128_train_set.fa.gz")
 #' 
+#' ## Silva release v132
+#' path <- "~/Desktop/Silva/Silva.nr_v132"
+#' dada2:::makeTaxonomyFasta_Silva(file.path(path, "silva.nr_v132.align"), 
+#'     file.path(path, "silva.nr_v132.tax"), 
+#'     "~/tax/silva_nr_v132_train_set.fa.gz")
+#' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
 #' @importFrom ShortRead sread
@@ -492,11 +498,18 @@ makeTaxonomyFasta_Silva <- function(fin, ftax, fout, compress=TRUE) {
 #' dada2:::makeSpeciesFasta_Silva("~/Desktop/Silva/SILVA_128_SSURef_tax_silva.fasta.gz", 
 #'     "~/tax/silva_species_assignment_v128.fa.gz")
 #' 
+#' ## Silva release v132
+#' dada2:::makeSpeciesFasta_Silva("~/Desktop/Silva/SILVA_132_SSURef_tax_silva.fasta.gz", 
+#'     "~/tax/silva_species_assignment_v132.fa.gz")
+#' 
+#' Output: 313502 sequences with genus/species binomial annotation output.
+#' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
 #' @importFrom ShortRead sread
 #' @importFrom Biostrings BStringSet
 #' @importFrom Biostrings DNAStringSet
+#' @importFrom Biostrings readRNAStringSet
 #' @keywords internal
 makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
   # Read in and remove records not assigned to species and non-bacteria

@@ -31,6 +31,9 @@ The distribution of quality scores at each position is shown as a grey-scale
 heat map, with dark colors corresponding to higher frequency. The plotted lines
 show positional summary statistics: green is the mean, orange is the median, and
 the dashed orange lines are the 25th and 75th quantiles.
+
+If the sequences vary in length, a red line will be plotted showing the proportion
+of reads that extend to at least that position.
 }
 \examples{
 plotQualityProfile(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
