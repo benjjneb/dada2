@@ -20,8 +20,8 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
@@ -32,10 +32,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -299,10 +301,11 @@ $(document).ready(function () {
 </div>
 <div id="can-i-use-dada2-with-my-454-or-ion-torrent-data" class="section level2">
 <h2>Can I use dada2 with my 454 or Ion Torrent data?</h2>
-<p>Yes. We recommend the following 454-specific parameters for best results:</p>
-<pre class="s"><code>filterAndTrim(..., maxLen=XXX) # XXX depends on the chemistry
-dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)</code></pre>
-<p>We recommend the following IT-specific parameters when filtering Ion Torrent data for best results:</p>
+<p>Yes. We recommend the following parameters for denoising pyrosequencing data (like IT and 454):</p>
+<pre class="s"><code>dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)</code></pre>
+<p>We recommend additional (relative to the tutorial) filtering of 454 sequences by maximum length:</p>
+<pre class="s"><code>filterAndTrim(..., maxLen=XXX) # XXX depends on the chemistry</code></pre>
+<p>We recommend additional (relative to the tutorial) trimming of Ion Torrent sequences:</p>
 <pre class="s"><code>filterAndTrim(..., trimLeft=15)</code></pre>
 <p> </p>
 </div>

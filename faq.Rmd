@@ -33,14 +33,19 @@ filterAndTrim(..., matchIDs=TRUE)
 
 ## Can I use dada2 with my 454 or Ion Torrent data?
 
-Yes. We recommend the following 454-specific parameters for best results:
+Yes. We recommend the following parameters for denoising pyrosequencing data (like IT and 454):
 
 ```S
-filterAndTrim(..., maxLen=XXX) # XXX depends on the chemistry
 dada(..., HOMOPOLYMER_GAP_PENALTY=-1, BAND_SIZE=32)
 ```
 
-We recommend the following IT-specific parameters when filtering Ion Torrent data for best results:
+We recommend additional (relative to the tutorial) filtering of 454 sequences by maximum length:
+
+```S
+filterAndTrim(..., maxLen=XXX) # XXX depends on the chemistry
+```
+
+We recommend additional (relative to the tutorial) trimming of Ion Torrent sequences:
 
 ```S
 filterAndTrim(..., trimLeft=15)
