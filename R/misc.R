@@ -269,3 +269,20 @@ bcinstall <- function(pkg="dada2", suppressUpdates=TRUE) {
   source("https://bioconductor.org/biocLite.R")
   biocLite(pkg, suppressUpdates=suppressUpdates)
 }
+
+#' @keywords internal
+seqtab_to_qiime <- function(st, fout) {
+  st <- t(st) # QIIME has OTUs as rows
+  col.names <- colnames(st)
+  col.names[[1]] <- paste0("#OTU ID\t", col.names[[1]])
+  write.table(st, fout, sep="\t",
+              row.names=TRUE, col.names=col.names, quote=FALSE)
+}
+
+#' @keywords internal
+samdf_to_qiime2 <- function(df, fout) {
+  col.names <- colnames(df)
+  col.names[[1]] <- paste0("#SampleID\t", col.names[[1]])
+  write.table(df, fout, sep="\t",
+              row.names=TRUE, col.names=col.names, quote=FALSE)
+}

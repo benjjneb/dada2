@@ -14,4 +14,11 @@ dada2:::makeTaxonomyFasta_Silva(file.path(path, "silva.nr_v128.align"),
     file.path(path, "silva.nr_v128.tax"), 
     "~/tax/silva_nr_v128_train_set.fa.gz")
 }
+\details{
+## Silva release v132
+path <- "~/Desktop/Silva.nr_v128"
+dada2:::makeTaxonomyFasta_Silva(file.path(path, "silva.nr_v132.align"), 
+    file.path(path, "silva.nr_v132.tax"), 
+    "~/tax/silva_nr_v132_train_set.fa.gz")
+}
 \keyword{internal}
