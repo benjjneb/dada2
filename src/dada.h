@@ -67,6 +67,7 @@ typedef struct {
   double E_minmax;
   Comparison comp;  // the comparison between this Raw and...
   bool lock;   // "Locks" the raw to its current Bi in greedy-mode
+  bool correct; // this Raw will be corrected to the center of its partition
 } Raw;
 
 // Bi: This is one cluster or partition. Contains raws grouped in fams.

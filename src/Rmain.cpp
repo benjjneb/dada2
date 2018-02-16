@@ -30,7 +30,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
                         int match, int mismatch, int gap,
                         bool use_kmers, double kdist_cutoff,
                         int band_size,
-                        double omegaA, double omegaP,
+                        double omegaA, double omegaP, double omegaC,
                         int max_clust,
                         double min_fold, int min_hamming, int min_abund,
                         bool use_quals,
@@ -227,6 +227,22 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     }
   }
 
+  // Assign final w/in cluster P
+  Rcpp::NumericVector Rpraw(nraw); ///! temporary output for evaluation purposes
+  for(i=0;i<bb->nclust;i++) {
+    for(r=0;r<bb->bi[i]->nraw;r++) {
+      raw = bb->bi[i]->raw[r];
+      index = raw->index;
+      if(bb->bi[i]->center == raw) { // centers always have correct=true
+        raw->p = 1.0; // Due to fp precision, possible to get 1's from non-centers in below calc?
+      } else {
+        raw->p = calc_pA(raw->reads, raw->comp.lambda * bb->bi[i]->reads, true);
+        if(raw->p < omegaC) { raw->correct = false; } // Don't correct!
+      }
+      Rpraw[index] = raw->p; ///! temporary output for evaluation purposes
+    }
+  }
+  
   Rcpp::DataFrame df_clustering = b_make_clustering_df(bb, subs, birth_subs, has_quals);
   Rcpp::IntegerMatrix mat_trans = b_make_transition_by_quality_matrix(bb, subs, has_quals, err.ncol());
   Rcpp::NumericMatrix mat_quals = b_make_cluster_quality_matrix(bb, subs, has_quals, maxlen);
@@ -245,20 +261,15 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   Rcpp::IntegerVector Rmap(nraw);
   for(i=0;i<bb->nclust;i++) {
     for(r=0;r<bb->bi[i]->nraw;r++) {
-      Rmap(bb->bi[i]->raw[r]->index) = i+1; // +1 for R 1-indexing
+      raw = bb->bi[i]->raw[r];
+      if(raw->correct) { 
+        Rmap(raw->index) = i+1; // +1 for R 1-indexing; 
+      } else {
+        Rmap(raw->index) = NA_INTEGER;
+      }
     }
   }
   
-  // Make vector of final w/in cluster P
-  Rcpp::NumericVector Rpraw(nraw);
-  for(i=0;i<bb->nclust;i++) {
-    for(r=0;r<bb->bi[i]->nraw;r++) {
-      raw = bb->bi[i]->raw[r];
-      index = raw->index;
-      Rpraw[index] = calc_pA(raw->reads, raw->comp.lambda * bb->bi[i]->reads, true);
-    }
-  }
-
   // Free memory
   b_free(bb);
   for(index=0;index<nraw;index++) {
