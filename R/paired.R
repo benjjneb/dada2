@@ -99,12 +99,18 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
     mapF <- derepF[[i]]$map
     mapR <- derepR[[i]]$map
     if(!(is.integer(mapF) && is.integer(mapR))) stop("Incorrect format of $map in derep-class arguments.")
+#    if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
+    if(!(length(mapF) == length(mapR) && max(mapF) == length(dadaF[[i]]$map) &&
+         max(mapR) == length(dadaR[[i]]$map))) {
+      stop("Non-corresponding maps and dada-outputs.")
+    }
     rF <- dadaF[[i]]$map[mapF]
     rR <- dadaR[[i]]$map[mapR]
-    if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
     
     pairdf <- data.frame(sequence = "", abundance=0, forward=rF, reverse=rR)
     ups <- unique(pairdf) # The unique forward/reverse pairs of denoised sequences
+    keep <- !is.na(ups$forward) & !is.na(ups$reverse)
+    ups <- ups[!is.na(ups$forward) & !is.na(ups$reverse),] # Drop pairs with uncorrected uniques
     Funqseq <- unname(as.character(dadaF[[i]]$clustering$sequence[ups$forward]))
     Runqseq <- rc(unname(as.character(dadaR[[i]]$clustering$sequence[ups$reverse])))
     
@@ -155,6 +161,9 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
     ups <- ups[order(ups$abundance, decreasing=TRUE),]
     rownames(ups) <- NULL
     if(verbose) {
+      if(!all(keep)) {
+        message("Merging attempted on ", sum(ups$abundance), " corrected paired-reads, out of ", length(mapF), " total paired-reads input to denoising.")
+      }
       message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
     }
     if(!returnRejects) { ups <- ups[ups$accept,] }

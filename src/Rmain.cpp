@@ -234,7 +234,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
       raw = bb->bi[i]->raw[r];
       index = raw->index;
       if(bb->bi[i]->center == raw) { // centers always have correct=true
-        raw->p = 1.0; // Due to fp precision, possible to get 1's from non-centers in below calc?
+        raw->p = 1.0; // Due to fp precision, possible to get 1's from non-centers in below calc
       } else {
         raw->p = calc_pA(raw->reads, raw->comp.lambda * bb->bi[i]->reads, true);
         if(raw->p < omegaC) { raw->correct = false; } // Don't correct!
