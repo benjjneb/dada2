@@ -1,6 +1,7 @@
 dada_opts <- new.env()
 assign("OMEGA_A", 1e-40, envir = dada_opts)
 assign("OMEGA_P", 1e-4, envir = dada_opts)
+assign("OMEGA_C", 0.0, envir=dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
@@ -244,7 +245,14 @@ dada <- function(derep,
       }
     }
   }
-
+  
+  # Validate OMEGA parameters
+  if(opts$OMEGA_A < 0 || opts$OMEGA_A >= 1) stop("OMEGA_A must be between zero and one.")
+  if(opts$OMEGA_P < 0 || opts$OMEGA_P >= 1) stop("OMEGA_P must be between zero and one.")
+  if(opts$OMEGA_P < opts$OMEGA_A && length(priors) > 0) warning("OMEGA_P should generally be larger than OMEGA_A.")
+  if(opts$OMEGA_C > 1e-10 && selfConsist) warning("Strict error correction (OMEGA_C < 1e-10) is not recommended when learning error rates.")
+  if(opts$OMEGA_C >= 1 && selfConsist) stop("Some error correction required when learning error rates.")
+  
   # Validate errorEstimationFunction
   if(!opts$USE_QUALS) {
     if(!missing(errorEstimationFunction) && verbose) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
@@ -293,7 +301,7 @@ dada <- function(derep,
     birth_subs <- list()
     trans <- list()
     map <- list()
-#    exp <- list()
+    pval <- list()
     prev <- cur
     if(nconsist > 0) errs[[nconsist]] <- err
 
@@ -325,7 +333,7 @@ dada <- function(derep,
                           opts[["MATCH"]], opts[["MISMATCH"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
-                          opts[["OMEGA_A"]], opts[["OMEGA_P"]],
+                          opts[["OMEGA_A"]], opts[["OMEGA_P"]], opts[["OMEGA_C"]],
                           if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] },
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]], opts[["MIN_ABUNDANCE"]],
                           TRUE, #opts[["USE_QUALS"]],
@@ -347,7 +355,7 @@ dada <- function(derep,
       birth_subs[[i]] <- res$birth_subs
       trans[[i]] <- res$subqual
       map[[i]] <- res$map
-#      exp[[i]] <- res$exp
+      pval[[i]] <- res$pval
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
       colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
     }
@@ -415,7 +423,7 @@ dada <- function(derep,
     rval2[[i]]$birth_subs <- birth_subs[[i]]
     rval2[[i]]$trans <- trans[[i]]
     rval2[[i]]$map <- map[[i]]
-#    rval2[[i]]$exp <- exp[[i]]
+    rval2[[i]]$pval <- pval[[i]]
     # Return the error rate(s) used as well as the final estimated error matrix
     if(selfConsist) { # Did a self-consist loop
       rval2[[i]]$err_in <- errs
@@ -454,6 +462,7 @@ dada <- function(derep,
       rval2[[i]]$birth_subs$clust <- newBi[rval2[[i]]$birth_subs$clust]      
       # Remap $map
       rval2[[i]]$map <- newBi[map[names(derep.in[[i]]$uniques)]]
+      # Would need to add $pval back in here
       # Recalculate abundances (both $denoised and $clustering$abundance)
       rval2[[i]]$denoised[] <- tapply(derep.in[[i]]$uniques, rval2[[i]]$map, sum)
       rval2[[i]]$clustering$abundance <- rval2[[i]]$denoised
@@ -495,6 +504,13 @@ dada <- function(derep,
 #'  positive inferences, but which comes at the cost of reducing the ability to identify some rare variants.
 #' 
 #' OMEGA_P: The threshold for unique sequences with prior evidence of existence (see `priors` argument). Default is 1e-4.
+#' 
+#' OMEGA_C: The threshold at which unique sequences inferred to contain errors are corrected in the final output. 
+#' The probability that each unique sequence
+#'  is generated at its observed abundance from the center of its final partition is evaluated, and compared to OMEGA_C. If that
+#'  probability is >= OMEGA_C, it is "corrected", i.e. replaced by the partition center sequence. The special value of 0 corresponds
+#'  to correcting all input sequences, and any value > 1 corresponds to performing no correction on sequences found to contain
+#'  errors. Default is 0 (i.e. correct all).
 #' 
 #' **Alignment**
 #' 

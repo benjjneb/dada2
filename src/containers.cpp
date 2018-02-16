@@ -38,6 +38,7 @@ Raw *raw_new(char *seq, double *qual, unsigned int reads, bool prior) {
   raw->p = 0.0;
   raw->E_minmax = -999.0;
   raw->lock = false;
+  raw->correct = true;
   return raw;
 }
 

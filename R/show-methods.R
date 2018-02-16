@@ -40,8 +40,9 @@ setMethod("show", "dada", function(object){
   if( length(object$denoised) > 0 && length(object$map) > 0 ) {
     cat(length(object$denoised), "sequence variants were inferred from", length(object$map), "input unique sequences.", fill=TRUE)
   }
-  cat("Key parameters: OMEGA_A = ", object$opts$OMEGA_A, ", BAND_SIZE = ", 
-      object$opts$BAND_SIZE, ", USE_QUALS = ", object$opts$USE_QUALS, 
+  cat("Key parameters: OMEGA_A = ", object$opts$OMEGA_A,
+      ", OMEGA_C = ", object$opts$OMEGA_C,
+      ", BAND_SIZE = ", object$opts$BAND_SIZE, 
       sep="", fill=TRUE)
 })
 
