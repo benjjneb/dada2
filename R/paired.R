@@ -161,9 +161,6 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
     ups <- ups[order(ups$abundance, decreasing=TRUE),]
     rownames(ups) <- NULL
     if(verbose) {
-      if(!all(keep)) {
-        message("Merging attempted on ", sum(ups$abundance), " corrected paired-reads, out of ", length(mapF), " total paired-reads input to denoising.")
-      }
       message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
     }
     if(!returnRejects) { ups <- ups[ups$accept,] }

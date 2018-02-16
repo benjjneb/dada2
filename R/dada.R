@@ -1,6 +1,7 @@
 dada_opts <- new.env()
 assign("OMEGA_A", 1e-40, envir = dada_opts)
 assign("OMEGA_P", 1e-4, envir = dada_opts)
+assign("OMEGA_C", 0.0, envir=dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
@@ -22,7 +23,6 @@ assign("GAPLESS", TRUE, envir=dada_opts)
 assign("GREEDY", TRUE, envir=dada_opts)
 assign("PSEUDO_PREVALENCE", 2, envir=dada_opts)
 assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
-assign("OMEGA_C", 0.0, envir=dada_opts)
 # assign("FINAL_CONSENSUS", FALSE, envir=dada_opts) # NON-FUNCTIONAL AT THE MOMENT
 
 #' High resolution sample inference from amplicon data.
@@ -245,7 +245,14 @@ dada <- function(derep,
       }
     }
   }
-
+  
+  # Validate OMEGA parameters
+  if(opts$OMEGA_A < 0 || opts$OMEGA_A >= 1) stop("OMEGA_A must be between zero and one.")
+  if(opts$OMEGA_P < 0 || opts$OMEGA_P >= 1) stop("OMEGA_P must be between zero and one.")
+  if(opts$OMEGA_P < opts$OMEGA_A && length(priors) > 0) warning("OMEGA_P should generally be larger than OMEGA_A.")
+  if(opts$OMEGA_C > 1e-10 && selfConsist) warning("Strict error correction (OMEGA_C < 1e-10) is not recommended when learning error rates.")
+  if(opts$OMEGA_C >= 1 && selfConsist) stop("Some error correction required when learning error rates.")
+  
   # Validate errorEstimationFunction
   if(!opts$USE_QUALS) {
     if(!missing(errorEstimationFunction) && verbose) message("The errorEstimationFunction argument is ignored when USE_QUALS is FALSE.")
@@ -497,6 +504,13 @@ dada <- function(derep,
 #'  positive inferences, but which comes at the cost of reducing the ability to identify some rare variants.
 #' 
 #' OMEGA_P: The threshold for unique sequences with prior evidence of existence (see `priors` argument). Default is 1e-4.
+#' 
+#' OMEGA_C: The threshold at which unique sequences inferred to contain errors are corrected in the final output. 
+#' The probability that each unique sequence
+#'  is generated at its observed abundance from the center of its final partition is evaluated, and compared to OMEGA_C. If that
+#'  probability is >= OMEGA_C, it is "corrected", i.e. replaced by the partition center sequence. The special value of 0 corresponds
+#'  to correcting all input sequences, and any value > 1 corresponds to performing no correction on sequences found to contain
+#'  errors. Default is 0 (i.e. correct all).
 #' 
 #' **Alignment**
 #' 
