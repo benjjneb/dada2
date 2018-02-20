@@ -1,4 +1,4 @@
-PKG_LIBS += $(shell ${R_HOME}/bin/Rscript -e "RcppParallel::RcppParallelLibs()")
+PKG_LIBS += $(shell ${R_HOME}/bin/Rscript --vanilla -e "RcppParallel::RcppParallelLibs()")
 CXX_STD = CXX11
 PKG_CPPFLAGS += -msse2
 PKG_CFLAGS += -msse2
