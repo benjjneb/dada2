@@ -4,19 +4,22 @@
 \alias{learnErrors}
 \title{Learns the error rates from an input list, or vector, of file names or a list of \code{\link{derep-class}} objects.}
 \usage{
-learnErrors(fls, nreads = 1e+06, errorEstimationFunction = loessErrfun,
-  multithread = FALSE, randomize = FALSE, MAX_CONSIST = 10,
-  verbose = FALSE, ...)
+learnErrors(fls, nbases = 1e+08, nreads = NULL,
+  errorEstimationFunction = loessErrfun, multithread = FALSE,
+  randomize = FALSE, MAX_CONSIST = 10, verbose = FALSE, ...)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
 The file path(s) to the fastq, fastq.gz file(s), or any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
 A list of derep-class ojects can also be provided.}
 
-\item{nreads}{(Optional). Default 1e6.
-The minimum number of reads to use for error rate learning. Samples are read into memory
-until at least this number of reads has been reached, or all provided samples have been
+\item{nbases}{(Optional). Default 1e8.
+The minimum number of total bases to use for error rate learning. Samples are read into memory
+until at least this number of total bases has been reached, or all provided samples have been
 read in.}
+
+\item{nreads}{(Optional). Default NULL. DEPRECATED.
+Please update your code to use the nbases parameter.}
 
 \item{errorEstimationFunction}{(Optional). Function. Default \code{\link{loessErrfun}}.
 

@@ -129,10 +129,13 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  The file path(s) to the fastq, fastq.gz file(s), or any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
 #'  A list of derep-class ojects can also be provided. 
 #'  
-#' @param nreads (Optional). Default 1e6.
-#'  The minimum number of reads to use for error rate learning. Samples are read into memory
-#'  until at least this number of reads has been reached, or all provided samples have been
+#' @param nbases (Optional). Default 1e8.
+#'  The minimum number of total bases to use for error rate learning. Samples are read into memory
+#'  until at least this number of total bases has been reached, or all provided samples have been
 #'  read in.
+#'    
+#' @param nreads (Optional). Default NULL. DEPRECATED.
+#'  Please update your code to use the nbases parameter.
 #'  
 #' @param errorEstimationFunction (Optional). Function. Default \code{\link{loessErrfun}}.
 #' 
@@ -183,10 +186,14 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  dereps <- derepFastq(c(fl1, fl2))
 #'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE, MAX_CONSIST=20)
 #' 
-learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, multithread=FALSE, 
+learnErrors <- function(fls, nbases=1e8, nreads=NULL, errorEstimationFunction = loessErrfun, multithread=FALSE, 
                         randomize=FALSE, MAX_CONSIST=10, verbose=FALSE, ...) {
+  if(!is.null(nreads)) {
+    warning("The nreads parameter is DEPRECATED. Please update your code with the nbases parameter.")
+  }
+  NBASES <- 0
   NREADS <- 0
-  if(is(fls, "derep")) { fls <- list(fls) } # A single derep=class object
+  if(is(fls, "derep")) { fls <- list(fls) } # A single derep-class object
   drps <- vector("list", length(fls))
   if(randomize) { fls <- sample(fls) }
   for(i in seq_along(fls)) {
@@ -196,13 +203,17 @@ learnErrors <- function(fls, nreads=1e6, errorEstimationFunction = loessErrfun, 
         drps[[i]] <- derepFastq(fls[[i]])
     }
     NREADS <- NREADS + sum(drps[[i]]$uniques)
-    if(NREADS > nreads) { break }
+    NBASES <- NBASES + sum(drp[[i]]$uniques * nchar(names(drp[[i]]$uniques)))
+    if(is.null(nreads) && NBASES > nbases) { break }
+    if(!is.null(nreads) && NREADS > nreads) { break }
   }
   drps <- drps[1:i]
   # Run dada in self-consist mode on those samples
   dds <- dada(drps, err=NULL, errorEstimationFunction=errorEstimationFunction, selfConsist=TRUE, 
               multithread=multithread, verbose=verbose, MAX_CONSIST=MAX_CONSIST, ...)
-  if(is.logical(verbose) || verbose > 0) cat("Total reads used: ", NREADS, "\n")
+  if(is.logical(verbose) || verbose > 0) {
+    cat(NBASES, " total bases in ", NREADS, " reads used for learning the error model.\n")
+  }
   return(getErrors(dds, detailed=TRUE))
 }
 
