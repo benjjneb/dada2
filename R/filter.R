@@ -489,7 +489,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
     fq <- fq[nFilter(maxN)(fq)]
     keep <- rep(TRUE, length(fq))
     qq <- as(quality(fq), "matrix")
-    if(minQ > truncQ) keep <- keep & (apply(qq, 1, min)>minQ) # Prob a faster trimTails trick
+    if(minQ > truncQ) keep <- keep & (apply(qq, 1, min, na.rm=TRUE)>minQ) # Prob a faster trimTails trick
     if(maxEE < Inf) {
       keep <- keep & C_matrixEE(qq) <= maxEE
     }
