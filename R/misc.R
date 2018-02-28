@@ -286,3 +286,9 @@ samdf_to_qiime2 <- function(df, fout) {
   write.table(df, fout, sep="\t",
               row.names=TRUE, col.names=col.names, quote=FALSE)
 }
+
+#' @keywords internal
+bs1ham <- function(dd, ham=1) {
+  is.1ham <- which(dd$clustering$birth_ham %in% ham)
+  dd$birth_subs[dd$birth_subs$clust %in% is.1ham,]
+}
