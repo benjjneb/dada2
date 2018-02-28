@@ -1,5 +1,14 @@
 # NEED TO WORK ON VARIOUS SCENAIORS
 # especially trimming of partial reverse primers, and sometimes present reverse primers
+#' @importFrom Biostrings vmatchPattern
+#' @importFrom ShortRead sread
+#' @importFrom ShortRead reverseComplement
+#' @importFrom ShortRead readFastq
+#' @importFrom XVector rev
+#' @importFrom methods as
+#' @importFrom BiocGenerics end
+#' @importFrom BiocGenerics width
+#' @importFrom BiocGenerics start
 removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL, 
                           max.mismatch=2, allow.indels=FALSE, 
                           require.fwd=TRUE, require.rev=TRUE, trim.fwd=TRUE, trim.rev=TRUE, orient=FALSE,
@@ -27,7 +36,7 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
   fixed.fwd <- C_isACGT(primer.fwd)
   if(has.rev) fixed.rev <- C_isACGT(primer.rev)
   # Read in file
-  fq <- readFastq(fwd)
+  fq <- readFastq(fn)
   inseqs <- length(fq)
   # Match patterns
   match.fwd <- as(vmatchPattern(primer.fwd, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
@@ -49,7 +58,7 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
   if(any(hits.fwd>1) || (has.rev && any(hits.rev>1))) {
     if(verbose) message("Multiple matches to the primer(s) in some sequences. Using the longest possible match.")
     match.fwd[hits.fwd>1] <- sapply(match.fwd[hits.fwd>1], `[`, 1)
-    if(has.rev) match.rev[hits.rev>1] <- sapply(match.rev[hits.rev>1], `[`, hits.rev[hits.rev>1])
+    if(has.rev) match.rev[hits.rev>1] <- sapply(match.rev[hits.rev>1], function(x) rev(x)[1])
   }
   if(orient) {
     hits.fwd.rc <- sapply(match.fwd.rc, length)
@@ -57,7 +66,7 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
     if(any(hits.fwd.rc>1) || (has.rev && any(hits.rev.rc>1))) {
       if(verbose) message("Multiple matches to the primer(s) in some reverse-complement sequences. Using the longest possible match.")
       match.fwd.rc[hits.fwd.rc>1] <- sapply(match.fwd.rc[hits.fwd.rc>1], `[`, 1)
-      match.rev.rc[hits.rev.rc>1] <- sapply(match.rev.rc[hits.rev.rc>1], `[`, hits.rev.rc[hits.rev.rc>1])
+      match.rev.rc[hits.rev.rc>1] <- sapply(match.rev.rc[hits.rev.rc>1], function(x) rev(x)[1])
     }
   }
   # If orient, replace non-matches with rc matches where they exist
@@ -92,6 +101,8 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
   } else {
     last <- width(fq)
   }
+  keep <- last > first
+  if(!all(keep)) first <- first[keep]; last <- last[keep]; fq <- fq[keep]
   fq <- narrow(fq, first, last) # Need to handle zero case gracefully, w/ informative error
   # Delete fout if it already exists (since writeFastq doesn't overwrite)
   if(file.exists(fout)) {
