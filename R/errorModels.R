@@ -204,7 +204,7 @@ learnErrors <- function(fls, nbases=1e8, nreads=NULL, errorEstimationFunction = 
         drps[[i]] <- derepFastq(fls[[i]])
     }
     NREADS <- NREADS + sum(drps[[i]]$uniques)
-    NBASES <- NBASES + sum(drp[[i]]$uniques * nchar(names(drp[[i]]$uniques)))
+    NBASES <- NBASES + sum(drps[[i]]$uniques * nchar(names(drps[[i]]$uniques)))
     if(is.null(nreads) && NBASES > nbases) { break }
     if(!is.null(nreads) && NREADS > nreads) { break }
   }

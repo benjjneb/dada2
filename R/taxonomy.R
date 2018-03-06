@@ -209,6 +209,10 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' If TRUE, the reverse-complement of each sequences will also be tested for exact matching 
 #' to the reference sequences.
 #'   
+#' @param n (Optional). Default \code{2000}.
+#' The number of sequences to perform assignment on at one time. 
+#' This controls the peak memory requirement so that large numbers of sequences are supported. 
+#'
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
 #' 
@@ -231,7 +235,7 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' species_fasta <- system.file("extdata", "example_species_assignment.fa.gz", package="dada2")
 #' spec <- assignSpecies(seqs, species_fasta)
 #' 
-assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verbose=FALSE) {
+assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=2000, verbose=FALSE) {
   # Define number of multiple species to return
   if(is.logical(allowMultiple)) {
     if(allowMultiple) keep <- Inf
@@ -258,16 +262,23 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verb
   hits <- vector("list", length(seqs))
   lens <- nchar(seqs)
   for(len in unique(lens)) { # Requires all same length sequences
-    seqdict <- PDict(seqs[lens==len])
-    vhit <- (vcountPDict(seqdict, sread(refsr))>0)
-    if(tryRC) vhit <- vhit | (vcountPDict(seqdict, reverseComplement(sread(refsr)))>0)
-    hits[lens==len] <- lapply(seq(nrow(vhit)), function(x) vhit[x,])
+    i.len <- which(lens==len); n.len <- length(i.len)
+    j.lo<-1; j.hi<-min(n,n.len)
+    while(j.lo <= n.len) {
+      i.loop <- i.len[j.lo:j.hi]
+      seqdict <- PDict(seqs[i.loop])
+      vhit <- (vcountPDict(seqdict, sread(refsr))>0)
+      if(tryRC) vhit <- vhit | (vcountPDict(seqdict, reverseComplement(sread(refsr)))>0)
+      hits[i.loop] <- lapply(seq(nrow(vhit)), function(x) vhit[x,])
+      j.lo <- j.lo + n; j.hi <- min(j.hi+n, n.len)
+    }
   }
   # Get genus species return strings
   rval <- cbind(unlist(sapply(hits, mapHits, refs=genus, keep=1)),
                 unlist(sapply(hits, mapHits, refs=species, keep=keep)))
   colnames(rval) <- c("Genus", "Species")
   rownames(rval) <- seqs
+  gc()
   if(verbose) cat(sum(!is.na(rval[,"Species"])), "out of", length(seqs), "were assigned to the species level.\n")
   rval
 }
@@ -302,6 +313,11 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verb
 #' If TRUE, the reverse-complement of each sequences will be used for classification if it is a better match to the reference
 #' sequences than the forward sequence.
 #'   
+#' @param n (Optional). Default \code{1e5}.
+#' The number of records (reads) to read in and filter at any one time. 
+#' This controls the peak memory requirement so that very large fastq files are supported. 
+#' See \code{\link{FastqStreamer}} for details.
+#'
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
 #' 
@@ -323,9 +339,9 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, verb
 #' taxa.spec <- addSpecies(taxa, species_fasta)
 #' taxa.spec.multi <- addSpecies(taxa, species_fasta, allowMultiple=TRUE)
 #' 
-addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, verbose=FALSE) {
+addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=2000, verbose=FALSE) {
   seqs <- rownames(taxtab)
-  binom <- assignSpecies(seqs, refFasta=refFasta, allowMultiple=allowMultiple, tryRC=tryRC, verbose=verbose)
+  binom <- assignSpecies(seqs, refFasta=refFasta, allowMultiple=allowMultiple, tryRC=tryRC, n=n, verbose=verbose)
   # Merge tables
   if("Genus" %in% colnames(taxtab)) gcol <- which(colnames(taxtab) == "Genus")
   else gcol <- ncol(taxtab)
