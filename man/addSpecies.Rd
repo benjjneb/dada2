@@ -5,7 +5,7 @@
 \title{Add species-level annotation to a taxonomic table.}
 \usage{
 addSpecies(taxtab, refFasta, allowMultiple = FALSE, tryRC = FALSE,
-  verbose = FALSE)
+  n = 2000, verbose = FALSE)
 }
 \arguments{
 \item{taxtab}{(Required). A taxonomic table, the output of \code{\link{assignTaxonomy}}.}
@@ -27,6 +27,11 @@ identifications up to that many are returned as a concatenated string.}
 \item{tryRC}{(Optional). Default FALSE. 
 If TRUE, the reverse-complement of each sequences will be used for classification if it is a better match to the reference
 sequences than the forward sequence.}
+
+\item{n}{(Optional). Default \code{1e5}.
+The number of records (reads) to read in and filter at any one time. 
+This controls the peak memory requirement so that very large fastq files are supported. 
+See \code{\link{FastqStreamer}} for details.}
 
 \item{verbose}{(Optional). Default FALSE.
 If TRUE, print status to standard output.}

@@ -5,7 +5,7 @@
 \title{Taxonomic assignment to the species level by exact matching.}
 \usage{
 assignSpecies(seqs, refFasta, allowMultiple = FALSE, tryRC = FALSE,
-  verbose = FALSE)
+  n = 2000, verbose = FALSE)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 
@@ -28,6 +28,10 @@ identifications up to that many are returned as a concatenated string.}
 \item{tryRC}{(Optional). Default FALSE. 
 If TRUE, the reverse-complement of each sequences will also be tested for exact matching 
 to the reference sequences.}
+
+\item{n}{(Optional). Default \code{2000}.
+The number of sequences to perform assignment on at one time. 
+This controls the peak memory requirement so that large numbers of sequences are supported.}
 
 \item{verbose}{(Optional). Default FALSE.
 If TRUE, print status to standard output.}
