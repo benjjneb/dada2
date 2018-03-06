@@ -280,6 +280,14 @@ seqtab_to_qiime <- function(st, fout) {
 }
 
 #' @keywords internal
+seqtab_to_mothur <- function(st, fout) {
+  # mothur has OTUs as columns, and a couple required columns
+  df.shared <- data.frame(label=rep("DADA2", nrow(st)), Group=rownames(st), numOtus=ncol(st))
+  df.shared <- cbind(df.shared, st)
+  write.table(df.shared, four, row.names=FALSE, col.names=TRUE, quote=FALSE)
+}
+
+#' @keywords internal
 samdf_to_qiime2 <- function(df, fout) {
   col.names <- colnames(df)
   col.names[[1]] <- paste0("#SampleID\t", col.names[[1]])
