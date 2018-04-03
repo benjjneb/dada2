@@ -386,7 +386,13 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   unsigned int seqlen;
   for(i=0;i<nseq;i++) {
     seqlen = seqs[i].size();
-    if(seqlen < 50) Rcpp::stop("Sequences must be at least 50 nts to classify.");
+    if(seqlen < 50) {
+      free(genus_num_plus1);
+      free(genus_kmers);
+      free(kmer_prior);
+      free(ref_kv);
+      Rcpp::stop("Sequences must be at least 50 nts to classify.");
+    }
     if((seqlen-k) > max_arraylen) { max_arraylen = seqlen-k; }
   }
   
