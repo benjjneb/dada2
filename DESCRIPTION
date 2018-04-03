@@ -28,6 +28,8 @@ Imports:
     RcppParallel (>= 4.3.0),
     parallel (>= 3.2.0),
     IRanges (>= 2.6.0),
+    XVector (>= 0.16.0),
+    BiocGenerics (>= 0.22.0)
 Suggests:
     BiocStyle,
     knitr,
