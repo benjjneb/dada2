@@ -366,6 +366,7 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=200
 #' @importFrom ShortRead writeFasta
 #' @importFrom ShortRead sread
 #' @importFrom Biostrings BStringSet
+#' @importFrom utils read.table
 #' @keywords internal
 makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
   # Read in the fasta and pull out the taxonomy entries
@@ -480,6 +481,7 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
 #' @importFrom ShortRead writeFasta
 #' @importFrom ShortRead sread
 #' @importFrom Biostrings BStringSet
+#' @importFrom utils read.table
 #' @keywords internal
 makeTaxonomyFasta_Silva <- function(fin, ftax, fout, compress=TRUE) {
   # Read in the fasta and pull out the taxonomy entries

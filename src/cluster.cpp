@@ -92,13 +92,13 @@ struct CompareParallel : public RcppParallel::Worker
   // source data
   B *b;
   unsigned int i;
+  double *err_mat;
+  unsigned int ncol;
   
   // destination comparison array
   Comparison *output;
   
   // parameters
-  double *err_mat;
-  unsigned int ncol;
   int match, mismatch, gap_pen, homo_gap_pen;
   bool use_kmers;
   double kdist_cutoff;
