@@ -280,9 +280,23 @@ seqtab_to_qiime <- function(st, fout) {
 }
 
 #' @keywords internal
+seqtab_to_mothur <- function(st, fout) {
+  # mothur has OTUs as columns, and a couple required columns
+  df.shared <- data.frame(label=rep("DADA2", nrow(st)), Group=rownames(st), numOtus=ncol(st))
+  df.shared <- cbind(df.shared, st)
+  write.table(df.shared, four, row.names=FALSE, col.names=TRUE, quote=FALSE)
+}
+
+#' @keywords internal
 samdf_to_qiime2 <- function(df, fout) {
   col.names <- colnames(df)
   col.names[[1]] <- paste0("#SampleID\t", col.names[[1]])
   write.table(df, fout, sep="\t",
               row.names=TRUE, col.names=col.names, quote=FALSE)
+}
+
+#' @keywords internal
+bs1ham <- function(dd, ham=1) {
+  is.1ham <- which(dd$clustering$birth_ham %in% ham)
+  dd$birth_subs[dd$birth_subs$clust %in% is.1ham,]
 }

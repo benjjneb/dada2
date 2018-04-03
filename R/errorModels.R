@@ -36,7 +36,8 @@ loessErrfun <- function(trans) {
         rlogp <- log10((errs+1)/tot)  # 1 psuedocount for each err, but if tot=0 will give NA
         rlogp[is.infinite(rlogp)] <- NA
         df <- data.frame(q=qq, errs=errs, tot=tot, rlogp=rlogp)
-        mod.lo <- loess(rlogp ~ q, df, weights=errs)
+        ###! mod.lo <- loess(rlogp ~ q, df, weights=errs) ###!
+        mod.lo <- loess(rlogp ~ q, df, weights=tot) ###!
         #        mod.lo <- loess(rlogp ~ q, df)
         pred <- predict(mod.lo, qq)
         maxrli <- max(which(!is.na(pred)))
