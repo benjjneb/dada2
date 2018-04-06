@@ -4,17 +4,21 @@
 \alias{mergeSequenceTables}
 \title{Merge two or more sample-by-sequence observation matrices.}
 \usage{
-mergeSequenceTables(table1, table2, ..., repeats = "error",
-  orderBy = "abundance")
+mergeSequenceTables(table1 = NULL, table2 = NULL, ..., tables = NULL,
+  repeats = "error", orderBy = "abundance")
 }
 \arguments{
-\item{table1}{(Required). Named integer matrix. Rownames correspond to samples
+\item{table1}{(Optional, default=NULL). Named integer matrix. Rownames correspond to samples
 and column names correspond to sequences. The output of \code{\link{makeSequenceTable}}.}
 
-\item{table2}{(Required). Named integer matrix. Rownames correspond to samples
+\item{table2}{(Optional, default=NULL). Named integer matrix. Rownames correspond to samples
 and column names correspond to sequences. The output of \code{\link{makeSequenceTable}}.}
 
 \item{...}{(Optional). Additional sequence tables.}
+
+\item{tables}{(Optional, default=NULL). Either a list of sequence tables, or a list/vector of RDS filenames
+corresponding to sequence tables. If provided, \code{table1}, \code{table2}, and any
+additional arguments will be ignored.}
 
 \item{repeats}{(Optional). Default "error".
 Specifies how merging should proceed in the presence of repeated sample names.
@@ -36,7 +40,11 @@ This function combines sequence tables together into one merged sequences table.
 \examples{
 
 \dontrun{
-  mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3)
+  mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3) # unnamed arguments are assumed to be individual sequence tables
+  input_tables <- list(seqtab1, seqtab2, seqtab3)
+  mergetab <- mergeSequenceTables(tables=input_tables) # list of sequence tables
+  files <- c(file1, file2, file3)
+  mergetab <- mergeSequenceTables(tables=files) # vector of filenames
 }
 
 }
