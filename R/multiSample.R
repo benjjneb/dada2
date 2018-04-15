@@ -190,13 +190,17 @@ is.sequence.table <- function(tab) {
 #' 
 #' This function combines sequence tables together into one merged sequences table.
 #' 
-#' @param table1 (Required). Named integer matrix. Rownames correspond to samples
+#' @param table1 (Optional, default=NULL). Named integer matrix. Rownames correspond to samples
 #' and column names correspond to sequences. The output of \code{\link{makeSequenceTable}}.
 #' 
-#' @param table2 (Required). Named integer matrix. Rownames correspond to samples
+#' @param table2 (Optional, default=NULL). Named integer matrix. Rownames correspond to samples
 #' and column names correspond to sequences. The output of \code{\link{makeSequenceTable}}.
 #' 
 #' @param ... (Optional). Additional sequence tables.
+#' 
+#' @param tables (Optional, default=NULL). Either a list of sequence tables, or a list/vector of RDS filenames
+#' corresponding to sequence tables. If provided, \code{table1}, \code{table2}, and any
+#' additional arguments will be ignored.
 #' 
 #' @param repeats (Optional). Default "error".
 #'  Specifies how merging should proceed in the presence of repeated sample names.
@@ -217,13 +221,31 @@ is.sequence.table <- function(tab) {
 #' @examples
 #' 
 #' \dontrun{
-#'   mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3)
+#'   mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3) # unnamed arguments are assumed to be individual sequence tables
+#'   input_tables <- list(seqtab1, seqtab2, seqtab3)
+#'   mergetab <- mergeSequenceTables(tables=input_tables) # list of sequence tables
+#'   files <- c(file1, file2, file3)
+#'   mergetab <- mergeSequenceTables(tables=files) # vector of filenames
 #' }
 #' 
-mergeSequenceTables <- function(table1, table2, ..., repeats="error", orderBy = "abundance") {
-  # Combine passed tables into a list
-  tables <- list(table1, table2)
-  tables <- c(tables, list(...))
+mergeSequenceTables <- function( table1=NULL, table2=NULL, ..., tables=NULL, repeats="error", orderBy = "abundance") {
+  # Convert to sequence tables if necessary
+  if (is.null(tables) && (is.null(table1) || is.null(table2))) {
+  	stop("Either 'tables' or 'table1' and 'table2' must be provided.")
+  } else if (!is.null(tables)) {
+		if (is.list(tables)) {
+			if(all(sapply(tables, is.character))) {
+				tables <- lapply(tables, readRDS)
+			}
+		} else if (is.character(tables)) {
+			tables <- sapply(tables, readRDS)
+		} else {
+			stop("'tables' must be a list or vector.")
+		}
+	} else {
+		tables <- list(table1, table2)
+		tables <- c(tables, list(...))
+	}
   # Validate tables
   if(!(all(sapply(tables, is.sequence.table)))) {
     stop("At least two valid sequence tables, and no invalid objects, are expected.")
