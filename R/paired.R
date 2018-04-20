@@ -287,9 +287,9 @@ dada_to_seq_table = function(dadaRes, derep, sr,
   readIDs = gsub(idRegExpr[1], idRegExpr[2], as.character(id(sr)))
   # Genotype index
   genotypeID <- dadaRes$map[map]
-  if(any(is.na(genotypeID))){
-    stop("Non-corresponding maps and dada-outputs.")
-  }
+#  if(any(is.na(genotypeID))){
+#    stop("Non-corresponding maps and dada-outputs.")
+#  }
   # A data.table containing these organized results, and more.
   dt = data.table(uniqueIndex = map, 
                   genotypeIndex = genotypeID,
@@ -299,6 +299,7 @@ dada_to_seq_table = function(dadaRes, derep, sr,
                   seq = names(dadaRes$denoised)[genotypeID],
                   # read id
                   id = readIDs)
+  dt <- dt[!is.na(dt$seq),] # Handle NAs from uncorrected reads
   # Join with some information from `clustering`
   clusteringdt = data.table(dadaRes$clustering)
   setnames(clusteringdt, "sequence", "seq")

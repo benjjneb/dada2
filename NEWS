@@ -1,3 +1,36 @@
+CHANGES IN VERSION 1.7.8
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o nbases has replaced the nreads parameter in the learnErrors function. As suggested by the name, this controls the amount of data the machine learning uses by the total number of bases rather than the read count, which is more appropriate given the range of read-lengths in target applications.
+
+    o OMEGA_C has been set to 1e-40 by default. This means that error-correction is no longer performed on all reads, but instead just those a post-hoc probability less than OMEGA_C=1e-40. In practice this has a very small impact on final abundances.
+
+BUG FIXES
+
+    o The memory usage and speed of assignSpecies on large datasets has significantly improved.
+
+CHANGES IN VERSION 1.7.7
+-----------------------
+
+NEW FEATURES
+
+    o Error-correction can now be modified, and turned off, by the OMEGA_C parameter, which controls the threshold at which reads that are inferred to contain errors are corrected (or not) to the sequence from which they are inferred to originate.
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The DADA2 options enabling the quick gapless alignment check, and extremely conservative greediness in the partioning method were turned on by default (GAPLESS=TRUE, GREEDY=TRUE). Some speedup in the core denoising algorithm.
+
+    o plotQualityProfile now includes a cumulative description of read length variation.
+
+CHANGES IN VERSION 1.7.6
+-----------------------
+
+NEW FEATURES
+
+    o A new and extremely conservative form of greediness in the core denoising algorithm was added, and can be turned on by setting the DADA2 option GREEDY=TRUE. This provides some speedup in the core denoising algorithm.
+
 CHANGES IN VERSION 1.7.5
 -----------------------
 
