@@ -1,7 +1,7 @@
 dada_opts <- new.env()
 assign("OMEGA_A", 1e-40, envir = dada_opts)
 assign("OMEGA_P", 1e-4, envir = dada_opts)
-assign("OMEGA_C", 0.0, envir=dada_opts)
+assign("OMEGA_C", 1e-40, envir=dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
@@ -309,7 +309,10 @@ dada <- function(derep,
       qi <- unname(t(derep[[i]]$quals)) # Need transpose so that sequences are columns
 
       if(nconsist == 1 && verbose) {
-        if(pool) {
+        if(selfConsist) {
+          if(i==1) cat("selfConsist step 1 ")
+          cat(".")
+        } else if(pool) {
           cat(length(derep.in), "samples were pooled:", sum(derep[[i]]$uniques), "reads in", 
               length(derep[[i]]$uniques), "unique sequences.\n")
         } else {
@@ -320,7 +323,7 @@ dada <- function(derep,
         if(nconsist == 0) {
           cat("Initializing error rates to maximum possible estimate.\n")
         } else {
-          cat("   selfConsist step", nconsist, "\n")
+          cat("\n   selfConsist step", nconsist)
         }
       }
       # Initialize error matrix if necessary
@@ -403,6 +406,7 @@ dada <- function(derep,
   } # repeat
 
   if(selfConsist && verbose) {
+    cat("\n")
     if(nconsist >= opts$MAX_CONSIST) {
       message("Self-consistency loop terminated before convergence.")
     } else {
@@ -510,7 +514,7 @@ dada <- function(derep,
 #'  is generated at its observed abundance from the center of its final partition is evaluated, and compared to OMEGA_C. If that
 #'  probability is >= OMEGA_C, it is "corrected", i.e. replaced by the partition center sequence. The special value of 0 corresponds
 #'  to correcting all input sequences, and any value > 1 corresponds to performing no correction on sequences found to contain
-#'  errors. Default is 0 (i.e. correct all).
+#'  errors. Default is 1e-40 (same as OMEGA_A).
 #' 
 #' **Alignment**
 #' 

@@ -6,7 +6,8 @@
 \usage{
 learnErrors(fls, nbases = 1e+08, nreads = NULL,
   errorEstimationFunction = loessErrfun, multithread = FALSE,
-  randomize = FALSE, MAX_CONSIST = 10, verbose = FALSE, ...)
+  randomize = FALSE, MAX_CONSIST = 10, OMEGA_C = 0, verbose = FALSE,
+  ...)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
@@ -38,6 +39,12 @@ If TRUE, samples are picked at random from those provided.}
 \item{MAX_CONSIST}{(Optional). Default 10.
 The maximum number of times to step through the self-consistency loop. If convergence was not
 reached in MAX_CONSIST steps, the estimated error rates in the last step are returned.}
+
+\item{OMEGA_C}{(Optional). Default 0.
+The threshold at which unique sequences inferred to contain errors are corrected in the final output,
+ and used to estimate the error rates (see more at \code{\link{setDadaOpt}}). For reasons of convergence,
+ and because it is more conservative, it is recommended to set this value to 0, which means that all
+ reads are counted and contribute to estimating the error rates.}
 
 \item{verbose}{(Optional). Default FALSE. 
  Print verbose text output. More fine-grained control is available by providing an integer argument.

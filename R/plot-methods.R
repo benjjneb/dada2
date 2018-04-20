@@ -104,13 +104,14 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
   transdf$Nominal[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")] <- 1 - 10^-(transdf$Qual[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")]/10)
   
   p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual))
-  if(obs) p <- p + geom_point(aes(y=Observed), na.rm=TRUE)
-  if(err_out)  p <- p + geom_line(aes(y=Estimated))
+  if(obs) p <- p + geom_point(aes(y=Observed), color="gray40", na.rm=TRUE)
   if(err_in)   p <- p + geom_line(aes(y=Input), linetype="dashed")
+  if(err_out)  p <- p + geom_line(aes(y=Estimated))
   if(nominalQ) p <- p + geom_line(aes(y=Nominal), color="red")
   p <- p + scale_y_log10()
   p <- p + facet_wrap(~Transition, nrow=length(nti))
   p <- p + xlab("Consensus quality score") + ylab("Error frequency (log10)")
+  p <- p + theme_bw()
   p
 }
 
@@ -124,7 +125,7 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
 #' show positional summary statistics: green is the mean, orange is the median, and
 #' the dashed orange lines are the 25th and 75th quantiles.
 #' 
-#' If the sequences vary in length, a red line will be plotted showing the proportion
+#' If the sequences vary in length, a red line will be plotted showing the percentage
 #' of reads that extend to at least that position.
 #' 
 #' @param fl (Required). \code{character}.
@@ -203,7 +204,9 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
 		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) + 
       facet_wrap(~label) + ylim(c(0,NA))
     if(length(unique(statdf$Cum))>1) {
-      p <- p + geom_line(data=statdf.summary, aes(y=Cum/nrow(anndf)), color="red", size=0.25, linetype="solid")
+      p <- p + geom_line(data=statdf.summary, aes(y=Cum/nrow(anndf)), color="red", size=0.25, linetype="solid") +
+        scale_y_continuous(sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
+        theme(axis.text.y.right = element_text(color = "red"), axis.title.y.right = element_text(color = "red"))
     }
   } else {
   	p <- ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
@@ -217,7 +220,9 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
 		  geom_text(data=anndf, aes(x=0, label=rclabel, y=0), color="red", hjust=0) + 
       facet_wrap(~file) + ylim(c(0,NA))
     if(length(unique(statdf$Cum))>1) {
-      p <- p + geom_line(data=statdf, aes(y=Cum), color="red", size=0.25, linetype="solid")
+      p <- p + geom_line(data=statdf, aes(y=Cum), color="red", size=0.25, linetype="solid") +
+        scale_y_continuous(sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
+        theme(axis.text.y.right = element_text(color = "red"), axis.title.y.right = element_text(color = "red"))
     }
   }
   p

@@ -31,7 +31,7 @@ The probability that each unique sequence
  is generated at its observed abundance from the center of its final partition is evaluated, and compared to OMEGA_C. If that
  probability is >= OMEGA_C, it is "corrected", i.e. replaced by the partition center sequence. The special value of 0 corresponds
  to correcting all input sequences, and any value > 1 corresponds to performing no correction on sequences found to contain
- errors. Default is 0 (i.e. correct all).
+ errors. Default is 1e-40 (same as OMEGA_A).
 
 **Alignment**
 
