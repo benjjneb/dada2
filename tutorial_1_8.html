@@ -330,14 +330,14 @@ sample.names &lt;- sapply(strsplit(basename(fnFs), &quot;_&quot;), `[`, 1)</code
 <pre class="r"><code>plotQualityProfile(fnFs[1:2])</code></pre>
 <pre><code>## Scale for &#39;y&#39; is already present. Adding another scale for &#39;y&#39;, which
 ## will replace the existing scale.</code></pre>
-<p><img src="tutorial_files/figure-html/see-quality-F-1.png" width="672" /></p>
+<p><img src="tutorial_1_8_files/figure-html/see-quality-F-1.png" width="672" /></p>
 <p>In gray-scale is a heat map of the frequency of each quality score at each base position. The median quality score at each position is shown by the green line, and the quartiles of the quality score distribution by the orange lines. The red line shows the scaled proportion of reads that extend to at least that position (this is more useful for other sequencing technologies, as Illumina reads are typically all the same lenghth, hence the flat red line).</p>
 <p>The forward reads are good quality. We generally advise trimming the last few nucleotides to avoid less well-controlled errors that can arise there. These quality profiles do not suggest that any additional trimming is needed. We will truncate the forward reads at position 240 (trimming the last 10 nucleotides).</p>
 <p>Now we visualize the quality profile of the reverse reads:</p>
 <pre class="r"><code>plotQualityProfile(fnRs[1:2])</code></pre>
 <pre><code>## Scale for &#39;y&#39; is already present. Adding another scale for &#39;y&#39;, which
 ## will replace the existing scale.</code></pre>
-<p><img src="tutorial_files/figure-html/see-quality-R-1.png" width="672" /></p>
+<p><img src="tutorial_1_8_files/figure-html/see-quality-R-1.png" width="672" /></p>
 <p>The reverse reads are of significantly worse quality, especially at the end, which is common in Illumina sequencing. This isn’t too worrisome, as DADA2 incorporates quality information into its error model which makes the algorithm <a href="https://twitter.com/bejcal/status/771010634074820608">robust to lower quality sequence</a>, but trimming as the average qualities crash will improve the algorithm’s sensitivity to rare sequence variants. Based on these profiles, we will truncate the reverse reads at position 160 where the quality distribution crashes.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
 <strong><span style="color:red">Considerations for your own data:</span></strong> <strong>Your reads must still overlap after truncation in order to merge them later!</strong> The tutorial is using 2x250 V4 sequence data, so the forward and reverse reads almost completely overlap and our trimming can be completely guided by the quality scores. If you are using a less-overlapping primer set, like V1-V2 or V3-V4, your <code>truncLen</code> must be large enough to maintain <code>20 + biological.length.variation</code> nucleotides of overlap between them.
@@ -396,7 +396,7 @@ head(out)</code></pre>
 ## Convergence after  7  rounds.</code></pre>
 <p>It is always worthwhile, as a sanity check if nothing else, to visualize the estimated error rates:</p>
 <pre class="r"><code>plotErrors(errF, nominalQ=TRUE)</code></pre>
-<p><img src="tutorial_files/figure-html/plot-errors-1.png" width="672" /></p>
+<p><img src="tutorial_1_8_files/figure-html/plot-errors-1.png" width="672" /></p>
 <p>The error rates for each possible transition (A→C, A→G, …) are shown. Points are the observed error rates for each consensus quality score. The black line shows the estimated error rates after convergence of the machine-learning algorithm. The red line shows the error rates expected under the nominal definition of the Q-score. Here the estimated error rates (black line) are a good fit to the observed rates (points), and the error rates drop with increased quality as expected. Everything looks reasonable and we proceed with confidence.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
 <strong><span style="color:red">Considerations for your own data:</span></strong> Parameter learning is computationally intensive, so by default the <code>learnErrors</code> function uses only a subset of the data (the first 100M bases). If you are working with a large dataset and the plotted error model does not look like a good fit, you can try increasing the <code>nbases</code> parameter to see if the fit improves.
@@ -688,56 +688,48 @@ ps</code></pre>
 <p>We are now ready to use phyloseq!</p>
 <p><strong>Visualize alpha-diversity</strong>:</p>
 <pre class="r"><code>plot_richness(ps, x=&quot;Day&quot;, measures=c(&quot;Shannon&quot;, &quot;Simpson&quot;), color=&quot;When&quot;)</code></pre>
-<p><img src="tutorial_files/figure-html/richness-1.png" width="672" /></p>
+<p><img src="tutorial_1_8_files/figure-html/richness-1.png" width="672" /></p>
 <p>No obvious systematic difference in alpha-diversity between early and late samples.</p>
 <p><strong>Ordinate</strong>:</p>
 <pre class="r"><code># Transform data to proportions as appropriate for Bray-Curtis distances
 ps.prop &lt;- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.nmds.bray &lt;- ordinate(ps.prop, method=&quot;NMDS&quot;, distance=&quot;bray&quot;)</code></pre>
 <pre><code>## Run 0 stress 0.08072627 
-## Run 1 stress 0.08053054 
+## Run 1 stress 0.35577 
+## Run 2 stress 0.08602577 
+## Run 3 stress 0.08602577 
+## Run 4 stress 0.08602577 
+## Run 5 stress 0.08053038 
 ## ... New best solution
-## ... Procrustes: rmse 0.00902636  max resid 0.02957712 
-## Run 2 stress 0.08072255 
-## ... Procrustes: rmse 0.00839825  max resid 0.02749623 
-## Run 3 stress 0.08995024 
-## Run 4 stress 0.1214508 
-## Run 5 stress 0.08995028 
-## Run 6 stress 0.08072681 
-## ... Procrustes: rmse 0.009139124  max resid 0.02979123 
-## Run 7 stress 0.1214508 
-## Run 8 stress 0.08053039 
-## ... New best solution
-## ... Procrustes: rmse 0.0002411851  max resid 0.0006681851 
+## ... Procrustes: rmse 0.009095294  max resid 0.02978305 
+## Run 6 stress 0.08995028 
+## Run 7 stress 0.09462672 
+## Run 8 stress 0.08602577 
+## Run 9 stress 0.1214508 
+## Run 10 stress 0.08995056 
+## Run 11 stress 0.1214509 
+## Run 12 stress 0.121451 
+## Run 13 stress 0.09462672 
+## Run 14 stress 0.08072671 
+## ... Procrustes: rmse 0.009126877  max resid 0.02974015 
+## Run 15 stress 0.08602577 
+## Run 16 stress 0.09462672 
+## Run 17 stress 0.0805306 
+## ... Procrustes: rmse 0.0002661163  max resid 0.0007347384 
 ## ... Similar to previous best
-## Run 9 stress 0.1327653 
-## Run 10 stress 0.09462679 
-## Run 11 stress 0.08602582 
-## Run 12 stress 0.08072013 
-## ... Procrustes: rmse 0.008107359  max resid 0.02656825 
-## Run 13 stress 0.08602685 
-## Run 14 stress 0.1325441 
-## Run 15 stress 0.08072793 
-## ... Procrustes: rmse 0.00941215  max resid 0.03062796 
-## Run 16 stress 0.08995039 
-## Run 17 stress 0.08053084 
-## ... Procrustes: rmse 0.0003552472  max resid 0.0009627563 
-## ... Similar to previous best
-## Run 18 stress 0.08995034 
-## Run 19 stress 0.08071828 
-## ... Procrustes: rmse 0.007751205  max resid 0.02548007 
-## Run 20 stress 0.08072619 
-## ... Procrustes: rmse 0.008979075  max resid 0.02927728 
+## Run 18 stress 0.1214512 
+## Run 19 stress 0.08602578 
+## Run 20 stress 0.1335535 
 ## *** Solution reached</code></pre>
 <pre class="r"><code>plot_ordination(ps.prop, ord.nmds.bray, color=&quot;When&quot;, title=&quot;Bray NMDS&quot;)</code></pre>
-<p><img src="tutorial_files/figure-html/ordinate-1.png" width="672" /></p>
+<p><img src="tutorial_1_8_files/figure-html/ordinate-1.png" width="672" /></p>
 <p>Ordination picks out a clear separation between the early and late samples.</p>
 <p><strong>Bar plot</strong>:</p>
 <pre class="r"><code>top20 &lt;- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
 ps.top20 &lt;- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
 ps.top20 &lt;- prune_taxa(top20, ps.top20)
 plot_bar(ps.top20, x=&quot;Day&quot;, fill=&quot;Family&quot;) + facet_wrap(~When, scales=&quot;free_x&quot;)</code></pre>
-<p><img src="tutorial_files/figure-html/bar-plot-1.png" width="672" /></p>
+<p><img src="tutorial_1_8_files/figure-html/bar-plot-1.png" width="672" /></p>
 <p>Nothing glaringly obvious jumps out from the taxonomic distribution of the top 20 sequences to explain the early-late differentiation.</p>
 <p>These were minimal examples of what can be done with phyloseq, as our purpose here was just to show how the results of DADA2 can be easily imported into phyloseq and interrogated further. For examples of the many analyses possible with phyloseq, see <a href="https://joey711.github.io/phyloseq/">the phyloseq web site</a>!</p>
 </div>

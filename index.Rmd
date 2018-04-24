@@ -1,12 +1,15 @@
----
-title: "The DADA2 R package"
----
+&nbsp;
+<center>
+![The DADA2 R package](images/DADA2_Logo_640.png)
+</center>
+
+--------------------------
 
 ## Fast and accurate sample inference from amplicon data with single-nucleotide resolution
 
 --------------------------
 
-####**<span style="color:red">Higher sensitivity to rare variants via [priors and pseudo-pooling](pseudo.html) introduced in dada2 version 1.7.5.</span>**
+####**<span style="color:red">Higher sensitivity to rare variants via [priors and pseudo-pooling](pseudo.html) introduced in dada2 version 1.8.</span>**
 
 &nbsp;
 
