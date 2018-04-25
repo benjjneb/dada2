@@ -462,48 +462,6 @@ names(derepRs) &lt;- sample.names</code></pre>
 ## Sample 18 - 4871 reads in 1161 unique sequences.
 ## Sample 19 - 6504 reads in 1502 unique sequences.
 ## Sample 20 - 4314 reads in 732 unique sequences.</code></pre>
-<pre class="r"><code>ddF &lt;- dada(derepFs, err=errF, OMEGA_C=0, multithread=TRUE)</code></pre>
-<pre><code>## Sample 1 - 7113 reads in 1979 unique sequences.
-## Sample 2 - 5299 reads in 1639 unique sequences.
-## Sample 3 - 5463 reads in 1477 unique sequences.
-## Sample 4 - 2914 reads in 904 unique sequences.
-## Sample 5 - 2941 reads in 939 unique sequences.
-## Sample 6 - 4312 reads in 1267 unique sequences.
-## Sample 7 - 6741 reads in 1756 unique sequences.
-## Sample 8 - 4560 reads in 1438 unique sequences.
-## Sample 9 - 15637 reads in 3590 unique sequences.
-## Sample 10 - 11413 reads in 2762 unique sequences.
-## Sample 11 - 12017 reads in 3021 unique sequences.
-## Sample 12 - 5032 reads in 1566 unique sequences.
-## Sample 13 - 18075 reads in 3707 unique sequences.
-## Sample 14 - 6250 reads in 1479 unique sequences.
-## Sample 15 - 4052 reads in 1195 unique sequences.
-## Sample 16 - 7369 reads in 1832 unique sequences.
-## Sample 17 - 4765 reads in 1183 unique sequences.
-## Sample 18 - 4871 reads in 1382 unique sequences.
-## Sample 19 - 6504 reads in 1709 unique sequences.
-## Sample 20 - 4314 reads in 897 unique sequences.</code></pre>
-<pre class="r"><code>ddR &lt;- dada(derepRs, err=errR, OMEGA_C=0, multithread=TRUE)</code></pre>
-<pre><code>## Sample 1 - 7113 reads in 1660 unique sequences.
-## Sample 2 - 5299 reads in 1349 unique sequences.
-## Sample 3 - 5463 reads in 1335 unique sequences.
-## Sample 4 - 2914 reads in 853 unique sequences.
-## Sample 5 - 2941 reads in 880 unique sequences.
-## Sample 6 - 4312 reads in 1286 unique sequences.
-## Sample 7 - 6741 reads in 1803 unique sequences.
-## Sample 8 - 4560 reads in 1265 unique sequences.
-## Sample 9 - 15637 reads in 3414 unique sequences.
-## Sample 10 - 11413 reads in 2522 unique sequences.
-## Sample 11 - 12017 reads in 2771 unique sequences.
-## Sample 12 - 5032 reads in 1415 unique sequences.
-## Sample 13 - 18075 reads in 3290 unique sequences.
-## Sample 14 - 6250 reads in 1390 unique sequences.
-## Sample 15 - 4052 reads in 1134 unique sequences.
-## Sample 16 - 7369 reads in 1635 unique sequences.
-## Sample 17 - 4765 reads in 1084 unique sequences.
-## Sample 18 - 4871 reads in 1161 unique sequences.
-## Sample 19 - 6504 reads in 1502 unique sequences.
-## Sample 20 - 4314 reads in 732 unique sequences.</code></pre>
 <p>Inspecting the returned <code>dada-class</code> object:</p>
 <pre class="r"><code>dadaFs[[1]]</code></pre>
 <pre><code>## dada-class: object describing DADA2 denoising results
@@ -695,39 +653,36 @@ ps</code></pre>
 ps.prop &lt;- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.nmds.bray &lt;- ordinate(ps.prop, method=&quot;NMDS&quot;, distance=&quot;bray&quot;)</code></pre>
 <pre><code>## Run 0 stress 0.08072627 
-## Run 1 stress 0.08053054 
+## Run 1 stress 0.08602577 
+## Run 2 stress 0.08995035 
+## Run 3 stress 0.08053079 
 ## ... New best solution
-## ... Procrustes: rmse 0.00902636  max resid 0.02957712 
-## Run 2 stress 0.08072255 
-## ... Procrustes: rmse 0.00839825  max resid 0.02749623 
-## Run 3 stress 0.08995024 
-## Run 4 stress 0.1214508 
-## Run 5 stress 0.08995028 
-## Run 6 stress 0.08072681 
-## ... Procrustes: rmse 0.009139124  max resid 0.02979123 
-## Run 7 stress 0.1214508 
-## Run 8 stress 0.08053039 
+## ... Procrustes: rmse 0.008984229  max resid 0.02943336 
+## Run 4 stress 0.1320382 
+## Run 5 stress 0.0899503 
+## Run 6 stress 0.08602659 
+## Run 7 stress 0.08995024 
+## Run 8 stress 0.08072413 
+## ... Procrustes: rmse 0.008403402  max resid 0.02749364 
+## Run 9 stress 0.08995027 
+## Run 10 stress 0.08995033 
+## Run 11 stress 0.08071718 
+## ... Procrustes: rmse 0.007568879  max resid 0.02494459 
+## Run 12 stress 0.08072174 
+## ... Procrustes: rmse 0.008109692  max resid 0.02658816 
+## Run 13 stress 0.08602577 
+## Run 14 stress 0.08995027 
+## Run 15 stress 0.08995022 
+## Run 16 stress 0.08602579 
+## Run 17 stress 0.08053051 
 ## ... New best solution
-## ... Procrustes: rmse 0.0002411851  max resid 0.0006681851 
+## ... Procrustes: rmse 0.0001178169  max resid 0.0003044077 
 ## ... Similar to previous best
-## Run 9 stress 0.1327653 
-## Run 10 stress 0.09462679 
-## Run 11 stress 0.08602582 
-## Run 12 stress 0.08072013 
-## ... Procrustes: rmse 0.008107359  max resid 0.02656825 
-## Run 13 stress 0.08602685 
-## Run 14 stress 0.1325441 
-## Run 15 stress 0.08072793 
-## ... Procrustes: rmse 0.00941215  max resid 0.03062796 
-## Run 16 stress 0.08995039 
-## Run 17 stress 0.08053084 
-## ... Procrustes: rmse 0.0003552472  max resid 0.0009627563 
-## ... Similar to previous best
-## Run 18 stress 0.08995034 
-## Run 19 stress 0.08071828 
-## ... Procrustes: rmse 0.007751205  max resid 0.02548007 
-## Run 20 stress 0.08072619 
-## ... Procrustes: rmse 0.008979075  max resid 0.02927728 
+## Run 18 stress 0.08072382 
+## ... Procrustes: rmse 0.008622681  max resid 0.02818448 
+## Run 19 stress 0.0807263 
+## ... Procrustes: rmse 0.009048783  max resid 0.02950948 
+## Run 20 stress 0.08602577 
 ## *** Solution reached</code></pre>
 <pre class="r"><code>plot_ordination(ps.prop, ord.nmds.bray, color=&quot;When&quot;, title=&quot;Bray NMDS&quot;)</code></pre>
 <p><img src="tutorial_files/figure-html/ordinate-1.png" width="672" /></p>

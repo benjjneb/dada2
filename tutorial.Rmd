@@ -139,8 +139,6 @@ We are now ready to apply [the core sample inference algorithm](https://www.natu
 ```{r dada}
 dadaFs <- dada(derepFs, err=errF, multithread=TRUE)
 dadaRs <- dada(derepRs, err=errR, multithread=TRUE)
-ddF <- dada(derepFs, err=errF, OMEGA_C=0, multithread=TRUE)
-ddR <- dada(derepRs, err=errR, OMEGA_C=0, multithread=TRUE)
 ```
 
 Inspecting the returned `dada-class` object:
