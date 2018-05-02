@@ -8,11 +8,10 @@ Description: The dada2 package infers exact amplicon sequence variants (ASVs) fr
     removing substitution and chimera errors. Taxonomic classification is available
     via a native implementation of the RDP naive Bayesian classifier, and genus-species
     assignment by exact matching.
-Version: 1.7.9
-Date: 2018-1-30
+Version: 1.8.0
+Date: 2018-05-01
 Maintainer: Benjamin Callahan <benjamin.j.callahan@gmail.com>
-Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan
-    Holmes
+Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan Holmes
 License: LGPL-3
 LazyLoad: yes
 Depends:
