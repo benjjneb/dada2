@@ -20,8 +20,8 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
@@ -32,10 +32,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -290,7 +292,7 @@ $(document).ready(function () {
 <p><strong>Filtering script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # Filename parsing
-path &lt;- &quot;/path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed fastq files
+path &lt;- &quot;path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed fastq files
 filtpath &lt;- file.path(path, &quot;filtered&quot;) # Filtered files go into the filtered/ subdirectory
 fns &lt;- list.files(path, pattern=&quot;fastq.gz&quot;) # CHANGE if different file extensions
 # Filtering
@@ -302,17 +304,17 @@ filterAndTrim(file.path(path,fns), file.path(filtpath,fns),
 <div id="infer-sequence-variants" class="section level2">
 <h2>Infer Sequence Variants</h2>
 <p>The crucial difference between this workflow and the introductory workflow is that the samples are read in and processed in a streaming fashion (within a for-loop) during sample inference, so only one sample is fully loaded into memory at a time. This keeps memory requirements quite low: A Hiseq lane can be processed on 8GB of memory (although more is nice!).</p>
-<p>The second performance-relevant feature to be aware of is that error rates are being learned from a subset of the data. Learning error rates is computationally intensive, as it requires multiple iterations of the core algorithm. As a rule of thumb, a million reads is more than adequate to learn the error rates.</p>
+<p>The second performance-relevant feature to be aware of is that error rates are being learned from a subset of the data. Learning error rates is computationally intensive, as it requires multiple iterations of the core algorithm. As a rule of thumb, a million 100nt reads (or 100M total bases) is more than adequate to learn the error rates.</p>
 <p><strong>Sample inference script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # File parsing
-filtpath &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered fastq files
+filtpath &lt;- &quot;path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered fastq files
 filts &lt;- list.files(filtpath, pattern=&quot;fastq.gz&quot;, full.names=TRUE) # CHANGE if different file extensions
 sample.names &lt;- sapply(strsplit(basename(filts), &quot;_&quot;), `[`, 1) # Assumes filename = sample_XXX.fastq.gz
 names(filts) &lt;- sample.names
 # Learn error rates
 set.seed(100)
-err &lt;- learnErrors(filts, nreads = 1e6, multithread=TRUE, randomize=TRUE)
+err &lt;- learnErrors(filts, nbases = 1e8, multithread=TRUE, randomize=TRUE)
 # Infer sequence variants
 dds &lt;- vector(&quot;list&quot;, length(sample.names))
 names(dds) &lt;- sample.names
@@ -323,7 +325,7 @@ for(sam in sample.names) {
 }
 # Construct sequence table and write to disk
 seqtab &lt;- makeSequenceTable(dds)
-saveRDS(seqtab, &quot;/path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to where you want sequence table saved</code></pre>
+saveRDS(seqtab, &quot;path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to where you want sequence table saved</code></pre>
 <p>The final result, the count matrix of samples (rows) by sequence variants (columns), is stored as as serialized R object. Read it back into R with <code>foo &lt;- readRDS(&quot;/path/to/run1/output/seqtab.rds&quot;)</code>.</p>
 </div>
 <div id="merge-runs-remove-chimeras-assign-taxonomy" class="section level2">
@@ -334,17 +336,17 @@ saveRDS(seqtab, &quot;/path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to wher
 <p><strong>Chimera/Taxonomy script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # Merge multiple runs (if necessary)
-st1 &lt;- readRDS(&quot;/path/to/run1/output/seqtab.rds&quot;)
-st2 &lt;- readRDS(&quot;/path/to/run2/output/seqtab.rds&quot;)
-st3 &lt;- readRDS(&quot;/path/to/run3/output/seqtab.rds&quot;)
+st1 &lt;- readRDS(&quot;path/to/run1/output/seqtab.rds&quot;)
+st2 &lt;- readRDS(&quot;path/to/run2/output/seqtab.rds&quot;)
+st3 &lt;- readRDS(&quot;path/to/run3/output/seqtab.rds&quot;)
 st.all &lt;- mergeSequenceTables(st1, st2, st3)
 # Remove chimeras
 seqtab &lt;- removeBimeraDenovo(st.all, method=&quot;consensus&quot;, multithread=TRUE)
 # Assign taxonomy
-tax &lt;- assignTaxonomy(seqtab, &quot;/path/to/silva_nr_v128_train_set.fa.gz&quot;, multithread=TRUE)
+tax &lt;- assignTaxonomy(seqtab, &quot;path/to/silva_nr_v128_train_set.fa.gz&quot;, multithread=TRUE)
 # Write to disk
-saveRDS(seqtab, &quot;/path/to/study/seqtab_final.rds&quot;) # CHANGE ME to where you want sequence table saved
-saveRDS(tax, &quot;/pathto/study/tax_final.rds&quot;) # CHANGE ME ...</code></pre>
+saveRDS(seqtab, &quot;path/to/study/seqtab_final.rds&quot;) # CHANGE ME to where you want sequence table saved
+saveRDS(tax, &quot;pathto/study/tax_final.rds&quot;) # CHANGE ME ...</code></pre>
 <hr />
 </div>
 <div id="how-long-does-it-take" class="section level2">
@@ -352,7 +354,7 @@ saveRDS(tax, &quot;/pathto/study/tax_final.rds&quot;) # CHANGE ME ...</code></pr
 <p>There are too many factors that influence running time to give an answer that will hold for everyone. But we can offer our experience running primarily human microbiome data on a fairly typical compute node as a guide.</p>
 <p><strong>Dataset:</strong> Relatively good quality Hiseq lanes of ~150M reads each, split amongst ~750 samples from a varying mix of oral, fecal and vaginal communities.</p>
 <p><strong>Hardware:</strong> A <a href="http://sherlock.stanford.edu/mediawiki/index.php/Main_Page">general compute node</a> with 16 cores and 64GB of memory.</p>
-<p><strong>Running times:</strong> The Sample Inference step (16 cores, 64GB) takes from 2-16 hours, with running times increasing with lower run quality and higher diversity samples. Paired-end sequencing takes twice as long, as sample inference is run independently on the forward and reverse reads before merging (see <a href="tutorial.html">tutorial</a> and the <a href="bigdata_paired.html">paired-end version of the big data workflow</a>). The Filtering and Chimera/Taxonomy steps generally take significantly less time than Sample Inference.</p>
+<p><strong>Running times:</strong> The Sample Inference step (16 cores, 64GB) takes from 2-12 hours, with running times increasing with lower run quality and higher diversity samples. Paired-end sequencing takes twice as long, as sample inference is run independently on the forward and reverse reads before merging (see <a href="tutorial.html">tutorial</a> and the <a href="bigdata_paired.html">paired-end version of the big data workflow</a>). The Filtering and Chimera/Taxonomy steps generally take significantly less time than Sample Inference.</p>
 <p>One scaling issue to be aware of: Because the running time of the core sample inference method scales quadratically with the depth of individual samples, but linearly in the number of samples, running times will be longer when fewer samples are multiplexed. Very roughly, if your 150M Hiseq reads are split across 150 samples instead of 750, the running time will be about 5x higher.</p>
 <p>Finally, a powerful computing approach that is enabled by the parallelism in this workflow is farming out chunks of the computationally intensive sample inference stage to different nodes, each of which has low resource requirements. 10 Amazon 8GB instances can do the job as well as one larger (and more costly) compute node!</p>
 <p>Bugs and performance issues with this workflow welcome on the <a href="https://github.com/benjjneb/dada2/issues">issue tracker</a>. To a billion reads and beyond!</p>

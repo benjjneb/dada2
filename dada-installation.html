@@ -20,8 +20,8 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
@@ -32,10 +32,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -269,12 +271,12 @@ $(document).ready(function () {
 <hr />
 <div id="install-binaries-from-bioconductor" class="section level2">
 <h2><strong>Install binaries from Bioconductor</strong></h2>
-<p>Binary installation is available through the Bioconductor package repository. Binary installation of the current version of the dada2 package (1.6) requires R 3.4.2 and Bioconductor version 3.6:</p>
+<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current version of the dada2 package (1.8) requires R 3.5.0 and Bioconductor version 3.7:</p>
 <pre class="s"><code>## try http:// if https:// URLs are not supported
 source(&quot;https://bioconductor.org/biocLite.R&quot;)
 biocLite(&quot;dada2&quot;)</code></pre>
 <p>Allow installation of any additional packages requested. You are ready to start using dada2!</p>
-<p><em>If the above installed an early version of dada2 (1.2 or 1.4) you can get the current dada2 release by updating your Bioconductor installation to version 3.6: <code>biocLite(&quot;BiocUpgrade&quot;)</code> then <code>biocLite()</code>. This may require updating R as well.</em></p>
+<p><em>If the above installed an early version of dada2 (e.g. 1.4 or 1.6) you can get the current dada2 release by updating to <a href="https://bioconductor.org/news/bioc_3_7_release/">Bioconductor 3.7</a>: <code>biocLite(&quot;BiocUpgrade&quot;)</code> then <code>biocLite()</code>. This may require updating R as well.</em></p>
 <hr />
 </div>
 <div id="install-from-source" class="section level2">
@@ -284,7 +286,7 @@ biocLite(&quot;dada2&quot;)</code></pre>
 <h3>0. Download</h3>
 <ul>
 <li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.6)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.6.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.6.tar.gz">tarball</a>.</p></li>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.7)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.8)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
 </ul>
 </div>
 <div id="install-external-dependencies" class="section level3">
@@ -318,7 +320,7 @@ devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
                  dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
 <p>Check Package Version</p>
 <pre class="r"><code>packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.6.0&#39;</code></pre>
+<pre><code>## [1] &#39;1.8.0&#39;</code></pre>
 </div>
 <div id="troubleshoot-dependencies-optional" class="section level3">
 <h3>3. Troubleshoot Dependencies (Optional)</h3>
@@ -344,7 +346,6 @@ devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
 <div id="load-package-explore-function-documentation" class="section level3">
 <h3>5. Load Package, Explore Function Documentation</h3>
 <pre class="r"><code>library(&quot;dada2&quot;)</code></pre>
-<pre><code>## Warning: package &#39;Rcpp&#39; was built under R version 3.4.2</code></pre>
 <p>Now that the package is loaded, you can explore the documentation using the R help system.</p>
 <pre class="r"><code>help(package=&quot;dada2&quot;)
 ?derepFastq

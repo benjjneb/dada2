@@ -1,6 +1,6 @@
 &nbsp;
 <center>
-![The DADA2 R package](images/DADA2_Logo_640.png)
+![The DADA2 R package](images/DADA2_Logo_Text_1_8_640.png)
 </center>
 
 --------------------------
@@ -9,13 +9,13 @@
 
 --------------------------
 
-####**<span style="color:red">Higher sensitivity to rare variants via [priors and pseudo-pooling](pseudo.html) introduced in dada2 version 1.8.</span>**
+####**<span style="color:red">Version 1.8 of the dada2 R package has been released. See the [release notes.](ReleaseNotes_1_8.html)</span>**
 
 &nbsp;
 
 ## Installation
 
-Binaries for the current release version of DADA2 (1.6) are available from Bioconductor. Note that you must have R 3.4.2 or newer, and [Biocondcutor version 3.6](https://www.bioconductor.org/install/), to install the current release from Bioconductor.
+Binaries for the current release version of DADA2 (1.8) are available from Bioconductor. Note that you must have R 3.5.0 or newer, and [Biocondcutor version 3.7](https://www.bioconductor.org/install/), to install the current release from Bioconductor.
 
 ```S
 ## try http:// if https:// URLs are not supported

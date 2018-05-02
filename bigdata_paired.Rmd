@@ -21,8 +21,8 @@ Please consider the filtering parameters, one set of parameters is not optimal f
 ```{r filter, eval=FALSE}
 library(dada2); packageVersion("dada2")
 # File parsing
-pathF <- "/path/to/FWD" # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
-pathR <- "/path/to/REV" # CHANGE ME ...
+pathF <- "path/to/FWD" # CHANGE ME to the directory containing your demultiplexed forward-read fastqs
+pathR <- "path/to/REV" # CHANGE ME ...
 filtpathF <- file.path(pathF, "filtered") # Filtered forward files go into the pathF/filtered/ subdirectory
 filtpathR <- file.path(pathR, "filtered") # ...
 fastqFs <- sort(list.files(pathF, pattern="fastq.gz"))
@@ -43,8 +43,8 @@ This portion of the workflow should be performed on a run-by-run basis, as error
 ```{r inference, eval=FALSE}
 library(dada2); packageVersion("dada2")
 # File parsing
-filtpathF <- "/path/to/FWD/filtered" # CHANGE ME to the directory containing your filtered forward fastq files
-filtpathR <- "/path/to/FWD/filtered" # CHANGE ME ...
+filtpathF <- "path/to/FWD/filtered" # CHANGE ME to the directory containing your filtered forward fastqs
+filtpathR <- "path/to/FWD/filtered" # CHANGE ME ...
 filtFs <- list.files(filtpathF, pattern="fastq.gz", full.names = TRUE)
 filtRs <- list.files(filtpathR, pattern="fastq.gz", full.names = TRUE)
 sample.names <- sapply(strsplit(basename(filtFs), "_"), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
@@ -54,9 +54,9 @@ names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 set.seed(100)
 # Learn forward error rates
-errF <- learnErrors(filtFs, nread=1e6, multithread=TRUE)
+errF <- learnErrors(filtFs, nbases=1e8, multithread=TRUE)
 # Learn reverse error rates
-errR <- learnErrors(filtRs, nread=1e6, multithread=TRUE)
+errR <- learnErrors(filtRs, nbases=1e8, multithread=TRUE)
 # Sample inference and merger of paired-end reads
 mergers <- vector("list", length(sample.names))
 names(mergers) <- sample.names
@@ -72,10 +72,10 @@ for(sam in sample.names) {
 rm(derepF); rm(derepR)
 # Construct sequence table and remove chimeras
 seqtab <- makeSequenceTable(mergers)
-saveRDS(seqtab, "/path/to/run1/output/seqtab.rds") # CHANGE ME to where you want sequence table saved
+saveRDS(seqtab, "path/to/run1/output/seqtab.rds") # CHANGE ME to where you want sequence table saved
 ```
 
-The final result, the count matrix of samples (rows) by non-chimeric sequence variants (columns), is stored as as serialized R object. Read it back into R with `foo <- readRDS("/path/to/run1/output/seqtab.rds")`.
+The final result, the count matrix of samples (rows) by non-chimeric sequence variants (columns), is stored as as serialized R object. Read it back into R with `foo <- readRDS("path/to/run1/output/seqtab.rds")`.
 
 ## Merge Runs, Remove Chimeras, Assign Taxonomy
 
@@ -85,15 +85,15 @@ This part is the same as in the single-read version of this workflow.
 ```{r combine, eval=FALSE}
 library(dada2); packageVersion("dada2")
 # Merge multiple runs (if necessary)
-st1 <- readRDS("/path/to/run1/output/seqtab.rds")
-st2 <- readRDS("/path/to/run2/output/seqtab.rds")
-st3 <- readRDS("/path/to/run3/output/seqtab.rds")
+st1 <- readRDS("path/to/run1/output/seqtab.rds")
+st2 <- readRDS("path/to/run2/output/seqtab.rds")
+st3 <- readRDS("path/to/run3/output/seqtab.rds")
 st.all <- mergeSequenceTables(st1, st2, st3)
 # Remove chimeras
 seqtab <- removeBimeraDenovo(st.all, method="consensus", multithread=TRUE)
 # Assign taxonomy
-tax <- assignTaxonomy(seqtab, "/path/to/silva_nr_v128_train_set.fa.gz", multithread=TRUE)
+tax <- assignTaxonomy(seqtab, "path/to/silva_nr_v128_train_set.fa.gz", multithread=TRUE)
 # Write to disk
-saveRDS(seqtab, "/path/to/study/seqtab_final.rds") # CHANGE ME to where you want sequence table saved
-saveRDS(tax, "/pathto/study/tax_final.rds") # CHANGE ME ...
+saveRDS(seqtab, "path/to/study/seqtab_final.rds") # CHANGE ME to where you want sequence table saved
+saveRDS(tax, "path/to/study/tax_final.rds") # CHANGE ME ...
 ```

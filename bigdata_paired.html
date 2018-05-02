@@ -20,8 +20,8 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
@@ -32,10 +32,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -279,8 +281,8 @@ $(document).ready(function () {
 <p><strong>Filtering script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # File parsing
-pathF &lt;- &quot;/path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed forward-read fastq files
-pathR &lt;- &quot;/path/to/REV&quot; # CHANGE ME ...
+pathF &lt;- &quot;path/to/FWD&quot; # CHANGE ME to the directory containing your demultiplexed forward-read fastqs
+pathR &lt;- &quot;path/to/REV&quot; # CHANGE ME ...
 filtpathF &lt;- file.path(pathF, &quot;filtered&quot;) # Filtered forward files go into the pathF/filtered/ subdirectory
 filtpathR &lt;- file.path(pathR, &quot;filtered&quot;) # ...
 fastqFs &lt;- sort(list.files(pathF, pattern=&quot;fastq.gz&quot;))
@@ -298,8 +300,8 @@ filterAndTrim(fwd=file.path(pathF, fastqFs), filt=file.path(filtpathF, fastqFs),
 <p><strong>Sample inference script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # File parsing
-filtpathF &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered forward fastq files
-filtpathR &lt;- &quot;/path/to/FWD/filtered&quot; # CHANGE ME ...
+filtpathF &lt;- &quot;path/to/FWD/filtered&quot; # CHANGE ME to the directory containing your filtered forward fastqs
+filtpathR &lt;- &quot;path/to/FWD/filtered&quot; # CHANGE ME ...
 filtFs &lt;- list.files(filtpathF, pattern=&quot;fastq.gz&quot;, full.names = TRUE)
 filtRs &lt;- list.files(filtpathR, pattern=&quot;fastq.gz&quot;, full.names = TRUE)
 sample.names &lt;- sapply(strsplit(basename(filtFs), &quot;_&quot;), `[`, 1) # Assumes filename = samplename_XXX.fastq.gz
@@ -309,9 +311,9 @@ names(filtFs) &lt;- sample.names
 names(filtRs) &lt;- sample.names
 set.seed(100)
 # Learn forward error rates
-errF &lt;- learnErrors(filtFs, nread=1e6, multithread=TRUE)
+errF &lt;- learnErrors(filtFs, nbases=1e8, multithread=TRUE)
 # Learn reverse error rates
-errR &lt;- learnErrors(filtRs, nread=1e6, multithread=TRUE)
+errR &lt;- learnErrors(filtRs, nbases=1e8, multithread=TRUE)
 # Sample inference and merger of paired-end reads
 mergers &lt;- vector(&quot;list&quot;, length(sample.names))
 names(mergers) &lt;- sample.names
@@ -327,8 +329,8 @@ for(sam in sample.names) {
 rm(derepF); rm(derepR)
 # Construct sequence table and remove chimeras
 seqtab &lt;- makeSequenceTable(mergers)
-saveRDS(seqtab, &quot;/path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to where you want sequence table saved</code></pre>
-<p>The final result, the count matrix of samples (rows) by non-chimeric sequence variants (columns), is stored as as serialized R object. Read it back into R with <code>foo &lt;- readRDS(&quot;/path/to/run1/output/seqtab.rds&quot;)</code>.</p>
+saveRDS(seqtab, &quot;path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to where you want sequence table saved</code></pre>
+<p>The final result, the count matrix of samples (rows) by non-chimeric sequence variants (columns), is stored as as serialized R object. Read it back into R with <code>foo &lt;- readRDS(&quot;path/to/run1/output/seqtab.rds&quot;)</code>.</p>
 </div>
 <div id="merge-runs-remove-chimeras-assign-taxonomy" class="section level2">
 <h2>Merge Runs, Remove Chimeras, Assign Taxonomy</h2>
@@ -336,17 +338,17 @@ saveRDS(seqtab, &quot;/path/to/run1/output/seqtab.rds&quot;) # CHANGE ME to wher
 <p><strong>Chimera/Taxonomy script:</strong></p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)
 # Merge multiple runs (if necessary)
-st1 &lt;- readRDS(&quot;/path/to/run1/output/seqtab.rds&quot;)
-st2 &lt;- readRDS(&quot;/path/to/run2/output/seqtab.rds&quot;)
-st3 &lt;- readRDS(&quot;/path/to/run3/output/seqtab.rds&quot;)
+st1 &lt;- readRDS(&quot;path/to/run1/output/seqtab.rds&quot;)
+st2 &lt;- readRDS(&quot;path/to/run2/output/seqtab.rds&quot;)
+st3 &lt;- readRDS(&quot;path/to/run3/output/seqtab.rds&quot;)
 st.all &lt;- mergeSequenceTables(st1, st2, st3)
 # Remove chimeras
 seqtab &lt;- removeBimeraDenovo(st.all, method=&quot;consensus&quot;, multithread=TRUE)
 # Assign taxonomy
-tax &lt;- assignTaxonomy(seqtab, &quot;/path/to/silva_nr_v128_train_set.fa.gz&quot;, multithread=TRUE)
+tax &lt;- assignTaxonomy(seqtab, &quot;path/to/silva_nr_v128_train_set.fa.gz&quot;, multithread=TRUE)
 # Write to disk
-saveRDS(seqtab, &quot;/path/to/study/seqtab_final.rds&quot;) # CHANGE ME to where you want sequence table saved
-saveRDS(tax, &quot;/pathto/study/tax_final.rds&quot;) # CHANGE ME ...</code></pre>
+saveRDS(seqtab, &quot;path/to/study/seqtab_final.rds&quot;) # CHANGE ME to where you want sequence table saved
+saveRDS(tax, &quot;path/to/study/tax_final.rds&quot;) # CHANGE ME ...</code></pre>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">

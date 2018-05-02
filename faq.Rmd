@@ -17,7 +17,7 @@ You can also demultiplex using [QIIME1](http://qiime.org/) by running `split_lib
 
 ## How can I remove primers/adapters/etc from my amplicon reads?
 
-We recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic) for this purpose. Provided the primers are at the start of your reads and are a constant length, you can also use the `trimLeft` argument of dada2's filtering functions to remove the primer nucleotides. **Please double-check that your primers have been removed!** The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.
+If primers are at the start of your reads and are a constant length (a common scenario) you can use the `trimLeft = c(FWD_PRIMER_LEN, REV_PRIMER_LEN)` argument of dada2's filtering functions to remove the primers. For more complex situations (e.g. heterogenity spacers, highly variable lengths) we recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic). **Please double-check that your primers have been removed!** The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.
 
 &nbsp;
 
@@ -63,7 +63,7 @@ The `mergePairs(..., justConcatenate=TRUE)` option allows the paired reads to be
 
 ## What if the self-consistency loop terminated before convergence?
 
-In almost all cases, just proceed with the learned error rates. While in most cases convergence is reached within the `MAX_CONSIST=10` rounds of self-consistent looping allowed by default, the error model is suitable to use as long as it is close to convergence. The estimation of the error rates is important primarily because of the huge difference in error rates that can exist between different runs and sequencing technologies. The small fluctuations in slow-converging datasets are minor relative to those major differences, and are often smaller than the uncertainty in the estimation methods anyway.
+In almost all cases, just proceed with the learned error rates. While in most cases convergence is reached within the `MAX_CONSIST=10` rounds of self-consistent looping allowed by default, the error model is suitable to use as long as it is close to convergence. The estimation of the error rates is important primarily because of the huge difference in error rates that can exist between different runs and sequencing technologies. The small fluctuations in slow-converging datasets are minor relative to those major differences, and are typically smaller than the uncertainty in the estimation methods anyway.
 
 For those who want to be sure the non-converged error model is reasonable, there are two ways to inspect the error rates and diagnose any potential issues. The first is to use `plotErrors(err, nominalQ=TRUE`). Do the fitted error rates (black line) reasonably fit the observations (black points) and generally decrease with increasing Q? Second, inspect the output of `dada2:::checkConvergence(err)`, which gives the sum of absolute differences between error rate parameters at each step. Are the final values much lower (multiple orders of magnitude) than the first two values? If the answers to both questions are yes, then it is appropriate to use the error rates as is. The perfectionist can try increasing the allowed number of self-consistency steps with e.g. `learnErrors(..., MAX_CONSIST=20)` and see if the error model improves further.
 

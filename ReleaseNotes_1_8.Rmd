@@ -1,0 +1,30 @@
+DADA2 1.8 RELEASE NOTES
+-----------------------
+
+#### NEW FEATURES
+
+* The `dada` function now accepts a list of "priors", i.e. sequences for which there is prior evidence they might be real. Input sequences that match one of the priors are evaluated against a relaxed threshold of statistical evidence (`OMEGA_P` instead of `OMEGA_A`), which [allows those sequences to be detected at lower frequencies and even as singletons](pseudo.html#priors).
+
+* The `dada` function can perform "pseudo-pooling" with `dada(..., pool="pseudo")`. In pseudo-pooling, the input samples are denoised independently, then a set of sequences that appear in at least `MIN_PREVALENCE` samples are used as priors for a second and final round of sample inference. [Pseudo-pooling approximates full pooling in linear time](pseudo.html#pseudo-pooling).
+
+* Error-correction can now be modified, and turned off, by the `OMEGA_C` parameter which sets the threshold at which error-containing reads are corrected (or not) to the sequence from which they are inferred to originate. `OMEGA_C` has been set to `1e-40` by default. In practice this has a very small impact on final abundances. The previous behavior (correct everything) can be recovered by setting `OMEGA_C = 0`.
+
+* `seqComplexity` calculates the complexity of input sequences, and can be used to identify and filter out low-complexity sequences.
+    
+* `plotQualityProfile` now includes a cumulative description of read length variation.
+
+#### SIGNIFICANT USER-VISIBLE CHANGES
+
+* The default `minOverlap` parameter of `mergePairs` was reduced from 20 to 12, and the alignment parameters used during merging were altered to more strongly penalize mismatches and gaps, which improves merging performance in repetitive sequences.
+
+* `nbases` has replaced the `nreads` parameter in the `learnErrors` function. As suggested by the name, this controls the amount of data the machine learning uses by the total number of bases rather than the read count, which is more appropriate given the range of read-lengths in target applications.
+
+* A new and extremely conservative form of greediness in the core denoising algorithm was added, providing some speedup in the core denoising algorithm. This heuristic can be toggled off by setting `GREEDY=FALSE`.
+
+* A new fast screen for optimal gapless alignments in the core denoising algorithm was added, providing some speedup in the core denoising algorithm. This heuristic can be toggled off by setting `GAPLESS=FALSE`.
+    
+#### BUG FIXES
+
+* The memory usage and speed of assignSpecies on large datasets has significantly improved.
+
+* Fixed an overflow bug on sequences 260nts or longer in the `SSE=2` code. The DADA2 option enabling explicit 8-bit SSE vectorization in the C code was turned on by default (`SSE=2`). Some speedup in the core denoising algorithm.

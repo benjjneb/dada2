@@ -11,7 +11,7 @@
 
 
 
-<title>Download dada2</title>
+<title></title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -263,25 +263,38 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Download dada2</h1>
 
 </div>
 
 
-<div id="binaries" class="section level2">
-<h2>Binaries</h2>
-<p>Binaries are available through <a href="https://www.bioconductor.org/packages/release/bioc/html/dada2.html">Bioconductor</a>.</p>
-<pre class="s"><code>## try http:// if https:// URLs are not supported
-source(&quot;https://bioconductor.org/biocLite.R&quot;)
-biocLite(&quot;dada2&quot;)</code></pre>
-<p>See the <a href="https://www.bioconductor.org/install/">Bioconductor install instructions</a> if issues arise. In particular, to get the newest release of dada2 through Bioconductor you will need to have the current version of R installed.</p>
-</div>
-<div id="source" class="section level2">
-<h2>Source</h2>
+<div id="dada2-1.8-release-notes" class="section level2">
+<h2>DADA2 1.8 RELEASE NOTES</h2>
+<div id="new-features" class="section level4">
+<h4>NEW FEATURES</h4>
 <ul>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.8)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
-<li><p>Previous Release <a href="https://github.com/benjjneb/dada2/releases">(1.6)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.6.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.6.tar.gz">tarball</a>.</p></li>
+<li><p>The <code>dada</code> function now accepts a list of “priors”, i.e. sequences for which there is prior evidence they might be real. Input sequences that match one of the priors are evaluated against a relaxed threshold of statistical evidence (<code>OMEGA_P</code> instead of <code>OMEGA_A</code>), which <a href="pseudo.html#priors">allows those sequences to be detected at lower frequencies and even as singletons</a>.</p></li>
+<li><p>The <code>dada</code> function can perform “pseudo-pooling” with <code>dada(..., pool=&quot;pseudo&quot;)</code>. In pseudo-pooling, the input samples are denoised independently, then a set of sequences that appear in at least <code>MIN_PREVALENCE</code> samples are used as priors for a second and final round of sample inference. <a href="pseudo.html#pseudo-pooling">Pseudo-pooling approximates full pooling in linear time</a>.</p></li>
+<li><p>Error-correction can now be modified, and turned off, by the <code>OMEGA_C</code> parameter which sets the threshold at which error-containing reads are corrected (or not) to the sequence from which they are inferred to originate. <code>OMEGA_C</code> has been set to <code>1e-40</code> by default. In practice this has a very small impact on final abundances. The previous behavior (correct everything) can be recovered by setting <code>OMEGA_C = 0</code>.</p></li>
+<li><p><code>seqComplexity</code> calculates the complexity of input sequences, and can be used to identify and filter out low-complexity sequences.</p></li>
+<li><p><code>plotQualityProfile</code> now includes a cumulative description of read length variation.</p></li>
 </ul>
+</div>
+<div id="significant-user-visible-changes" class="section level4">
+<h4>SIGNIFICANT USER-VISIBLE CHANGES</h4>
+<ul>
+<li><p>The default <code>minOverlap</code> parameter of <code>mergePairs</code> was reduced from 20 to 12, and the alignment parameters used during merging were altered to more strongly penalize mismatches and gaps, which improves merging performance in repetitive sequences.</p></li>
+<li><p><code>nbases</code> has replaced the <code>nreads</code> parameter in the <code>learnErrors</code> function. As suggested by the name, this controls the amount of data the machine learning uses by the total number of bases rather than the read count, which is more appropriate given the range of read-lengths in target applications.</p></li>
+<li><p>A new and extremely conservative form of greediness in the core denoising algorithm was added, providing some speedup in the core denoising algorithm. This heuristic can be toggled off by setting <code>GREEDY=FALSE</code>.</p></li>
+<li><p>A new fast screen for optimal gapless alignments in the core denoising algorithm was added, providing some speedup in the core denoising algorithm. This heuristic can be toggled off by setting <code>GAPLESS=FALSE</code>.</p></li>
+</ul>
+</div>
+<div id="bug-fixes" class="section level4">
+<h4>BUG FIXES</h4>
+<ul>
+<li><p>The memory usage and speed of assignSpecies on large datasets has significantly improved.</p></li>
+<li><p>Fixed an overflow bug on sequences 260nts or longer in the <code>SSE=2</code> code. The DADA2 option enabling explicit 8-bit SSE vectorization in the C code was turned on by default (<code>SSE=2</code>). Some speedup in the core denoising algorithm.</p></li>
+</ul>
+</div>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
