@@ -6,7 +6,8 @@ title: "DADA2 Installation"
 
 ## **Install binaries from Bioconductor**
 
-Binary installation is available through [the Bioconductor package repository](https://bioconductor.org/). Binary installation of the current version of the dada2 package (1.8) requires R 3.5.0 and Bioconductor version 3.7:
+Binary installation is available through [the Bioconductor package repository](https://bioconductor.org/). 
+Binary installation of the current release version (1.8) requires R 3.5.0 and Bioconductor version 3.7:
 
 ```S
 ## try http:// if https:// URLs are not supported
@@ -26,9 +27,9 @@ Source installation is available for R 3.2 or later, and the latest and greatest
 
 ### 0. Download
 
-* Current Release [(1.6)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.6.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.6.tar.gz).
+* Current Release [(1.8)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.8.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.8.tar.gz).
 
-* Development Branch [(1.8)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
+* Development Branch [(1.9)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
 
 ### 1. Install External Dependencies
 

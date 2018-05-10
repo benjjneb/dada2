@@ -16,7 +16,9 @@ See the [Bioconductor install instructions](https://www.bioconductor.org/install
 
 ## Source
 
-* Development Branch [(1.8)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
+* Current Release [(1.8)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.8.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.8.tar.gz).
+
+* Development Branch [(1.9)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
 
 * Previous Release [(1.6)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.6.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.6.tar.gz).
 

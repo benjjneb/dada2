@@ -271,7 +271,7 @@ $(document).ready(function () {
 <hr />
 <div id="install-binaries-from-bioconductor" class="section level2">
 <h2><strong>Install binaries from Bioconductor</strong></h2>
-<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current version of the dada2 package (1.8) requires R 3.5.0 and Bioconductor version 3.7:</p>
+<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current release version (1.8) requires R 3.5.0 and Bioconductor version 3.7:</p>
 <pre class="s"><code>## try http:// if https:// URLs are not supported
 source(&quot;https://bioconductor.org/biocLite.R&quot;)
 biocLite(&quot;dada2&quot;)</code></pre>
@@ -285,8 +285,8 @@ biocLite(&quot;dada2&quot;)</code></pre>
 <div id="download" class="section level3">
 <h3>0. Download</h3>
 <ul>
-<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.6)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.6.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.6.tar.gz">tarball</a>.</p></li>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.8)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.8)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.8.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.8.tar.gz">tarball</a>.</p></li>
+<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.9)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
 </ul>
 </div>
 <div id="install-external-dependencies" class="section level3">
@@ -346,6 +346,7 @@ devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
 <div id="load-package-explore-function-documentation" class="section level3">
 <h3>5. Load Package, Explore Function Documentation</h3>
 <pre class="r"><code>library(&quot;dada2&quot;)</code></pre>
+<pre><code>## Warning: package &#39;Rcpp&#39; was built under R version 3.4.4</code></pre>
 <p>Now that the package is loaded, you can explore the documentation using the R help system.</p>
 <pre class="r"><code>help(package=&quot;dada2&quot;)
 ?derepFastq
