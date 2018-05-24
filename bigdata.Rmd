@@ -9,7 +9,7 @@ As the size of datasets grows the computational tractability of bioinformatics t
 
 The DADA2 pipeline capably handles data at this scale with relatively modest time and memory requirements. However, certain adjustments to the [tutorial workflow](tutorial.html) make a substantial difference in computational costs. Here we present such a workflow, optimized to reduce computational time and control memory requirements.
 
-*This workflow takes advantage of functionality added in the 1.4 release. The [workflow for the earlier 1.2 version of the dada2 R package](big_dada_1_2.html) is also available.*
+*This workflow takes advantage of functionality added in the 1.4 release. The [workflow for the earlier 1.2 version of the dada2 R package](bigdata_1_2.html) is also available.*
 
 --------------------------
 
