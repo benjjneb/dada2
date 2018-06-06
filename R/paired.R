@@ -110,10 +110,16 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
     pairdf <- data.frame(sequence = "", abundance=0, forward=rF, reverse=rR)
     ups <- unique(pairdf) # The unique forward/reverse pairs of denoised sequences
     keep <- !is.na(ups$forward) & !is.na(ups$reverse)
-    ups <- ups[!is.na(ups$forward) & !is.na(ups$reverse),] # Drop pairs with uncorrected uniques
+    ups <- ups[keep, ]
+    if (nrow(ups)==0) {
+        outnames <- c("sequence", "abundance", "forward", "reverse",
+                      "nmatch", "nmismatch", "nindel", "prefer", "accept")
+        ups <- data.frame(matrix(ncol = length(outnames), nrow = 0))
+        names(ups) <- outnames
+        return(ups)
+    }
     Funqseq <- unname(as.character(dadaF[[i]]$clustering$sequence[ups$forward]))
     Runqseq <- rc(unname(as.character(dadaR[[i]]$clustering$sequence[ups$reverse])))
-    
     if (justConcatenate == TRUE) {
       # Simply concatenate the sequences together
       ups$sequence <- mapply(function(x,y) paste0(x,"NNNNNNNNNN", y), Funqseq, Runqseq, SIMPLIFY=FALSE);  
