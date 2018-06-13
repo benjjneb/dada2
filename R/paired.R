@@ -115,6 +115,9 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
                       "nmatch", "nmismatch", "nindel", "prefer", "accept")
         ups <- data.frame(matrix(ncol = length(outnames), nrow = 0))
         names(ups) <- outnames
+        if(verbose) {
+            message("No paired-reads (in ZERO unique pairings) successfully merged out of ", nrow(pairdf), " pairings) input.")
+        }
         return(ups)
     } else {
         Funqseq <- unname(as.character(dadaF[[i]]$clustering$sequence[ups$forward]))
