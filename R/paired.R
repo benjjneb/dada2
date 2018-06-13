@@ -178,7 +178,6 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
     }
   })
   if(length(rval) == 1) rval <- rval[[1]]
-  cat("\nlength(rval)", length(rval), "\n")
   if(!is.null(names(dadaF))) names(rval) <- names(dadaF)
 
   return(rval)
