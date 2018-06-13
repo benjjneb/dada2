@@ -94,8 +94,7 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
   nrecs <- c(length(dadaF), length(derepF), length(dadaR), length(derepR))
   if(length(unique(nrecs))>1) stop("The dadaF/derepF/dadaR/derepR arguments must be the same length.")
   
-  rval <- list()
-  for(i in seq_along(dadaF))  {
+  rval <- lapply(seq_along(dadaF), function (i)  {
     mapF <- derepF[[i]]$map
     mapR <- derepR[[i]]$map
     if(!(is.integer(mapF) && is.integer(mapR))) stop("Incorrect format of $map in derep-class arguments.")
@@ -117,68 +116,71 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
         ups <- data.frame(matrix(ncol = length(outnames), nrow = 0))
         names(ups) <- outnames
         return(ups)
-    }
-    Funqseq <- unname(as.character(dadaF[[i]]$clustering$sequence[ups$forward]))
-    Runqseq <- rc(unname(as.character(dadaR[[i]]$clustering$sequence[ups$reverse])))
-    if (justConcatenate == TRUE) {
-      # Simply concatenate the sequences together
-      ups$sequence <- mapply(function(x,y) paste0(x,"NNNNNNNNNN", y), Funqseq, Runqseq, SIMPLIFY=FALSE);  
-      ups$nmatch <- 0
-      ups$nmismatch <- 0
-      ups$nindel <- 0
-      ups$prefer <- NA
-      ups$accept <- TRUE
     } else {
-      # Align forward and reverse reads.
-      # Use unbanded N-W align to compare forward/reverse
-      # Adjusting align params to prioritize zero-mismatch merges
-      tmp <- getDadaOpt(c("MATCH", "MISMATCH", "GAP_PENALTY"))
-      if(maxMismatch==0) {
-        setDadaOpt(MATCH=1L, MISMATCH=-64L, GAP_PENALTY=-64L)
-      } else {
-        setDadaOpt(MATCH=1L, MISMATCH=-8L, GAP_PENALTY=-8L)
-      }
-      alvecs <- mapply(function(x,y) nwalign(x,y,band=-1,...), Funqseq, Runqseq, SIMPLIFY=FALSE)
-      setDadaOpt(tmp)
-      outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
-      ups$nmatch <- outs[,1]
-      ups$nmismatch <- outs[,2]
-      ups$nindel <- outs[,3]
-      ups$prefer <- 1 + (dadaR[[i]]$clustering$n0[ups$reverse] > dadaF[[i]]$clustering$n0[ups$forward])
-      ups$accept <- (ups$nmatch >= minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
-      # Make the sequence
-      ups$sequence <- mapply(C_pair_consensus, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer, trimOverhang);
-      # Additional param to indicate whether 1:forward or 2:reverse takes precedence
-      # Must also strip out any indels in the return
-      # This function is only used here.
+        Funqseq <- unname(as.character(dadaF[[i]]$clustering$sequence[ups$forward]))
+        Runqseq <- rc(unname(as.character(dadaR[[i]]$clustering$sequence[ups$reverse])))
+        if (justConcatenate == TRUE) {
+          # Simply concatenate the sequences together
+            ups$sequence <- mapply(function(x,y) paste0(x,"NNNNNNNNNN", y),
+                                   Funqseq, Runqseq, SIMPLIFY=FALSE);  
+            ups$nmatch <- 0
+            ups$nmismatch <- 0
+            ups$nindel <- 0
+            ups$prefer <- NA
+            ups$accept <- TRUE
+        } else {
+          # Align forward and reverse reads.
+          # Use unbanded N-W align to compare forward/reverse
+          # Adjusting align params to prioritize zero-mismatch merges
+            tmp <- getDadaOpt(c("MATCH", "MISMATCH", "GAP_PENALTY"))
+            if(maxMismatch==0) {
+                setDadaOpt(MATCH=1L, MISMATCH=-64L, GAP_PENALTY=-64L)
+            } else {
+                setDadaOpt(MATCH=1L, MISMATCH=-8L, GAP_PENALTY=-8L)
+            }
+            alvecs <- mapply(function(x,y) nwalign(x,y,band=-1,...), Funqseq, Runqseq, SIMPLIFY=FALSE)
+            setDadaOpt(tmp)
+            outs <- t(sapply(alvecs, function(x) C_eval_pair(x[1], x[2])))
+            ups$nmatch <- outs[,1]
+            ups$nmismatch <- outs[,2]
+            ups$nindel <- outs[,3]
+            ups$prefer <- 1 + (dadaR[[i]]$clustering$n0[ups$reverse] > dadaF[[i]]$clustering$n0[ups$forward])
+            ups$accept <- (ups$nmatch >= minOverlap) & ((ups$nmismatch + ups$nindel) <= maxMismatch)
+          # Make the sequence
+            ups$sequence <- mapply(C_pair_consensus, sapply(alvecs,`[`,1), sapply(alvecs,`[`,2), ups$prefer, trimOverhang);
+          # Additional param to indicate whether 1:forward or 2:reverse takes precedence
+          # Must also strip out any indels in the return
+          # This function is only used here.
     }
     
-    # Add abundance and sequence to the output data.frame
-    tab <- table(pairdf$forward, pairdf$reverse)
-    ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
-    ups$sequence[!ups$accept] <- ""
-    # Add columns from forward/reverse clustering
-    propagateCol <- propagateCol[propagateCol %in% colnames(dadaF[[i]]$clustering)]
-    for(col in propagateCol) {
-      ups[,paste0("F.",col)] <- dadaF[[i]]$clustering[ups$forward,col]
-      ups[,paste0("R.",col)] <- dadaR[[i]]$clustering[ups$reverse,col]
-    }
-    # Sort output by abundance and name
-    ups <- ups[order(ups$abundance, decreasing=TRUE),]
-    rownames(ups) <- NULL
-    if(verbose) {
-      message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
-    }
-    if(!returnRejects) { ups <- ups[ups$accept,] }
+        # Add abundance and sequence to the output data.frame
+        tab <- table(pairdf$forward, pairdf$reverse)
+        ups$abundance <- tab[cbind(ups$forward, ups$reverse)]
+        ups$sequence[!ups$accept] <- ""
+        # Add columns from forward/reverse clustering
+        propagateCol <- propagateCol[propagateCol %in% colnames(dadaF[[i]]$clustering)]
+        for(col in propagateCol) {
+            ups[,paste0("F.",col)] <- dadaF[[i]]$clustering[ups$forward,col]
+            ups[,paste0("R.",col)] <- dadaR[[i]]$clustering[ups$reverse,col]
+        }
+        # Sort output by abundance and name
+        ups <- ups[order(ups$abundance, decreasing=TRUE),]
+        rownames(ups) <- NULL
+        if(verbose) {
+            message(sum(ups$abundance[ups$accept]), " paired-reads (in ", sum(ups$accept), " unique pairings) successfully merged out of ", sum(ups$abundance), " (in ", nrow(ups), " pairings) input.")
+        }
+        if(!returnRejects) { ups <- ups[ups$accept,] }
     
-    if(any(duplicated(ups$sequence))) {
-      message("Duplicate sequences in merged output.")
+        if(any(duplicated(ups$sequence))) {
+            message("Duplicate sequences in merged output.")
+        }
+        return(ups)
     }
-    rval[[i]] <- ups
-  }
+  })
   if(length(rval) == 1) rval <- rval[[1]]
-  else if(!is.null(names(dadaF))) names(rval) <- names(dadaF)
-  
+  cat("\nlength(rval)", length(rval), "\n")
+  if(!is.null(names(dadaF))) names(rval) <- names(dadaF)
+
   return(rval)
 }
 
