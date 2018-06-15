@@ -30,11 +30,12 @@ int tax_kmer(const char *seq, unsigned int k) {
 void tax_kvec(const char *seq, unsigned int k, unsigned char *kvec) {
   unsigned int i;
   unsigned int len = strlen(seq);
+  size_t klen = len - k + 1; // The number of kmers in this sequence
   int kmer = 0;
   size_t n_kmers = (1 << (2*k));  // 4^k kmers
   for(i=0;i<n_kmers;i++) { kvec[i] = 0; }
 
-  for(i=0; i<len-k; i++) {
+  for(i=0; i<klen; i++) {
     kmer = tax_kmer(&seq[i], k);
     
     // Ensure a valid kmer index
@@ -48,8 +49,9 @@ unsigned int tax_karray(const char *seq, unsigned int k, int *karray) {
   unsigned int i, j;
   int kmer;
   unsigned int len = strlen(seq);
+  size_t klen = len - k + 1; // The number of kmers in this sequence
   
-  for(i=0,j=0;i<len-k;i++) {
+  for(i=0,j=0;i<klen;i++) {
     kmer = tax_kmer(&seq[i], k);
     // Ensure a valid kmer index
     if(kmer>=0) {
@@ -164,7 +166,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   for(i=0;i<nseq;i++) {
     seqlen = seqs[i].size();
     if(seqlen < 50) Rcpp::stop("Sequences must be at least 50 nts to classify.");
-    if((seqlen-k) > max_arraylen) { max_arraylen = seqlen-k; }
+    if((seqlen-k+1) > max_arraylen) { max_arraylen = seqlen-k+1; }
   }
 
   // Rprintf("Allocate kmer array to be used by the seqs.");
@@ -196,7 +198,9 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
     if(try_rc) { // see if rev-comp is a better match to refs
       arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
-      if(arraylen != arraylen_rc) { Rcpp::stop("Discrepancy between forward and RC arraylen."); }
+      if(arraylen != arraylen_rc) { ///!
+        Rprintf("F: %s (%i)\nR: %s (%i)\n", seqs[j].c_str(), arraylen, rcs[j].c_str(), arraylen_rc);
+        Rcpp::stop("Discrepancy between forward and RC arraylen."); }
       max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
       if(logp_rc > logp) { // rev-comp is better, replace with it
         max_g = max_g_rc;
@@ -393,7 +397,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
       free(ref_kv);
       Rcpp::stop("Sequences must be at least 50 nts to classify.");
     }
-    if((seqlen-k) > max_arraylen) { max_arraylen = seqlen-k; }
+    if((seqlen-k+1) > max_arraylen) { max_arraylen = seqlen-k+1; }
   }
   
   // Rprintf("Generate random numbers for bootstrapping.");
