@@ -158,8 +158,8 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
   for(f in fl[!is.na(fl)]) {
     srqa <- qa(f, n=n)
     df <- srqa[["perCycle"]]$quality
-    rc <- srqa[["readCounts"]]$read
-    if (rc >= n){
+    rc <- sum(srqa[["readCounts"]]$read) # Handle aggregate form from qa of a directory
+    if (rc >= n) { 
       rclabel <- paste("Reads >= ", n)
     } else {
       rclabel <- paste("Reads: ", rc)
