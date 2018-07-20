@@ -15,6 +15,7 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
                           n = 1e5, compress=TRUE, verbose = FALSE) {
   # Check and enforce filepaths
   if(length(fn) != length(fout)) stop("Every input file must have a corresponding output file.")
+  if(allow.indels) stop("Primer matching with indels not currently supported (vmatchPattern).")
   odirs <- unique(dirname(fout))
   for(odir in odirs) {
     if(!dir.exists(odir)) { 
