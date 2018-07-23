@@ -1,0 +1,54 @@
+---
+title: "Downloading files from SRA"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Downloading sequence data from SRA
+
+This workflow discusses the steps on how to download a dataset from the SRA. For this workflow, we discuss an example ITS mock community submission with the Bioproject ID: PRJNA377530. The author discusses this mock community here: [A Fungal mock community control for amplicon sequencing experiments](https://onlinelibrary.wiley.com/doi/abs/10.1111/1755-0998.12760). In this study, the author has created 2 fungal amplicon sequencing libraries 1 and 2. Here we describe downloading the fastq files for the Amplicon Sequencing Library #1. 
+
+To download the data, we first start by visiting SRA Run Info for the Bioproject [PRJNA377530](https://www.ncbi.nlm.nih.gov/sra/PRJNA377530). After visiting the website, on the top right corner, go to Send to: -> Choose Destination Menu: select File, -> Under Format choose RunInfo and then click on create file to download the SRARunInfo.csv file.
+
+The Amplicon sequencing libraries, library 1 files start with the SRR Run: SRR531 and library 2 starts with SRR583. Since we are interested in downloading the Amplicon sequencing library 1, we select on these files by using the `grep` function.
+
+```{r Run info, warning=FALSE, message=FALSE, tidy=TRUE,comment=""}
+sra.info <- read.csv("~/Desktop/SraRunInfo.csv", stringsAsFactors = FALSE) ## Reading in the Run info file
+run <- sra.info$Run  ## Selecting the Names of all the sequencing files.
+amplicon.library1 <- grep("SRR531", run, value = TRUE) ## Selecting the run files for Amplicon library 1
+amplicon.library1
+```
+
+
+
+## Download the sequence reads from the ENA ftp website
+
+Now that we have obtained the accession numbers of all the files for Amplicon library #1, we will use R functions to download the ftp files. The library consists of forward and reverse reads with the file extensions, "_1.fastq.gz" and "_2.fastq.gz". The [ENA website](https://www.ebi.ac.uk/ena) hosts the fastq files and we will use the ftp protocol to be able to bulk download all the sequencing files as discussed [here](https://www.ebi.ac.uk/ena/browse/read-download). 
+
+```{r ena download, echo=TRUE}
+download.path <- "~/Desktop/Amplicon_sequencing_library_1/"  ## Change to the location where you would like to store your sequence files.
+if(!dir.exists(download.path)) dir.create(download.path)   ## Creating output directory if it does not exist. 
+
+## Downloading all the sequence files for the accession numbers in sequencing library 1. 
+for (i in 1:length(amplicon.library1)) {    
+  x <- substr(amplicon.library1[i],10,10)     
+  first.dir <- "00"
+  base.link <- "ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR531/"   ##The ENA ftp link
+  folder.link <- paste0(first.dir, x, "/")
+  fwd.ext <- "_1.fastq.gz"
+  rev.ext <- "_2.fastq.gz"
+  file1 <- paste0(amplicon.library1[i],"/", amplicon.library1[i], fwd.ext)
+  file2 <- paste0(amplicon.library1[i],"/", amplicon.library1[i], rev.ext)
+  download.file1 <- paste0(download.path,amplicon.library1[i], fwd.ext)
+  download.file2 <- paste0(download.path,amplicon.library1[i], rev.ext)
+  download.link1 <- paste0(base.link, folder.link, file1)
+  download.link2 <- paste0(base.link, folder.link, file2)
+  download.file(download.link1, download.file1)
+  download.file(download.link2, download.file2)
+  }
+```
+
+
