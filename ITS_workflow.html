@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>DADA2 ITS Pipeline Workflow (1.8)</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 60px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+
+.section h2 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h3 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h4 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h5 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+.section h6 {
+  padding-top: 65px;
+  margin-top: -65px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">dada2</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="dada-installation.html">Install</a>
+</li>
+<li>
+  <a href="tutorial.html">Tutorial</a>
+</li>
+<li>
+  <a href="bigdata.html">Big Data</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+    </li>
+    <li>
+      <a href="assign.html">Taxonomy</a>
+    </li>
+    <li>
+      <a href="pool.html">Pooling</a>
+    </li>
+    <li>
+      <a href="faq.html">FAQ</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Evaluation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+    </li>
+    <li>
+      <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="SMBS_DADA2.pdf">Symposium Slides</a>
+    </li>
+    <li>
+      <a href="SotA.html">Benchmarking</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://www.twitter.com/bejcal">
+    <span class="ion ion-social-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2/issues">
+    <span class="fa fa-question fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">DADA2 ITS Pipeline Workflow (1.8)</h1>
+
+</div>
+
+
+<p>This workflow is an ITS-specific variation of <a href="tutorial_1_8.html">version 1.8 of the DADA2 tutorial workflow</a>. The starting point is a set of Illumina-sequenced paired-end fastq files that have been split (“demultiplexed”) by sample and from which the barcodes have already been removed. The end product is an amplicon sequence variant (ASV) table, a higher-resolution analogue of the traditional OTU table, providing records of the number of times each exact <a href="https://www.nature.com/articles/ismej2017119">amplicon sequence variant</a> was observed in each sample. We also assign taxanomy to the output ITS sequence variants using the UNITE database. <strong>The key addition to this workflow (compared to the tutorial) is the identification and removal of primers from the reads, and the verification of primer orientation and removal.</strong></p>
+<hr />
+<div id="preamble" class="section level1">
+<h1>Preamble</h1>
+<p>Unlike the 16S rRNA gene, the ITS region is highly variable in length. The commonly amplified ITS1 and ITS2 regions range from 200 - 600 bp in length. This length variation is biological, not technical, and arises from the high rates of insertions and deletions in the evolution of this less conserved gene region.</p>
+<p>The length variation of the ITS region has significant consequences for the filtering and trimming steps of the standard DADA2 workflow. First, truncation to a fixed length is no longer appropriate, as that approach remove real ITS variants with lengths shorter than the truncation length. Second, primer removal is complicated by the possibility of some, but not all, reads extending into the opposite primer when the amplified ITS region is shorter than the read length.</p>
+<div class="figure">
+<img src="ITS_region_schema.png" alt="a) The amplified ITS region is longer than the read lengths, the forward and reverse reads overlap to capture the full amplified ITS region, but do not read into the opposite primer. b) The amplified ITS region is shorter than the read lengths, and the forward and reverse reads extend into the opposite primers which will appear in their reverse complement form towards the ends of those reads." />
+<p class="caption"><strong>a)</strong> The amplified ITS region is longer than the read lengths, the forward and reverse reads overlap to capture the full amplified ITS region, but do not read into the opposite primer. <strong>b)</strong> The amplified ITS region is shorter than the read lengths, and the forward and reverse reads extend into the opposite primers which will appear in their reverse complement form towards the ends of those reads.</p>
+</div>
+<p>Because both scenarios pictured above typically occur within the same ITS dataset, a critical addition to ITS worfklows is the removal of primers on the forward and reverse reads, in a way that accounts for the possibility of read-through into the opposite primer. This is true even if the amplicon sequencing strategy doesn’t include the primers, as read-through into the opposite primer can still occur.</p>
+<p>In the standard 16S workflow, it is generally possible to remove primers (when included on the reads) via the <code>trimLeft</code> parameter (<code>filterAndTrim(..., trimLeft=(FWD_PRIMER_LEN, REV_PRIMER_LEN))</code>) as they only appear at the start of the reads and have a fixed length. However, the more complex read-through scenarios that are encountered when sequencing the highly-length-variable ITS region require the use of external tools. Here we present the <a href="http://cutadapt.readthedocs.io/en/stable/index.html">cutadapt</a> tool for removal of primers from the ITS amplicon sequencing data.</p>
+</div>
+<div id="starting-point" class="section level1">
+<h1>Starting point</h1>
+<p>This workflow assumes that your sequencing data meets certain criteria:</p>
+<ul>
+<li>Samples have been demultiplexed, i.e., split into individual per-sample fastq files.</li>
+<li>If paired-end sequencing data, the forward and reverse fastq files contain reads in matched order.</li>
+</ul>
+<p>You can also refer to the <a href="https://benjjneb.github.io/dada2/faq.html">FAQ</a> for recommendations for some common issues.</p>
+</div>
+<div id="getting-ready" class="section level1">
+<h1>Getting ready</h1>
+<p>Along with the <code>dada2</code> library, we also load the <code>ShortRead</code> and the <code>Biostrings</code> package (R Bioconductor packages; can be installed from the following locations, <a href="https://benjjneb.github.io/dada2/dada-installation.html">dada2</a>, <a href="https://bioconductor.org/packages/release/bioc/html/ShortRead.html">ShortRead</a> and <a href="https://bioconductor.org/packages/release/bioc/html/Biostrings.html">Biostrings</a>) which will help in identification and count of the primers present on the raw FASTQ sequence files.</p>
+<pre class="r"><code>library(dada2)
+packageVersion(&quot;dada2&quot;)
+library(ShortRead)
+packageVersion(&quot;ShortRead&quot;)
+library(Biostrings)
+packageVersion(&quot;Biostrings&quot;)</code></pre>
+<pre><code>[1] &#39;1.8.0&#39;
+[1] &#39;1.36.1&#39;
+[1] &#39;2.46.0&#39;</code></pre>
+<p>The <a href="https://www.ebi.ac.uk/ena/data/view/PRJNA377530">dataset</a> used here is the Amplicon sequencing library #1, an ITS Mock community constructed by selecting 19 known fungal cultures from the microbial culture collection at the USDA Agricultural Research Service (CFMR) culture collection and sequenced on an Illumina MiSeq using a version 3 (600 cycle) reagent kit.</p>
+<p>To follow along, download the forward and reverse fastq files from the 31 samples listed <a href="https://www.ebi.ac.uk/ena/data/view/PRJNA377530">in the ENA Project</a>. Define the following path variable so that it points to the directory containing those files on <strong>your</strong> machine:</p>
+<pre class="r"><code>path &lt;- &quot;~/Desktop/Amplicon_sequencing_library_1&quot;  ## CHANGE ME to the directory containing the fastq files.
+list.files(path)</code></pre>
+<pre><code> [1] &quot;cutadapt&quot;              &quot;filtN&quot;                
+ [3] &quot;SRR5314314_1.fastq.gz&quot; &quot;SRR5314314_2.fastq.gz&quot;
+ [5] &quot;SRR5314315_1.fastq.gz&quot; &quot;SRR5314315_2.fastq.gz&quot;
+ [7] &quot;SRR5314316_1.fastq.gz&quot; &quot;SRR5314316_2.fastq.gz&quot;
+ [9] &quot;SRR5314317_1.fastq.gz&quot; &quot;SRR5314317_2.fastq.gz&quot;
+[11] &quot;SRR5314331_1.fastq.gz&quot; &quot;SRR5314331_2.fastq.gz&quot;
+[13] &quot;SRR5314332_1.fastq.gz&quot; &quot;SRR5314332_2.fastq.gz&quot;
+[15] &quot;SRR5314333_1.fastq.gz&quot; &quot;SRR5314333_2.fastq.gz&quot;
+[17] &quot;SRR5314334_1.fastq.gz&quot; &quot;SRR5314334_2.fastq.gz&quot;
+[19] &quot;SRR5314335_1.fastq.gz&quot; &quot;SRR5314335_2.fastq.gz&quot;
+[21] &quot;SRR5314336_1.fastq.gz&quot; &quot;SRR5314336_2.fastq.gz&quot;
+[23] &quot;SRR5314337_1.fastq.gz&quot; &quot;SRR5314337_2.fastq.gz&quot;
+[25] &quot;SRR5314338_1.fastq.gz&quot; &quot;SRR5314338_2.fastq.gz&quot;
+[27] &quot;SRR5314339_1.fastq.gz&quot; &quot;SRR5314339_2.fastq.gz&quot;
+[29] &quot;SRR5314343_1.fastq.gz&quot; &quot;SRR5314343_2.fastq.gz&quot;
+[31] &quot;SRR5314344_1.fastq.gz&quot; &quot;SRR5314344_2.fastq.gz&quot;
+[33] &quot;SRR5314345_1.fastq.gz&quot; &quot;SRR5314345_2.fastq.gz&quot;
+[35] &quot;SRR5314346_1.fastq.gz&quot; &quot;SRR5314346_2.fastq.gz&quot;
+[37] &quot;SRR5314347_1.fastq.gz&quot; &quot;SRR5314347_2.fastq.gz&quot;
+[39] &quot;SRR5314348_1.fastq.gz&quot; &quot;SRR5314348_2.fastq.gz&quot;
+[41] &quot;SRR5314349_1.fastq.gz&quot; &quot;SRR5314349_2.fastq.gz&quot;
+[43] &quot;SRR5314350_1.fastq.gz&quot; &quot;SRR5314350_2.fastq.gz&quot;
+[45] &quot;SRR5314351_1.fastq.gz&quot; &quot;SRR5314351_2.fastq.gz&quot;
+[47] &quot;SRR5314355_1.fastq.gz&quot; &quot;SRR5314355_2.fastq.gz&quot;
+[49] &quot;SRR5314356_1.fastq.gz&quot; &quot;SRR5314356_2.fastq.gz&quot;
+[51] &quot;SRR5314357_1.fastq.gz&quot; &quot;SRR5314357_2.fastq.gz&quot;
+[53] &quot;SRR5314358_1.fastq.gz&quot; &quot;SRR5314358_2.fastq.gz&quot;
+[55] &quot;SRR5314359_1.fastq.gz&quot; &quot;SRR5314359_2.fastq.gz&quot;
+[57] &quot;SRR5314360_1.fastq.gz&quot; &quot;SRR5314360_2.fastq.gz&quot;
+[59] &quot;SRR5314361_1.fastq.gz&quot; &quot;SRR5314361_2.fastq.gz&quot;
+[61] &quot;SRR5314362_1.fastq.gz&quot; &quot;SRR5314362_2.fastq.gz&quot;
+[63] &quot;SRR5314363_1.fastq.gz&quot; &quot;SRR5314363_2.fastq.gz&quot;</code></pre>
+<p>If the packages loaded successfully and your listed files match those here, your are ready to follow along with the ITS workflow.</p>
+<p>Before proceeding, we will now due a bit of housekeeping, and generate matched lists of the forward and reverse read files, as well as parsing out the sample name. Here we assume forward and reverse read files are in the format <code>SAMPLENAME_1.fastq.gz</code> and <code>SAMPLENAME_2.fastq.gz</code>, respectively, so string parsing may have to be altered in your own data if your filenamess have a different format.</p>
+<pre class="r"><code>fnFs &lt;- sort(list.files(path, pattern = &quot;_1.fastq.gz&quot;, full.names = TRUE))
+fnRs &lt;- sort(list.files(path, pattern = &quot;_2.fastq.gz&quot;, full.names = TRUE))</code></pre>
+</div>
+<div id="identify-primers" class="section level1">
+<h1>Identify primers</h1>
+<p>The BITS3 (forward) and B58S3 (reverse) primers were used to amplify this dataset. We record the DNA sequences, including ambiguous nucleotides, for those primers.</p>
+<pre class="r"><code>FWD &lt;- &quot;ACCTGCGGARGGATCA&quot;  ## CHANGE ME to your forward primer sequence
+REV &lt;- &quot;GAGATCCRTTGYTRAAAGTT&quot;  ## CHANGE ME...</code></pre>
+<p>In theory if you understand your amplicon sequencing setup, this is sufficient to continue. However, to ensure we have the right primers, and the correct orientation of the primers on the reads, we will verify the presence and orientation of these primers in the data.</p>
+<pre class="r"><code>allOrients &lt;- function(primer) {
+    # Create all orientations of the input sequence
+    require(Biostrings)
+    dna &lt;- DNAString(primer)  # The Biostrings works w/ DNAString objects rather than character vectors
+    orients &lt;- c(Forward = dna, Complement = complement(dna), Reverse = reverse(dna), 
+        RevComp = reverseComplement(dna))
+    return(sapply(orients, toString))  # Convert back to character vector
+}
+FWD.orients &lt;- allOrients(FWD)
+REV.orients &lt;- allOrients(REV)
+FWD.orients</code></pre>
+<pre><code>##            Forward         Complement            Reverse 
+## &quot;ACCTGCGGARGGATCA&quot; &quot;TGGACGCCTYCCTAGT&quot; &quot;ACTAGGRAGGCGTCCA&quot; 
+##            RevComp 
+## &quot;TGATCCYTCCGCAGGT&quot;</code></pre>
+<p>The presence of ambiguous bases (Ns) in the sequencing reads makes accurate mapping of short primer sequences difficult. Next we are going to “pre-filter” the sequences just to remove those with Ns, but perform no other filtering.</p>
+<pre class="r"><code>fnFs.filtN &lt;- file.path(path, &quot;filtN&quot;, basename(fnFs)) # Put N-filterd files in filtN/ subdirectory
+fnRs.filtN &lt;- file.path(path, &quot;filtN&quot;, basename(fnRs))
+filterAndTrim(fnFs, fnFs.filtN, fnRs, fnRs.filtN, maxN = 0, multithread = TRUE)</code></pre>
+<p>We are now ready to count the number of times the primers appear in the forward and reverse read, while considering all possible primer orientations. Identifying and counting the primers on one set of paired end FASTQ files is sufficient, assuming all the files were created using the same library preparation, so we’ll just process the first sample.</p>
+<pre class="r"><code>primerHits &lt;- function(primer, fn) {
+    # Counts number of reads in which the primer is found
+    nhits &lt;- vcountPattern(primer, sread(readFastq(fn)), fixed = FALSE)
+    return(sum(nhits &gt; 0))
+}
+rbind(FWD.ForwardReads = sapply(FWD.orients, primerHits, fn = fnFs.filtN[[1]]), 
+    FWD.ReverseReads = sapply(FWD.orients, primerHits, fn = fnRs.filtN[[1]]), 
+    REV.ForwardReads = sapply(REV.orients, primerHits, fn = fnFs.filtN[[1]]), 
+    REV.ReverseReads = sapply(REV.orients, primerHits, fn = fnRs.filtN[[1]]))</code></pre>
+<pre><code>                 Forward Complement Reverse RevComp
+FWD.ForwardReads    4214          0       0       0
+FWD.ReverseReads       0          0       0    3743
+REV.ForwardReads       0          0       0    3590
+REV.ReverseReads    4200          0       0       0</code></pre>
+<p>As expected, the FWD primer is found in the forward reads in its forward orientation, and in some of the reverse reads in its reverse-complement orientation (due to read-through when the ITS region is short). Similarly the REV primer is found with its expected orientations.</p>
+<p><strong>Note:</strong> Orientation mixups are a common trip-up. If, for example, the REV primer is matching the Reverse reads in its RevComp orientation, then replace REV with its reverse-complement orientation (<code>REV &lt;- REV.orient[[&quot;RevComp&quot;]]</code>) before proceeding.</p>
+</div>
+<div id="remove-primers" class="section level1">
+<h1>Remove Primers</h1>
+<p>These primers can be now removed using a specialized primer/adapter removal tool. Here, we use <a href="http://cutadapt.readthedocs.io/en/stable/index.html">cutadapt</a> for this purpose. Download, installation and usage instructions are available online: <a href="http://cutadapt.readthedocs.io/en/stable/index.html" class="uri">http://cutadapt.readthedocs.io/en/stable/index.html</a></p>
+<p>Install cutadapat if you don’t have it already. After installing cutadapt, we need to tell R the path to the cutadapt command.</p>
+<pre class="r"><code>cutadapt &lt;- &quot;/Users/nbetrap/miniconda2/bin/cutadapt&quot; # CHANGE ME to the cutadapt path on your machine
+system2(cutadapt, args = &quot;--version&quot;) # Run shell commands from R</code></pre>
+<p>If the above command succesfully executed, R has found cutadapt and you are ready to continue following along.</p>
+<p>We now create output filenames for the cutadapt-ed files, and define the parameters we are going to give the cutadapt command. The critical parameters are the primers, and they need to be in the right orientation, i.e. the FWD primer should have been matching the forward-reads in its forward orientation, and the REV primer should have been matching the reverse-reads in its forward orientation. <em>Warning: A lot of output will be written to the screen by cutadapt!</em></p>
+<pre class="r"><code>path.cut &lt;- file.path(path, &quot;cutadapt&quot;)
+if(!dir.exists(path.cut)) dir.create(path.cut)
+fnFs.cut &lt;- file.path(path.cut, basename(fnFs))
+fnRs.cut &lt;- file.path(path.cut, basename(fnRs))
+
+FWD.RC &lt;- dada2:::rc(FWD)
+REV.RC &lt;- dada2:::rc(REV)
+# Trim FWD and the reverse-complement of REV off of R1 (forward reads)
+R1.flags &lt;- paste(&quot;-g&quot;, FWD, &quot;-a&quot;, REV.RC) 
+# Trim REV and the reverse-complement of FWD off of R2 (reverse reads)
+R2.flags &lt;- paste(&quot;-G&quot;, REV, &quot;-A&quot;, FWD.RC) 
+# Run Cutadapt
+for(i in seq_along(fnFs)) {
+  system2(cutadapt, args = c(R1.flags, R2.flags, &quot;-n&quot;, 2, # -n 2 required to remove FWD and REV from reads
+                             &quot;-o&quot;, fnFs.cut[i], &quot;-p&quot;, fnRs.cut[i], # output files
+                             fnFs.filtN[i], fnRs.filtN[i])) # input files
+}</code></pre>
+<p>As a sanity check, we will count the presence of primers in the first cutadapt-ed sample:</p>
+<pre class="r"><code>rbind(FWD.ForwardReads = sapply(FWD.orients, primerHits, fn = fnFs.cut[[1]]), 
+    FWD.ReverseReads = sapply(FWD.orients, primerHits, fn = fnRs.cut[[1]]), 
+    REV.ForwardReads = sapply(REV.orients, primerHits, fn = fnFs.cut[[1]]), 
+    REV.ReverseReads = sapply(REV.orients, primerHits, fn = fnRs.cut[[1]]))</code></pre>
+<pre><code>                 Forward Complement Reverse RevComp
+FWD.ForwardReads       0          0       0       0
+FWD.ReverseReads       0          0       0       0
+REV.ForwardReads       0          0       0       0
+REV.ReverseReads       0          0       0       0</code></pre>
+<p>Success! Primers are no longer detected in the cutadapted reads.</p>
+<p>The primer-free sequence files are now ready to be analyzed through the DADA2 pipeline. Similar to the earlier steps of reading in FASTQ files, we read in the names of the cutadapt-ed FASTQ files and applying some string manipulation to get the matched lists of forward and reverse fastq files.</p>
+<pre class="r"><code># Forward and reverse fastq filenames have the format:
+cutFs &lt;- sort(list.files(path.cut, pattern = &quot;_1.fastq.gz&quot;, full.names = TRUE))
+cutRs &lt;- sort(list.files(path.cut, pattern = &quot;_2.fastq.gz&quot;, full.names = TRUE))
+
+# Extract sample names, assuming filenames have format:
+get.sample.name &lt;- function(fname) strsplit(basename(fname), &quot;_&quot;)[[1]][1]
+sample.names &lt;- unname(sapply(cutFs, get.sample.name))
+head(sample.names)</code></pre>
+<pre><code>[1] &quot;SRR5314314&quot; &quot;SRR5314315&quot; &quot;SRR5314316&quot; &quot;SRR5314317&quot; &quot;SRR5314331&quot;
+[6] &quot;SRR5314332&quot;</code></pre>
+</div>
+<div id="inspect-read-quality-profiles" class="section level1">
+<h1>Inspect read quality profiles</h1>
+<p>We start by visualizing the quality profiles of the forward reads:</p>
+<pre class="r"><code>plotQualityProfile(cutFs[1:2])</code></pre>
+<p><img src="ITS_workflow_files/figure-html/Quality%20Profile%20forward-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>The quality profile plot is a gray-scale heatmap of the frequency of each quality score at each base position. The median quality score at each position is shown by the green line, and the quartiles of the quality score distribution by the orange lines. The read line shows the scaled proportion of reads that extend to at least that position.</p>
+<p>The forward reads are of good quality. The red line shows that a significant chunk of reads were cutadapt-ed to about 150nts in length, likely reflecting the length of the amplified ITS region in one of the taxa present in these samples. Note that, unlike in the 16S Tutorial Workflow, we will not be truncating the reads to a fixed length, as the ITS region has significant biological length variation that is lost by such an appraoch.</p>
+<p>Now we visualize the quality profile of the reverse reads:</p>
+<pre class="r"><code>plotQualityProfile(cutRs[1:2])</code></pre>
+<p><img src="ITS_workflow_files/figure-html/Quality%20Profile%20reverse-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>These reverse reads are of decent, but less good, quality. Note that we see the same length peak at around ~150nts, and in the same proportions, as we did in the forward reads. A good sign of consistency!</p>
+<div id="filter-and-trim" class="section level2">
+<h2>Filter and trim</h2>
+<p>Assigning the filenames for the output of the filtered reads to be stored as fastq.gz files.</p>
+<pre class="r"><code>filtFs &lt;- file.path(path.cut, &quot;filtered&quot;, basename(cutFs))
+filtRs &lt;- file.path(path.cut, &quot;filtered&quot;, basename(cutRs))</code></pre>
+<p>For this dataset, we will use standard filtering paraments: <code>maxN=0</code> (DADA2 requires sequences contain no Ns), <code>truncQ = 2</code>, <code>rm.phix = TRUE</code> and <code>maxEE=2</code>. The <code>maxEE</code> parameter sets the maximum number of “expected errors” allowed in a read, which is a <a href="http://www.drive5.com/usearch/manual/expected_errors.html">better filter than simply averaging quality scores</a>. <strong>Note:</strong> We enforce a <code>minLen</code> here, to get rid of spurious very low-length sequences. This was not needed in the 16S Tutorial Workflow because <code>truncLen</code> already served that purpose.</p>
+<pre class="r"><code>out &lt;- filterAndTrim(cutFs, filtFs, cutRs, filtRs, maxN = 0, maxEE = c(2, 2), 
+    truncQ = 2, minLen = 50, rm.phix = TRUE, compress = TRUE, multithread = TRUE)  # on windows, set multithread = FALSE
+head(out)</code></pre>
+<pre><code>                      reads.in reads.out
+SRR5314314_1.fastq.gz     6202      5658
+SRR5314315_1.fastq.gz    12325     10985
+SRR5314316_1.fastq.gz    16006     14046
+SRR5314317_1.fastq.gz    11801     10423
+SRR5314331_1.fastq.gz    17399     15213
+SRR5314332_1.fastq.gz    42604     36742</code></pre>
+<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;;margin-top: 15px;">
+<span style="color:blue"><strong>Attention:</strong></span> The rest of this workflow is presented in abbreviated format, as there is nothing ITS-specific about it except the choice of taxonomic assignment database at the end. For more complete development of each step and the options available, please consult <a href="tutorial.html">the Tutorial Workflow</a>.
+</div>
+<p> </p>
+</div>
+<div id="learn-the-error-rates" class="section level2">
+<h2>Learn the Error Rates</h2>
+<p><strong>Please ignore all the “Not all sequences were the same length.” messages in the next couple sections.</strong> We know they aren’t, and it’s OK!</p>
+<pre class="r"><code>errF &lt;- learnErrors(filtFs, multithread = TRUE)</code></pre>
+<pre><code>Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+101352470 total bases in 624059 reads from 22 samples will be used for learning the error rates.
+Initializing error rates to maximum possible estimate.
+selfConsist step 1 ......................
+   selfConsist step 2
+   selfConsist step 3
+   selfConsist step 4
+   selfConsist step 5
+Convergence after  5  rounds.</code></pre>
+<pre class="r"><code>errR &lt;- learnErrors(filtRs, multithread = TRUE)</code></pre>
+<pre><code>Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+Not all sequences were the same length.
+100984087 total bases in 624059 reads from 22 samples will be used for learning the error rates.
+Initializing error rates to maximum possible estimate.
+selfConsist step 1 ......................
+   selfConsist step 2
+   selfConsist step 3
+   selfConsist step 4
+   selfConsist step 5
+   selfConsist step 6
+   selfConsist step 7
+   selfConsist step 8
+Convergence after  8  rounds.</code></pre>
+<p>Visualize the estimated error rates as a sanity check.</p>
+<pre class="r"><code>plotErrors(errF, nominalQ = TRUE)</code></pre>
+<p><img src="ITS_workflow_files/figure-html/Plot%20Quality%20Profile-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Everything looks reasonable and we proceed with confidence.</p>
+</div>
+<div id="dereplicate-identical-reads" class="section level2">
+<h2>Dereplicate identical reads</h2>
+<pre class="r"><code>derepFs &lt;- derepFastq(filtFs, verbose = TRUE)
+derepRs &lt;- derepFastq(filtRs, verbose = TRUE)
+# Name the derep-class objects by the sample names
+names(derepFs) &lt;- sample.names
+names(derepRs) &lt;- sample.names</code></pre>
+</div>
+<div id="sample-inference" class="section level2">
+<h2>Sample Inference</h2>
+<p>At this step, <a href="https://www.nature.com/articles/nmeth.3869#methods">the core sample inference algorithm</a> is applied to the dereplicated data.</p>
+<pre class="r"><code>dadaFs &lt;- dada(derepFs, err = errF, multithread = TRUE)
+dadaRs &lt;- dada(derepRs, err = errR, multithread = TRUE)</code></pre>
+</div>
+<div id="merge-paired-reads" class="section level2">
+<h2>Merge paired reads</h2>
+<pre class="r"><code>mergers &lt;- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose=TRUE)</code></pre>
+</div>
+<div id="construct-sequence-table" class="section level2">
+<h2>Construct Sequence Table</h2>
+<p>We can now construct an amplicon sequence variant table (ASV) table, a higher-resolution version of the OTU table produced by traditional methods.</p>
+<pre class="r"><code>seqtab &lt;- makeSequenceTable(mergers)
+dim(seqtab)</code></pre>
+<pre><code>## [1]  31 549</code></pre>
+</div>
+<div id="remove-chimeras" class="section level2">
+<h2>Remove chimeras</h2>
+<pre class="r"><code>seqtab.nochim &lt;- removeBimeraDenovo(seqtab, method=&quot;consensus&quot;, multithread=TRUE, verbose=TRUE)</code></pre>
+<p>Inspect distribution of sequence lengths:</p>
+<pre class="r"><code>table(nchar(getSequences(seqtab.nochim)))</code></pre>
+<pre><code>
+106 107 110 113 115 116 129 130 137 141 142 143 146 151 153 156 158 160 
+  1   1   1   3   1   1   1   1   1   1   1   1   1   3   1   1   2   1 
+167 168 174 178 181 185 188 195 197 199 207 212 224 230 248 262 289 290 
+  1   2   1   1   1   1   1   1   1   1   1   1   1   1   1   2   1   2 
+291 292 293 294 
+  3 133   7   1 </code></pre>
+<p>As expected, quite a bit of length variability in the the amplified ITS region.</p>
+</div>
+<div id="track-reads-through-the-pipeline" class="section level2">
+<h2>Track reads through the pipeline</h2>
+<p>We now inspect the the number of reads that made it through each step in the pipeline to verify everything worked as expected.</p>
+<pre class="r"><code>getN &lt;- function(x) sum(getUniques(x))
+track &lt;- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, 
+    getN), rowSums(seqtab.nochim))
+# If processing a single sample, remove the sapply calls: e.g. replace
+# sapply(dadaFs, getN) with getN(dadaFs)
+colnames(track) &lt;- c(&quot;input&quot;, &quot;filtered&quot;, &quot;denoisedF&quot;, &quot;denoisedR&quot;, &quot;merged&quot;, 
+    &quot;nonchim&quot;)
+rownames(track) &lt;- sample.names
+head(track)</code></pre>
+<pre><code>           input filtered denoisedF denoisedR merged nonchim
+SRR5314314  6202     5658      5639      5594   5548    5016
+SRR5314315 12325    10985     10890     10722  10462    6076
+SRR5314316 16006    14046     14025     13917  13822    7273
+SRR5314317 11801    10423     10389     10341  10217    5485
+SRR5314331 17399    15213     15209     15209  15085   15085
+SRR5314332 42604    36742     36721     36734  34972   34972</code></pre>
+<p>Looks good! We kept the majority of our raw reads, and there is no over-large drop associated with any single step.</p>
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
+<strong><span style="color:red">Considerations for your own data:</span></strong> This is a great place to do a last <strong>sanity check</strong>. Outside of filtering (depending on how stringent you want to be) there should no step in which a majority of reads are lost. If a majority of reads were removed as chimeric, you may need to revisit the removal of primers, as the ambiguous nucleotides in unremoved primers interfere with chimera identification. If a majority of reads failed to merge, the culprit could also be unremoved primers, but could also be due to biological length variation in the sequenced ITS region that sometimes extends beyond the total read length resulting in no overlap.
+</div>
+<p> </p>
+</div>
+<div id="assign-taxonomy" class="section level2">
+<h2>Assign taxonomy</h2>
+<p>DADA2 supports fungal taxonmic assignment using the UNITE database! The DADA2 package provides a native implementation of the <a href="https://www.ncbi.nlm.nih.gov/pubmed/17586664">naive Bayesian classifier method</a> for taxonomic assignment. The <code>assignTaxonomy</code> function takes as input a set of sequences to ba classified, and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least minBoot bootstrap confidence. For fungal taxonomy, the General Fasta release files from the <a href="https://unite.ut.ee/repository.php">UNITE ITS database</a> can be downloaded and used as the reference.</p>
+<p><em>We also maintain <a href="https://benjjneb.github.io/dada2/training.html">formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database</a> for 16S, and additional trainings fastas suitable for protists and certain specific environments have been contributed.</em></p>
+<pre class="r"><code>unite.ref &lt;- &quot;~/tax/sh_general_release_dynamic_s_01.12.2017.fasta&quot;  # CHANGE ME to location on your machine
+taxa &lt;- assignTaxonomy(seqtab.nochim, unite.ref, multithread = TRUE, tryRC = TRUE)</code></pre>
+<pre><code>UNITE fungal taxonomic reference detected.</code></pre>
+<p>Inspecting the taxonomic assignments:</p>
+<pre class="r"><code>taxa.print &lt;- taxa  # Removing sequence rownames for display only
+rownames(taxa.print) &lt;- NULL
+head(taxa.print)</code></pre>
+<pre><code>     Kingdom    Phylum                 Class                  
+[1,] &quot;k__Fungi&quot; &quot;p__Basidiomycota&quot;     &quot;c__Tremellomycetes&quot;   
+[2,] &quot;k__Fungi&quot; &quot;p__Ascomycota&quot;        &quot;c__Taphrinomycetes&quot;   
+[3,] &quot;k__Fungi&quot; &quot;p__Ascomycota&quot;        &quot;c__Sordariomycetes&quot;   
+[4,] &quot;k__Fungi&quot; &quot;p__Ascomycota&quot;        &quot;c__Dothideomycetes&quot;   
+[5,] &quot;k__Fungi&quot; &quot;p__Ascomycota&quot;        &quot;c__Sordariomycetes&quot;   
+[6,] &quot;k__Fungi&quot; &quot;p__Mortierellomycota&quot; &quot;c__Mortierellomycetes&quot;
+     Order               Family               Genus           
+[1,] &quot;o__Filobasidiales&quot; &quot;f__Filobasidiaceae&quot; &quot;g__Naganishia&quot; 
+[2,] &quot;o__Taphrinales&quot;    &quot;f__Protomycetaceae&quot; &quot;g__Saitoella&quot;  
+[3,] &quot;o__Hypocreales&quot;    &quot;f__Nectriaceae&quot;     NA              
+[4,] &quot;o__Pleosporales&quot;   &quot;f__Pleosporaceae&quot;   &quot;g__Alternaria&quot; 
+[5,] &quot;o__Hypocreales&quot;    &quot;f__Nectriaceae&quot;     &quot;g__Fusarium&quot;   
+[6,] &quot;o__Mortierellales&quot; &quot;f__Mortierellaceae&quot; &quot;g__Mortierella&quot;
+     Species        
+[1,] NA             
+[2,] &quot;s__complicata&quot;
+[3,] NA             
+[4,] &quot;s__alternata&quot; 
+[5,] NA             
+[6,] &quot;s__humilis&quot;   </code></pre>
+<p>Look like fungi!</p>
+</div>
+</div>
+
+<div class="container" style="width: 100%;color:grey;text-align:right">
+  <hr>
+  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+</div>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

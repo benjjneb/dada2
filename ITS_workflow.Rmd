@@ -1,5 +1,5 @@
 ---
-title: "DADA2 ITS Pipeline Tutorial (1.8)"
+title: "DADA2 ITS Pipeline Workflow (1.8)"
 output: html_document
 ---
 
@@ -7,23 +7,23 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 ```
 
-This workflow is an ITS-specific variation of [version 1.8 of the DADA2 tutorial workflow](tutorial_1_8.html). The starting point is a set of Illumina-sequenced paired-end fastq files that have been split ("demultiplexed") by sample and from which the barcodes have already been removed. The end product is an amplicon sequence variant (ASV) table, a higher-resolution analogue of the traditional OTU table, providing records of the number of times each exact [amplicon sequence variant](https://www.nature.com/articles/ismej2017119) was observed in each sample. We also assign taxanomy to the output ITS sequence variants. 
+This workflow is an ITS-specific variation of [version 1.8 of the DADA2 tutorial workflow](tutorial_1_8.html). The starting point is a set of Illumina-sequenced paired-end fastq files that have been split ("demultiplexed") by sample and from which the barcodes have already been removed. The end product is an amplicon sequence variant (ASV) table, a higher-resolution analogue of the traditional OTU table, providing records of the number of times each exact [amplicon sequence variant](https://www.nature.com/articles/ismej2017119) was observed in each sample. We also assign taxanomy to the output ITS sequence variants using the UNITE database. **The key addition to this workflow (compared to the tutorial) is the identification and removal of primers from the reads, and the verification of primer orientation and removal.**
 
-## Preamble
+-----------------------
+
+# Preamble
 
 Unlike the 16S rRNA gene, the ITS region is highly variable in length. The commonly amplified ITS1 and ITS2 regions range from 200 - 600 bp in length. This length variation is biological, not technical, and arises from the high rates of insertions and deletions in the evolution of this less conserved gene region. 
 
 The length variation of the ITS region has significant consequences for the filtering and trimming steps of the standard DADA2 workflow. First, truncation to a fixed length is no longer appropriate, as that approach remove real ITS variants with lengths shorter than the truncation length. Second, primer removal is complicated by the possibility of some, but not all, reads extending into the opposite primer when the amplified ITS region is shorter than the read length.
 
-![**Schematic a:** ITS region length is greater than the read lengths.        **Schematic b:** ITS region is shorter than the read lengths.](ITS_region_schema.png) 
+![**a)** The amplified ITS region is longer than the read lengths, the forward and reverse reads overlap to capture the full amplified ITS region, but do not read into the opposite primer. **b)** The amplified ITS region is shorter than the read lengths, and the forward and reverse reads extend into the opposite primers which will appear in their reverse complement form towards the ends of those reads.](ITS_region_schema.png) 
 
-**a)** The amplified ITS region is longer than the read lengths, the forward and reverse reads overlap to capture the full amplified ITS region, but do not read into the opposite primer. **b)** The amplified ITS region is shorter than the read lengths, and the forward and reverse reads extend into the opposite primers which will appear in their reverse complement form towards the ends of those reads.
-
-A critical addition to ITS worfklows is then the identification and removal of primers on the forward and reverse reads, in a way that accounts for the possibility of read-through into the opposite primer. This is true even if the amplicon sequencing strategy doesn't include the primers, as read-through still happens in that scenario. 
+Because both scenarios pictured above typically occur within the same ITS dataset, a critical addition to ITS worfklows is the removal of primers on the forward and reverse reads, in a way that accounts for the possibility of read-through into the opposite primer. This is true even if the amplicon sequencing strategy doesn't include the primers, as read-through into the opposite primer can still occur. 
 
 In the standard 16S workflow, it is generally possible to remove primers (when included on the reads) via the `trimLeft` parameter (`filterAndTrim(..., trimLeft=(FWD_PRIMER_LEN, REV_PRIMER_LEN))`) as they only appear at the start of the reads and have a fixed length. However, the more complex read-through scenarios that are encountered when sequencing the highly-length-variable ITS region require the use of external tools. Here we present the [cutadapt](http://cutadapt.readthedocs.io/en/stable/index.html) tool for removal of primers from the ITS amplicon sequencing data.
 
-## Starting point
+# Starting point
 
 This workflow assumes that your sequencing data meets certain criteria: 
 
@@ -32,7 +32,7 @@ This workflow assumes that your sequencing data meets certain criteria:
 
 You can also refer to the [FAQ](https://benjjneb.github.io/dada2/faq.html) for recommendations for some common issues.
 
-##Getting ready
+# Getting ready
 
 Along with the `dada2` library, we also load the `ShortRead` and the `Biostrings` package (R Bioconductor packages; can be installed from the following locations, [dada2](https://benjjneb.github.io/dada2/dada-installation.html), [ShortRead](https://bioconductor.org/packages/release/bioc/html/ShortRead.html) and [Biostrings](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)) which will help in identification and count of the primers present on the raw FASTQ sequence files.  
 
@@ -63,7 +63,7 @@ fnFs <- sort(list.files(path, pattern = "_1.fastq.gz", full.names = TRUE))
 fnRs <- sort(list.files(path, pattern = "_2.fastq.gz", full.names = TRUE))
 ```
 
-## Identify primers
+# Identify primers
 
 The BITS3 (forward) and B58S3 (reverse) primers were used to amplify this dataset. We record the DNA sequences, including ambiguous nucleotides, for those primers.
 
@@ -111,7 +111,7 @@ As expected, the FWD primer is found in the forward reads in its forward orienta
 
 **Note:** Orientation mixups are a common trip-up. If, for example, the REV primer is matching the Reverse reads in its RevComp orientation, then replace REV with its reverse-complement orientation (`REV <- REV.orient[["RevComp"]]`) before proceeding.
 
-## Remove Primers
+# Remove Primers
 
 These primers can be now removed using a specialized primer/adapter removal tool. Here, we use [cutadapt](http://cutadapt.readthedocs.io/en/stable/index.html) for this purpose. Download, installation and usage instructions are available online: http://cutadapt.readthedocs.io/en/stable/index.html
 
@@ -170,7 +170,7 @@ sample.names <- unname(sapply(cutFs, get.sample.name))
 head(sample.names)
 ```
 
-##Inspect read quality profiles
+# Inspect read quality profiles
 
 We start by visualizing the quality profiles of the forward reads:
 
@@ -208,11 +208,13 @@ out <- filterAndTrim(cutFs, filtFs, cutRs, filtRs,
 head(out)
 ```
 
+<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;;margin-top: 15px;"><span style="color:blue">**Attention:**</span> The rest of this workflow is presented in abbreviated format, as there is nothing ITS-specific about it except the choice of taxonomic assignment database at the end. For more complete development of each step and the options available, please consult [the Tutorial Workflow](tutorial.html).</div>
+
+&nbsp;
+
 ## Learn the Error Rates
 
-The DADA2 algorithm makes use of a parametric error model (`err`) and every amplicon dataset has a different set of error rates. The `learnErrors` method learns this error model from the data, by alternating estimation of the error rates and inference of sample composition until they converge on a jointly consistent solution. As in many machine-learning problems, the algorithm must begin with an initial guess, for which the maximum error rate in this data are used (the error rates if only the most abundant sequence is correct and all the rest are errors). The below steps are learning errors from the forward and reverse reads. 
-
-**Please ignore all the "Not all sequences were the same length." messages in the next couple sections.** We know they aren't, and it's OK! That over-verbose message will be removed in the next dada2 release.
+**Please ignore all the "Not all sequences were the same length." messages in the next couple sections.** We know they aren't, and it's OK!
 
 ```{r Error rate, warning=FALSE, message=FALSE, tidy=TRUE,comment= ""}
 errF <- learnErrors(filtFs, multithread = TRUE)
@@ -222,20 +224,15 @@ errF <- learnErrors(filtFs, multithread = TRUE)
 errR <- learnErrors(filtRs, multithread = TRUE)
 ```
 
-As a sanity check, it is worth visualizing the estimated error rates:
+Visualize the estimated error rates as a sanity check.
 
 ```{r Plot Quality Profile, warning=FALSE, message=FALSE, tidy=TRUE}
 plotErrors(errF, nominalQ=TRUE)
 ```
 
-The error rates for each possible transition (A→C, A→G, ...) are shown. Points are the observed error rates for each consensus quality score. The black line shows the estimated error rates after convergence of the machine-learning algorithm. The red line shows the error rates expected under the nominal definition of the Q-score. Here the estimated error rates (black line) are a good fit to the observed rates (points), and the error rates drop with increased quality as expected. Everything looks reasonable and we proceed with confidence.
+Everything looks reasonable and we proceed with confidence.
 
-## Dereplication
-
-Dereplication combines all identical sequencing reads into their “unique sequences” with a corresponding “abundance” equal to the number of reads with that unique sequence. Dereplication substantially reduces computation time by eliminating redundant comparisons.
-
-Dereplication in the DADA2 pipeline has one crucial addition from other pipelines: DADA2 *retains a summary of the quality information associated with each unique sequence*. The consensus quality profile of a unique sequence is the average of the positional qualities from the dereplicated reads. These quality profiles inform the error model of the subsequent sample inference step, significantly increasing DADA2’s accuracy.
-
+## Dereplicate identical reads
 
 ```{r Dereplication, echo=TRUE, warning=FALSE, message=FALSE, tidy=TRUE, results="hide", comment= ""}
 derepFs <- derepFastq(filtFs, verbose=TRUE)
@@ -244,7 +241,6 @@ derepRs <- derepFastq(filtRs, verbose=TRUE)
 names(derepFs) <- sample.names
 names(derepRs) <- sample.names
 ```
-
 
 ## Sample Inference
 
@@ -255,27 +251,11 @@ dadaFs <- dada(derepFs, err=errF, multithread=TRUE)
 dadaRs <- dada(derepRs, err=errR, multithread=TRUE)
 ```
 
-Inspecting the returned `dada-class` object:
-
-```{r dada2 object, warning=FALSE, message=FALSE, tidy=TRUE,comment= ""}
-dadaFs[1]
-```
-
-The DADA2 algorithm inferred `r length(getSequences(dadaFs[[1]]))` true sequence variants in the first sample. There is much more to the `dada-class` return object than this (see help(`"dada-class"`) for some info), including multiple diagnostics about the quality of each denoised sequence variant, but that is beyond the scope of an introductory tutorial.
-
-
 ## Merge paired reads
-
-After applying the core sample inference algorithm, the forward aand reverse reads are merged to obtain the full denoise sequences. Merging is performed by aligning the denoised forward reads with the reverse-complement of the corresponding denoised reverse reads, and then constructing the merged "contig" sequences. By default, merged sequences are only output if the forward and reverse reads overlap by at least 12 bases, and are identical to each other in the overlap region. 
-
 
 ```{r Mergers, warning=FALSE, message=FALSE,comment= ""}
 mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose=TRUE)
-# Inspect the merger data.frame from the first sample
-head(mergers[[1]])
 ```
-
-The `mergers` object is a list of `data.frames` from each sample. Each `data.frame` contains the merged `$sequence`, its `$abundance`, and the indices of the `$forward` and `$reverse` sequence variants that were merged. Paired reads that did not exactly overlap were removed by `mergePairs`, further reducing spurious output.
 
 ## Construct Sequence Table
 
@@ -286,33 +266,22 @@ seqtab <- makeSequenceTable(mergers)
 dim(seqtab)
 ```
 
-Inspect distribution of sequence lengths:
-```{r Distribution of lengths, warning=FALSE,message=FALSE, tidy=TRUE,comment= ""}
-table(nchar(getSequences(seqtab)))
-```
-
-
-The sequence table is a `matrix` with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. This table contains 549 ASVs. 
-
 ## Remove chimeras
-
-The core `dada` method corrects substitution and indel errors, but chimeras remain. Fortunately, the accuracy of the sequence variants after denoising makes identifying chimeras simpler than it is when dealing with fuzzy OTUs. Chimeric sequences are identified if they can be exactly reconstructed by combining a left-segment and a right-segment from two more abundant “parent” sequences.
 
 ```{r seqtab chimera removal, warning=FALSE, message=FALSE,comment= ""}
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
-dim(seqtab.nochim)
 ```
 
-```{r seqtab sum, warning=FALSE, message=FALSE, tidy=TRUE,comment= ""}
-sum(seqtab.nochim)/sum(seqtab)
+Inspect distribution of sequence lengths:
+```{r Distribution of lengths, warning=FALSE,message=FALSE, tidy=TRUE,comment= ""}
+table(nchar(getSequences(seqtab.nochim)))
 ```
 
-The frequency of chimeric sequences varies substantially from dataset to dataset, and depends on on factors including experimental procedures and sample complexity. Here chimeras make up about `r round(100*(ncol(seqtab)-ncol(seqtab.nochim))/ncol(seqtab))`\% of the merged sequence variants, but when we account for the abundances of those variants we see they account for less than `r round(100*(sum(seqtab)-sum(seqtab.nochim))/sum(seqtab))`\% of the merged sequence reads.
-
+As expected, quite a bit of length variability in the the amplified ITS region.
 
 ## Track reads through the pipeline
 
-As a final check of our progress, we will look at the number of reads that made it through each step in the pipeline: 
+We now inspect the the number of reads that made it through each step in the pipeline to verify everything worked as expected.
 
 ```{r Track reads, warning=FALSE, message=FALSE, tidy=TRUE,comment= ""}
 getN <- function(x) sum(getUniques(x))
@@ -325,14 +294,18 @@ head(track)
 
 Looks good! We kept the majority of our raw reads, and there is no over-large drop associated with any single step.
 
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** This is a great place to do a last **sanity check**. Outside of filtering (depending on how stringent you want to be) there should no step in which a majority of reads are lost. If a majority of reads were removed as chimeric, you may need to revisit the removal of primers, as the ambiguous nucleotides in unremoved primers interfere with chimera identification. If a majority of reads failed to merge, the culprit could also be unremoved primers, but could also be due to biological length variation in the sequenced ITS region that sometimes extends beyond the total read length resulting in no overlap.</div>
+
+&nbsp;
+
 ## Assign taxonomy
 
 DADA2 supports fungal taxonmic assignment using the UNITE database! The DADA2 package provides a native implementation of the [naive Bayesian classifier method](https://www.ncbi.nlm.nih.gov/pubmed/17586664) for taxonomic assignment. The `assignTaxonomy` function takes as input a set of sequences to ba classified, and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least minBoot bootstrap confidence. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be downloaded and used as the reference. 
 
-*We also maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database](https://benjjneb.github.io/dada2/training.html) for 16S, and additional trainings fastas suitable for protists and certain specific environments have been contributed.  *
+*We also maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database](https://benjjneb.github.io/dada2/training.html) for 16S, and additional trainings fastas suitable for protists and certain specific environments have been contributed.*
 
 ```{r Taxa assignment, message=FALSE, warning=FALSE, tidy=TRUE,comment= ""}
-unite.ref <- "~/Desktop/Taxonomy_assignment_databases/sh_general_release_dynamic_s_01.12.2017.fasta" # CHANGE ME to location on your machine
+unite.ref <- "~/tax/sh_general_release_dynamic_s_01.12.2017.fasta" # CHANGE ME to location on your machine
 taxa <- assignTaxonomy(seqtab.nochim, unite.ref, multithread=TRUE, tryRC = TRUE)
 ```
 

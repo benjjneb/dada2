@@ -17,7 +17,11 @@ You can also demultiplex using [QIIME1](http://qiime.org/) by running `split_lib
 
 ## How can I remove primers/adapters/etc from my amplicon reads?
 
-If primers are at the start of your reads and are a constant length (a common scenario) you can use the `trimLeft = c(FWD_PRIMER_LEN, REV_PRIMER_LEN)` argument of dada2's filtering functions to remove the primers. For more complex situations (e.g. heterogenity spacers, highly variable lengths) we recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic). **Please double-check that your primers have been removed!** The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.
+If primers are at the start of your reads and are a constant length (a common scenario) you can use the `trimLeft = c(FWD_PRIMER_LEN, REV_PRIMER_LEN)` argument of dada2's filtering functions to remove the primers.
+
+For more complex situations (e.g. heterogenity spacers, variable length amplicons such as the ITS region) we recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic). You can see a worked example, including verification of primer removal, in the [ITS-specific version of the DADA2 workflow](ITS_workflow.html).
+
+**Please double-check that your primers have been removed!** The ambiguous nucleotides in unremoved primers **will** interfere with the dada2 pipeline.
 
 &nbsp;
 

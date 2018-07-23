@@ -290,7 +290,9 @@ $(document).ready(function () {
 </div>
 <div id="how-can-i-remove-primersadaptersetc-from-my-amplicon-reads" class="section level2">
 <h2>How can I remove primers/adapters/etc from my amplicon reads?</h2>
-<p>If primers are at the start of your reads and are a constant length (a common scenario) you can use the <code>trimLeft = c(FWD_PRIMER_LEN, REV_PRIMER_LEN)</code> argument of dada2’s filtering functions to remove the primers. For more complex situations (e.g. heterogenity spacers, highly variable lengths) we recommend the <a href="http://cutadapt.readthedocs.io/en/stable/index.html">cutadapt tool</a> or the <a href="http://www.usadellab.org/cms/?page=trimmomatic">trimmomatic tool</a>. <strong>Please double-check that your primers have been removed!</strong> The ambiguous nucleotides in unremoved primers will interfere with the dada2 pipeline.</p>
+<p>If primers are at the start of your reads and are a constant length (a common scenario) you can use the <code>trimLeft = c(FWD_PRIMER_LEN, REV_PRIMER_LEN)</code> argument of dada2’s filtering functions to remove the primers.</p>
+<p>For more complex situations (e.g. heterogenity spacers, variable length amplicons such as the ITS region) we recommend the <a href="http://cutadapt.readthedocs.io/en/stable/index.html">cutadapt tool</a> or the <a href="http://www.usadellab.org/cms/?page=trimmomatic">trimmomatic tool</a>. You can see a worked example, including verification of primer removal, in the <a href="ITS_workflow.html">ITS-specific version of the DADA2 workflow</a>.</p>
+<p><strong>Please double-check that your primers have been removed!</strong> The ambiguous nucleotides in unremoved primers <strong>will</strong> interfere with the dada2 pipeline.</p>
 <p> </p>
 </div>
 <div id="what-if-my-forward-and-reverse-reads-arent-in-matching-order" class="section level2">

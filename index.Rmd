@@ -9,7 +9,7 @@
 
 --------------------------
 
-####**<span style="color:red">Version 1.8 of the dada2 R package has been released. See the [release notes.](ReleaseNotes_1_8.html)</span>**
+####**<span style="color:red">An [ITS-specific version of the DADA2 workflow](ITS_workflow.html) is now available.</span>**
 
 &nbsp;
 
@@ -32,6 +32,8 @@ If you wish to install the latest and greatest development version, or to instal
 **<span style="color:red">Start here:</span>** The [DADA2 tutorial](tutorial.html) goes through a typical workflow for paired end Illumina Miseq data: raw amplicon sequencing data is processed into the table of exact **amplicon sequence variants (ASVs)** present in each sample.
 
 The [DADA2 Workflow on Big Data](bigdata.html) goes through workflow optimized to run on large datasets (10s of millions to billions of reads).
+
+An [ITS-specific version of the DADA2 workflow](ITS_workflow.html) identifies and verifiably removes primers on both ends of each ITS read, a key step due to the variable length of the ITS region.
 
 Short demonstrations of [assigning taxonomy](assign.html) and [assigning species](assign.html) to sequences.
 
