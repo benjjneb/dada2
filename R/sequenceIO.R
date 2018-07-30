@@ -98,9 +98,6 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
               " total sequences read.")
     }
     close(f)
-    if(sum(tabulate(nchar(names(derepCounts)))>0) > 1) {
-      cat("Not all sequences were the same length.\n")
-    }
     derepO <- list(uniques=derepCounts, quals=derepQuals, map=derepMap)
     derepO <- as(derepO, "derep")
     rval[[i]] <- derepO
