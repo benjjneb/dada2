@@ -5,7 +5,7 @@
 \title{Combine together sequences that are identical up to shifts and/or length.}
 \usage{
 collapseNoMismatch(seqtab, minOverlap = 20, orderBy = "abundance",
-  vec = TRUE, verbose = FALSE)
+  identicalOnly = FALSE, vec = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{seqtab}{(Required). A sample by sequence matrix, the return of \code{\link{makeSequenceTable}}.}
@@ -16,6 +16,9 @@ The minimum amount of overlap between sequences required to collapse them togeth
 \item{orderBy}{(Optional). \code{character(1)}. Default "abundance".
 Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
 Valid values: "abundance", "nsamples", NULL.}
+
+\item{identicalOnly}{(Optional). \code{logical(1)}. Default FALSE.
+If TRUE, only identical sequences (i.e. duplicates) are collapsed together.}
 
 \item{vec}{(Optional). \code{logical(1)}. Default TRUE.
 Use the vectorized aligner. Should be turned off if sequences exceed 2kb in length.}
@@ -34,7 +37,7 @@ This function takes as input a sequence table and returns a sequence table in wh
 any sequences that are identical up to shifts or length variation, i.e. that have
 no mismatches or internal indels when aligned, are collapsed together. The most abundant
 sequence is chosen as the representative of the collapsed sequences. This function can
-be thought of as implementing greedy 100\% OTU clustering, with end-gapping is ignored.
+be thought of as implementing greedy 100\% OTU clustering with end-gapping ignored.
 }
 \examples{
 derep1 <- derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

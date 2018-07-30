@@ -59,7 +59,7 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' any sequences that are identical up to shifts or length variation, i.e. that have
 #' no mismatches or internal indels when aligned, are collapsed together. The most abundant
 #' sequence is chosen as the representative of the collapsed sequences. This function can
-#' be thought of as implementing greedy 100\% OTU clustering, with end-gapping is ignored.
+#' be thought of as implementing greedy 100\% OTU clustering with end-gapping ignored.
 #' 
 #' @param seqtab (Required). A sample by sequence matrix, the return of \code{\link{makeSequenceTable}}.
 #' 
@@ -69,6 +69,9 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' @param orderBy (Optional). \code{character(1)}. Default "abundance".
 #' Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
 #' Valid values: "abundance", "nsamples", NULL.
+#' 
+#' @param identicalOnly (Optional). \code{logical(1)}. Default FALSE.
+#' If TRUE, only identical sequences (i.e. duplicates) are collapsed together.
 #' 
 #' @param vec (Optional). \code{logical(1)}. Default TRUE.
 #' Use the vectorized aligner. Should be turned off if sequences exceed 2kb in length.
@@ -92,7 +95,20 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' seqtab <- makeSequenceTable(list(sample1=dada1, sample2=dada2))
 #' collapseNoMismatch(seqtab)
 #' 
-collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", vec=TRUE, verbose=FALSE) {
+collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", identicalOnly=FALSE, vec=TRUE, verbose=FALSE) {
+  # Collapse identical sequences (duplicates)
+  dupes <- duplicated(colnames(seqtab))
+  if(any(dupes)) { # Collapse duplicates first
+    st <- seqtab[,!dupes,drop=FALSE] # Deduplicated matrix
+    for(i in which(dupes)) {
+      sq <- colnames(seqtab)[[i]]
+      st[,sq] <- st[,sq] + seqtab[,i]
+    }
+  }
+  seqtab <- st # Use deduplicates sequence table going forward
+  if(identicalOnly) { return(seqtab) }
+  
+  # Collapse sequences with no mismatches
   unqs.srt <- sort(getUniques(seqtab), decreasing=TRUE)
   seqs <- names(unqs.srt) # The input sequences in order of decreasing total abundance
   seqs.out <- character(0) # The output sequences (after collapsing)
@@ -120,10 +136,8 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", vec=T
       seqs.out <- c(seqs.out, query)
     }
   } # for(query in seqs)
-  if(!identical(unname(colSums(collapsed)>0), colnames(collapsed) %in% seqs.out)) {
-    stop("Mismatch between output sequences and the collapsed sequence table.")
-  }
   collapsed <- collapsed[,colnames(collapsed) %in% seqs.out,drop=FALSE]
+  
   # Order columns
   if(!is.null(orderBy)) {
     if(orderBy == "abundance") {
