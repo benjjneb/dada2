@@ -209,7 +209,7 @@ dada <- function(derep,
     if(qmax > 250) {
       stop("derep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) 
     }
-    warning("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.")
+    message("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.\n")
   }
   
   # Get prior sequences

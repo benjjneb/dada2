@@ -66,6 +66,21 @@ loessErrfun <- function(trans) {
   return(err)
 }
 
+PacBioErrfun <- function(trans) {
+  if("93" %in% colnames(trans)) {
+    i.93 <- which(colnames(trans) %in% "93")
+    if(i.93 != ncol(trans)) stop("Max qual score of 93 not the last column as expected.")
+    err <- loessErrfun(trans[,1:(i.93-1)])
+    tot93 <- rep(c(sum(trans[1:4,"93"]), sum(trans[5:8,"93"]), sum(trans[9:12,"93"]), sum(trans[13:16,"93"])), each=4)
+    err93 <- (trans[,"93"] + 1)/(tot93 + 1)
+    err <- cbind(err, "93"=err93)
+  } else {
+    message("The max qual score of 93 was not detected. Using standard error fitting.")
+    err <- loessErrfun(trans)
+  }
+  return(err)
+}
+
 #' Estimate error rates for each type of transition while ignoring quality scores.
 #' 
 #' This function accepts a matrix of observed transitions, groups together all observed
