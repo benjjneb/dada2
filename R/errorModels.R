@@ -66,6 +66,31 @@ loessErrfun <- function(trans) {
   return(err)
 }
 
+#' Estimate error rates from transition counts in PacBio CCS data.
+#' 
+#' This function accepts a matrix of observed transitions from PacBio CCS amplicon
+#' sequencing data, with each transition
+#' corresponding to a row (eg. row 2 = A->C) and each column to a quality score
+#' (eg. col 31 = Q30). It returns a matrix of estimated error
+#' rates of the same shape. Error rates are estimates by \code{\link{loessErrfun}}
+#' for quality scores 0-92, and individually by the maximum likelihood estimate
+#' for the maximum quality score of 93.
+#' 
+#' @param trans (Required). A matrix of the observed transition counts. Must be 16 rows,
+#' with the rows named "A2A", "A2C", ...
+#' 
+#' @return A numeric matrix with 16 rows and the same number of columns as trans.
+#'  The estimated error rates for each transition (row, eg. "A2C") and quality score
+#'  (column, eg. 31), as determined by \code{\link{loess}} smoothing over the quality
+#'  scores within each transition category.
+#' 
+#' @export
+#' 
+#' @examples
+#' derep.PB <- derepFastq(system.file("extdata", "samPB.fastq.gz", package="dada2"))
+#' dada.PB <- dada(derep.PB, errorEstimationFunction=PacBioErrfun, BAND_SIZE=32, selfConsist=TRUE)
+#' err.PB <- PacBioErrfun(dada.PB$trans)
+#' 
 PacBioErrfun <- function(trans) {
   if("93" %in% colnames(trans)) {
     i.93 <- which(colnames(trans) %in% "93")

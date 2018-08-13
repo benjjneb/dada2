@@ -6,9 +6,9 @@ Description: The dada2 package infers exact amplicon sequence variants (ASVs) fr
     OTU clustering approach. The dada2 pipeline takes as input demultiplexed fastq 
     files, and outputs the sequence variants and their sample-wise abundances after 
     removing substitution and chimera errors. Taxonomic classification is available
-    via a native implementation of the RDP naive Bayesian classifier, and genus-species
-    assignment by exact matching.
-Version: 1.9.0
+    via a native implementation of the RDP naive Bayesian classifier, and species-level
+    assignment to 16S rRNA gene fragments by exact matching.
+Version: 1.9.1
 Date: 2018-05-09
 Maintainer: Benjamin Callahan <benjamin.j.callahan@gmail.com>
 Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan Holmes

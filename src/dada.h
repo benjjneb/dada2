@@ -12,7 +12,7 @@
 //#include <gsl/gsl_cdf.h>
 
 #define VERBOSE 0
-#define SEQLEN 1600 // Buffer size for DNA sequences read in from uniques files
+#define SEQLEN 3000 // Buffer size for DNA sequences read in from uniques files
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal
 #define DBL_PRECISION 1e-15 // precision of doubles
 #define KMER_SIZE 5
