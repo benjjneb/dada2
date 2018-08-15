@@ -9,7 +9,8 @@
 
 --------------------------
 
-####**<span style="color:red">An [ITS-specific version of the DADA2 workflow](ITS_workflow.html) is now available.</span>**
+####**<span style="color:red">DADA2 + PacBio is live in version 1.9.1<br>
+[High-throughput amplicon sequencing of the full-length 16S rRNA gene with single-nucleotide resolution](https://www.biorxiv.org/content/early/2018/08/15/392332)</span>**
 
 &nbsp;
 
@@ -44,6 +45,8 @@ Short demonstrations of [assigning taxonomy](assign.html) and [assigning species
 Our [manuscript introducing DADA2](http://dx.doi.org/10.1038/nmeth.3869) ([OA link](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4927377/)) compares the accuracy of DADA2 and other methods on several mock community datasets. 
 
 We describe [the broad advantages of exact sequence variants over OTUs in our recent open-access ISMEJ paper](http://dx.doi.org/10.1038/ismej.2017.119).
+
+We evaluate [the high accuracy and resolution that is achievable by sequencing the full-length 16S rRNA gene with PacBio and DADA2](https://www.biorxiv.org/content/early/2018/08/15/392332).
 
 Further [benchmarking of DADA2 against the methods evaluated in a recent QIIME1 benchmarking paper](SotA.html) is available.
 
