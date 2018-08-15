@@ -104,8 +104,8 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", ident
       sq <- colnames(seqtab)[[i]]
       st[,sq] <- st[,sq] + seqtab[,i]
     }
+    seqtab <- st # Use deduplicated sequence table going forward
   }
-  seqtab <- st # Use deduplicates sequence table going forward
   if(identicalOnly) { return(seqtab) }
   
   # Collapse sequences with no mismatches
