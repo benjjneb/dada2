@@ -205,13 +205,10 @@ dada <- function(derep,
   }
 
   qmax <- ceiling(qmax) # Only getting averages from derep$quals
-  if(qmax > 45) {
-    if(qmax > 250) {
-      stop("derep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) 
-    }
-    message("derep$quals matrix has Phred Quality Scores >45. For Illumina 1.8 or earlier, this is unexpected.\n")
+  if(qmax > 250) {
+    stop("derep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) 
   }
-  
+
   # Get prior sequences
   priors <- getSequences(priors)
   
