@@ -300,3 +300,17 @@ bs1ham <- function(dd, ham=1) {
   is.1ham <- which(dd$clustering$birth_ham %in% ham)
   dd$birth_subs[dd$birth_subs$clust %in% is.1ham,]
 }
+
+#' @keywords internal
+getSRR <- Vectorize(function(run, outdir="sra", verbose=TRUE, ...) {
+  if(!grepl("^SRR[0-9]{6+}$", run)) stop("Requires SRA Run accessions in format: SRR1234567")
+  if(!dir.exists(outdir)) dir.create(outdir)
+  loc <- paste0("ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/",
+                substr(run, 1, 6), "/", run, "/")
+  loc <- paste0(loc, run, ".sra")
+  download.file(loc, file.path(outdir, paste0(run, ".sra")), ...)
+  if(verbose) cat(run, "\n")
+})
+
+
+

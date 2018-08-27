@@ -346,6 +346,7 @@ getErrors <- function(obj, detailed=FALSE, enforce=TRUE) {
 #'  tperr3.all <- inflateErr(tperr1, 3, inflateSelfTransitions=TRUE)
 #' 
 inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
+  err <- getErrors(err)
   t_errs <- c("A2C", "A2G", "A2T", "C2A", "C2G", "C2T", "G2A", "G2C", "G2T", "T2A", "T2C", "T2G")
   err[t_errs,] <- (err[t_errs,] * inflation)/(1 + (inflation-1) * err[t_errs,])
   if(inflateSelfTransitions) { # Also inflate the non-substitution probabilities
