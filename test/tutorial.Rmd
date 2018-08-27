@@ -242,49 +242,27 @@ taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr_v128_train_set.fa.gz", mul
 taxa <- addSpecies(taxa, "~/tax/silva_species_assignment_v128.fa.gz")
 ```
 
-<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;;margin-bottom: 30px;"></div>
+<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-bottom: 30px;"></div>
 
+<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;"><span style="color:green">**Alternatives:**</span> The recently developed `IdTaxa` taxonomic classification method is also available via [the DECIPHER Bioconductor package](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html). The paper introducing IDTaxa [reports classification performance that is better than the long-time standard set by the naive Bayesian classifier](https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5). Here we include a code block that allows you to use `IDTaxa` as a drop-in replacement for `assignTaxonomy`. And it's faster as well! Trained classifierers are downloaded from http://DECIPHER.codes/Downloads.html, get the SILVA SSU r132 (modified) file to follow along.</div>
 
-```{r}
-library(DECIPHER)
-
-# Create a DNAStringSet from the ASVs
-seqs <- DNAStringSet(colnames(seqtab.nochim))
-
-# Download a trained classifier: http://DECIPHER.codes/Downloads.html, 	SILVA SSU r132 (modified)
+```{r, message=FALSE, warning=FALSE}
+library(DECIPHER); packageVersion("DECIPHER")
+dna <- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
 load("~/tax/IDTaxa/SILVA_SSU_r132_March2018.RData") # CHANGE ME...
-
-# Classify the sequences using the IDTAXA algorithm
-ids <- IdTaxa(seqs, trainingSet, strand="top",  threshold=60, processors=NULL) # use all processors
-# try strand="both" if orientation unknown
-
-# Look at the resulting classifications
-print(ids)
-plot(ids)
-
-# Convert to taxonomic names
-taxid <- sapply(ids,
-	function(x)
-		paste(x$taxon,
-			collapse="; "))
-head(taxid)
-
-# Create a taxon table by collapsing seqTab
-taxonTab <- t(rowsum(t(seqtab.nochim),
-	taxid))
-
-# Create a taxonomic matrix by sequence
-ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species")
-# indicate ranks of interest
-# note that the species rank depends on the training set
-taxid <- unname(t(sapply(ids,
-	function(x) {
+ids <- IdTaxa(dna, trainingSet, strand="top", processors=NULL, verbose=FALSE) # use all processors
+# Create a taxonomic matrix that is analogous to the output from assignTaxonomy
+ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species") # ranks of interest
+taxid <- t(sapply(ids, function(x) {
 		m <- match(ranks, x$rank)
-		x$taxon[m]
-	})))
-colnames(taxid) <- ranks
-head(taxid)
+		taxa <- x$taxon[m]
+		taxa[startsWith(taxa, "unclassified_")] <- NA
+		taxa
+}))
+colnames(taxid) <- ranks; rownames(taxid) <- getSequences(seqtab.nochim)
 ```
+
+<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-bottom: 30px;">The `taxid` matrix from `IdTaxa` is a drop-in replacement for the `taxa` matrix from `assignTaxonomy`. Read more about IdTaxa and other useful tools at [the DECIPHER R package website](http://www2.decipher.codes/).</div>
 
 Let's inspect the taxonomic assignments:
 ```{r see-tax}
