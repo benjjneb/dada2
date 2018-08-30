@@ -266,8 +266,9 @@ is.list.of <- function(x, ctype) {
 
 #' @keywords internal
 bcinstall <- function(pkg="dada2", suppressUpdates=TRUE) {
-  source("https://bioconductor.org/biocLite.R")
-  biocLite(pkg, suppressUpdates=suppressUpdates)
+  if (!requireNamespace("BiocManager", quietly=TRUE))
+      install.packages("BiocManager")
+  BiocManager::install(pkg, suppressUpdates=suppressUpdates)
 }
 
 #' @keywords internal
