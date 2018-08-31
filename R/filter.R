@@ -193,12 +193,16 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
 #' @param rm.phix (Optional). Default TRUE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.
 #'
-#' @param primer.fwd (Optional). Default NULL. Paired-read filtering only.
-#'  A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
-#'  compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
-#'  not an exact match, the read is filtered out.
-#'  For paired reads, the reverse read is also interrogated, and if the primer is detected on the reverse read,
-#'  the forward/reverse reads are swapped.
+#' @param orient.fwd (Optional). Default NULL.
+#'  A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
+#'  This string is compared to the start of each read, and the reverse complement of each read.
+#'  If it exactly matches the start of the read, the read is kept.
+#'  If it exactly matches the start of the reverse-complement read, the read is reverse-complemented and kept.
+#'  Otherwise the read if filtered out.
+#'  For paired reads, the string is compared to the start of the forward and reverse reads, and if it matches
+#'  the start of the reverse read the reaads are swapped and kept.
+#'  The primary use of this parameter is to unify the orientation of amplicon sequencing libraries that
+#'  are a mixture of forward and reverse orientations, and that include the forward primer on the reads.
 #'
 #' @param matchIDs (Optional). Default FALSE. Paired-read filtering only.
 #'  Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
@@ -259,7 +263,7 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
 #' filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE)
 #' 
 filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
-                        truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=TRUE, primer.fwd=NULL,
+                        truncQ=2, truncLen=0, trimLeft=0, maxLen=Inf, minLen=20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=TRUE, orient.fwd=NULL,
                         matchIDs=FALSE, id.sep="\\s", id.field=NULL,
                         multithread=FALSE, n = 1e5, OMP=TRUE, verbose = FALSE) {
   PAIRED <- FALSE
@@ -312,7 +316,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
     rval <- mcmapply(fastqPairedFilter, 
                      mapply(c, fwd, rev, SIMPLIFY=FALSE), mapply(c, filt, filt.rev, SIMPLIFY=FALSE), 
                      MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, maxLen=maxLen, minLen=minLen,
-                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, primer.fwd=primer.fwd,
+                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, orient.fwd=orient.fwd,
                                      matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, 
                                      compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
@@ -320,7 +324,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
     rval <- mcmapply(fastqFilter, 
                      fwd, filt, 
                      MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, maxLen=maxLen, minLen=minLen, 
-                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, primer.fwd=primer.fwd,
+                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, orient.fwd=orient.fwd,
                                      n=n, OMP=OMP, compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
   }
@@ -372,6 +376,10 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
 #'  \code{trimLeft} are provided, filtered reads will have length \code{truncLen-trimLeft}.
 #'  
+#' @param trimRight (Optional). Default 0.
+#'  The number of nucleotides to remove from the end of each read. If both \code{truncLen} and 
+#'  \code{trimRight} are provided, truncation will be performed after \code{trimRight} is enforced.
+#'  
 #' @param maxN (Optional). Default 0.
 #'  After truncation, sequences with more than \code{maxN} Ns will be discarded. 
 #'  Note that \code{\link{dada}} currently does not allow Ns.
@@ -387,11 +395,15 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
 #'
-#' @param primer.fwd (Optional). Default NULL.
-#'  A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
-#'  compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
-#'  not an exact match, the read is filtered out.
-#'
+#' @param orient.fwd (Optional). Default NULL.
+#'  A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
+#'  This string is compared to the start of each read, and the reverse complement of each read.
+#'  If it exactly matches the start of the read, the read is kept.
+#'  If it exactly matches the start of the reverse-complement read, the read is reverse-complemented and kept.
+#'  Otherwise the read if filtered out.
+#'  The primary use of this parameter is to unify the orientation of amplicon sequencing libraries that
+#'  are a mixture of forward and reverse orientations, and that include the forward primer on the reads.
+#'  
 #' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
@@ -438,7 +450,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=TRUE, primer.fwd=NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=20, trimLeft = 0, trimRight=0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix=TRUE, orient.fwd=NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -470,16 +482,25 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
   while( length(suppressWarnings(fq <- yield(f))) ){
     inseqs <- inseqs + length(fq)
     
-    # Enforce primer.fwd
-    if(!is.null(primer.fwd)) {
-      barlen <- nchar(primer.fwd)
-      fq <- fq[narrow(sread(fq),1,barlen) == primer.fwd]
+    # Enforce and orient on orient.fwd
+    if(!is.null(orient.fwd)) {
+      if(!C_isACGT(orient.fwd)) stop("Non-ACGT characters detected in orient.fwd")
+      barlen <- nchar(orient.fwd)
+      fq.rc <- reverseComplement(fq)
+      keepF <- narrow(sread(fq),1,barlen) == orient.fwd
+      keepR <- narrow(sread(fq.rc),1,barlen) == orient.fwd & !keepF
+      fq <- ShortReadQ(sread=c(sread(fq[keepF]), sread(fq.rc[keepR])), 
+                       quality=c(quality(quality(fq[keepF])), quality(quality(fq.rc[keepR]))), 
+                       id=c(id(fq[keepF]), id(fq.rc[keepR])))
     }
     # Enforce maxLen
     if(is.finite(maxLen)) { fq <- fq[width(fq) <= maxLen] }
     # Trim left
     fq <- fq[width(fq) >= start]
     fq <- narrow(fq, start = start, end = NA)
+    # Trim right
+###    fq <- fq[width(fq) >= start]
+###    fq <- narrow(fq, start = start, end = NA)
     # Trim on truncQ 
     # Convert numeric quality score to the corresponding ascii character
     enc <- encoding(quality(fq))
@@ -586,11 +607,14 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
 #'  
-#' @param primer.fwd (Optional). Default NULL.
-#'  A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
-#'  compared to the first len(primer.fwd) nucleotides at the start of the forward and reverse reads. If there is
-#'  not an exact match, the paired read is filtered out. If detected on the reverse read, the fwd/rev reads
-#'  are swapped.
+#' @param orient.fwd (Optional). Default NULL.
+#'  A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
+#'  This string is compared to the start of the forward and reverse reads. 
+#'  If it exactly matches the start of the forward read, the read is kept.
+#'  If it exactly matches the start of the reverse read, the fwd/rev reads are swapped.
+#'  Otherwise the read if filtered out.
+#'  The primary use of this parameter is to unify the orientation of amplicon sequencing libraries that
+#'  are a mixture of forward and reverse orientations, and that include the forward primer on the reads.
 #'
 #' \strong{ID MATCHING ARGUMENTS}   
 #' 
@@ -665,7 +689,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen=Inf, minLen=2
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
 #'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, primer.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, orient.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -780,11 +804,12 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       fqR <- fqR[idsR %in% idsF]
     }
     
-    # Enforce primer.fwd
-    if(!is.null(primer.fwd)) {
-      barlen <- nchar(primer.fwd)
-      keepF <- narrow(sread(fqF),1,barlen) == primer.fwd
-      keepR <- (narrow(sread(fqR),1,barlen) == primer.fwd) & !keepF
+    # Enforce orient.fwd
+    if(!is.null(orient.fwd)) {
+      if(!C_isACGT(orient.fwd)) stop("Non-ACGT characters detected in orient.fwd")
+      barlen <- nchar(orient.fwd)
+      keepF <- narrow(sread(fqF),1,barlen) == orient.fwd
+      keepR <- (narrow(sread(fqR),1,barlen) == orient.fwd) & !keepF
       fq <- ShortReadQ(sread=c(sread(fqF[keepF]), sread(fqR[keepR])), 
                        quality=c(quality(quality(fqF[keepF])), quality(quality(fqR[keepR]))), 
                        id=c(id(fqF[keepF]), id(fqR[keepR])))

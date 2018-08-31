@@ -7,7 +7,7 @@
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), maxLen = c(Inf, Inf), minLen = c(20, 20),
   trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf, Inf),
-  rm.phix = c(TRUE, TRUE), matchIDs = FALSE, primer.fwd = NULL,
+  rm.phix = c(TRUE, TRUE), matchIDs = FALSE, orient.fwd = NULL,
   id.sep = "\\\\s", id.field = NULL, n = 1e+06, OMP = TRUE,
   compress = TRUE, verbose = FALSE, ...)
 }
@@ -61,11 +61,14 @@ Whether to enforce matching between the id-line sequence identifiers of the forw
 Note: \code{matchIDs=FALSE} essentially assumes matching order between forward and reverse reads. If that
   matched order is not present future processing steps may break (in particular \code{\link{mergePairs}}).}
 
-\item{primer.fwd}{(Optional). Default NULL.
- A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
- compared to the first len(primer.fwd) nucleotides at the start of the forward and reverse reads. If there is
- not an exact match, the paired read is filtered out. If detected on the reverse read, the fwd/rev reads
- are swapped.
+\item{orient.fwd}{(Optional). Default NULL.
+ A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
+ This string is compared to the start of the forward and reverse reads. 
+ If it exactly matches the start of the forward read, the read is kept.
+ If it exactly matches the start of the reverse read, the fwd/rev reads are swapped.
+ Otherwise the read if filtered out.
+ The primary use of this parameter is to unify the orientation of amplicon sequencing libraries that
+ are a mixture of forward and reverse orientations, and that include the forward primer on the reads.
 
 \strong{ID MATCHING ARGUMENTS}   
 

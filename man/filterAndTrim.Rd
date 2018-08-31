@@ -6,7 +6,7 @@
 \usage{
 filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL, compress = TRUE,
   truncQ = 2, truncLen = 0, trimLeft = 0, maxLen = Inf, minLen = 20,
-  maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE, primer.fwd = NULL,
+  maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL,
   matchIDs = FALSE, id.sep = "\\\\s", id.field = NULL,
   multithread = FALSE, n = 1e+05, OMP = TRUE, verbose = FALSE)
 }
@@ -66,12 +66,16 @@ Expected errors are calculated from the nominal definition of the quality score:
 \item{rm.phix}{(Optional). Default TRUE.
 If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.}
 
-\item{primer.fwd}{(Optional). Default NULL. Paired-read filtering only.
-A character string defining the forward primer. Only allows unambiguous nucleotides. The primer will be
-compared to the first len(primer.fwd) nucleotides at the start of the read. If there is
-not an exact match, the read is filtered out.
-For paired reads, the reverse read is also interrogated, and if the primer is detected on the reverse read,
-the forward/reverse reads are swapped.}
+\item{orient.fwd}{(Optional). Default NULL.
+A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
+This string is compared to the start of each read, and the reverse complement of each read.
+If it exactly matches the start of the read, the read is kept.
+If it exactly matches the start of the reverse-complement read, the read is reverse-complemented and kept.
+Otherwise the read if filtered out.
+For paired reads, the string is compared to the start of the forward and reverse reads, and if it matches
+the start of the reverse read the reaads are swapped and kept.
+The primary use of this parameter is to unify the orientation of amplicon sequencing libraries that
+are a mixture of forward and reverse orientations, and that include the forward primer on the reads.}
 
 \item{matchIDs}{(Optional). Default FALSE. Paired-read filtering only.
 Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
