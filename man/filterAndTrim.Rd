@@ -5,10 +5,11 @@
 \title{Filter and trim fastq file(s).}
 \usage{
 filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL, compress = TRUE,
-  truncQ = 2, truncLen = 0, trimLeft = 0, maxLen = Inf, minLen = 20,
-  maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL,
-  matchIDs = FALSE, id.sep = "\\\\s", id.field = NULL,
-  multithread = FALSE, n = 1e+05, OMP = TRUE, verbose = FALSE)
+  truncQ = 2, truncLen = 0, trimLeft = 0, trimRight = 0, maxLen = Inf,
+  minLen = 20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE,
+  orient.fwd = NULL, matchIDs = FALSE, id.sep = "\\\\s",
+  id.field = NULL, multithread = FALSE, n = 1e+05, OMP = TRUE,
+  verbose = FALSE)
 }
 \arguments{
 \item{fwd}{(Required). \code{character}.
@@ -45,6 +46,10 @@ Truncate reads after \code{truncLen} bases. Reads shorter than this are discarde
 \item{trimLeft}{(Optional). Default 0.
 The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
 \code{trimLeft} are provided, filtered reads will have length \code{truncLen-trimLeft}.}
+
+\item{trimRight}{(Optional). Default 0.
+The number of nucleotides to remove from the end of each read. If both \code{truncLen} and 
+\code{trimRight} are provided, truncation will be performed after \code{trimRight} is enforced.}
 
 \item{maxLen}{(Optional). Default Inf (no maximum).
 Remove reads with length greater than maxLen. maxLen is enforced \strong{before} trimming and truncation.}

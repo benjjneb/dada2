@@ -6,10 +6,10 @@
 \usage{
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), maxLen = c(Inf, Inf), minLen = c(20, 20),
-  trimLeft = c(0, 0), minQ = c(0, 0), maxEE = c(Inf, Inf),
-  rm.phix = c(TRUE, TRUE), matchIDs = FALSE, orient.fwd = NULL,
-  id.sep = "\\\\s", id.field = NULL, n = 1e+06, OMP = TRUE,
-  compress = TRUE, verbose = FALSE, ...)
+  trimLeft = c(0, 0), trimRight = c(0, 0), minQ = c(0, 0),
+  maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE,
+  orient.fwd = NULL, id.sep = "\\\\s", id.field = NULL, n = 1e+06,
+  OMP = TRUE, compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.}
@@ -42,6 +42,10 @@ Remove reads with length less than minLen. minLen is enforced after all other tr
 \item{trimLeft}{(Optional). Default 0.
 The number of nucleotides to remove from the start of each read. If both \code{truncLen} and 
 \code{trimLeft} are provided, filtered reads will have length \code{truncLen-trimLeft}.}
+
+\item{trimRight}{(Optional). Default 0.
+The number of nucleotides to remove from the end of each read. If both \code{truncLen} and 
+\code{trimRight} are provided, truncation will be performed after \code{trimRight} is enforced.}
 
 \item{minQ}{(Optional). Default 0.
 After truncation, reads contain a quality score below minQ will be discarded.}
