@@ -350,7 +350,7 @@ sample.names &lt;- sapply(strsplit(basename(fnFs), &quot;_&quot;), `[`, 1)</code
 <pre class="r"><code># Place filtered files in filtered/ subdirectory
 filtFs &lt;- file.path(path, &quot;filtered&quot;, paste0(sample.names, &quot;_F_filt.fastq.gz&quot;))
 filtRs &lt;- file.path(path, &quot;filtered&quot;, paste0(sample.names, &quot;_R_filt.fastq.gz&quot;))</code></pre>
-<p>We’ll use standard filtering parameters: <code>maxN=0</code> (DADA2 requires no Ns), <code>truncQ=2</code>, <code>rm.phix=TRUE</code> and <code>maxEE=2</code>. The <code>maxEE</code> parameter sets the maximum number of “expected errors” allowed in a read, which is <a href="http://www.drive5.com/usearch/manual/expected_errors.html">a better filter than simply averaging quality scores</a>.</p>
+<p>We’ll use standard filtering parameters: <code>maxN=0</code> (DADA2 requires no Ns), <code>truncQ=2</code>, <code>rm.phix=TRUE</code> and <code>maxEE=2</code>. The <code>maxEE</code> parameter sets the maximum number of “expected errors” allowed in a read, which is <a href="https://academic.oup.com/bioinformatics/article/31/21/3476/194979">a better filter than simply averaging quality scores</a>.</p>
 <pre class="r"><code>out &lt;- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
               maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
               compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
