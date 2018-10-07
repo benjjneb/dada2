@@ -28,6 +28,8 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 * [RDP fungi LSU trainset 11](https://doi.org/10.5281/zenodo.835612)
 
+* [Silva Eukaryotic 18S, v132 & v128](https://zenodo.org/record/1447330)
+
 * [PR2 version 4.7.2+](https://github.com/vaulot/pr2_database/releases). SEE NOTE BELOW.
 
 **Note:** PR2 has different `taxLevels` than the dada2 default. When assigning taxonomy against PR2, use the following: `assignTaxonomy(..., taxLevels = c("Kingdom","Supergroup","Division","Class","Order","Family","Genus","Species"))`
