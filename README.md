@@ -11,8 +11,9 @@ The dada2 package binaries are available through Bioconductor:
 
 ```S
 ## try http:// if https:// URLs are not supported
-source("https://bioconductor.org/biocLite.R")
-biocLite("dada2")
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("dada2")
 ```
 
 In order to install dada2 from source (and get the latest and greatest new features) see our [installation from source instructions](https://benjjneb.github.io/dada2/dada-installation.html).
