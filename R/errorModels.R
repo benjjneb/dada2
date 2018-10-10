@@ -202,12 +202,12 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  and because it is more conservative, it is recommended to set this value to 0, which means that all
 #'  reads are counted and contribute to estimating the error rates. 
 #'  
-#' @param verbose (Optional). Default FALSE. 
+#' @param verbose (Optional). Default TRUE 
 #'  Print verbose text output. More fine-grained control is available by providing an integer argument.
 #' \itemize{ 
-#'  \item{0: Silence. No text output}
-#'  \item{1: Minimal text output (same as FALSE). }
-#'  \item{2: Detailed output (same as TRUE). }
+#'  \item{0: Silence. No text output (same as FALSE).}
+#'  \item{1: Basic text output (same as TRUE). }
+#'  \item{2: Detailed text output, mostly intended for debugging. }
 #' }
 #'  
 #' @param ... (Optional). Additional arguments will be passed on to the \code{\link{dada}} function.

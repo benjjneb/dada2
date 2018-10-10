@@ -85,12 +85,12 @@ assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
 #'  If an integer is provided, the number of threads to use is set by passing the argument on to
 #'  \code{\link{setThreadOptions}}.
 #'   
-#' @param verbose (Optional). Default FALSE. 
+#' @param verbose (Optional). Default TRUE. 
 #'  Print verbose text output. More fine-grained control is available by providing an integer argument.
 #' \itemize{ 
-#'  \item{0: Silence. No text output}
-#'  \item{1: Minimal text output (same as FALSE). }
-#'  \item{2: Detailed output (same as TRUE). }
+#'  \item{0: Silence. No text output (same as FALSE). }
+#'  \item{1: Basic text output (same as TRUE). }
+#'  \item{2: Detailed text output, mostly intended for debugging. }
 #' }
 #'  
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
@@ -142,7 +142,7 @@ dada <- function(derep,
                  pool = FALSE,
                  priors = character(0),
                  multithread = FALSE, 
-                 verbose=FALSE, ...) {
+                 verbose=TRUE, ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
@@ -166,8 +166,8 @@ dada <- function(derep,
   
   # Parse verbose
   if(is.logical(verbose)) {
-    if(verbose == FALSE) { verbose <- 1 }
-    else { verbose <- 2 }
+    if(verbose == FALSE) { verbose <- 0 }
+    else { verbose <- 1 }
   }
   
   # If a single derep object, make into a length 1 list
