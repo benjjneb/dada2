@@ -368,7 +368,9 @@ dada <- function(derep,
     } else {
       err <- tryCatch(suppressWarnings(errorEstimationFunction(cur)),
               error = function(cond) {
-                if(verbose) message("Error rates could not be estimated.")
+                if((verbose && selfConsist) || verbose >= 2) {
+                  message("Error rates could not be estimated (this is usually because of very few reads).")
+                }
                 return(NULL)
       })
     }
