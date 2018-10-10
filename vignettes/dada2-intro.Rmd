@@ -69,7 +69,7 @@ filterAndTrim(fwd=fnF1, filt=filtF1, rev=fnR1, filt.rev=filtR1,
                   compress=TRUE, verbose=TRUE)
 ```
 
-The `filterAndTrim(...)` function filters the forward and reverse reads jointly, outputting only those pairs of reads that both pass the filter. In this function call we did four things: We removed the first `trimLeft=10` nucleotides of each read. We truncated the forward and reverse reads at `truncLen=c(240, 200)` nucleotides respectively. We filtered out all reads with more than `maxN=0` ambiguous nucleotides. And we filtered out all reads with more than two [expected errors](http://www.drive5.com/usearch/manual/expected_errors.html). The filtered output files were stored as gzipped fastq files (`compress=TRUE`).
+The `filterAndTrim(...)` function filters the forward and reverse reads jointly, outputting only those pairs of reads that both pass the filter. In this function call we did four things: We removed the first `trimLeft=10` nucleotides of each read. We truncated the forward and reverse reads at `truncLen=c(240, 200)` nucleotides respectively. We filtered out all reads with more than `maxN=0` ambiguous nucleotides. And we filtered out all reads with more than two [expected errors](https://doi.org/10.1093/bioinformatics/btv401). The filtered output files were stored as gzipped fastq files (`compress=TRUE`).
 
 This represents a fairly standard set of filtering/trimming parameters. However, it is always worth evaluating whether the filtering and trimming parameters you are using are appropriate for your data. One size does not fit all! (And are you sure you have removed your primers?)
 
