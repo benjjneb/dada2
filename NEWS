@@ -1,3 +1,29 @@
+CHANGES IN VERSION 1.9.2
+-----------------------
+
+NEW FEATURES
+
+    o PacBio CCS reads up to 3 kilobases are now supported. See also PacBioErrfun, the new and recommended error-estimation function for PacBio CCS data.
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o primer.fwd has been replaced by orient.fwd in the filterAndTrim function. This option consistently orients mixed-orientation single-end or paired-end reads based on matching the provided sequence fragment to the start or end of each read (or paired read). Intended for use with mixed-orientation reads that included sequenced primers. If primers aren't included in the amplicons, an external re-orientation solution remains preferable.
+    
+    o trimRight has been added to the filterAndTrim function. This removes the specified number of bases from the end ("right" side) of each read.
+    
+BUG FIXES
+
+    o collapseNoMismatch now collapses identical sequences as well (previous behavior is togglable).
+
+CHANGES IN VERSION 1.9.1
+-----------------------
+
+BUG FIXES
+
+    o mergePairs now gracefully handles cases when zero reads succesfully merge.
+
+    o plotQualityProfile now works correclty when given a directory containing fastq files.
+
 CHANGES IN VERSION 1.7.8
 -----------------------
 
