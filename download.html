@@ -11,7 +11,7 @@
 
 
 
-<title>Download dada2</title>
+<title>Download DADA2</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -263,7 +263,7 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Download dada2</h1>
+<h1 class="title toc-ignore">Download DADA2</h1>
 
 </div>
 
@@ -271,23 +271,24 @@ $(document).ready(function () {
 <div id="binaries" class="section level2">
 <h2>Binaries</h2>
 <p>Binaries are available through <a href="https://www.bioconductor.org/packages/release/bioc/html/dada2.html">Bioconductor</a>.</p>
-<pre class="s"><code>## try http:// if https:// URLs are not supported
-source(&quot;https://bioconductor.org/biocLite.R&quot;)
-biocLite(&quot;dada2&quot;)</code></pre>
+<pre class="s"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
+    install.packages(&quot;BiocManager&quot;)
+BiocManager::install(&quot;dada2&quot;, version = &quot;3.8&quot;)</code></pre>
 <p>See the <a href="https://www.bioconductor.org/install/">Bioconductor install instructions</a> if issues arise. In particular, to get the newest release of dada2 through Bioconductor you will need to have the current version of R installed.</p>
 </div>
 <div id="source" class="section level2">
 <h2>Source</h2>
 <ul>
-<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.8)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.8.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.8.tar.gz">tarball</a>.</p></li>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.9)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
-<li><p>Previous Release <a href="https://github.com/benjjneb/dada2/releases">(1.6)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.6.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.6.tar.gz">tarball</a>.</p></li>
+<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.10)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.10.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.10.tar.gz">tarball</a>.</p></li>
+<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.11)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+<li><p>Previous Release <a href="https://github.com/benjjneb/dada2/releases">(1.8)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.8.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.8.tar.gz">tarball</a>.</p></li>
 </ul>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
   <hr>
   Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+  <br> Documentation License: <a href="https://creativecommons.org/licenses/by/4.0">CC-BY 4.0</a>
 </div>
 
 

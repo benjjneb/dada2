@@ -271,12 +271,12 @@ $(document).ready(function () {
 <hr />
 <div id="install-binaries-from-bioconductor" class="section level2">
 <h2><strong>Install binaries from Bioconductor</strong></h2>
-<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current release version (1.8) requires R 3.5.0 and Bioconductor version 3.7:</p>
-<pre class="s"><code>## try http:// if https:// URLs are not supported
-source(&quot;https://bioconductor.org/biocLite.R&quot;)
-biocLite(&quot;dada2&quot;)</code></pre>
-<p>Allow installation of any additional packages requested. You are ready to start using dada2!</p>
-<p><em>If the above installed an early version of dada2 (e.g. 1.4 or 1.6) you can get the current dada2 release by updating to <a href="https://bioconductor.org/news/bioc_3_7_release/">Bioconductor 3.7</a>: <code>biocLite(&quot;BiocUpgrade&quot;)</code> then <code>biocLite()</code>. This may require updating R as well.</em></p>
+<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current release version (1.10) requires R 3.5.0 and Bioconductor version 3.8:</p>
+<pre class="s"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
+    install.packages(&quot;BiocManager&quot;)
+BiocManager::install(&quot;dada2&quot;, version = &quot;3.8&quot;)</code></pre>
+<p>Allow installation of any additional packages requested. You are ready to start using DADA2!</p>
+<p><em>If the above installed an early version of dada2 (e.g. 1.4 or 1.6) you can get the current dada2 release by updating to <a href="https://www.bioconductor.org/news/bioc_3_8_release/">Bioconductor 3.8</a>. This may require updating R as well.</em></p>
 <hr />
 </div>
 <div id="install-from-source" class="section level2">
@@ -285,8 +285,8 @@ biocLite(&quot;dada2&quot;)</code></pre>
 <div id="download" class="section level3">
 <h3>0. Download</h3>
 <ul>
-<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.8)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.8.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.8.tar.gz">tarball</a>.</p></li>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.9)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.10)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.10.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.10.tar.gz">tarball</a>.</p></li>
+<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.1)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
 </ul>
 </div>
 <div id="install-external-dependencies" class="section level3">
@@ -302,7 +302,7 @@ biocLite(&quot;ShortRead&quot;, suppressUpdates = FALSE)</code></pre>
 <p>The easiest method is to use the devtools package to install from github:</p>
 <pre class="r"><code>biocLite(&quot;devtools&quot;)
 library(&quot;devtools&quot;)
-devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
+devtools::install_github(&quot;benjjneb/dada2&quot;) # use the ref=&quot;v1.10&quot; (e.g.) argument to get specific versions</code></pre>
 <p>If that worked you’re done (see step 4)! If it failed on missing dependencies, goto step 2.</p>
 </div>
 <div id="a.-install-manually-from-source" class="section level3">
@@ -320,7 +320,7 @@ devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
                  dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
 <p>Check Package Version</p>
 <pre class="r"><code>packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.8.0&#39;</code></pre>
+<pre><code>## [1] &#39;1.10.0&#39;</code></pre>
 </div>
 <div id="troubleshoot-dependencies-optional" class="section level3">
 <h3>3. Troubleshoot Dependencies (Optional)</h3>
@@ -358,6 +358,7 @@ devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
 <div class="container" style="width: 100%;color:grey;text-align:right">
   <hr>
   Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+  <br> Documentation License: <a href="https://creativecommons.org/licenses/by/4.0">CC-BY 4.0</a>
 </div>
 
 

@@ -1,5 +1,5 @@
 ---
-title: "Download dada2"
+title: "Download DADA2"
 ---
 
 ## Binaries
@@ -7,18 +7,18 @@ title: "Download dada2"
 Binaries are available through [Bioconductor](https://www.bioconductor.org/packages/release/bioc/html/dada2.html).
 
 ```S
-## try http:// if https:// URLs are not supported
-source("https://bioconductor.org/biocLite.R")
-biocLite("dada2")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("dada2", version = "3.8")
 ```
 
 See the [Bioconductor install instructions](https://www.bioconductor.org/install/) if issues arise. In particular, to get the newest release of dada2 through Bioconductor you will need to have the current version of R installed.
 
 ## Source
 
-* Current Release [(1.8)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.8.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.8.tar.gz).
+* Current Release [(1.10)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.10.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.10.tar.gz).
 
-* Development Branch [(1.9)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
+* Development Branch [(1.11)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
 
-* Previous Release [(1.6)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.6.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.6.tar.gz).
+* Previous Release [(1.8)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.8.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.8.tar.gz).
 

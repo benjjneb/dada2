@@ -1,0 +1,22 @@
+DADA2 1.10 RELEASE NOTES
+-----------------------
+
+#### NEW FEATURES
+
+* PacBio CCS reads up to 3 kilobases are now supported. See also `PacBioErrfun`, the new and recommended error-estimation function for PacBio CCS data. The [preprint introducing DADA2's long-read functionality](https://doi.org/10.1101/392332) has information on accuracy and sub-species resolution, and [the associated reproducible analyses show PacBio-specific workflows](https://github.com/benjjneb/LRASManuscript).
+
+* The `trimRight` argument has been added to the `filterAndTrim` function. This removes the specified number of bases from the end ("right" side) of each read. Default value is `trimRight=0` (no such trimming).
+
+#### SIGNIFICANT USER-VISIBLE CHANGES
+
+* `primer.fwd` has been replaced by `orient.fwd` in the `filterAndTrim` function. This option consistently orients mixed-orientation single-end or paired-end reads based on matching the provided sequence fragment to the start or end of each read (or paired read). This features is intended for use with mixed-orientation reads that included sequenced primers. If primers aren't included in the amplicons, an external re-orientation solution remains preferable.
+
+* `nbases` has replaced the `nreads` parameter in the `learnErrors` function. As suggested by the name, this controls the amount of data the machine learning uses by the total number of bases rather than the read count, which is more appropriate given the range of read-lengths in target applications.
+
+#### BUG FIXES
+
+* `collapseNoMismatch` now collapses identical sequences as well (previous behavior is togglable).
+
+* `mergePairs` now gracefully handles cases when zero reads succesfully merge.
+
+* `plotQualityProfile` now works correclty when given a directory containing fastq files.

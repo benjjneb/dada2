@@ -7,17 +7,17 @@ title: "DADA2 Installation"
 ## **Install binaries from Bioconductor**
 
 Binary installation is available through [the Bioconductor package repository](https://bioconductor.org/). 
-Binary installation of the current release version (1.8) requires R 3.5.0 and Bioconductor version 3.7:
+Binary installation of the current release version (1.10) requires R 3.5.0 and Bioconductor version 3.8:
 
 ```S
-## try http:// if https:// URLs are not supported
-source("https://bioconductor.org/biocLite.R")
-biocLite("dada2")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("dada2", version = "3.8")
 ```
 
-Allow installation of any additional packages requested. You are ready to start using dada2!
+Allow installation of any additional packages requested. You are ready to start using DADA2!
 
-*If the above installed an early version of dada2 (e.g. 1.4 or 1.6) you can get the current dada2 release by updating to [Bioconductor 3.7](https://bioconductor.org/news/bioc_3_7_release/): `biocLite("BiocUpgrade")` then `biocLite()`. This may require updating R as well.*
+*If the above installed an early version of dada2 (e.g. 1.4 or 1.6) you can get the current dada2 release by updating to [Bioconductor 3.8](https://www.bioconductor.org/news/bioc_3_8_release/). This may require updating R as well.*
 
 -----------------------------
 
@@ -27,9 +27,9 @@ Source installation is available for R 3.2 or later, and the latest and greatest
 
 ### 0. Download
 
-* Current Release [(1.8)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.8.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.8.tar.gz).
+* Current Release [(1.10)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.10.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.10.tar.gz).
 
-* Development Branch [(1.9)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
+* Development Branch [(1.1)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
 
 ### 1. Install External Dependencies
 
@@ -57,7 +57,7 @@ The easiest method is to use the devtools package to install from github:
 ```{r devtools-install, eval=FALSE}
 biocLite("devtools")
 library("devtools")
-devtools::install_github("benjjneb/dada2")
+devtools::install_github("benjjneb/dada2") # use the ref="v1.10" (e.g.) argument to get specific versions
 ```
 
 If that worked you're done (see step 4)! If it failed on missing dependencies, goto step 2.
