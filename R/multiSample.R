@@ -185,6 +185,12 @@ combineDereps2 <- function(dereps) {
   
   derepQuals <- sweep(derepQuals, 1, derepCounts, "/")
   
+  # Order by decreasing abundance
+  ord <- order(derepCounts, decreasing=TRUE)
+  derepCounts <- derepCounts[ord]
+  derepQuals <- derepQuals[ord,]
+  derepMap <- match(seq(length(ord)), ord)[derepMap]
+  
   rval <- list(uniques=derepCounts, quals=derepQuals, map=derepMap)
   rval <- as(rval, "derep")
   rval
