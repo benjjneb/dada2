@@ -8,7 +8,7 @@ Description: The dada2 package infers exact amplicon sequence variants (ASVs) fr
     removing substitution and chimera errors. Taxonomic classification is available
     via a native implementation of the RDP naive Bayesian classifier, and species-level
     assignment to 16S rRNA gene fragments by exact matching.
-Version: 1.11.0
+Version: 1.11.1
 Date: 2018-10-10
 Maintainer: Benjamin Callahan <benjamin.j.callahan@gmail.com>
 Author: Benjamin Callahan <benjamin.j.callahan@gmail.com>, Paul McMurdie, Susan Holmes
@@ -38,7 +38,7 @@ LinkingTo:
     RcppParallel
 SystemRequirements: GNU make
 VignetteBuilder: knitr
-biocViews: Microbiome, Sequencing, Classification, Metagenomics
+biocViews: ImmunoOncology, Microbiome, Sequencing, Classification, Metagenomics
 URL: http://benjjneb.github.io/dada2/
 BugReports: https://github.com/benjjneb/dada2/issues
 LazyData: true
