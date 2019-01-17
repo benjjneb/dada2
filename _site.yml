@@ -16,6 +16,8 @@ navbar:
           href: https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf
         - text: "Taxonomy"
           href: assign.html
+        - text: "Taxonomic References"
+          href: training.html
         - text: "Pooling"
           href: pool.html
         - text: "FAQ"
@@ -23,10 +25,12 @@ navbar:
     - text: "Evaluation"
       icon: fa-gear
       menu:
-        - text: "Manuscript"
+        - text: "DADA2 Manuscript"
           href: http://dx.doi.org/10.1038/nmeth.3869
         - text: "Exact Sequence Variants"
           href: http://dx.doi.org/10.1038/ismej.2017.119
+        - text: "PacBio Long Reads"
+          href: https://doi.org/10.1101/392332
         - text: "Symposium Slides"
           href: SMBS_DADA2.pdf
         - text: "Benchmarking"

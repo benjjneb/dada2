@@ -204,6 +204,9 @@ $(document).ready(function () {
       <a href="assign.html">Taxonomy</a>
     </li>
     <li>
+      <a href="training.html">Taxonomic References</a>
+    </li>
+    <li>
       <a href="pool.html">Pooling</a>
     </li>
     <li>
@@ -221,10 +224,13 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">DADA2 Manuscript</a>
     </li>
     <li>
       <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="https://doi.org/10.1101/392332">PacBio Long Reads</a>
     </li>
     <li>
       <a href="SMBS_DADA2.pdf">Symposium Slides</a>
@@ -283,6 +289,8 @@ $(document).ready(function () {
 </ul>
 <p><strong>Contributed</strong>:</p>
 <ul>
+<li><p><a href="https://zenodo.org/record/1447330">RefSeq + RDP</a> (NCBI RefSeq 16S rRNA database supplemented by RDP)</p></li>
+<li><p><a href="https://zenodo.org/record/1447330">GTDB: Genome Taxonomy Database</a> (More info: <a href="http://gtdb.ecogenomic.org/" class="uri">http://gtdb.ecogenomic.org/</a>)</p></li>
 <li><p><a href="http://doi.org/10.5281/zenodo.159205">HitDB version 1</a> (Human InTestinal 16S rRNA)</p></li>
 <li><p><a href="https://doi.org/10.5281/zenodo.835612">RDP fungi LSU trainset 11</a></p></li>
 <li><p><a href="https://zenodo.org/record/1447330">Silva Eukaryotic 18S, v132 &amp; v128</a></p></li>
@@ -291,7 +299,7 @@ $(document).ready(function () {
 <p><strong>Note:</strong> PR2 has different <code>taxLevels</code> than the dada2 default. When assigning taxonomy against PR2, use the following: <code>assignTaxonomy(..., taxLevels = c(&quot;Kingdom&quot;,&quot;Supergroup&quot;,&quot;Division&quot;,&quot;Class&quot;,&quot;Order&quot;,&quot;Family&quot;,&quot;Genus&quot;,&quot;Species&quot;))</code></p>
 <hr />
 <p>In addition to thanking the folks at RDP, Silva, GreenGenes and UNITE for making these datasets available, we also want to thank Pat Schloss and the <a href="http://www.mothur.org">mothur</a> team for their work compiling the Silva data. We created the dada2-compatible training fastas from <a href="http://www.mothur.org/wiki/Silva_reference_files">the mothur-compatible Silva training data</a> (<a href="http://blog.mothur.org/2017/03/22/SILVA-v128-reference-files/">described here</a>, and <a href="https://www.arb-silva.de/silva-license-information/">license here</a>), the <a href="http://rdp.cme.msu.edu/misc/resources.jsp">RDP trainset 16 and release 11.5 database</a>, and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
-<p>As of version 1.5.1, the scripts to parse and produce the dada2-formatted training fastas are included as private functions within the dada2 R package. Inspect <code>taxonomy.R</code> to see the code. Currently training fastas for <code>assignSpecies</code> are only available for the Silva and RDP databases.</p>
+<p>As of version 1.5.1, the scripts to parse and produce the officially maintained training fastas are included as private functions within the dada2 R package. Inspect <code>taxonomy.R</code> to see the code. Currently training fastas for <code>assignSpecies</code> are only available for the Silva and RDP databases.</p>
 </div>
 <div id="formatting-custom-databases" class="section level2">
 <h2>Formatting custom databases</h2>
