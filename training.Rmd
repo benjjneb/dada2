@@ -24,9 +24,9 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 **Contributed**:
 
-* [RefSeq + RDP](https://zenodo.org/record/1447330) (NCBI RefSeq 16S rRNA database supplemented by RDP)
+* [RefSeq + RDP](https://zenodo.org/record/2541239) (NCBI RefSeq 16S rRNA database supplemented by RDP)
 
-* [GTDB: Genome Taxonomy Database](https://zenodo.org/record/1447330) (More info: http://gtdb.ecogenomic.org/)
+* [GTDB: Genome Taxonomy Database](https://zenodo.org/record/2541239) (More info: http://gtdb.ecogenomic.org/)
 
 * [HitDB version 1](http://doi.org/10.5281/zenodo.159205) (Human InTestinal 16S rRNA)
 
