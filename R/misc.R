@@ -265,13 +265,6 @@ is.list.of <- function(x, ctype) {
 }
 
 #' @keywords internal
-bcinstall <- function(pkg="dada2", suppressUpdates=TRUE) {
-  if (!requireNamespace("BiocManager", quietly=TRUE))
-      install.packages("BiocManager")
-  BiocManager::install(pkg, suppressUpdates=suppressUpdates)
-}
-
-#' @keywords internal
 seqtab_to_qiime <- function(st, fout) {
   st <- t(st) # QIIME has OTUs as rows
   col.names <- colnames(st)
