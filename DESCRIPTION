@@ -21,7 +21,6 @@ Depends:
 Imports:
     Biostrings (>= 2.42.1),
     ggplot2 (>= 2.1.0),
-    data.table (>= 1.9.4),
     reshape2 (>= 1.4.1),
     ShortRead (>= 1.32.0),
     RcppParallel (>= 4.3.0),
