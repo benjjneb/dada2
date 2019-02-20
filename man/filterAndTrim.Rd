@@ -4,12 +4,12 @@
 \alias{filterAndTrim}
 \title{Filter and trim fastq file(s).}
 \usage{
-filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL, compress = TRUE,
-  truncQ = 2, truncLen = 0, trimLeft = 0, trimRight = 0, maxLen = Inf,
-  minLen = 20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE,
-  orient.fwd = NULL, matchIDs = FALSE, id.sep = "\\\\s",
-  id.field = NULL, multithread = FALSE, n = 1e+05, OMP = TRUE,
-  verbose = FALSE)
+filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL,
+  compress = TRUE, truncQ = 2, truncLen = 0, trimLeft = 0,
+  trimRight = 0, maxLen = Inf, minLen = 20, maxN = 0, minQ = 0,
+  maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL, matchIDs = FALSE,
+  id.sep = "\\\\s", id.field = NULL, multithread = FALSE,
+  n = 1e+05, OMP = TRUE, qualityType = "Auto", verbose = FALSE)
 }
 \arguments{
 \item{fwd}{(Required). \code{character}.
@@ -114,6 +114,13 @@ See \code{\link{FastqStreamer}} for details.}
 Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Should be set to FALSE if
 calling this function within a parallelized chunk of code.
 If \code{multithread=TRUE}, this argument will be coerced to FALSE.}
+
+\item{qualityType}{(Optional). \code{character(1)}.
+The quality encoding of the fastq file(s). "Auto" (the default) means to
+attempt to auto-detect the encoding. This may fail for PacBio files with
+uniformly high quality scores, in which case use "FastqQuality". This
+parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
+information there for details.}
 
 \item{verbose}{(Optional). Default FALSE.
 Whether to output status messages.}
