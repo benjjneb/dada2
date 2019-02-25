@@ -9,7 +9,8 @@ fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   trimLeft = c(0, 0), trimRight = c(0, 0), minQ = c(0, 0),
   maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE,
   orient.fwd = NULL, id.sep = "\\\\s", id.field = NULL, n = 1e+06,
-  OMP = TRUE, compress = TRUE, verbose = FALSE, ...)
+  OMP = TRUE, qualityType = "Auto", compress = TRUE,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.}
@@ -89,13 +90,18 @@ The field of the id-line containing the sequence identifier.
 If NULL (the default) and matchIDs is TRUE, the function attempts to automatically detect
   the sequence identifier field under the assumption of Illumina formatted output.}
 
-\item{n}{(Optional). The number of records (reads) to read in and filter at any one time. 
-This controls the peak memory requirement so that very large fastq files are supported. 
+\item{n}{(Optional). The number of records (reads) to read in and filter at any one time.
+This controls the peak memory requirement so that very large fastq files are supported.
 Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.}
 
 \item{OMP}{(Optional). Default TRUE.
 Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
 calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).}
+
+\item{qualityType}{(Optional). \code{character(1)}.
+The quality encoding of the fastq file(s). "Auto" (the default) means to
+attempt to auto-detect the encoding. This parameter is passed on to
+\code{\link[ShortRead]{readFastq}}; see information there for details.}
 
 \item{compress}{(Optional). Default TRUE.
 Whether the output fastq files should be gzip compressed.}

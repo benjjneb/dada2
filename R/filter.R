@@ -244,6 +244,13 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
 #'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Should be set to FALSE if
 #'  calling this function within a parallelized chunk of code.
 #'  If \code{multithread=TRUE}, this argument will be coerced to FALSE.
+#'  
+#' @param qualityType (Optional). \code{character(1)}.
+#'  The quality encoding of the fastq file(s). "Auto" (the default) means to
+#'  attempt to auto-detect the encoding. This may fail for PacBio files with
+#'  uniformly high quality scores, in which case use "FastqQuality". This
+#'  parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
+#'  information there for details.
 #' 
 #' @param verbose (Optional). Default FALSE.
 #'  Whether to output status messages.  
@@ -274,7 +281,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                         truncQ=2, truncLen=0, trimLeft=0, trimRight=0, maxLen=Inf, minLen=20, 
                         maxN=0, minQ=0, maxEE=Inf, rm.phix=TRUE, orient.fwd=NULL,
                         matchIDs=FALSE, id.sep="\\s", id.field=NULL,
-                        multithread=FALSE, n = 1e5, OMP=TRUE, verbose = FALSE) {
+                        multithread=FALSE, n = 1e5, OMP=TRUE, qualityType = "Auto", verbose = FALSE) {
   PAIRED <- FALSE
   if(length(fwd) != length(filt)) stop("Every input file must have a corresponding output file.")
   odirs <- unique(dirname(filt))
@@ -328,7 +335,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                                      maxLen=maxLen, minLen=minLen,
                                      maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, orient.fwd=orient.fwd,
                                      matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, 
-                                     compress=compress, verbose=verbose),
+                                     qualityType=qualityType, compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
   } else {
     rval <- mcmapply(fastqFilter, 
@@ -336,7 +343,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                      MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight,
                                      maxLen=maxLen, minLen=minLen, 
                                      maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, orient.fwd=orient.fwd,
-                                     n=n, OMP=OMP, compress=compress, verbose=verbose),
+                                     n=n, OMP=OMP, qualityType=qualityType, compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
   }
   # Check if expected matrix was returned, if not there are errors
@@ -423,6 +430,13 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
 #'  calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).
 #' 
+#' @param qualityType (Optional). \code{character(1)}.
+#'  The quality encoding of the fastq file(s). "Auto" (the default) means to
+#'  attempt to auto-detect the encoding. This may fail for PacBio files with
+#'  uniformly high quality scores, in which case use "FastqQuality". This
+#'  parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
+#'  information there for details.
+#' 
 #' 
 #' @param compress (Optional). Default TRUE.
 #'  Whether the output fastq file should be gzip compressed.
@@ -461,7 +475,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen = 20, trimLeft = 0, trimRight = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL, n = 1e6, OMP = TRUE, compress = TRUE, verbose = FALSE, ...){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen = 20, trimLeft = 0, trimRight = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL, n = 1e6, OMP = TRUE, qualityType = "Auto", compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -490,7 +504,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
   first=TRUE
   inseqs = 0
   outseqs = 0
-  while( length(suppressWarnings(fq <- yield(f))) ){
+  while( length(suppressWarnings(fq <- yield(f, qualityType = qualityType))) ){
     inseqs <- inseqs + length(fq)
     
     # Enforce and orient on orient.fwd
@@ -500,8 +514,8 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
       fq.rc <- reverseComplement(fq)
       keepF <- narrow(sread(fq),1,barlen) == orient.fwd
       keepR <- narrow(sread(fq.rc),1,barlen) == orient.fwd & !keepF
-      fq <- ShortReadQ(sread=c(sread(fq[keepF]), sread(fq.rc[keepR])), 
-                       quality=c(quality(quality(fq[keepF])), quality(quality(fq.rc[keepR]))), 
+      fq <- ShortReadQ(sread=c(sread(fq[keepF]), sread(fq.rc[keepR])),
+                       quality=c(quality(quality(fq[keepF])), quality(quality(fq.rc[keepR]))),
                        id=c(id(fq[keepF]), id(fq.rc[keepR])))
     }
     # Enforce maxLen
@@ -655,13 +669,18 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
 #'  If NULL (the default) and matchIDs is TRUE, the function attempts to automatically detect
 #'    the sequence identifier field under the assumption of Illumina formatted output.
 #'
-#' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
-#'  This controls the peak memory requirement so that very large fastq files are supported. 
+#' @param n (Optional). The number of records (reads) to read in and filter at any one time.
+#'  This controls the peak memory requirement so that very large fastq files are supported.
 #'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
 #'  
 #' @param OMP (Optional). Default TRUE.
 #'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
 #'  calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).
+#' 
+#' @param qualityType (Optional). \code{character(1)}.
+#'  The quality encoding of the fastq file(s). "Auto" (the default) means to
+#'  attempt to auto-detect the encoding. This parameter is passed on to
+#'  \code{\link[ShortRead]{readFastq}}; see information there for details.
 #' 
 #' @param compress (Optional). Default TRUE.
 #'  Whether the output fastq files should be gzip compressed.
@@ -706,7 +725,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
 #'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), trimRight=c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, orient.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, compress = TRUE, verbose = FALSE, ...){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), trimRight=c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, orient.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, qualityType="Auto", compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -762,8 +781,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   casava <- "Undetermined"
   inseqs = 0; outseqs = 0
   while( TRUE ) {
-    suppressWarnings(fqF <- yield(fF))
-    suppressWarnings(fqR <- yield(fR))
+    suppressWarnings(fqF <- yield(fF, qualityType = qualityType))
+    suppressWarnings(fqR <- yield(fR, qualityType = qualityType))
     if(length(fqF) == 0 && length(fqR) == 0) { break } # Loop Logic
     
     inseqs <- inseqs + length(fqF)
