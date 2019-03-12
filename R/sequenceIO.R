@@ -17,6 +17,13 @@
 #'  See \code{\link[ShortRead]{FastqStreamer}} for details on this parameter,
 #'  which is passed on.
 #' 
+#' @param qualityType (Optional). \code{character(1)}.
+#'  The quality encoding of the fastq file(s). "Auto" (the default) means to 
+#'  attempt to auto-detect the encoding. This may fail for PacBio files with
+#'  uniformly high quality scores, in which case use "FastqQuality". This
+#'  parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
+#'  information there for details.
+#' 
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, throw standard R \code{\link{message}}s 
 #'  on the intermittent and final status of the dereplication.
@@ -35,7 +42,7 @@
 #' derep1.35 = derepFastq(testFastq, 35, TRUE)
 #' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
-derepFastq <- function(fls, n = 1e6, verbose = FALSE){
+derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto"){
   if(!is.character(fls)) { stop("Filenames must be provided in character format.") }
   rval <- list()
   for(i in seq_along(fls)) {
@@ -45,14 +52,14 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE){
     }
     
     f <- FastqStreamer(fl, n = n)
-    suppressWarnings(fq <- yield(f))
+    suppressWarnings(fq <- yield(f, qualityType = qualityType))
     
     out <- qtables2(fq, FALSE) ###ITS
     
     derepCounts <- out$uniques
     derepQuals <- out$cum_quals
     derepMap <- out$map
-    while( length(suppressWarnings(fq <- yield(f))) ){
+    while( length(suppressWarnings(fq <- yield(f, qualityType = qualityType))) ){
       # A little loop protection
       newniques = alreadySeen = NULL
       # Dot represents one turn inside the chunking loop.

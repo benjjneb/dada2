@@ -7,7 +7,8 @@
 fastqFilter(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf,
   minLen = 20, trimLeft = 0, trimRight = 0, maxN = 0, minQ = 0,
   maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL, n = 1e+06,
-  OMP = TRUE, compress = TRUE, verbose = FALSE, ...)
+  OMP = TRUE, qualityType = "Auto", compress = TRUE,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). The path to the input fastq file.}
@@ -66,6 +67,13 @@ Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for de
 \item{OMP}{(Optional). Default TRUE.
 Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
 calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).}
+
+\item{qualityType}{(Optional). \code{character(1)}.
+The quality encoding of the fastq file(s). "Auto" (the default) means to
+attempt to auto-detect the encoding. This may fail for PacBio files with
+uniformly high quality scores, in which case use "FastqQuality". This
+parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
+information there for details.}
 
 \item{compress}{(Optional). Default TRUE.
 Whether the output fastq file should be gzip compressed.}

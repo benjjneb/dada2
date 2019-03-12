@@ -202,6 +202,13 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  and because it is more conservative, it is recommended to set this value to 0, which means that all
 #'  reads are counted and contribute to estimating the error rates. 
 #'  
+#' @param qualityType (Optional). \code{character(1)}.
+#'  The quality encoding of the fastq file(s). "Auto" (the default) means to
+#'  attempt to auto-detect the encoding. This may fail for PacBio files with
+#'  uniformly high quality scores, in which case use "FastqQuality". This
+#'  parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
+#'  information there for details.
+#'  
 #' @param verbose (Optional). Default TRUE 
 #'  Print verbose text output. More fine-grained control is available by providing an integer argument.
 #' \itemize{ 
@@ -234,7 +241,7 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE, MAX_CONSIST=20)
 #' 
 learnErrors <- function(fls, nbases=1e8, nreads=NULL, errorEstimationFunction = loessErrfun, multithread=FALSE, 
-                        randomize=FALSE, MAX_CONSIST=10, OMEGA_C=0, verbose=TRUE, ...) {
+                        randomize=FALSE, MAX_CONSIST=10, OMEGA_C=0, qualityType = "Auto", verbose=FALSE, ...) {
   if(!is.null(nreads)) {
     warning("The nreads parameter is DEPRECATED. Please update your code with the nbases parameter.")
   }
@@ -247,7 +254,7 @@ learnErrors <- function(fls, nbases=1e8, nreads=NULL, errorEstimationFunction = 
     if (is.list.of(fls, "derep")){
         drps[[i]] <- fls[[i]]
     } else {
-        drps[[i]] <- derepFastq(fls[[i]])
+        drps[[i]] <- derepFastq(fls[[i]], qualityType = qualityType)
     }
     NREADS <- NREADS + sum(drps[[i]]$uniques)
     NBASES <- NBASES + sum(drps[[i]]$uniques * nchar(names(drps[[i]]$uniques)))

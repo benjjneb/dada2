@@ -189,14 +189,15 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
 #' @importFrom ShortRead FastqStreamer
 #' @importFrom ShortRead id
 #' @importFrom ShortRead yield
-sameOrder <- function(fnF, fnR) {
+sameOrder <- function(fnF, fnR, qualityType = "Auto") {
   matched <- TRUE
   fF <- FastqStreamer(fnF)
   on.exit(close(fF))
   fR <- FastqStreamer(fnR)
   on.exit(close(fR), add=TRUE)
   
-  while( length(suppressWarnings(fqF <- yield(fF))) && length(suppressWarnings(fqR <- yield(fR))) ) {
+  while( length(suppressWarnings(fqF <- yield(fF, qualityType = qualityType)))
+         && length(suppressWarnings(fqR <- yield(fR, qualityType = qualityType))) ) {
     idF <- trimTails(id(fqF), 1, " ")
     idR <- trimTails(id(fqR), 1, " ")
     matched <- matched && all(idF == idR)

@@ -34,6 +34,8 @@ Further documentation is available on [the DADA2 front page](http://benjjneb.git
 
 [Exact sequence variants should replace operational taxonomic units in marker-gene data analysis. ISMEJ, 2017.](http://dx.doi.org/10.1038/ismej.2017.119)
 
+[High-throughput amplicon sequencing of the full-length 16S rRNA gene with single-nucleotide resolution. bioRxiv, 2018.](https://doi.org/10.1101/392332)
+
 ### Other Resources
 
 Planned feature improvements are publicly catalogued at the main DADA2 development site on github, specifically on the "Issues" page for DADA2:

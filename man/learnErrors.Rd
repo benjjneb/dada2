@@ -6,7 +6,8 @@
 \usage{
 learnErrors(fls, nbases = 1e+08, nreads = NULL,
   errorEstimationFunction = loessErrfun, multithread = FALSE,
-  randomize = FALSE, MAX_CONSIST = 10, OMEGA_C = 0, verbose = TRUE, ...)
+  randomize = FALSE, MAX_CONSIST = 10, OMEGA_C = 0,
+  qualityType = "Auto", verbose = FALSE, ...)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
@@ -44,6 +45,13 @@ The threshold at which unique sequences inferred to contain errors are corrected
  and used to estimate the error rates (see more at \code{\link{setDadaOpt}}). For reasons of convergence,
  and because it is more conservative, it is recommended to set this value to 0, which means that all
  reads are counted and contribute to estimating the error rates.}
+
+\item{qualityType}{(Optional). \code{character(1)}.
+The quality encoding of the fastq file(s). "Auto" (the default) means to
+attempt to auto-detect the encoding. This may fail for PacBio files with
+uniformly high quality scores, in which case use "FastqQuality". This
+parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
+information there for details.}
 
 \item{verbose}{(Optional). Default TRUE 
  Print verbose text output. More fine-grained control is available by providing an integer argument.

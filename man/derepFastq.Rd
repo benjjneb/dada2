@@ -4,7 +4,7 @@
 \alias{derepFastq}
 \title{Read in and dereplicate a fastq file.}
 \usage{
-derepFastq(fls, n = 1e+06, verbose = FALSE)
+derepFastq(fls, n = 1e+06, verbose = FALSE, qualityType = "Auto")
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
@@ -22,6 +22,13 @@ which is passed on.}
 \item{verbose}{(Optional). Default FALSE.
 If TRUE, throw standard R \code{\link{message}}s 
 on the intermittent and final status of the dereplication.}
+
+\item{qualityType}{(Optional). \code{character(1)}.
+The quality encoding of the fastq file(s). "Auto" (the default) means to 
+attempt to auto-detect the encoding. This may fail for PacBio files with
+uniformly high quality scores, in which case use "FastqQuality". This
+parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
+information there for details.}
 }
 \value{
 A \code{\link{derep-class}} object or list of such objects.
