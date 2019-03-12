@@ -234,7 +234,7 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE, MAX_CONSIST=20)
 #' 
 learnErrors <- function(fls, nbases=1e8, nreads=NULL, errorEstimationFunction = loessErrfun, multithread=FALSE, 
-                        randomize=FALSE, MAX_CONSIST=10, OMEGA_C=0, verbose=FALSE, ...) {
+                        randomize=FALSE, MAX_CONSIST=10, OMEGA_C=0, verbose=TRUE, ...) {
   if(!is.null(nreads)) {
     warning("The nreads parameter is DEPRECATED. Please update your code with the nbases parameter.")
   }

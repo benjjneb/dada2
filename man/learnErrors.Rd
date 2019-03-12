@@ -6,8 +6,7 @@
 \usage{
 learnErrors(fls, nbases = 1e+08, nreads = NULL,
   errorEstimationFunction = loessErrfun, multithread = FALSE,
-  randomize = FALSE, MAX_CONSIST = 10, OMEGA_C = 0, verbose = FALSE,
-  ...)
+  randomize = FALSE, MAX_CONSIST = 10, OMEGA_C = 0, verbose = TRUE, ...)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.

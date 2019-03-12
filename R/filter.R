@@ -58,8 +58,8 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
   if(has.rev) hits.rev <- sapply(match.rev, length)
   if(!require.fwd) stop("Currently, only require.fwd=TRUE is supported.")
   if(has.rev && !require.rev) stop("Currently, only require.rev=TRUE is supported when a reverse primer sequence is provided.")
-  if(require.fwd && sum(hits.fwd == 0)) stop("No sequences matched the provided forward primer sequence.")
-  if(has.rev && require.rev && sum(hits.rev == 0)) stop("Reverse primer sequences were provided, but no sequences matched the provided reverse primer sequence.")
+  if(require.fwd && sum(hits.fwd) == 0) stop("No sequences matched the provided forward primer sequence.")
+  if(has.rev && require.rev && sum(hits.rev) == 0) stop("Reverse primer sequences were provided, but no sequences matched the provided reverse primer sequence.")
   if(any(hits.fwd>1) || (has.rev && any(hits.rev>1))) {
     if(verbose) message("Multiple matches to the primer(s) in some sequences. Using the longest possible match.")
     match.fwd[hits.fwd>1] <- sapply(match.fwd[hits.fwd>1], `[`, 1)
