@@ -480,6 +480,9 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
   }
+  if(any(sapply(list(truncQ, truncLen, maxLen, minLen, trimLeft, trimRight, maxN, minQ, maxEE), length) > 1)) {
+    stop("Filtering and trimming arguments should be of length 1 when processing single-end (rather than paired-end) data.")
+  }
   
   start <- max(1, trimLeft + 1, na.rm=TRUE)
   end <- truncLen

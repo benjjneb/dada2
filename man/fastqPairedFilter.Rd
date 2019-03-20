@@ -9,8 +9,8 @@ fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   trimLeft = c(0, 0), trimRight = c(0, 0), minQ = c(0, 0),
   maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE,
   orient.fwd = NULL, id.sep = "\\\\s", id.field = NULL, n = 1e+06,
-  OMP = TRUE, qualityType = "Auto", compress = TRUE,
-  verbose = FALSE, ...)
+  OMP = TRUE, qualityType = "Auto", compress = TRUE, verbose = FALSE,
+  ...)
 }
 \arguments{
 \item{fn}{(Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.}

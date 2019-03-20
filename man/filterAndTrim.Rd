@@ -4,12 +4,12 @@
 \alias{filterAndTrim}
 \title{Filter and trim fastq file(s).}
 \usage{
-filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL,
-  compress = TRUE, truncQ = 2, truncLen = 0, trimLeft = 0,
-  trimRight = 0, maxLen = Inf, minLen = 20, maxN = 0, minQ = 0,
-  maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL, matchIDs = FALSE,
-  id.sep = "\\\\s", id.field = NULL, multithread = FALSE,
-  n = 1e+05, OMP = TRUE, qualityType = "Auto", verbose = FALSE)
+filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL, compress = TRUE,
+  truncQ = 2, truncLen = 0, trimLeft = 0, trimRight = 0, maxLen = Inf,
+  minLen = 20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE,
+  orient.fwd = NULL, matchIDs = FALSE, id.sep = "\\\\s",
+  id.field = NULL, multithread = FALSE, n = 1e+05, OMP = TRUE,
+  qualityType = "Auto", verbose = FALSE)
 }
 \arguments{
 \item{fwd}{(Required). \code{character}.
