@@ -615,11 +615,13 @@ setDadaOpt <- function(...) {
   }
   for(opnm in names(args)) {
     if(opnm %in% names(opts)) {
-      if(class(getDadaOpt(opnm)) != class(args[[opnm]])) {
-        warning(paste0(opnm, " not set, value provided has different class (", class(args[[opnm]]), 
-                    ") then current option value (", class(getDadaOpt(opnm)), ")"))
-      } else {
+      if( (class(getDadaOpt(opnm)) == class(args[[opnm]])) ||
+         (opnm == "HOMOPOLYMER_GAP_PENALTY" && # Allow numeric or NULL for HOMOPOLYMER_GAP_PENALTY
+          (is.numeric(args[["HOMOPOLYMER_GAP_PENALTY"]])) || is.null(args[["HOMOPOLYMER_GAP_PENALTY"]])) ) {
         assign(opnm, args[[opnm]], envir=dada_opts)
+      } else {
+        warning(paste0(opnm, " not set, value provided has different class (", class(args[[opnm]]), 
+                       ") then current option value (", class(getDadaOpt(opnm)), ")"))
       }
     } else {
       warning(opnm, " is not a valid DADA option.")
