@@ -413,6 +413,12 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
 #'
+#' @param rm.lowcomplex (Optional). Default 0.
+#'  If set greater than 0, reads with an effective number of kmers less than this value will be removed.
+#'  The effective number of kmers is determined by \code{\link{seqComplexity}} using a Shannon information
+#'  approximation. The default kmer-size is 2, and therefore perfectly random sequences will approach an
+#'  effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).
+#'
 #' @param orient.fwd (Optional). Default NULL.
 #'  A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
 #'  This string is compared to the start of each read, and the reverse complement of each read.
@@ -475,7 +481,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #' fastqFilter(testFastq, filtFastq, maxN=0, maxEE=2)
 #' fastqFilter(testFastq, filtFastq, trimLeft=10, truncLen=200, maxEE=2, verbose=TRUE)
 #' 
-fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen = 20, trimLeft = 0, trimRight = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL, n = 1e6, OMP = TRUE, qualityType = "Auto", compress = TRUE, verbose = FALSE, ...){
+fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen = 20, trimLeft = 0, trimRight = 0, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE, rm.lowcomplex = 0, orient.fwd = NULL, n = 1e6, OMP = TRUE, qualityType = "Auto", compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -562,6 +568,12 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
     if(rm.phix) {
       is.phi <- isPhiX(as(sread(fq), "character"), ...)
       fq <- fq[!is.phi]
+    }
+    
+    # Remove low complexity
+    if(rm.lowcomplex > 0) {
+      sqcmplx <- seqComplexity(sread(fq), ...)
+      fq <- fq[sqcmplx >= rm.lowcomplex]
     }
     
     outseqs <- outseqs + length(fq)
@@ -691,7 +703,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
 #' @param verbose (Optional). Default FALSE.
 #'  Whether to output status messages.  
 #' 
-#' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}}.
+#' @param ... (Optional). Arguments passed on to \code{\link{isPhiX}} or \code{\link{seqComplexity}}.
 #' 
 #' @return \code{integer(2)}.
 #'  The number of reads read in, and the number of reads that passed the filter and were output.
@@ -997,6 +1009,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
 #' @param nonOverlapping (Optional). Default TRUE.
 #' If TRUE, only non-overlapping matching words are counted.
 #' 
+#' @param ... (Optional). Ignored.
+#' 
 #' @return \code{logical(1)}.
 #'  TRUE if sequence matched the phiX genome.
 #'
@@ -1014,7 +1028,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
 #' isPhiX(sqs1)
 #' isPhiX(sqs1, wordSize=20,  minMatches=1)
 #' 
-isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE) {
+isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE, ...) {
   seqs <- getSequences(seqs)
   sq.phix <- as(sread(readFasta(system.file("extdata", "phix_genome.fa", package="dada2"))), "character")
   rc.phix <- rc(sq.phix)
@@ -1025,25 +1039,31 @@ isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE) {
 ################################################################################
 #' Determine if input sequence(s) are low complexity.
 #'
-#' This function calculates the oligonucleotide
+#' This function calculates the kmer
 #' complexity of input sequences. Complexity is quantified as the Shannon
-#' richness of oligonucleotides, which can be thought of as the
-#' effective number of oligonucleotides if they were all
+#' richness of kmers, which can be thought of as the
+#' effective number of kmers if they were all
 #' at equal frequencies. If a window size is provided, the minimum Shannon
 #' richness observed over sliding window along the sequence is returned.
 #'
 #' This function can be used to identify potentially artefactual or undesirable
 #' low-complexity sequences, or sequences with low-complexity regions, as are
 #' sometimes observed in Illumina sequencing runs. When such artefactual
-#' sequences are present, a simple plot of the Shannon oligonucleotide
+#' sequences are present, the Shannon kmer
 #' richness values returned by this function will typically show a clear
 #' bimodal signal.
+#' 
+#' Kmers with non-ACGT characters are ignored. Also note that no correction is
+#' performed for sequence lengths. This is important when using longer kmer
+#' lengths, where 4^wordSize approaches the length of the sequence, as shorter
+#' sequences will then have a lower effective richness simply due to their
+#' being too little sequence to sample all the possible kmers.
 #'
 #' @param seqs (Required). A \code{character} vector of A/C/G/T sequences, or
 #' any object coercible by \code{\link{getSequences}}.
 #'
-#' @param wordSize (Optional). Default 2.
-#'  The size of the oligonucleotides (or "words" or "kmers") to use.
+#' @param kmerSize (Optional). Default 2.
+#'  The size of the kmers (or "oligonucleotides" or "words") to use.
 #'
 #' @param window (Optional). Default NULL.
 #' The width in nucleotides of the moving window. If NULL the whole sequence is used.
@@ -1051,10 +1071,13 @@ isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE) {
 #' @param by (Optional). Default 5.
 #' The step size in nucleotides between each moving window tested.
 #'
+#' @param ... (Optional). Ignored.
+#' 
 #' @return \code{numeric}.
-#'  A vector of minimum olignucleotide complexities for each sequence.
+#'  A vector of minimum kmer complexities for each sequence.
 #'
 #' @seealso
+#'  \code{\link{plotComplexity}}
 #'  \code{\link[Biostrings]{oligonucleotideFrequency}}
 #'
 #' @export
@@ -1071,24 +1094,24 @@ isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE) {
 #' sq.part <- "TTTTTCTTCTCCCCCTTCCCCTTTCCTTTTCTCCTTTTTTCCTTTAGTGCAGTTGAGGCAGGCGGAATTCGTGG"
 #' sqs <- c(sq.norm, sq.lowc, sq.part)
 #' seqComplexity(sqs)
-#' seqComplexity(sqs, window=25)
+#' seqComplexity(sqs, kmerSize=3, window=25)
 #'
-seqComplexity <- function(seqs, wordSize=2, window=NULL, by=5) {
-  if(!is.null(window) && wordSize >= window) stop("The window over which oligonucleotide frequency is calculated must be larger than the wordSize.")
+seqComplexity <- function(seqs, kmerSize=2, window=NULL, by=5, ...) {
+  if(!is.null(window) && kmerSize >= window) stop("The window over which kmer frequency is calculated must be larger than the kmerSize.")
   if(!is(seqs, "DNAStringSet")) {
     seqs <- getSequences(seqs)
     if(!(all(C_isACGT(seqs)))) warning("Not all sequences were A/C/G/T only, which can interfere with the calculation of the Shannon richness.")
     seqs <- DNAStringSet(seqs)
   }
-  si.max <- 4**wordSize
+  si.max <- 4**kmerSize
   if(is.null(window)) {
-    si <- apply(oligonucleotideFrequency(seqs, width=wordSize), 1, sindex)
+    si <- apply(oligonucleotideFrequency(seqs, width=kmerSize), 1, sindex)
   } else {
     si <- rep(si.max, length(seqs))
     for(i in seq(1, max(width(seqs))-window, by=by)) {
       keep <- (width(seqs) >= (i+window-1))
       wind <- narrow(seqs[keep],i,i+window-1)
-      si.i <- apply(oligonucleotideFrequency(wind, width=wordSize), 1, sindex)
+      si.i <- apply(oligonucleotideFrequency(wind, width=kmerSize), 1, sindex)
       si[keep] <- pmin(si[keep], si.i)
     }
   }

@@ -6,9 +6,9 @@
 \usage{
 fastqFilter(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf,
   minLen = 20, trimLeft = 0, trimRight = 0, maxN = 0, minQ = 0,
-  maxEE = Inf, rm.phix = TRUE, orient.fwd = NULL, n = 1e+06,
-  OMP = TRUE, qualityType = "Auto", compress = TRUE, verbose = FALSE,
-  ...)
+  maxEE = Inf, rm.phix = TRUE, rm.lowcomplex = 0, orient.fwd = NULL,
+  n = 1e+06, OMP = TRUE, qualityType = "Auto", compress = TRUE,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). The path to the input fastq file.}
@@ -50,6 +50,12 @@ Expected errors are calculated from the nominal definition of the quality score:
 \item{rm.phix}{(Optional). Default TRUE.
 If TRUE, discard reads that match against the phiX genome, as determined by 
 \code{\link{isPhiX}}.}
+
+\item{rm.lowcomplex}{(Optional). Default 0.
+If set greater than 0, reads with an effective number of kmers less than this value will be removed.
+The effective number of kmers is determined by \code{\link{seqComplexity}} using a Shannon information
+approximation. The default kmer-size is 2, and therefore perfectly random sequences will approach an
+effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).}
 
 \item{orient.fwd}{(Optional). Default NULL.
 A character string present at the start of valid reads. Only allows unambiguous nucleotides. 

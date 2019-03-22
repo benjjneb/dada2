@@ -4,30 +4,32 @@
 \alias{seqComplexity}
 \title{Determine if input sequence(s) are low complexity.}
 \usage{
-seqComplexity(seqs, wordSize = 2, window = NULL, by = 5)
+seqComplexity(seqs, kmerSize = 2, window = NULL, by = 5, ...)
 }
 \arguments{
 \item{seqs}{(Required). A \code{character} vector of A/C/G/T sequences, or
 any object coercible by \code{\link{getSequences}}.}
 
-\item{wordSize}{(Optional). Default 2.
-The size of the oligonucleotides (or "words" or "kmers") to use.}
+\item{kmerSize}{(Optional). Default 2.
+The size of the kmers (or "oligonucleotides" or "words") to use.}
 
 \item{window}{(Optional). Default NULL.
 The width in nucleotides of the moving window. If NULL the whole sequence is used.}
 
 \item{by}{(Optional). Default 5.
 The step size in nucleotides between each moving window tested.}
+
+\item{...}{(Optional). Ignored.}
 }
 \value{
 \code{numeric}.
- A vector of minimum olignucleotide complexities for each sequence.
+ A vector of minimum kmer complexities for each sequence.
 }
 \description{
-This function calculates the oligonucleotide
+This function calculates the kmer
 complexity of input sequences. Complexity is quantified as the Shannon
-richness of oligonucleotides, which can be thought of as the
-effective number of oligonucleotides if they were all
+richness of kmers, which can be thought of as the
+effective number of kmers if they were all
 at equal frequencies. If a window size is provided, the minimum Shannon
 richness observed over sliding window along the sequence is returned.
 }
@@ -35,9 +37,15 @@ richness observed over sliding window along the sequence is returned.
 This function can be used to identify potentially artefactual or undesirable
 low-complexity sequences, or sequences with low-complexity regions, as are
 sometimes observed in Illumina sequencing runs. When such artefactual
-sequences are present, a simple plot of the Shannon oligonucleotide
+sequences are present, the Shannon kmer
 richness values returned by this function will typically show a clear
 bimodal signal.
+
+Kmers with non-ACGT characters are ignored. Also note that no correction is
+performed for sequence lengths. This is important when using longer kmer
+lengths, where 4^wordSize approaches the length of the sequence, as shorter
+sequences will then have a lower effective richness simply due to their
+being too little sequence to sample all the possible kmers.
 }
 \examples{
 sq.norm <- "TACGGAAGGTCCGGGCGTTATCCGGATTTATTGGGTTTAAAGGGAGCGTAGGCCGGAGATTAAGCGTGTTGTGA"
@@ -45,9 +53,10 @@ sq.lowc <- "TCCTTCTTCTCCTCTCTTTCTCCTTCTTTCTTTTTTTTCCCTTTCTCTTCTTCTTTTTCTTCCTTCCT
 sq.part <- "TTTTTCTTCTCCCCCTTCCCCTTTCCTTTTCTCCTTTTTTCCTTTAGTGCAGTTGAGGCAGGCGGAATTCGTGG"
 sqs <- c(sq.norm, sq.lowc, sq.part)
 seqComplexity(sqs)
-seqComplexity(sqs, window=25)
+seqComplexity(sqs, kmerSize=3, window=25)
 
 }
 \seealso{
-\code{\link[Biostrings]{oligonucleotideFrequency}}
+\code{\link{plotComplexity}}
+ \code{\link[Biostrings]{oligonucleotideFrequency}}
 }

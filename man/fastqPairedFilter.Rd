@@ -109,7 +109,7 @@ Whether the output fastq files should be gzip compressed.}
 \item{verbose}{(Optional). Default FALSE.
 Whether to output status messages.}
 
-\item{...}{(Optional). Arguments passed on to \code{\link{isPhiX}}.}
+\item{...}{(Optional). Arguments passed on to \code{\link{isPhiX}} or \code{\link{seqComplexity}}.}
 }
 \value{
 \code{integer(2)}.

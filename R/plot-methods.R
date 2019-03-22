@@ -227,3 +227,71 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
   }
   p
 }
+
+#' Plot sequence complexity profile of a fastq file.
+#' 
+#' This function plots a histogram of the distribution of sequence complexities
+#' in the form of effective numbers of kmers as determined by \code{\link{seqComplexity}}.
+#' By default, kmers of size 2 are used, in which case a perfectly random sequences
+#' will approach an effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).
+#' 
+#' @param fl (Required). \code{character}.
+#'  File path(s) to fastq or fastq.gz file(s).
+#' 
+#' @param wordSize (Optional). Default 2.
+#'  The size of the kmers (or "oligonucleotides" or "words") to use.
+#'
+#' @param window (Optional). Default NULL.
+#' The width in nucleotides of the moving window. If NULL the whole sequence is used.
+#'
+#' @param by (Optional). Default 5.
+#' The step size in nucleotides between each moving window tested.
+#'
+#' @param n (Optional). Default 100,000.
+#'  The number of records to sample from the fastq file.
+#' 
+#' @param bins (Optional). Default 100.
+#'  The number of bins to use for the histogram.
+#'
+#' @param aggregate (Optional). Default FALSE.
+#'  If TRUE, compute an aggregate quality profile for all fastq files provided.
+#'  
+#' @param ... (Optional). Arguments passed on to \code{\link{geom_histogram}}.
+#' 
+#' @return A \code{\link{ggplot}2} object.
+#'  Will be rendered to default device if \code{\link{print}ed},
+#'  or can be stored and further modified.
+#'  See \code{\link{ggsave}} for additional options.
+#'  
+#' @importFrom ShortRead FastqSampler
+#' @importFrom ShortRead yield
+#' @import ggplot2
+#' 
+#' @seealso
+#'  \code{\link{seqComplexity}}
+#'  \code{\link[Biostrings]{oligonucleotideFrequency}}
+#'
+#' @export
+#' 
+#' @examples
+#' plotComplexity(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
+#' 
+plotComplexity <- function(fl, wordSize=2, window=NULL, by=5, n=100000, bins=100, aggregate=FALSE, ...) {
+  cmplx <- lapply(fl, function(fli) {
+    f <- FastqSampler(fli, n)
+    srq <- yield(f)
+    close(f)
+    seqComplexity(sread(srq), wordSize=wordSize, window=window, by=by)
+  })
+  df <- data.frame( complexity=unlist(cmplx), 
+                    file=rep(basename(fl), times=sapply(cmplx, length)) )
+  if(aggregate) { df$file <- paste(length(fl), "files (aggregated)") }
+  p <- ggplot(data=df, aes(x=complexity)) + geom_histogram(bins=bins, na.rm=TRUE, ...) +
+    ylab("Count") + xlab("Effective Oligonucleotide Number") +
+    theme_bw() +
+    facet_wrap(~file) + 
+    scale_x_continuous(limits=c(0, 4^wordSize), breaks=seq(0, 4^wordSize, (4^wordSize)/4))
+  p
+}
+
+
