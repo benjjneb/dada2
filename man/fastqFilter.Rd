@@ -52,7 +52,7 @@ If TRUE, discard reads that match against the phiX genome, as determined by
 \code{\link{isPhiX}}.}
 
 \item{rm.lowcomplex}{(Optional). Default 0.
-If set greater than 0, reads with an effective number of kmers less than this value will be removed.
+If greater than 0, reads with an effective number of kmers less than this value will be removed.
 The effective number of kmers is determined by \code{\link{seqComplexity}} using a Shannon information
 approximation. The default kmer-size is 2, and therefore perfectly random sequences will approach an
 effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).}

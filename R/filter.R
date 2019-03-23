@@ -201,6 +201,12 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
 #' @param rm.phix (Optional). Default TRUE.
 #'  If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.
 #'
+#' @param rm.lowcomplex (Optional). Default 0.
+#'  If greater than 0, reads with an effective number of kmers less than this value will be removed.
+#'  The effective number of kmers is determined by \code{\link{seqComplexity}} using a Shannon information
+#'  approximation. The default kmer-size is 2, and therefore perfectly random sequences will approach an
+#'  effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).
+#'
 #' @param orient.fwd (Optional). Default NULL.
 #'  A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
 #'  This string is compared to the start of each read, and the reverse complement of each read.
@@ -275,11 +281,11 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
 #'                system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 #' filtFastqs <- c(tempfile(fileext=".fastq.gz"), tempfile(fileext=".fastq.gz"))
 #' filterAndTrim(testFastqs, filtFastqs, maxN=0, maxEE=2, verbose=TRUE)
-#' filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE)
+#' filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, rm.lowcomplex=8)
 #' 
 filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                         truncQ=2, truncLen=0, trimLeft=0, trimRight=0, maxLen=Inf, minLen=20, 
-                        maxN=0, minQ=0, maxEE=Inf, rm.phix=TRUE, orient.fwd=NULL,
+                        maxN=0, minQ=0, maxEE=Inf, rm.phix=TRUE, rm.lowcomplex=0, orient.fwd=NULL,
                         matchIDs=FALSE, id.sep="\\s", id.field=NULL,
                         multithread=FALSE, n = 1e5, OMP=TRUE, qualityType = "Auto", verbose = FALSE) {
   PAIRED <- FALSE
@@ -332,8 +338,8 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
     rval <- mcmapply(fastqPairedFilter, 
                      mapply(c, fwd, rev, SIMPLIFY=FALSE), mapply(c, filt, filt.rev, SIMPLIFY=FALSE), 
                      MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight, 
-                                     maxLen=maxLen, minLen=minLen,
-                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, orient.fwd=orient.fwd,
+                                     maxLen=maxLen, minLen=minLen, maxN=maxN, minQ=minQ, maxEE=maxEE, 
+                                     rm.phix=rm.phix, rm.lowcomplex=rm.lowcomplex, orient.fwd=orient.fwd,
                                      matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, 
                                      qualityType=qualityType, compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
@@ -341,8 +347,8 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
     rval <- mcmapply(fastqFilter, 
                      fwd, filt, 
                      MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight,
-                                     maxLen=maxLen, minLen=minLen, 
-                                     maxN=maxN, minQ=minQ, maxEE=maxEE, rm.phix=rm.phix, orient.fwd=orient.fwd,
+                                     maxLen=maxLen, minLen=minLen, maxN=maxN, minQ=minQ, maxEE=maxEE, 
+                                     rm.phix=rm.phix, rm.lowcomplex=rm.lowcomplex, orient.fwd=orient.fwd,
                                      n=n, OMP=OMP, qualityType=qualityType, compress=compress, verbose=verbose),
                      mc.cores=ncores, mc.silent=TRUE)
   }
@@ -414,7 +420,7 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  \code{\link{isPhiX}}.
 #'
 #' @param rm.lowcomplex (Optional). Default 0.
-#'  If set greater than 0, reads with an effective number of kmers less than this value will be removed.
+#'  If greater than 0, reads with an effective number of kmers less than this value will be removed.
 #'  The effective number of kmers is determined by \code{\link{seqComplexity}} using a Shannon information
 #'  approximation. The default kmer-size is 2, and therefore perfectly random sequences will approach an
 #'  effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).
@@ -653,6 +659,12 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
 #'  If TRUE, discard reads that match against the phiX genome, as determined by 
 #'  \code{\link{isPhiX}}.
 #'  
+#' @param rm.lowcomplex (Optional). Default 0.
+#'  If greater than 0, reads with an effective number of kmers less than this value will be removed.
+#'  The effective number of kmers is determined by \code{\link{seqComplexity}} using a Shannon information
+#'  approximation. The default kmer-size is 2, and therefore perfectly random sequences will approach an
+#'  effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).
+#'
 #' @param orient.fwd (Optional). Default NULL.
 #'  A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
 #'  This string is compared to the start of the forward and reverse reads. 
@@ -738,9 +750,9 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
 #' filtFastqR <- tempfile(fileext=".fastq.gz")
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
 #' fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
-#'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
+#'                     truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, rm.lowcomplex=5, kmerSize=2)
 #' 
-fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), trimRight=c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE, orient.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, qualityType="Auto", compress = TRUE, verbose = FALSE, ...){
+fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen = c(0,0), maxLen=c(Inf, Inf), minLen=c(20, 20), trimLeft = c(0,0), trimRight=c(0,0), minQ = c(0,0), maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), rm.lowcomplex = c(0, 0), matchIDs = FALSE, orient.fwd=NULL, id.sep = "\\s", id.field = NULL, n = 1e6, OMP=TRUE, qualityType="Auto", compress = TRUE, verbose = FALSE, ...){
   if(!OMP) {
     ompthreads <- .Call(ShortRead:::.set_omp_threads, 1L)
     on.exit(.Call(ShortRead:::.set_omp_threads, ompthreads))
@@ -751,7 +763,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
   
   if(any(duplicated(c(fn, fout)))) { stop("The output and input file names must be different.") }
   
-  for(var in c("maxN", "truncQ", "truncLen", "maxLen", "minLen", "trimLeft", "trimRight", "minQ", "maxEE", "rm.phix")) {
+  for(var in c("maxN", "truncQ", "truncLen", "maxLen", "minLen", "trimLeft", "trimRight", "minQ", "maxEE", "rm.phix", "rm.lowcomplex")) {
     if(length(get(var)) == 1) { # Double the 1 value to be the same for F and R
       assign(var, c(get(var), get(var)))
     }
@@ -961,6 +973,20 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
       fqR <- fqR[!is.phi]
     }
     
+    # Remove low complexity
+    if(rm.lowcomplex[[1]] > 0 && rm.lowcomplex[[2]] > 0) {
+      is.lowc <- (seqComplexity(sread(fqF), ...) < rm.lowcomplex[[1]])
+      is.lowc <- is.lowc | (seqComplexity(sread(fqF), ...) < rm.lowcomplex[[2]])
+    } else if(rm.lowcomplex[[1]] && !rm.lowcomplex[[2]]) {
+      is.lowc <- (seqComplexity(sread(fqF), ...) < rm.lowcomplex[[1]])
+    } else if(!rm.lowcomplex[[1]] && rm.lowcomplex[[2]]) {
+      is.lowc <- (seqComplexity(sread(fqR), ...) < rm.lowcomplex[[2]])
+    }
+    if(rm.lowcomplex[[1]] > 0 && rm.lowcomplex[[2]] > 0) {
+      fqF <- fqF[!is.lowc]
+      fqR <- fqR[!is.lowc]
+    }
+
     outseqs <- outseqs + length(fqF)    
     
     if(first) {

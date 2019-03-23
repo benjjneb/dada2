@@ -7,10 +7,10 @@
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), maxLen = c(Inf, Inf), minLen = c(20, 20),
   trimLeft = c(0, 0), trimRight = c(0, 0), minQ = c(0, 0),
-  maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), matchIDs = FALSE,
-  orient.fwd = NULL, id.sep = "\\\\s", id.field = NULL, n = 1e+06,
-  OMP = TRUE, qualityType = "Auto", compress = TRUE, verbose = FALSE,
-  ...)
+  maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), rm.lowcomplex = c(0, 0),
+  matchIDs = FALSE, orient.fwd = NULL, id.sep = "\\\\s",
+  id.field = NULL, n = 1e+06, OMP = TRUE, qualityType = "Auto",
+  compress = TRUE, verbose = FALSE, ...)
 }
 \arguments{
 \item{fn}{(Required). A \code{character(2)} naming the paths to the (forward,reverse) fastq files.}
@@ -58,6 +58,12 @@ Expected errors are calculated from the nominal definition of the quality score:
 \item{rm.phix}{(Optional). Default TRUE.
 If TRUE, discard reads that match against the phiX genome, as determined by 
 \code{\link{isPhiX}}.}
+
+\item{rm.lowcomplex}{(Optional). Default 0.
+If greater than 0, reads with an effective number of kmers less than this value will be removed.
+The effective number of kmers is determined by \code{\link{seqComplexity}} using a Shannon information
+approximation. The default kmer-size is 2, and therefore perfectly random sequences will approach an
+effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).}
 
 \item{matchIDs}{(Optional). Default FALSE.
 Whether to enforce matching between the id-line sequence identifiers of the forward and reverse fastq files.
@@ -130,7 +136,7 @@ filtFastqF <- tempfile(fileext=".fastq.gz")
 filtFastqR <- tempfile(fileext=".fastq.gz")
 fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), maxN=0, maxEE=2)
 fastqPairedFilter(c(testFastqF, testFastqR), c(filtFastqF, filtFastqR), trimLeft=c(10, 20),
-                    truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, verbose=TRUE)
+                    truncLen=c(240, 200), maxEE=2, rm.phix=TRUE, rm.lowcomplex=5, kmerSize=2)
 
 }
 \seealso{

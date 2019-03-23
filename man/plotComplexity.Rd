@@ -4,14 +4,14 @@
 \alias{plotComplexity}
 \title{Plot sequence complexity profile of a fastq file.}
 \usage{
-plotComplexity(fl, wordSize = 2, window = NULL, by = 5, n = 1e+05,
+plotComplexity(fl, kmerSize = 2, window = NULL, by = 5, n = 1e+05,
   bins = 100, aggregate = FALSE, ...)
 }
 \arguments{
 \item{fl}{(Required). \code{character}.
 File path(s) to fastq or fastq.gz file(s).}
 
-\item{wordSize}{(Optional). Default 2.
+\item{kmerSize}{(Optional). Default 2.
 The size of the kmers (or "oligonucleotides" or "words") to use.}
 
 \item{window}{(Optional). Default NULL.

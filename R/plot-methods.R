@@ -238,7 +238,7 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
 #' @param fl (Required). \code{character}.
 #'  File path(s) to fastq or fastq.gz file(s).
 #' 
-#' @param wordSize (Optional). Default 2.
+#' @param kmerSize (Optional). Default 2.
 #'  The size of the kmers (or "oligonucleotides" or "words") to use.
 #'
 #' @param window (Optional). Default NULL.
@@ -276,12 +276,12 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
 #' @examples
 #' plotComplexity(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' 
-plotComplexity <- function(fl, wordSize=2, window=NULL, by=5, n=100000, bins=100, aggregate=FALSE, ...) {
+plotComplexity <- function(fl, kmerSize=2, window=NULL, by=5, n=100000, bins=100, aggregate=FALSE, ...) {
   cmplx <- lapply(fl, function(fli) {
     f <- FastqSampler(fli, n)
     srq <- yield(f)
     close(f)
-    seqComplexity(sread(srq), wordSize=wordSize, window=window, by=by)
+    seqComplexity(sread(srq), kmerSize=kmerSize, window=window, by=by) # Also seqlens for warning?
   })
   df <- data.frame( complexity=unlist(cmplx), 
                     file=rep(basename(fl), times=sapply(cmplx, length)) )
@@ -290,7 +290,7 @@ plotComplexity <- function(fl, wordSize=2, window=NULL, by=5, n=100000, bins=100
     ylab("Count") + xlab("Effective Oligonucleotide Number") +
     theme_bw() +
     facet_wrap(~file) + 
-    scale_x_continuous(limits=c(0, 4^wordSize), breaks=seq(0, 4^wordSize, (4^wordSize)/4))
+    scale_x_continuous(limits=c(0, 4^kmerSize), breaks=seq(0, 4^kmerSize, (4^kmerSize)/4))
   p
 }
 

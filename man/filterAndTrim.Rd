@@ -7,9 +7,9 @@
 filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL, compress = TRUE,
   truncQ = 2, truncLen = 0, trimLeft = 0, trimRight = 0, maxLen = Inf,
   minLen = 20, maxN = 0, minQ = 0, maxEE = Inf, rm.phix = TRUE,
-  orient.fwd = NULL, matchIDs = FALSE, id.sep = "\\\\s",
-  id.field = NULL, multithread = FALSE, n = 1e+05, OMP = TRUE,
-  qualityType = "Auto", verbose = FALSE)
+  rm.lowcomplex = 0, orient.fwd = NULL, matchIDs = FALSE,
+  id.sep = "\\\\s", id.field = NULL, multithread = FALSE, n = 1e+05,
+  OMP = TRUE, qualityType = "Auto", verbose = FALSE)
 }
 \arguments{
 \item{fwd}{(Required). \code{character}.
@@ -70,6 +70,12 @@ Expected errors are calculated from the nominal definition of the quality score:
 
 \item{rm.phix}{(Optional). Default TRUE.
 If TRUE, discard reads that match against the phiX genome, as determined by \code{\link{isPhiX}}.}
+
+\item{rm.lowcomplex}{(Optional). Default 0.
+If greater than 0, reads with an effective number of kmers less than this value will be removed.
+The effective number of kmers is determined by \code{\link{seqComplexity}} using a Shannon information
+approximation. The default kmer-size is 2, and therefore perfectly random sequences will approach an
+effective kmer number of 16 = 4 (nucleotides) ^ 2 (kmer size).}
 
 \item{orient.fwd}{(Optional). Default NULL.
 A character string present at the start of valid reads. Only allows unambiguous nucleotides. 
@@ -149,7 +155,7 @@ testFastqs = c(system.file("extdata", "sam1F.fastq.gz", package="dada2"),
                system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 filtFastqs <- c(tempfile(fileext=".fastq.gz"), tempfile(fileext=".fastq.gz"))
 filterAndTrim(testFastqs, filtFastqs, maxN=0, maxEE=2, verbose=TRUE)
-filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE)
+filterAndTrim(testFastqs, filtFastqs, truncQ=2, truncLen=200, rm.phix=TRUE, rm.lowcomplex=8)
 
 }
 \seealso{
