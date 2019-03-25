@@ -37,7 +37,7 @@ LinkingTo:
     RcppParallel
 SystemRequirements: GNU make
 VignetteBuilder: knitr
-biocViews: Microbiome, Sequencing, Classification, Metagenomics
+biocViews: ImmunoOncology, Microbiome, Sequencing, Classification, Metagenomics
 URL: http://benjjneb.github.io/dada2/
 BugReports: https://github.com/benjjneb/dada2/issues
 LazyData: true
