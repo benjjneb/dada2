@@ -180,9 +180,9 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
         return(ups)
     }
   })
-  if(length(rval) == 1) rval <- rval[[1]]
   if(!is.null(names(dadaF))) names(rval) <- names(dadaF)
-
+  if(length(rval) == 1) rval <- rval[[1]]
+  
   return(rval)
 }
 
