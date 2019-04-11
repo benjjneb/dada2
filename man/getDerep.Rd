@@ -12,7 +12,7 @@ getDerep(object, ...)
 \item{...}{(Optional). Arguments passed to \code{\link{derepFastq}} if it is called.}
 }
 \value{
-A \code{\link{derep-class}} or a list of \code{\link{derep-class}} objects.
+A \code{\link{derep-class}} object or list of \code{\link{derep-class}} objects.
 }
 \description{
 This function extracts a \code{\link{derep-class}} or list of \code{\link{derep-class}}
