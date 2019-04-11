@@ -44,6 +44,7 @@
 #' 
 derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto"){
   if(!is.character(fls)) { stop("Filenames must be provided in character format.") }
+  if(!all(file.exists(fls))) { stop("Not all provided files exist.") }
   rval <- list()
   for(i in seq_along(fls)) {
     fl <- fls[[i]]
@@ -271,4 +272,33 @@ setMethod("writeFasta", "character", function(object, file, mode="w", width=2000
   if(is.null(names(seqs))) { names(seqs) <- as.character(seq(length(seqs))) }
   writeXStringSet(seqs, file, ..., append = append, width=width, format = "fasta")
 })
+
+################################################################################
+#' Get derep-class objects from the input object.
+#' 
+#' This function extracts a \code{\link{derep-class}} or list of \code{\link{derep-class}}
+#'  from either an input \code{\link{derep-class}} or list of \code{\link{derep-class}} objects,
+#'  or an input character vector of filenames to be dereplicated by \code{\link{derepFastq}}.
+#' 
+#' @param object (Required). The object from which to extract the \code{\link{derep-class}} object(s).
+#' 
+#' @param ... (Optional). Arguments passed to \code{\link{derepFastq}} if it is called.
+#' 
+#' @return A \code{\link{derep-class}} object or list of \code{\link{derep-class}} objects.
+#' 
+#' @internal
+#' 
+#' @examples
+#' fn <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' derep1 = derepFastq(fn)
+#' identical(getDerep(derep1), getDerep(fn))
+#' 
+getDerep <- function(object, ...) {
+  if(is(object, "derep")) { object }
+  else if(is.list.of(object, "derep")) { object }
+  else if(is(object, "character")) { derepFastq(object, ...) }
+  else{
+    stop("Unrecognized format: Requires derep-class object, list of derep-class objects, or a character vector of file names.")
+  }
+}
 
