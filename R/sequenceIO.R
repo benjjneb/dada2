@@ -286,8 +286,6 @@ setMethod("writeFasta", "character", function(object, file, mode="w", width=2000
 #' 
 #' @return A \code{\link{derep-class}} object or list of \code{\link{derep-class}} objects.
 #' 
-#' @internal
-#' 
 #' @examples
 #' fn <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
 #' derep1 = derepFastq(fn)
