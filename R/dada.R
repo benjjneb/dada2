@@ -148,14 +148,6 @@ dada <- function(derep,
   # Read in default opts and then replace with any that were passed in to the function
   opts <- getDadaOpt()
   args <- list(...)
-  # Catch the deprecated SCORE_MATRIX option
-  if("SCORE_MATRIX" %in% names(args)) {
-    stop("DEFUNCT: The SCORE_MATRIX option has been replaced by the MATCH/MISMATCH arguments. Please update your code.")
-  }
-  # Catch the defunct VERBOSE option
-  if("VERBOSE" %in% names(args)) {
-    stop("DEFUNCT: The VERBOSE option has been replaced by the verbose argument. Please update your code.")
-  }
   for(opnm in names(args)) {
     if(opnm %in% names(opts)) {
       opts[[opnm]] <- args[[opnm]]
@@ -170,10 +162,16 @@ dada <- function(derep,
     else { verbose <- 1 }
   }
   
-  # If a single derep object, make into a length 1 list
+  # Validate the derep argument. If a single derep object, make into a length 1 list
   if(class(derep) == "derep") { derep <- list(derep) }
   if(!(is.list.of(derep, "derep") || is(derep, "character"))) { stop("The derep argument must be a derep-class object, list of derep-class objects, or a character vector of fastq filenames.") }
-
+  if(is.character(derep)) { 
+    if(!all(file.exists(derep))) {
+      stop("Some of the filenames provided do not exist. This may have happened because some samples had zero reads after filtering.")
+    }
+    if(is.null(names(derep))) { names(derep) <- basename(derep) } # If unnamed vector of filenames provided
+  }
+  
   # Get prior sequences
   priors <- getSequences(priors)
   
