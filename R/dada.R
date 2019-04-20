@@ -129,9 +129,11 @@ assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
 #' @export
 #'
 #' @examples
-#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-#' derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
-#' dada(derep1, err=tperr1)
+#' fn1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' fn2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
+#' derep1 = derepFastq(fn1)
+#' derep2 = derepFastq(fn2)
+#' dada(fn1, err=tperr1)
 #' dada(list(sam1=derep1, sam2=derep2), err=tperr1, selfConsist=TRUE)
 #' dada(derep1, err=inflateErr(tperr1,3), BAND_SIZE=32, OMEGA_A=1e-20)
 #'
@@ -188,7 +190,7 @@ dada <- function(derep,
     pseudo <- TRUE
   } else { stop("Invalid pool argument.") }
   
-  # Validate err matrix  ###! BUG HERE
+  # Validate err matrix
   initializeErr <- FALSE
   if(selfConsist && (missing(err) || is.null(err))) {
     err <- NULL
@@ -355,10 +357,8 @@ dada <- function(derep,
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
       colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
     }
-    # Accumulate the sub matrix
-    ###! Add extension of trans matrices to a new qmax columns here
-    ###! Need to extend whatever fix is implemented to plotErrors as well, which also uses this Reduce statement on trans matrices
-    cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient
+    # Accumulate the trans matrix
+    cur <- accumulateTrans(trans) # The only thing that changes is err(trans), so this is sufficient to determine convergence
     
     # Estimate the new error model (if applicable)
     if(is.null(errorEstimationFunction)) {

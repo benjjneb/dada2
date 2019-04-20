@@ -310,7 +310,7 @@ getErrors <- function(obj, detailed=FALSE, enforce=TRUE) {
     }
     if(!is.null(obj[[1]]$err_out)) rval$err_out <- obj[[1]]$err_out
     rval$err_in <- obj[[1]]$err_in
-    rval$trans <- Reduce("+", lapply(obj, function(x) x$trans))
+    rval$trans <- accumulateTrans(lapply(obj, function(x) x$trans))
   } else if(is.list(obj) && "err_out" %in% names(obj) && "err_in" %in% names(obj) && "trans" %in% names(obj)) {
     rval <- obj
   }
@@ -363,6 +363,22 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
   return(err)
 }
 
+#' Sum matrices of transition counts together, accounting for the possibility
+#' of variation in the number of columns present in each.
+#' 
+#' @param trans (Required). A list of matrices recording the counts of transitions in each sample.
+#' 
+accumulateTrans <- function(trans) {
+  maxcol <- max(sapply(trans, ncol))
+  rval <- matrix(0L, nrow=16, ncol=maxcol)
+  rownames(rval) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
+  colnames(rval) <- seq(0, maxcol-1)  # One col for each integer starting at 0
+  for(tt in trans) {
+    rval[,1:ncol(tt)] <- rval[,1:ncol(tt)] + tt
+  }
+  rval
+}
+  
 ################################################################################
 #  --------------------- REQUIRES FURTHER TESTING --------------------------
 # Identify False Positive inferred sequences due to bad bases.
