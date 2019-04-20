@@ -30,8 +30,8 @@ This function extracts the sequences from several different data objects, includ
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 dada1 <- dada(derep1, err=tperr1)
-getSequences(derep1)
-getSequences(dada1)
-getSequences(dada1$clustering)
+getSequences(derep1)[1:5]
+getSequences(dada1)[1:5]
+getSequences(dada1$clustering)[1:5]
 
 }

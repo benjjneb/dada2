@@ -24,7 +24,7 @@
 #' derep2 <- derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, tperr1)
 #' dada2 <- dada(derep2, tperr1)
-#' makeSequenceTable(list(sample1=dada1, sample2=dada2))
+#' seqtab <- makeSequenceTable(list(sample1=dada1, sample2=dada2))
 #' 
 makeSequenceTable <- function(samples, orderBy = "abundance") {
   if(class(samples) %in% c("dada", "derep", "data.frame")) { samples <- list(samples) }

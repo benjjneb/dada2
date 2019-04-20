@@ -33,8 +33,8 @@ enough exactly matching words are found, the sequence is flagged.
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 sqs1 <- getSequences(derep1)
-isPhiX(sqs1)
-isPhiX(sqs1, wordSize=20,  minMatches=1)
+is.phi <- isPhiX(sqs1)
+is.phi <- isPhiX(sqs1, wordSize=20,  minMatches=1)
 
 }
 \seealso{

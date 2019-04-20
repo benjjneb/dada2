@@ -99,8 +99,8 @@ isBimera <- function(sq, parents, allowOneOff=FALSE, minOneOffParentDistance=4, 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
-#' isBimeraDenovo(dada1)
-#' isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=TRUE)
+#' is.bim <- isBimeraDenovo(dada1)
+#' is.bim2 <- isBimeraDenovo(dada1$denoised, minFoldParentOverAbundance = 2, allowOneOff=TRUE)
 #' 
 isBimeraDenovo <- function(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8, allowOneOff=FALSE, minOneOffParentDistance=4, maxShift=16, multithread=FALSE, verbose=FALSE) {
   if(any(duplicated(getSequences(unqs)))) message("Duplicate sequences detected.")
@@ -372,8 +372,8 @@ removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
-#' isShiftDenovo(dada1)
-#' isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
+#' is.shift <- isShiftDenovo(dada1)
+#' is.shift <- isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
 #' 
 isShiftDenovo <- function(unqs, minOverlap = 20, flagSubseqs=FALSE, verbose=FALSE) {
   unqs.int <- getUniques(unqs, silence=TRUE) # Internal, keep input unqs for proper return value when duplications

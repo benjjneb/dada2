@@ -235,7 +235,7 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
 #'  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
 #'  err <- learnErrors(c(fl1, fl2))
-#'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
+#'  err <- learnErrors(c(fl1, fl2), nbases=5000000, randomize=TRUE)
 #'  # Using a list of derep-class objects
 #'  dereps <- derepFastq(c(fl1, fl2))
 #'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE, MAX_CONSIST=20)

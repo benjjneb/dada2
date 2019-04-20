@@ -88,9 +88,9 @@ derepF = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 derepR = derepFastq(system.file("extdata", "sam1R.fastq.gz", package="dada2"))
 dadaF <- dada(derepF, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
 dadaR <- dada(derepR, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
-mergePairs(dadaF, derepF, dadaR, derepR)
-mergePairs(dadaF, derepF, dadaR, derepR, returnRejects=TRUE, propagateCol=c("n0", "birth_ham"))
-mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
+merger <- mergePairs(dadaF, derepF, dadaR, derepR)
+merger <- mergePairs(dadaF, derepF, dadaR, derepR, returnRejects=TRUE, propagateCol=c("n0", "birth_ham"))
+merger <- mergePairs(dadaF, derepF, dadaR, derepR, justConcatenate=TRUE)
 
 }
 \seealso{
