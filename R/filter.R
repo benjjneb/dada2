@@ -1051,8 +1051,8 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' sqs1 <- getSequences(derep1)
-#' isPhiX(sqs1)
-#' isPhiX(sqs1, wordSize=20,  minMatches=1)
+#' is.phi <- isPhiX(sqs1)
+#' is.phi <- isPhiX(sqs1, wordSize=20,  minMatches=1)
 #' 
 isPhiX <- function(seqs, wordSize=16, minMatches=2, nonOverlapping=TRUE, ...) {
   seqs <- getSequences(seqs)

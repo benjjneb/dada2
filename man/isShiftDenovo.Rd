@@ -31,8 +31,8 @@ the sequence collection that are more abundant than the sequence being evaluated
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
-isShiftDenovo(dada1)
-isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
+is.shift <- isShiftDenovo(dada1)
+is.shift <- isShiftDenovo(dada1$denoised, minOverlap=50, verbose=TRUE)
 
 }
 \seealso{

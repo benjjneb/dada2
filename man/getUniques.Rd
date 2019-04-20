@@ -30,8 +30,8 @@ This function extracts the \code{\link{uniques-vector}} from several different d
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 dada1 <- dada(derep1, err=tperr1)
-getUniques(derep1)
-getUniques(dada1)
-getUniques(dada1$clustering)
+getUniques(derep1)[1:3]
+getUniques(dada1)[1:3]
+getUniques(dada1$clustering)[1:3]
 
 }

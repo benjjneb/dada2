@@ -52,7 +52,7 @@ setMethod("show", "dada", function(object){
 #' @inheritParams base::`names<-`
 #' @return NULL.
 #' @include allClasses.R
-#' # examples
+#'
 setMethod("names<-", "derep", function(x, value){
   warning("derep-class objects cannot be renamed.")
   return(x)
@@ -64,32 +64,32 @@ setMethod("names<-", "derep", function(x, value){
 #' @inheritParams base::`names<-`
 #' @return NULL.
 #' @include allClasses.R
-#' # examples
+#' 
 setMethod("names<-", "dada", function(x, value){
   warning("dada-class objects cannot be renamed.")
   return(x)
 })
 
 ############################################################################
-#' Change concatenation to list construction.
+#' Change concatenation of derep-class objects to list construction.
 #'
 #' @inheritParams base::c
 #' @param x A derep-class object
 #' @return list.
 #' @include allClasses.R
-#' # examples
+#'
 setMethod("c", signature("derep"), function(x,...,recursive=FALSE){
   list(x,...)
 })
 
 ############################################################################
-#' Change concatenation to list construction.
+#' Change concatenation of dada-class objects to list construction.
 #'
 #' @inheritParams base::c
 #' @param x A dada-class object
 #' @return list.
 #' @include allClasses.R
-#' # examples
+#'
 setMethod("c", signature("dada"), function(x,...,recursive=FALSE){
   list(x,...)
 })

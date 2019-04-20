@@ -24,9 +24,9 @@
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1)
-#' getUniques(derep1)
-#' getUniques(dada1)
-#' getUniques(dada1$clustering)
+#' getUniques(derep1)[1:3]
+#' getUniques(dada1)[1:3]
+#' getUniques(dada1$clustering)[1:3]
 #' 
 getUniques <- function(object, collapse=TRUE, silence=FALSE) {
   if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
@@ -90,9 +90,9 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1)
-#' getSequences(derep1)
-#' getSequences(dada1)
-#' getSequences(dada1$clustering)
+#' getSequences(derep1)[1:5]
+#' getSequences(dada1)[1:5]
+#' getSequences(dada1$clustering)[1:5]
 #' 
 getSequences <- function(object, collapse=FALSE, silence=TRUE) {
   if(is(object, "character")) {
@@ -264,6 +264,7 @@ is.list.of <- function(x, ctype) {
   else return(all(sapply(x, is, ctype)))
 }
 
+#' @importFrom utils write.table
 #' @keywords internal
 seqtab_to_qiime <- function(st, fout) {
   st <- t(st) # QIIME has OTUs as rows
@@ -273,6 +274,7 @@ seqtab_to_qiime <- function(st, fout) {
               row.names=TRUE, col.names=col.names, quote=FALSE)
 }
 
+#' @importFrom utils write.table
 #' @keywords internal
 seqtab_to_mothur <- function(st, fout) {
   # mothur has OTUs as columns, and a couple required columns
@@ -281,6 +283,7 @@ seqtab_to_mothur <- function(st, fout) {
   write.table(df.shared, four, row.names=FALSE, col.names=TRUE, quote=FALSE)
 }
 
+#' @importFrom utils write.table
 #' @keywords internal
 samdf_to_qiime2 <- function(df, fout) {
   col.names <- colnames(df)

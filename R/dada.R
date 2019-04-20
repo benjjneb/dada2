@@ -129,9 +129,11 @@ assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
 #' @export
 #'
 #' @examples
-#' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
-#' derep2 = derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
-#' dada(derep1, err=tperr1)
+#' fn1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' fn2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
+#' derep1 = derepFastq(fn1)
+#' derep2 = derepFastq(fn2)
+#' dada(fn1, err=tperr1)
 #' dada(list(sam1=derep1, sam2=derep2), err=tperr1, selfConsist=TRUE)
 #' dada(derep1, err=inflateErr(tperr1,3), BAND_SIZE=32, OMEGA_A=1e-20)
 #'
@@ -148,14 +150,6 @@ dada <- function(derep,
   # Read in default opts and then replace with any that were passed in to the function
   opts <- getDadaOpt()
   args <- list(...)
-  # Catch the deprecated SCORE_MATRIX option
-  if("SCORE_MATRIX" %in% names(args)) {
-    stop("DEFUNCT: The SCORE_MATRIX option has been replaced by the MATCH/MISMATCH arguments. Please update your code.")
-  }
-  # Catch the defunct VERBOSE option
-  if("VERBOSE" %in% names(args)) {
-    stop("DEFUNCT: The VERBOSE option has been replaced by the verbose argument. Please update your code.")
-  }
   for(opnm in names(args)) {
     if(opnm %in% names(opts)) {
       opts[[opnm]] <- args[[opnm]]
@@ -170,45 +164,16 @@ dada <- function(derep,
     else { verbose <- 1 }
   }
   
-  # If a single derep object, make into a length 1 list
+  # Validate the derep argument. If a single derep object, make into a length 1 list
   if(class(derep) == "derep") { derep <- list(derep) }
-  if(!is.list.of(derep, "derep")) { stop("The derep argument must be a derep-class object or list of derep-class objects.") }
-  if(opts$USE_QUALS && any(is.null(lapply(derep, function(x) x$quals)))) { stop("The input derep-class object(s) must include quals if USE_QUALS is TRUE.") }
+  if(!(is.list.of(derep, "derep") || is(derep, "character"))) { stop("The derep argument must be a derep-class object, list of derep-class objects, or a character vector of fastq filenames.") }
+  if(is.character(derep)) { 
+    if(!all(file.exists(derep))) {
+      stop("Some of the filenames provided do not exist. This may have happened because some samples had zero reads after filtering.")
+    }
+    if(is.null(names(derep))) { names(derep) <- basename(derep) } # If unnamed vector of filenames provided
+  }
   
-  # Validate derep object(s)
-  for(i in seq_along(derep)) {
-    if(!(is.integer(derep[[i]]$uniques))) {
-      stop("Invalid derep$uniques vector. Must be integer valued.")
-    }
-    if(!(all(C_isACGT(names(derep[[i]]$uniques))))) {
-      stop("Invalid derep$uniques vector. Names must be sequences made up only of A/C/G/T.")
-    }
-  }
-
-  # Validate quals matrix(es)
-  qmax <- 0
-  for(i in seq_along(derep)) {
-    if(nrow(derep[[i]]$quals) != length(derep[[i]]$uniques)) {
-      stop("derep$quals matrices must have one row for each derep$unique sequence.")
-    }
-    if(any(sapply(names(derep[[i]]$uniques), nchar) > ncol(derep[[i]]$quals))) { ###ITS
-      stop("derep$quals matrices must have as many columns as the length of the derep$unique sequences.")
-    }
-    if(any(sapply(seq(nrow(derep[[i]]$quals)), 
-                  function(row) any(is.na(derep[[i]]$quals[row,1:nchar(names(derep[[i]]$uniques)[[row]])]))))) { ###ITS
-      stop("NAs in derep$quals matrix. Check that all input sequences had valid associated qualities assigned.")
-    }
-    if(min(derep[[i]]$quals, na.rm=TRUE) < 0) {
-      stop("Invalid derep$quals matrix. Quality values must be positive integers.")
-    }
-    qmax <- max(qmax, max(derep[[i]]$quals, na.rm=TRUE))
-  }
-
-  qmax <- ceiling(qmax) # Only getting averages from derep$quals
-  if(qmax > 250) {
-    stop("derep$quals matrix has an invalid maximum Phred Quality Scores of ", qmax) 
-  }
-
   # Get prior sequences
   priors <- getSequences(priors)
   
@@ -217,8 +182,8 @@ dada <- function(derep,
   if(length(derep) <= 1) { pool <- FALSE }
   if(is.logical(pool)) {
     if(pool) { # Make derep a length 1 list of pooled derep object
-      derep.in <- derep
-      derep <- list(combineDereps2(derep))
+      derep.in <- getDerep(derep)
+      derep <- list(combineDereps2(derep.in))
     }
   } else if(is.character(pool) && pool == "pseudo") {
     pool <- FALSE
@@ -232,15 +197,6 @@ dada <- function(derep,
     initializeErr <- TRUE
   } else {
     err <- getErrors(err, enforce=TRUE)
-    if(ncol(err) < qmax+1 && verbose) { # qmax = 0 if USE_QUALS = FALSE
-      message("The supplied error matrix does not extend to maximum observed Quality Scores in derep (", qmax, ").
-  Extending error rates by repeating the last column of the Error Matrix (column ", ncol(err), ").
-  In selfConsist mode this should converge to the proper error rates, otherwise this may not be what you want.")
-      for (q in seq(ncol(err), qmax)) { 
-        err <- cbind(err, err[1:16, q])
-        colnames(err)[q+1] <- q
-      }
-    }
   }
   
   # Validate OMEGA parameters
@@ -303,18 +259,63 @@ dada <- function(derep,
     if(nconsist > 0) errs[[nconsist]] <- err
 
     for(i in seq_along(derep)) {
-      qi <- unname(t(derep[[i]]$quals)) # Need transpose so that sequences are columns
+      drpi <- getDerep(derep[[i]])
+      # Validate dereplicated sequences
+      if(!all(C_isACGT(names(drpi$uniques)))) {
+        stop("Invalid derep$uniques vector. Sequences must be made up only of A/C/G/T.")
+      }
+      # Validate quals matrix
+      if(opts$USE_QUALS) {
+        if(is.null(drpi$quals)) { 
+          stop("The input derep-class object(s) must include quals if USE_QUALS is TRUE.")
+        }
+        if(nrow(drpi$quals) != length(drpi$uniques)) {
+          stop("derep$quals matrices must have one row for each derep$unique sequence.")
+        }
+        if(any(sapply(names(drpi$uniques), nchar) > ncol(drpi$quals))) { ###ITS
+          stop("derep$quals matrices must have as many columns as the length of the derep$unique sequences.")
+        }
+        if(any(sapply(seq(nrow(drpi$quals)), 
+                      function(row) any(is.na(drpi$quals[row,1:nchar(names(drpi$uniques)[[row]])]))))) { ###ITS
+          stop("NAs in derep$quals matrix. Check that all input sequences had valid associated qualities assigned.")
+        }
+        if(min(drpi$quals, na.rm=TRUE) < 0) {
+          stop("Invalid derep$quals matrix. Quality values must be positive integers.")
+        }
+        qmax <- ceiling(max(drpi$quals, na.rm=TRUE))
+        if(qmax > 250) { stop("Sample ", i, " has an invalid maximum Phred Quality Scores of ", qmax) }
+      }
 
+      # Initialize error matrix if necessary
+      if(initializeErr) {
+        erri <- matrix(1, nrow=16, ncol=max(41,qmax+1))
+      } else {
+        erri <- err
+      }
+      # Extend the error model if the data has higher quality scores in it than the provided error matrix
+      if(ncol(erri) < qmax+1) { # qmax = 0 if USE_QUALS = FALSE
+        if(verbose) {
+          message("The supplied error matrix does not extend to maximum observed Quality Scores in sample ", i, "(q=", qmax, ").
+                       Extending the error model by repeating the last column of the Error Matrix (column ", ncol(err), ").
+                       In selfConsist mode this should converge to the proper error rates, otherwise this may not be what you want.")
+        }
+        for (q in seq(ncol(erri), qmax)) { 
+          erri <- cbind(erri, erri[1:16, q])
+          colnames(erri)[q+1] <- q
+        }
+      }
+      
+      # Verbose progress reporting      
       if(nconsist == 1 && verbose) {
         if(selfConsist) {
           if(i==1) cat("selfConsist step 1 ")
           cat(".")
         } else if(pool) {
-          cat(length(derep.in), "samples were pooled:", sum(derep[[i]]$uniques), "reads in", 
-              length(derep[[i]]$uniques), "unique sequences.\n")
+          cat(length(derep.in), "samples were pooled:", sum(drpi$uniques), "reads in", 
+              length(drpi$uniques), "unique sequences.\n")
         } else {
-          cat("Sample", i, "-", sum(derep[[i]]$uniques), "reads in", 
-              length(derep[[i]]$uniques), "unique sequences.\n")
+          cat("Sample", i, "-", sum(drpi$uniques), "reads in", 
+              length(drpi$uniques), "unique sequences.\n")
         }
       } else if(i==1 && verbose) {
         if(nconsist == 0) {
@@ -323,13 +324,10 @@ dada <- function(derep,
           cat("\n   selfConsist step", nconsist)
         }
       }
-      # Initialize error matrix if necessary
-      if(initializeErr) {
-        err <- matrix(1, nrow=16, ncol=max(41,qmax+1))
-      }
-      res <- dada_uniques(names(derep[[i]]$uniques), unname(derep[[i]]$uniques), names(derep[[i]]$uniques) %in% c(priors, pseudo_priors),
-                          err,
-                          qi, 
+      
+      res <- dada_uniques(names(drpi$uniques), unname(drpi$uniques), names(drpi$uniques) %in% c(priors, pseudo_priors),
+                          erri,
+                          unname(t(drpi$quals)), # Transpose so that sequences are columns
                           opts[["MATCH"]], opts[["MISMATCH"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
@@ -359,8 +357,8 @@ dada <- function(derep,
       rownames(trans[[i]]) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
       colnames(trans[[i]]) <- seq(0, ncol(trans[[i]])-1)  # Assumes C sides is returning one col for each integer starting at 0
     }
-    # Accumulate the sub matrix
-    cur <- Reduce("+", trans) # The only thing that changes is err(trans), so this is sufficient
+    # Accumulate the trans matrix
+    cur <- accumulateTrans(trans) # The only thing that changes is err(trans), so this is sufficient to determine convergence
     
     # Estimate the new error model (if applicable)
     if(is.null(errorEstimationFunction)) {
@@ -380,11 +378,7 @@ dada <- function(derep,
     }
 
     if(selfConsist) { # Validate err matrix
-      if(!is.numeric(err)) stop("Error matrix returned by errorEstimationFunction not numeric.")
-      if(!(nrow(err)==16)) stop("Error matrix returned by errorEstimationFunction does not have 16 rows.")
-      if(!all(err>=0)) stop("Error matrix returned by errorEstimationFunction has entries <0.")
-      if(!all(err<=1)) stop("Error matrix returned by errorEstimationFunction has entries >1.")
-      if(any(err==0)) warning("Error matrix returned by errorEstimationFunction has 0s in some entries.")      
+      temp.var <- getErrors(err, enforce=TRUE); rm("temp.var")
     }
     
     # Termination condition for selfConsist loop

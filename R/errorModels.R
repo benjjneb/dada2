@@ -235,7 +235,7 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  fl1 <- system.file("extdata", "sam1F.fastq.gz", package="dada2")
 #'  fl2 <- system.file("extdata", "sam2F.fastq.gz", package="dada2")
 #'  err <- learnErrors(c(fl1, fl2))
-#'  err <- learnErrors(c(fl1, fl2), nreads=50000, randomize=TRUE)
+#'  err <- learnErrors(c(fl1, fl2), nbases=5000000, randomize=TRUE)
 #'  # Using a list of derep-class objects
 #'  dereps <- derepFastq(c(fl1, fl2))
 #'  err <- learnErrors(dereps, multithread=TRUE, randomize=TRUE, MAX_CONSIST=20)
@@ -310,7 +310,7 @@ getErrors <- function(obj, detailed=FALSE, enforce=TRUE) {
     }
     if(!is.null(obj[[1]]$err_out)) rval$err_out <- obj[[1]]$err_out
     rval$err_in <- obj[[1]]$err_in
-    rval$trans <- Reduce("+", lapply(obj, function(x) x$trans))
+    rval$trans <- accumulateTrans(lapply(obj, function(x) x$trans))
   } else if(is.list(obj) && "err_out" %in% names(obj) && "err_in" %in% names(obj) && "trans" %in% names(obj)) {
     rval <- obj
   }
@@ -363,6 +363,22 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
   return(err)
 }
 
+## Sum matrices of transition counts together, accounting for the possibility
+## of variation in the number of columns present in each.
+## 
+## @param trans (Required). A list of matrices recording the counts of transitions in each sample.
+## 
+accumulateTrans <- function(trans) {
+  maxcol <- max(sapply(trans, ncol))
+  rval <- matrix(0L, nrow=16, ncol=maxcol)
+  rownames(rval) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
+  colnames(rval) <- seq(0, maxcol-1)  # One col for each integer starting at 0
+  for(tt in trans) {
+    rval[,1:ncol(tt)] <- rval[,1:ncol(tt)] + tt
+  }
+  rval
+}
+  
 ################################################################################
 #  --------------------- REQUIRES FURTHER TESTING --------------------------
 # Identify False Positive inferred sequences due to bad bases.
@@ -495,16 +511,4 @@ NULL
 #'  Columns correspond to consensus quality scores 0 to 40.
 #'  
 #' @name errBalancedR
-NULL
-
-#' An empirical error matrix.
-#'
-#' A dataset containing the error matrix estimated by DADA2 from the forward reads of the
-#' Illumina Miseq 2x250 sequenced HMP mock community (see manuscript).
-#'
-#' @format A numerical matrix with 16 rows and 41 columns.
-#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
-#'  Columns correspond to consensus quality scores 0 to 40.
-#'  
-#' @name errHmpF
 NULL

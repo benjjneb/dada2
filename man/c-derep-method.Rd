@@ -3,7 +3,7 @@
 \docType{methods}
 \name{c,derep-method}
 \alias{c,derep-method}
-\title{Change concatenation to list construction.}
+\title{Change concatenation of derep-class objects to list construction.}
 \usage{
 \S4method{c}{derep}(x, ..., recursive = FALSE)
 }
@@ -20,5 +20,5 @@
 list.
 }
 \description{
-Change concatenation to list construction.
+Change concatenation of derep-class objects to list construction.
 }

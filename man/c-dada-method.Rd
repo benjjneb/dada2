@@ -3,7 +3,7 @@
 \docType{methods}
 \name{c,dada-method}
 \alias{c,dada-method}
-\title{Change concatenation to list construction.}
+\title{Change concatenation of dada-class objects to list construction.}
 \usage{
 \S4method{c}{dada}(x, ..., recursive = FALSE)
 }
@@ -20,5 +20,5 @@
 list.
 }
 \description{
-Change concatenation to list construction.
+Change concatenation of dada-class objects to list construction.
 }
