@@ -363,11 +363,11 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
   return(err)
 }
 
-#' Sum matrices of transition counts together, accounting for the possibility
-#' of variation in the number of columns present in each.
-#' 
-#' @param trans (Required). A list of matrices recording the counts of transitions in each sample.
-#' 
+## Sum matrices of transition counts together, accounting for the possibility
+## of variation in the number of columns present in each.
+## 
+## @param trans (Required). A list of matrices recording the counts of transitions in each sample.
+## 
 accumulateTrans <- function(trans) {
   maxcol <- max(sapply(trans, ncol))
   rval <- matrix(0L, nrow=16, ncol=maxcol)
@@ -511,16 +511,4 @@ NULL
 #'  Columns correspond to consensus quality scores 0 to 40.
 #'  
 #' @name errBalancedR
-NULL
-
-#' An empirical error matrix.
-#'
-#' A dataset containing the error matrix estimated by DADA2 from the forward reads of the
-#' Illumina Miseq 2x250 sequenced HMP mock community (see manuscript).
-#'
-#' @format A numerical matrix with 16 rows and 41 columns.
-#'  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
-#'  Columns correspond to consensus quality scores 0 to 40.
-#'  
-#' @name errHmpF
 NULL
