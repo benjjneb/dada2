@@ -114,11 +114,11 @@ If memory is an issue, execute in a clean environment and reduce the chunk size 
 \item{n}{(Optional). Default \code{1e5}.
 The number of records (reads) to read in and filter at any one time. 
 This controls the peak memory requirement so that very large fastq files are supported. 
-See \code{\link{FastqStreamer}} for details.}
+See \code{\link[ShortRead]{FastqStreamer}} for details.}
 
 \item{OMP}{(Optional). Default TRUE.
-Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Should be set to FALSE if
-calling this function within a parallelized chunk of code.
+Whether or not to use OMP multithreading when calling \code{\link[ShortRead]{FastqStreamer}}. 
+Should be set to FALSE if calling this function within a parallelized chunk of code.
 If \code{multithread=TRUE}, this argument will be coerced to FALSE.}
 
 \item{qualityType}{(Optional). \code{character(1)}.

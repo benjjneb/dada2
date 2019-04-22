@@ -1,5 +1,58 @@
-# NEED TO WORK ON VARIOUS SCENAIORS
-# especially trimming of partial reverse primers, and sometimes present reverse primers
+#' Removes primers and orients reads in a consistent direction.
+#' 
+#' Removes primer(s) and orients the reads in input fastq file(s) (can be compressed).
+#' Reads that do not contain the primer(s) are discarded.
+#' Intended for use with PacBio CCS data.
+#' Faster external solutions such as cutadapt or trimmomatic are recommended for short-read data.
+#' 
+#' @param fn (Required). \code{character}.
+#' The path(s) to the input fastq file(s). Can be compressed.
+#'   
+#' @param fout (Required). \code{character}.
+#'  The path(s) to the output fastq file(s) corresponding to the \code{fwd} input files.
+#'  If directory containing the file does not exist, it will be created.
+#'  Output files are gzip compressed by default.
+#'   
+#' @param primer.fwd (Required). \code{character}.
+#'  The forward primer sequence expected to be at the beginning of the sequenced amplicon.
+#'  Can contain IUPAC ambiguous nucleotide codes.
+#' 
+#' @param primer.rev (Optional). Default NULL.
+#'  The reverse primer sequence expected to be at the end of the sequenced amplicon.
+#'  Can contain IUPAC ambiguous nucleotide codes.
+#'  NOTE: `primer.rev` should be provided in the orientation that would appear in a DNA sequence
+#'  starting at the forward primer and being read towards the reverse primer. Thus, it is
+#'  often necessary to reverse-complement the reverse primer sequence before providing it to
+#'  this function.
+#' 
+#' @param max.mismatch (Optional). Default 2.
+#'  The number of mismatches to tolerate when matching reads to primer sequences.
+#'  Only substitution mismatches to the primers can be tolerated, indels are not tolerated.
+#'  See \code{\link[Biostrings]{vmatchPattern}} for details.
+#' 
+#' @param trim.fwd (Optional). Default TRUE.
+#'  If TRUE, reads are trimmed to the end of the forward primer, i.e. the forward
+#'  primer and any preceding sequence are trimmed off.
+#'  
+#' @param trim.rev (Optional). Default TRUE.
+#'  If TRUE, reads are trimmed to the beginning of the reverse primer, i.e. the reverse
+#'  primer and any subsequent sequence are trimmed off.
+#'  
+#' @param orient (Optional). Default TRUE.
+#'  If TRUE, reads are re-oriented if the reverse complement of the read is a better match to the
+#'  provided primer sequence(s). This is recommended for PacBio CCS reads, which come in a random
+#'  mix of forward and reverse-complement orientations.
+#' 
+#' @param compress (Optional). Default TRUE.
+#'  If TRUE, the output fastq file(s) are gzipped.
+#' 
+#' @param verbose (Optional). Default FALSE.
+#'  Whether to output status messages.  
+#' 
+#' @return Integer matrix. Returned invisibly (i.e. only if assigned to something).
+#'  Rows correspond to the input files, columns record the number of reads.in and reads.out after
+#'  discarding reads that didn't match the provided primers.
+#' 
 #' @importFrom Biostrings vmatchPattern
 #' @importFrom ShortRead sread
 #' @importFrom ShortRead reverseComplement
@@ -9,13 +62,27 @@
 #' @importFrom BiocGenerics end
 #' @importFrom BiocGenerics width
 #' @importFrom BiocGenerics start
-removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL, 
-                          max.mismatch=2, allow.indels=FALSE, 
-                          require.fwd=TRUE, require.rev=TRUE, trim.fwd=TRUE, trim.rev=TRUE, orient=FALSE,
-                          n = 1e5, compress=TRUE, verbose = FALSE) {
+#' 
+#' @export
+#' 
+#' @examples
+#' F27 <- "AGRGTTYGATYMTGGCTCAG"
+#' R1492 <- "RGYTACCTTGTTACGACTT"
+#' fn <- system.file("extdata", "samPBprimers.fastq.gz", package="dada2")
+#' fn.noprime <- tempfile(fileext=".fastq.gz")
+#' removePrimers(fn, fn.noprime, primer.fwd=F27, primer.rev=rc(R1492), orient=TRUE, verbose=TRUE)
+#' 
+# Further testing warranted for trimming of partial reverse primers, and sometimes present reverse primers
+removePrimers <- function(fn, fout, 
+                          primer.fwd, primer.rev=NULL, max.mismatch=2, 
+                          ### allow.indels=FALSE, require.fwd=TRUE, require.rev=TRUE, 
+                          trim.fwd=TRUE, trim.rev=TRUE, orient=TRUE,
+                          compress=TRUE, verbose = FALSE) {
   # Check and enforce filepaths
   if(length(fn) != length(fout)) stop("Every input file must have a corresponding output file.")
+  allow.indels <- FALSE ### see next line
   if(allow.indels) stop("Primer matching with indels not currently supported (vmatchPattern).")
+  require.fwd <- TRUE; require.rev <- TRUE ###
   odirs <- unique(dirname(fout))
   for(odir in odirs) {
     if(!dir.exists(odir)) { 
@@ -244,11 +311,11 @@ removePrimers <- function(fn, fout, primer.fwd, primer.rev=NULL,
 #' @param n (Optional). Default \code{1e5}.
 #' The number of records (reads) to read in and filter at any one time. 
 #' This controls the peak memory requirement so that very large fastq files are supported. 
-#' See \code{\link{FastqStreamer}} for details.
+#' See \code{\link[ShortRead]{FastqStreamer}} for details.
 #'
 #' @param OMP (Optional). Default TRUE.
-#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Should be set to FALSE if
-#'  calling this function within a parallelized chunk of code.
+#'  Whether or not to use OMP multithreading when calling \code{\link[ShortRead]{FastqStreamer}}. 
+#'  Should be set to FALSE if calling this function within a parallelized chunk of code.
 #'  If \code{multithread=TRUE}, this argument will be coerced to FALSE.
 #'  
 #' @param qualityType (Optional). \code{character(1)}.
@@ -436,11 +503,12 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #'  
 #' @param n (Optional). The number of records (reads) to read in and filter at any one time. 
 #'  This controls the peak memory requirement so that very large fastq files are supported. 
-#'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
+#'  Default is \code{1e6}, one-million reads. See \code{\link[ShortRead]{FastqStreamer}} for details.
 #'
 #' @param OMP (Optional). Default TRUE.
-#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
-#'  calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).
+#'  Whether or not to use OMP multithreading when calling \code{\link[ShortRead]{FastqStreamer}}. 
+#'  Set this to FALSE if calling this function within a parallelized chunk of code 
+#'  (eg. within \code{\link[parallel]{mclapply}}).
 #' 
 #' @param qualityType (Optional). \code{character(1)}.
 #'  The quality encoding of the fastq file(s). "Auto" (the default) means to
@@ -698,11 +766,12 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
 #'
 #' @param n (Optional). The number of records (reads) to read in and filter at any one time.
 #'  This controls the peak memory requirement so that very large fastq files are supported.
-#'  Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.
+#'  Default is \code{1e6}, one-million reads. See \code{\link[ShortRead]{FastqStreamer}} for details.
 #'  
 #' @param OMP (Optional). Default TRUE.
-#'  Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
-#'  calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).
+#'  Whether or not to use OMP multithreading when calling \code{\link[ShortRead]{FastqStreamer}}. 
+#'  Set this to FALSE if calling this function within a parallelized chunk of code 
+#'  (eg. within \code{\link[parallel]{mclapply}}).
 #' 
 #' @param qualityType (Optional). \code{character(1)}.
 #'  The quality encoding of the fastq file(s). "Auto" (the default) means to

@@ -234,17 +234,43 @@ strdiff <- function(s1, s2) {
   data.frame(pos=dd,nt0=xx[dd],nt1=yy[dd])
 }
 
+################################################################################
+#' Reverse complement DNA sequences.
+#' 
+#' This function reverse complements DNA sequence(s) provided.
+#' This function is nothing more than a concisely-named convenience wrapper for 
+#' \code{\link[Biostrings]{reverseComplement}} that handles the \code{character} vector
+#' DNA sequences generated in the the dada2 package.
+#' 
+#' @param sq (Required). \code{character}. The DNA sequence(s) to reverse-complement.
+#'  \code{\link[Biostrings]{DNAString}}, or \code{\link[Biostrings]{DNAStringSet}} formats
+#'  are also accepted.
+#'  
+#' @return \code{character}. The reverse-complemented DNA sequence(s).
+#' 
+#' @seealso 
+#'  \code{\link[Biostrings]{reverseComplement}}
+#'  
 #' @importFrom Biostrings DNAString
 #' @importFrom Biostrings DNAStringSet
 #' @importFrom Biostrings reverseComplement
 #' @importFrom methods as
-rc <- function(sqs) {
-  if(length(sqs) < 1) {
+#' 
+#' @export
+#' 
+#' @examples
+#' R1492 <- "RGYTACCTTGTTACGACTT"
+#' rc(R1492)
+#' sqs <- getSequences(system.file("extdata", "example_seqs.fa", package="dada2"))
+#' rc(sqs)
+#' 
+rc <- function(sq) {
+  if(length(sq) < 1) {
     return(character(0))
-  } else if(length(sqs) == 1) {
-    as(reverseComplement(DNAString(sqs)), "character")
+  } else if(length(sq) == 1) {
+    as(reverseComplement(DNAString(sq)), "character")
   } else {
-    as(reverseComplement(DNAStringSet(sqs)), "character")
+    as(reverseComplement(DNAStringSet(sq)), "character")
   }
 }
 

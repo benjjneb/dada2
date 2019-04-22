@@ -98,11 +98,12 @@ If NULL (the default) and matchIDs is TRUE, the function attempts to automatical
 
 \item{n}{(Optional). The number of records (reads) to read in and filter at any one time.
 This controls the peak memory requirement so that very large fastq files are supported.
-Default is \code{1e6}, one-million reads. See \code{\link{FastqStreamer}} for details.}
+Default is \code{1e6}, one-million reads. See \code{\link[ShortRead]{FastqStreamer}} for details.}
 
 \item{OMP}{(Optional). Default TRUE.
-Whether or not to use OMP multithreading when calling \code{\link{FastqStreamer}}. Set this to FALSE if
-calling this function within a parallelized chunk of code (eg. within \code{\link[parallel]{mclapply}}).}
+Whether or not to use OMP multithreading when calling \code{\link[ShortRead]{FastqStreamer}}. 
+Set this to FALSE if calling this function within a parallelized chunk of code 
+(eg. within \code{\link[parallel]{mclapply}}).}
 
 \item{qualityType}{(Optional). \code{character(1)}.
 The quality encoding of the fastq file(s). "Auto" (the default) means to
