@@ -1,0 +1,20 @@
+DADA2 1.12 RELEASE NOTES
+-----------------------
+
+#### NEW FEATURES
+
+* The new `seqComplexity` function quantifies the complexity of sequences in terms of the Shannon richness of their kmers. `plotComplexity` interrogates the distribution of sequences complexities in fastq files, and the `rm.lowcomplex` argument in the `filterAndTrim` function allows filtering of low complexity sequences.
+
+* The new `removePrimers` function removes forward and reverse primers from sequencing reads, and can orient reads based on the location of the forward primer. Currently we recommend `removePrimers` for use with PacBio CCS data, but external solutions remain recommended for Illumina data.
+
+#### SIGNIFICANT USER-VISIBLE CHANGES
+
+* The `dada` function can now accept fastq filenames rather than requiring files be dereplicated and stored into memory first. This allows memory requirements to remain flat when processing large numbers of samples.
+
+* [Pseudo-pooling, an algorithmic approximation to sample inference from pooled samples](https://benjjneb.github.io/dada2/pseudo.html#pseudo-pooling), now has memory requirements that remain flat with sample number when invoked using filenames, e.g. `dada(fastqFiles, err=err, pool="pseudo")`. We now recommend pseudo-pooling for those interested in detecting singleton ASVs in their samples.
+
+#### BUG FIXES
+
+* Pooled sample inference with `dada(..., pool=TRUE)` no longer fails to output the most abundant ASV in the first sample under certain conditions.
+
+* The `data.frame` returned by `mergePairs` is now properly formatted even when only one sample was provided as a list. 
