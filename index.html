@@ -204,6 +204,9 @@ $(document).ready(function () {
       <a href="assign.html">Taxonomy</a>
     </li>
     <li>
+      <a href="training.html">Taxonomic References</a>
+    </li>
+    <li>
       <a href="pool.html">Pooling</a>
     </li>
     <li>
@@ -221,10 +224,13 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">DADA2 Manuscript</a>
     </li>
     <li>
       <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="https://doi.org/10.1101/392332">PacBio Long Reads</a>
     </li>
     <li>
       <a href="SMBS_DADA2.pdf">Symposium Slides</a>
@@ -269,23 +275,23 @@ $(document).ready(function () {
 
  
 <center>
-<img src="images/DADA2_Logo_Text_1_10_640px.png" alt="The DADA2 R package" />
+<img src="images/DADA2_Logo_Text_1_12_640px.png" alt="The DADA2 R package" />
 </center>
 <hr />
 <div id="fast-and-accurate-sample-inference-from-amplicon-data-with-single-nucleotide-resolution" class="section level2">
 <h2>Fast and accurate sample inference from amplicon data with single-nucleotide resolution</h2>
 <hr />
-<div id="dada2-1.10-release-is-now-live-and-includes-support-for-pacbio-long-reads-see-the-release-notes." class="section level4">
-<h4><strong><span style="color:red">DADA2 1.10 release is now live, and includes support for PacBio long reads! See <a href="ReleaseNotes_1_10.html">the release notes</a>.</span></strong></h4>
+<div id="the-dada2-1.12-release-is-live-with-efficient-pseudo-pooling-that-detects-singleton-asvs-in-your-samples-see-the-release-notes." class="section level4">
+<h4><strong><span style="color:red">The DADA2 1.12 release is live, with efficient pseudo-pooling that detects singleton ASVs in your samples! <br> See <a href="ReleaseNotes_1_12.html">the release notes</a>.</span></strong></h4>
 <p> </p>
 </div>
 </div>
 <div id="installation" class="section level2">
 <h2>Installation</h2>
-<p>Binaries for the current release version of DADA2 (1.10) are available from Bioconductor. Note that you must have R 3.5.0 or newer, and <a href="https://www.bioconductor.org/install/">Biocondcutor version 3.8</a>, to install the current release from Bioconductor.</p>
+<p>Binaries for the current release version of DADA2 (1.12) are available from Bioconductor. Note that you must have R 3.6.0 or newer, and <a href="https://www.bioconductor.org/install/">Bioconductor version 3.9</a>, to install the current release from Bioconductor.</p>
 <pre class="s"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
     install.packages(&quot;BiocManager&quot;)
-BiocManager::install(&quot;dada2&quot;, version = &quot;3.8&quot;)</code></pre>
+BiocManager::install(&quot;dada2&quot;, version = &quot;3.9&quot;)</code></pre>
 <p>If you wish to install the latest and greatest development version, or to install to earlier versions of R, see our <a href="dada-installation.html">from-source installation instructions</a>.</p>
 <p> </p>
 </div>

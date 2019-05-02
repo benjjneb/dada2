@@ -204,6 +204,9 @@ $(document).ready(function () {
       <a href="assign.html">Taxonomy</a>
     </li>
     <li>
+      <a href="training.html">Taxonomic References</a>
+    </li>
+    <li>
       <a href="pool.html">Pooling</a>
     </li>
     <li>
@@ -221,10 +224,13 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">DADA2 Manuscript</a>
     </li>
     <li>
       <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="https://doi.org/10.1101/392332">PacBio Long Reads</a>
     </li>
     <li>
       <a href="SMBS_DADA2.pdf">Symposium Slides</a>
@@ -271,42 +277,35 @@ $(document).ready(function () {
 <hr />
 <div id="install-binaries-from-bioconductor" class="section level2">
 <h2><strong>Install binaries from Bioconductor</strong></h2>
-<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current release version (1.10) requires R 3.5.0 and Bioconductor version 3.8:</p>
+<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current release version (1.12) requires R 3.6.0 and Bioconductor version 3.9:</p>
 <pre class="s"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
     install.packages(&quot;BiocManager&quot;)
-BiocManager::install(&quot;dada2&quot;, version = &quot;3.8&quot;)</code></pre>
+BiocManager::install(&quot;dada2&quot;, version = &quot;3.9&quot;)</code></pre>
 <p>Allow installation of any additional packages requested. You are ready to start using DADA2!</p>
-<p><em>If the above installed an early version of dada2 (e.g. 1.4 or 1.6) you can get the current dada2 release by updating to <a href="https://www.bioconductor.org/news/bioc_3_8_release/">Bioconductor 3.8</a>. This may require updating R as well.</em></p>
+<p><em>If the above installed an early version of dada2 (e.g. 1.6 or 1.10) you can get the current dada2 release by updating to <a href="https://www.bioconductor.org/news/bioc_3_9_release/">Bioconductor 3.9</a>. This may require updating to R 3.6.0 as well.</em></p>
 <hr />
 </div>
 <div id="install-from-source" class="section level2">
 <h2><strong>Install from source</strong></h2>
-<p>Source installation is available for R 3.2 or later, and the latest and greatest features will be available first through source installs of the development branch.</p>
+<p>Source installation is available for R 3.4 or later, and the latest and greatest features will be available first through source installs of the development branch.</p>
+<div id="install-using-devtools" class="section level3">
+<h3>0. Install using devtools</h3>
+<p>The easiest method is to use the devtools package to install and compile directly from github:</p>
+<pre class="r"><code>install.packages(&quot;devtools&quot;)
+library(&quot;devtools&quot;)
+devtools::install_github(&quot;benjjneb/dada2&quot;, ref=&quot;v1.12&quot;) # change the ref argument to get other versions</code></pre>
+<p>If that worked you’re done (see step 4)! If it failed on missing dependencies, goto step 3. If devtools isn’t an option, you can also install directly from the source (goto step 1).</p>
+</div>
 <div id="download" class="section level3">
-<h3>0. Download</h3>
+<h3>1. Download</h3>
 <ul>
-<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.10)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.10.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.10.tar.gz">tarball</a>.</p></li>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.1)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.12)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.12.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.12.tar.gz">tarball</a>.</p></li>
+<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.13)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
 </ul>
 </div>
-<div id="install-external-dependencies" class="section level3">
-<h3>1. Install External Dependencies</h3>
+<div id="install-manually-from-source" class="section level3">
+<h3>2. Install manually from source</h3>
 <p>The following instructions assume that you have installed R and have installed <a href="https://developer.apple.com/xcode/downloads/">Xcode</a> (Mac) or <a href="http://cran.r-project.org/bin/windows/Rtools/">Rtools</a> (Windows); as well as <a href="http://bioconductor.org/install/">Bioconductor</a>.</p>
-<p>For Bioconductor, start a fresh R session, and enter the following.</p>
-<pre class="r"><code>source(&quot;http://bioconductor.org/biocLite.R&quot;)
-biocLite(suppressUpdates = FALSE)
-biocLite(&quot;ShortRead&quot;, suppressUpdates = FALSE)</code></pre>
-</div>
-<div id="install-using-devtools" class="section level3">
-<h3>2. Install using devtools</h3>
-<p>The easiest method is to use the devtools package to install from github:</p>
-<pre class="r"><code>biocLite(&quot;devtools&quot;)
-library(&quot;devtools&quot;)
-devtools::install_github(&quot;benjjneb/dada2&quot;) # use the ref=&quot;v1.10&quot; (e.g.) argument to get specific versions</code></pre>
-<p>If that worked you’re done (see step 4)! If it failed on missing dependencies, goto step 2.</p>
-</div>
-<div id="a.-install-manually-from-source" class="section level3">
-<h3>2a. Install manually from source</h3>
 <p>Alternatively, you can install from the source by hand. First <a href="download.html">download the zipped package</a> and unzip it (or expand the tarball).</p>
 <p>Start a fresh R session, and enter the following.</p>
 <pre class="r"><code>install.packages(&quot;path/to/dada2&quot;,
@@ -320,14 +319,17 @@ devtools::install_github(&quot;benjjneb/dada2&quot;) # use the ref=&quot;v1.10&q
                  dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
 <p>Check Package Version</p>
 <pre class="r"><code>packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.10.0&#39;</code></pre>
+<pre><code>## [1] &#39;1.11.4&#39;</code></pre>
 </div>
-<div id="troubleshoot-dependencies-optional" class="section level3">
-<h3>3. Troubleshoot Dependencies (Optional)</h3>
+<div id="troubleshoot-dependencies" class="section level3">
+<h3>3. Troubleshoot Dependencies</h3>
 <p>At this point, there may be complaints about missing dependencies. To install missing dependencies on either <a href="http://cran.r-project.org/">CRAN</a> or <a href="http://bioconductor.org/install/">Bioconductor</a>, start a fresh R session, and enter the following.</p>
-<pre class="r"><code>source(&quot;http://bioconductor.org/biocLite.R&quot;)
-biocLite(&quot;missing_package_1&quot;)
-biocLite(&quot;missing_package_2&quot;)
+<p>For Bioconductor, start a fresh R session, and enter the following.</p>
+<pre class="r"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
+    install.packages(&quot;BiocManager&quot;)
+BiocManager::install(&quot;ShortRead&quot;, version = &quot;3.9&quot;) 
+# Or you can use earlier versions of Biocondcutor, e.g. if you have a pre-3.6 version of R
+BiocManager::install(&quot;additional_missing_package_1&quot;, version = &quot;3.9&quot;) 
 # ... and so on</code></pre>
 </div>
 <div id="re-attempt-dada2-installation" class="section level3">

@@ -204,6 +204,9 @@ $(document).ready(function () {
       <a href="assign.html">Taxonomy</a>
     </li>
     <li>
+      <a href="training.html">Taxonomic References</a>
+    </li>
+    <li>
       <a href="pool.html">Pooling</a>
     </li>
     <li>
@@ -221,10 +224,13 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">DADA2 Manuscript</a>
     </li>
     <li>
       <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="https://doi.org/10.1101/392332">PacBio Long Reads</a>
     </li>
     <li>
       <a href="SMBS_DADA2.pdf">Symposium Slides</a>
@@ -274,7 +280,7 @@ $(document).ready(function () {
 <div id="getting-started" class="section level2">
 <h2>Getting started</h2>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.8.0&#39;</code></pre>
+<pre><code>## [1] &#39;1.11.4&#39;</code></pre>
 <p>In order to follow along with the examples below, <a href="training.html">download</a> the <code>rdp_train_set_16.fa.gz</code> and <code>rdp_species_assignment_16.fa.gz</code> files to an appropriate location on your local machine.</p>
 <p> </p>
 </div>
@@ -342,7 +348,7 @@ unname(taxa.80)</code></pre>
 ##  [4,] &quot;Aquificales&quot;        &quot;Hydrogenothermaceae&quot; &quot;Sulfurihydrogenibium&quot;
 ##  [5,] &quot;Rhodobacterales&quot;    &quot;Rhodobacteraceae&quot;    NA                    
 ##  [6,] &quot;Bacteroidales&quot;      &quot;Bacteroidaceae&quot;      &quot;Bacteroides&quot;         
-##  [7,] &quot;Actinomycetales&quot;    &quot;Micromonosporaceae&quot;  NA                    
+##  [7,] &quot;Actinomycetales&quot;    &quot;Micromonosporaceae&quot;  &quot;Salinispora&quot;         
 ##  [8,] &quot;Enterobacteriales&quot;  &quot;Enterobacteriaceae&quot;  &quot;Dickeya&quot;             
 ##  [9,] &quot;Methanococcales&quot;    &quot;Methanococcaceae&quot;    &quot;Methanococcus&quot;       
 ## [10,] &quot;Aquificales&quot;        &quot;Hydrogenothermaceae&quot; &quot;Persephonella&quot;</code></pre>
@@ -399,8 +405,8 @@ unname(genus.species)</code></pre>
 <div id="kingom-to-species" class="section level2">
 <h2>Kingom to Species</h2>
 <p>In many cases it is desirable to link the species annotation in with the broader taxonomic annotation afforded by <code>assignTaxonomy</code>. The convenience function <code>addSpecies</code> serves this purpose, as it takes as input a taxonomy table, and outputs a table with an added species column. Only those genus-species binomials which are consistent with the genus assigned in the provided taxonomy table are retained in the output. <em>Note that we have switched to the silva training fastas here for demonstration purposes.</em></p>
-<pre class="r"><code>tt &lt;- assignTaxonomy(seqs, &quot;Training/silva_nr_v128_train_set.fa.gz&quot;)
-tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v128.fa.gz&quot;, verbose=TRUE)</code></pre>
+<pre class="r"><code>tt &lt;- assignTaxonomy(seqs, &quot;Training/silva_nr_v132_train_set.fa.gz&quot;)
+tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v132.fa.gz&quot;, verbose=TRUE)</code></pre>
 <pre><code>## 5 out of 10 were assigned to the species level.
 ## Of which 4 had genera consistent with the input table.</code></pre>
 <pre class="r"><code>unname(tt.plus)</code></pre>
@@ -417,15 +423,15 @@ tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v128.fa.gz&
 ## [10,] &quot;Bacteria&quot; &quot;Aquificae&quot;       &quot;Aquificae&quot;          
 ##       [,4]                 [,5]                  [,6]                  
 ##  [1,] &quot;Alteromonadales&quot;    &quot;Shewanellaceae&quot;      &quot;Shewanella&quot;          
-##  [2,] &quot;Verrucomicrobiales&quot; &quot;Verrucomicrobiaceae&quot; &quot;Akkermansia&quot;         
+##  [2,] &quot;Verrucomicrobiales&quot; &quot;Akkermansiaceae&quot;     &quot;Akkermansia&quot;         
 ##  [3,] &quot;Desulfovibrionales&quot; &quot;Desulfovibrionaceae&quot; &quot;Desulfovibrio&quot;       
-##  [4,] &quot;Aquificales&quot;        &quot;Hydrogenothermaceae&quot; &quot;Sulfurihydrogenibium&quot;
-##  [5,] &quot;Rhodobacterales&quot;    &quot;Rhodobacteraceae&quot;    NA                    
+##  [4,] &quot;Hydrogenothermales&quot; &quot;Hydrogenothermaceae&quot; &quot;Sulfurihydrogenibium&quot;
+##  [5,] &quot;Rhodobacterales&quot;    &quot;Rhodobacteraceae&quot;    &quot;Loktanella&quot;          
 ##  [6,] &quot;Bacteroidales&quot;      &quot;Bacteroidaceae&quot;      &quot;Bacteroides&quot;         
 ##  [7,] &quot;Micromonosporales&quot;  &quot;Micromonosporaceae&quot;  &quot;Salinispora&quot;         
 ##  [8,] &quot;Enterobacteriales&quot;  &quot;Enterobacteriaceae&quot;  &quot;Dickeya&quot;             
 ##  [9,] &quot;Methanococcales&quot;    &quot;Methanococcaceae&quot;    &quot;Methanococcus&quot;       
-## [10,] &quot;Aquificales&quot;        &quot;Hydrogenothermaceae&quot; &quot;Persephonella&quot;       
+## [10,] &quot;Hydrogenothermales&quot; &quot;Hydrogenothermaceae&quot; &quot;Persephonella&quot;       
 ##       [,7]            
 ##  [1,] NA              
 ##  [2,] &quot;muciniphila&quot;   
@@ -443,6 +449,7 @@ tt.plus &lt;- addSpecies(tt, &quot;Training/silva_species_assignment_v128.fa.gz&
 <div class="container" style="width: 100%;color:grey;text-align:right">
   <hr>
   Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+  <br> Documentation License: <a href="https://creativecommons.org/licenses/by/4.0">CC-BY 4.0</a>
 </div>
 
 

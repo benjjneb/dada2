@@ -1,6 +1,6 @@
 &nbsp;
 <center>
-![The DADA2 R package](images/DADA2_Logo_Text_1_10_640px.png)
+![The DADA2 R package](images/DADA2_Logo_Text_1_12_640px.png)
 </center>
 
 --------------------------
@@ -9,18 +9,18 @@
 
 --------------------------
 
-####**<span style="color:red">DADA2 1.10 release is now live, and includes support for PacBio long reads! See [the release notes](ReleaseNotes_1_10.html).</span>**
+####**<span style="color:red">The DADA2 1.12 release is live, with efficient pseudo-pooling that detects singleton ASVs in your samples! <br> See [the release notes](ReleaseNotes_1_12.html).</span>**
 
 &nbsp;
 
 ## Installation
 
-Binaries for the current release version of DADA2 (1.10) are available from Bioconductor. Note that you must have R 3.5.0 or newer, and [Biocondcutor version 3.8](https://www.bioconductor.org/install/), to install the current release from Bioconductor.
+Binaries for the current release version of DADA2 (1.12) are available from Bioconductor. Note that you must have R 3.6.0 or newer, and [Bioconductor version 3.9](https://www.bioconductor.org/install/), to install the current release from Bioconductor.
 
 ```S
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("dada2", version = "3.8")
+BiocManager::install("dada2", version = "3.9")
 ```
 
 If you wish to install the latest and greatest development version, or to install to earlier versions of R, see our [from-source installation instructions](dada-installation.html).
