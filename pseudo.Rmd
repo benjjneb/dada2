@@ -33,13 +33,13 @@ library(vegan)
 theme_set(theme_bw())
 ```
 
-*"The data we will analyze here are highly-overlapping Illumina Miseq 2×250 amplicon sequences from the V4 region of the 16S gene6. These 360 fecal samples were collected from 12 mice longitudinally over the first year of life, to investigate the development and stabilization of the murine microbiome7. These data are downloaded from the following location: http://www.mothur.org/MiSeqDevelopmentData/StabilityNoMetaG.tar."* This passage is excerpted from our F1000Research paper [Bioconductor Workflow for Microbiome Data Analysis: from raw reads to community analyses](https://f1000research.com/articles/5-1492/v2 in which we analyze the same dataset. If you wish to follow the rest of this document in R yourself, pause now to download the data from the above link and unpack it into the `~/full/` directory.
+*"The data we will analyze here are highly-overlapping Illumina Miseq 2×250 amplicon sequences from the V4 region of the 16S gene6. These 360 fecal samples were collected from 12 mice longitudinally over the first year of life, to investigate the development and stabilization of the murine microbiome. These data are downloaded from the following location: http://www.mothur.org/MiSeqDevelopmentData/StabilityNoMetaG.tar."* This passage is excerpted from our F1000Research paper [Bioconductor Workflow for Microbiome Data Analysis: from raw reads to community analyses](https://f1000research.com/articles/5-1492/v2 in which we analyze the same dataset. If you wish to follow the rest of this document in R yourself, pause now to download the data from the above link and unpack it into the `~/full` directory.
 
 We now perform the standard data-processing preliminaries as in [the DADA2 Tutorial](https://benjjneb.github.io/dada2/tutorial.html): Visualize quality, filter and trim, learn error rates, dereplicate. Here we'll use just the forward reads from this paired-read dataset, in the interests of simplifying the presentation.
 
 ```{r prelims, results='hide', warning=FALSE}
 # Get forward files and visualize quality profile
-fnF <- list.files("~/full/", pattern="_R1", full.names = TRUE)
+fnF <- list.files("~/full", pattern="_R1", full.names = TRUE)
 plotQualityProfile(fnF[c(3,13,33)])
 # Filter and truncate to 240 based on quality profile
 filtF <- file.path("~/full/filtered", basename(fnF))
@@ -47,26 +47,24 @@ track <- filterAndTrim(fnF, filtF, truncLen=240, maxEE=2, multithread=TRUE)
 # Learn error rates
 err <- learnErrors(filtF, multithread=TRUE, verbose=0)
 plotErrors(err, nominalQ=TRUE) # sanity check
-# Sanity check looks normal, so go ahead and read in dereplicatd sequences
-drp <- derepFastq(filtF)
-# Parse sample names out of filenames, and add to drp
+# Sanity check looks normal, so parse sample names out of filenames
 sams <- sapply(strsplit(basename(fnF), "_"), `[`, 1)
-names(drp) <- sams
+names(filtF) <- sams
 ```
 
 ## Using priors to increase sensitivity and detect singletons
 
-First we run the naive `dada` denosing algorithm, in its standard fully de novo mode without prior information.
+First we run the naive `dada` denosing algorithm, in its default independent mode without prior information.
 
 ```{r dada-naive}
-dd <- dada(drp, err=err, multithread=TRUE, verbose=0)
+dd <- dada(filtF, err=err, multithread=TRUE, verbose=0)
 st <- removeBimeraDenovo(makeSequenceTable(dd), multithread=TRUE, verbose=TRUE)
 ```
 
 Now we run the `dada` method again, but this time we tell it about an *E. coli* sequence we have some prior reason to believe might be present in these samples:
 ```{r dada-prior-ecoli}
 sq.ec <- "TACGGAGGGTGCAAGCGTTAATCGGAATTACTGGGCGTAAAGCGCACGCAGGCGGTTTGTTAAGTCAGATGTGAAATCCCCGGGCTCAACCTGGGAACTGCATCTGATACTGGCAAGCTTGAGTCTCGTAGAGGGGGGTAGAATTCCAGGTGTAGCGGTGAAATGCGTAGAGATCTGGAGGAATACCGGTGGCGAAGGCGGCCCCCTGGACGAAGACTGACGCTCAGGTGCGAAAGCGTG"
-dd.ec <- dada(drp, err=err, multithread=TRUE, priors = sq.ec, verbose=0)
+dd.ec <- dada(filtF, err=err, multithread=TRUE, priors = sq.ec, verbose=0)
 st.ec <- removeBimeraDenovo(makeSequenceTable(dd.ec), multithread=TRUE, verbose=TRUE)
 ```
 
@@ -124,9 +122,9 @@ Pseudo-pooling with dada2 can be performed by hand using the `priors` argument, 
 Let's go ahead and run each mode of inference (independent: `pool=FALSE`, pseudo-pooling: `pool="pseudo"`, and pooled samples: `pool=TRUE`) on this dataset, and track the execution time of each.
 
 ```{r dada-pooling}
-system.time(dd <- dada(drp, err=err, multithread=TRUE, pool=FALSE, verbose=0)) # default
-system.time(dd.pseudo <- dada(drp, err=err, multithread=TRUE, pool="pseudo", verbose=0))
-system.time(dd.pool <- dada(drp, err=err, multithread=TRUE, pool=TRUE, verbose=0))
+system.time(dd <- dada(filtF, err=err, multithread=TRUE, pool=FALSE, verbose=0)) # default
+system.time(dd.pseudo <- dada(filtF, err=err, multithread=TRUE, pool="pseudo", verbose=0))
+system.time(dd.pool <- dada(filtF, err=err, multithread=TRUE, pool=TRUE, verbose=0))
 ```
 
 As expected, pooled inference takes longer than independent processing, while pseudo-pooling is intermediate. In general, pseudo-pooling will take very close to twice the time of independent processing, as it is effectively running independent processing twice. Note that all processing modes are easily tractable on this data on a laptop. Full pooling is usually tractable on Miseq dataset sizes, and it is only for larger dataset sizes that the quadratic increase in computation time with total depth becomes too onerous.
