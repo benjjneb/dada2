@@ -494,7 +494,7 @@ table(nchar(getSequences(seqtab)))</code></pre>
 ##   1  88 196   6   2</code></pre>
 <p>The sequence table is a <code>matrix</code> with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. This table contains 293 ASVs, and the lengths of our merged sequences all fall within the expected range for this V4 amplicon.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
-<strong><span style="color:red">Considerations for your own data:</span></strong> Sequences that are much longer or shorter than expected may be the result of non-specific priming. You can remove non-target-length sequences from your sequence table (eg. <code>seqtab2 &lt;- seqtab[,nchar(colnames(seqtab)) %in% seq(250,256)]</code>). This is analogous to “cutting a band” in-silico to get amplicons of the targeted length.
+<strong><span style="color:red">Considerations for your own data:</span></strong> Sequences that are much longer or shorter than expected may be the result of non-specific priming. You can remove non-target-length sequences from your sequence table (eg. <code>seqtab2 &lt;- seqtab[,nchar(colnames(seqtab)) %in% 250:256]</code>). This is analogous to “cutting a band” in-silico to get amplicons of the targeted length.
 </div>
 <p> </p>
 </div>
@@ -530,25 +530,21 @@ head(track)</code></pre>
 ## F3D144  4827     4312      4151      4228   3627    3488</code></pre>
 <p>Looks good! We kept the majority of our raw reads, and there is no over-large drop associated with any single step.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
-<strong><span style="color:red">Considerations for your own data:</span></strong> This is a great place to do a last <strong>sanity check</strong>. Outside of filtering (depending on how stringent you want to be) there should no step in which a majority of reads are lost. If a majority of reads failed to merge, you may need to revisit the <code>truncLen</code> parameter used in the filtering step and make sure that the truncated reads span your amplicon. If a majority of reads were removed as chimeric, you may need to revisit the removal of primers, as the ambiguous nucleotides in unremoved primers interfere with chimera identification.
+<strong><span style="color:red">Considerations for your own data:</span></strong> This is a great place to do a last <strong>sanity check</strong>. Outside of filtering, there should no step in which a majority of reads are lost. If a majority of reads failed to merge, you may need to revisit the <code>truncLen</code> parameter used in the filtering step and make sure that the truncated reads span your amplicon. If a majority of reads were removed as chimeric, you may need to revisit the removal of primers, as the ambiguous nucleotides in unremoved primers interfere with chimera identification.
 </div>
 <p> </p>
 </div>
 <div id="assign-taxonomy" class="section level1">
 <h1>Assign taxonomy</h1>
 <p>It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to assign taxonomy to the sequence variants. The DADA2 package provides a native implementation of the <a href="http://www.ncbi.nlm.nih.gov/pubmed/17586664">naive Bayesian classifier method</a> for this purpose. The <code>assignTaxonomy</code> function takes as input a set of sequences to be classified and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least <code>minBoot</code> bootstrap confidence.</p>
-<p>We maintain <a href="training.html">formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database</a>, and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the <a href="https://unite.ut.ee/repository.php">UNITE ITS database</a> can be used as is. To follow along, download the <code>silva_nr_v128_train_set.fa.gz</code> file, and place it in the directory with the fastq files.</p>
-<pre class="r"><code>taxa &lt;- assignTaxonomy(seqtab.nochim, &quot;~/tax/silva_nr_v128_train_set.fa.gz&quot;, multithread=TRUE)</code></pre>
+<p>We maintain <a href="training.html">formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database</a>, and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the <a href="https://unite.ut.ee/repository.php">UNITE ITS database</a> can be used as is. To follow along, download the <code>silva_nr_v132_train_set.fa.gz</code> file, and place it in the directory with the fastq files.</p>
+<pre class="r"><code>taxa &lt;- assignTaxonomy(seqtab.nochim, &quot;~/tax/silva_nr_v132_train_set.fa.gz&quot;, multithread=TRUE)</code></pre>
 <div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-top:30px;margin-bottom: 15px;">
-<span style="color:blue"><strong>Extensions:</strong></span> The dada2 package also implements a method to make <a href="assign.html#species-assignment">species level assignments based on <strong>exact matching</strong></a> between ASVs and sequenced reference strains. Recent analysis suggests that <a href="https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809">exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments</a>. Currently, <a href="training.html">species-assignment training fastas are available for the Silva and RDP 16S databases</a>. To follow the optional species addition step, download the <code>silva_species_assignment_v128.fa.gz</code> file, and place it in the directory with the fastq files.
-</div>
-<pre class="r"><code>taxa &lt;- addSpecies(taxa, &quot;~/tax/silva_species_assignment_v128.fa.gz&quot;)</code></pre>
-<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-bottom: 30px;">
-
+<p><span style="color:blue"><strong>Extensions:</strong></span> The dada2 package also implements a method to make <a href="assign.html#species-assignment">species level assignments based on <strong>exact matching</strong></a> between ASVs and sequenced reference strains. Recent analysis suggests that <a href="https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809">exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments</a>. Currently, <a href="training.html">species-assignment training fastas are available for the Silva and RDP 16S databases</a>. To follow the optional species addition step, download the <code>silva_species_assignment_v132.fa.gz</code> file, and place it in the directory with the fastq files.</p>
+<pre class="r"><code>taxa &lt;- addSpecies(taxa, &quot;~/tax/silva_species_assignment_v132.fa.gz&quot;)</code></pre>
 </div>
 <div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;">
-<span style="color:green"><strong>Alternatives:</strong></span> The recently developed <code>IdTaxa</code> taxonomic classification method is also available via <a href="https://bioconductor.org/packages/release/bioc/html/DECIPHER.html">the DECIPHER Bioconductor package</a>. The paper introducing the IDTAXA algorithm <a href="https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5">reports classification performance that is better than the long-time standard set by the naive Bayesian classifier</a>. Here we include a code block that allows you to use <code>IdTaxa</code> as a drop-in replacement for <code>assignTaxonomy</code> (and it’s faster as well!). Trained classifiers are available from <a href="http://DECIPHER.codes/Downloads.html" class="uri">http://DECIPHER.codes/Downloads.html</a>. Download the SILVA SSU r132 (modified) file to follow along.
-</div>
+<p><span style="color:green"><strong>Alternatives:</strong></span> The recently developed <code>IdTaxa</code> taxonomic classification method is also available via <a href="https://bioconductor.org/packages/release/bioc/html/DECIPHER.html">the DECIPHER Bioconductor package</a>. The paper introducing the IDTAXA algorithm <a href="https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5">reports classification performance that is better than the long-time standard set by the naive Bayesian classifier</a>. Here we include a code block that allows you to use <code>IdTaxa</code> as a drop-in replacement for <code>assignTaxonomy</code> (and it’s faster as well!). Trained classifiers are available from <a href="http://DECIPHER.codes/Downloads.html" class="uri">http://DECIPHER.codes/Downloads.html</a>. Download the SILVA SSU r132 (modified) file to follow along.</p>
 <pre class="r"><code>library(DECIPHER); packageVersion(&quot;DECIPHER&quot;)</code></pre>
 <pre><code>## [1] &#39;2.6.0&#39;</code></pre>
 <pre class="r"><code>dna &lt;- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
@@ -563,7 +559,6 @@ taxid &lt;- t(sapply(ids, function(x) {
         taxa
 }))
 colnames(taxid) &lt;- ranks; rownames(taxid) &lt;- getSequences(seqtab.nochim)</code></pre>
-<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-bottom: 30px;">
 The <code>taxid</code> matrix from <code>IdTaxa</code> is a drop-in replacement for the <code>taxa</code> matrix from <code>assignTaxonomy</code>, simply set <code>taxa &lt;- taxid</code> to carry on using the <code>IdTaxa</code> assignments. Read more about <code>IdTaxa</code> and other useful tools at <a href="http://www2.decipher.codes/">the DECIPHER R package website</a>.
 </div>
 <p>Let’s inspect the taxonomic assignments:</p>
@@ -577,13 +572,13 @@ head(taxa.print)</code></pre>
 ## [4,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot;
 ## [5,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot;
 ## [6,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot;
-##      Family                      Genus         Species       
-## [1,] &quot;Bacteroidales_S24-7_group&quot; NA            NA            
-## [2,] &quot;Bacteroidales_S24-7_group&quot; NA            NA            
-## [3,] &quot;Bacteroidales_S24-7_group&quot; NA            NA            
-## [4,] &quot;Bacteroidales_S24-7_group&quot; NA            NA            
-## [5,] &quot;Bacteroidaceae&quot;            &quot;Bacteroides&quot; &quot;acidifaciens&quot;
-## [6,] &quot;Bacteroidales_S24-7_group&quot; NA            NA</code></pre>
+##      Family           Genus         Species
+## [1,] &quot;Muribaculaceae&quot; NA            NA     
+## [2,] &quot;Muribaculaceae&quot; NA            NA     
+## [3,] &quot;Muribaculaceae&quot; NA            NA     
+## [4,] &quot;Muribaculaceae&quot; NA            NA     
+## [5,] &quot;Bacteroidaceae&quot; &quot;Bacteroides&quot; NA     
+## [6,] &quot;Muribaculaceae&quot; NA            NA</code></pre>
 <p>Unsurprisingly, the Bacteroidetes are well represented among the most abundant taxa in these fecal samples. Few species assignments were made, both because it is often not possible to make unambiguous species assignments from subsegments of the 16S gene, and because there is surprisingly little coverage of the indigenous mouse gut microbiota in reference databases.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
 <strong><span style="color:red">Considerations for your own data:</span></strong> If your reads do not seem to be appropriately assigned, for example lots of your bacterial 16S sequences are being assigned as <code>Eukaryota NA NA NA NA NA</code>, your reads may be in the opposite orientation as the reference database. Tell dada2 to try the reverse-complement orientation with <code>assignTaxonomy(..., tryRC=TRUE)</code> and see if this fixes the assignments. If using DECIPHER for taxonomy, try <code>IdTaxa (..., strand=&quot;both&quot;)</code>.
@@ -645,33 +640,31 @@ ps</code></pre>
 ps.prop &lt;- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.nmds.bray &lt;- ordinate(ps.prop, method=&quot;NMDS&quot;, distance=&quot;bray&quot;)</code></pre>
 <pre><code>## Run 0 stress 0.08072627 
-## Run 1 stress 0.09462672 
-## Run 2 stress 0.08995024 
-## Run 3 stress 0.1214513 
-## Run 4 stress 0.08995034 
-## Run 5 stress 0.08053042 
+## Run 1 stress 0.08602577 
+## Run 2 stress 0.08995023 
+## Run 3 stress 0.1214515 
+## Run 4 stress 0.08602584 
+## Run 5 stress 0.08995023 
+## Run 6 stress 0.09462696 
+## Run 7 stress 0.08995033 
+## Run 8 stress 0.08053039 
 ## ... New best solution
-## ... Procrustes: rmse 0.009121481  max resid 0.02985839 
-## Run 6 stress 0.1214508 
-## Run 7 stress 0.1232733 
-## Run 8 stress 0.0807246 
-## ... Procrustes: rmse 0.008624037  max resid 0.02814702 
-## Run 9 stress 0.08053082 
-## ... Procrustes: rmse 0.0004317502  max resid 0.001167003 
+## ... Procrustes: rmse 0.009081884  max resid 0.02974578 
+## Run 9 stress 0.08995024 
+## Run 10 stress 0.1320382 
+## Run 11 stress 0.1214508 
+## Run 12 stress 0.1214508 
+## Run 13 stress 0.08072376 
+## ... Procrustes: rmse 0.008661193  max resid 0.02829186 
+## Run 14 stress 0.1214509 
+## Run 15 stress 0.08995024 
+## Run 16 stress 0.08995023 
+## Run 17 stress 0.08053048 
+## ... Procrustes: rmse 0.0001704875  max resid 0.000480406 
 ## ... Similar to previous best
-## Run 10 stress 0.121451 
-## Run 11 stress 0.08602578 
-## Run 12 stress 0.08072387 
-## ... Procrustes: rmse 0.008723239  max resid 0.02847092 
-## Run 13 stress 0.08602577 
-## Run 14 stress 0.08072233 
-## ... Procrustes: rmse 0.008474099  max resid 0.02769599 
-## Run 15 stress 0.08995042 
-## Run 16 stress 0.121451 
-## Run 17 stress 0.1263813 
-## Run 18 stress 0.1301674 
-## Run 19 stress 0.08995027 
-## Run 20 stress 0.0899504 
+## Run 18 stress 0.08995027 
+## Run 19 stress 0.1320382 
+## Run 20 stress 0.09462673 
 ## *** Solution reached</code></pre>
 <pre class="r"><code>plot_ordination(ps.prop, ord.nmds.bray, color=&quot;When&quot;, title=&quot;Bray NMDS&quot;)</code></pre>
 <p><img src="tutorial_files/figure-html/ordinate-1.png" width="672" /></p>

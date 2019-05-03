@@ -167,7 +167,7 @@ table(nchar(getSequences(seqtab)))
 
 The sequence table is a `matrix` with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. This table contains `r ncol(seqtab)` ASVs, and the lengths of our merged sequences all fall within the expected range for this V4 amplicon.
 
-<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** Sequences that are much longer or shorter than expected may be the result of non-specific priming. You can remove non-target-length sequences from your sequence table (eg. `seqtab2 <- seqtab[,nchar(colnames(seqtab)) %in% seq(250,256)]`). This is analogous to "cutting a band" in-silico to get amplicons of the targeted length.</div>
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** Sequences that are much longer or shorter than expected may be the result of non-specific priming. You can remove non-target-length sequences from your sequence table (eg. `seqtab2 <- seqtab[,nchar(colnames(seqtab)) %in% 250:256]`). This is analogous to "cutting a band" in-silico to get amplicons of the targeted length.</div>
 
 &nbsp;
 
@@ -201,7 +201,7 @@ head(track)
 
 Looks good! We kept the majority of our raw reads, and there is no over-large drop associated with any single step.
 
-<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** This is a great place to do a last **sanity check**. Outside of filtering (depending on how stringent you want to be) there should no step in which a majority of reads are lost. If a majority of reads failed to merge, you may need to revisit the `truncLen` parameter used in the filtering step and make sure that the truncated reads span your amplicon. If a majority of reads were removed as chimeric, you may need to revisit the removal of primers, as the ambiguous nucleotides in unremoved primers interfere with chimera identification.</div>
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** This is a great place to do a last **sanity check**. Outside of filtering, there should no step in which a majority of reads are lost. If a majority of reads failed to merge, you may need to revisit the `truncLen` parameter used in the filtering step and make sure that the truncated reads span your amplicon. If a majority of reads were removed as chimeric, you may need to revisit the removal of primers, as the ambiguous nucleotides in unremoved primers interfere with chimera identification.</div>
 
 &nbsp;
 
@@ -209,23 +209,34 @@ Looks good! We kept the majority of our raw reads, and there is no over-large dr
 
 It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to assign taxonomy to the sequence variants. The DADA2 package provides a native implementation of the [naive Bayesian classifier method](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes as input a set of sequences to be classified and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least `minBoot` bootstrap confidence. 
 
-We maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97\% identity, and the Silva reference database](training.html), and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be used as is. To follow along, download the `silva_nr_v128_train_set.fa.gz` file, and place it in the directory with the fastq files.
+We maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97\% identity, and the Silva reference database](training.html), and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be used as is. To follow along, download the `silva_nr_v132_train_set.fa.gz` file, and place it in the directory with the fastq files.
 
 ```{r taxify}
-taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr_v128_train_set.fa.gz", multithread=TRUE)
+taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr_v132_train_set.fa.gz", multithread=TRUE)
 ```
 
-<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-top:30px;margin-bottom: 15px;"><span style="color:blue">**Extensions:**</span> The dada2 package also implements a method to make [species level assignments based on **exact matching**](assign.html#species-assignment) between ASVs and sequenced reference strains. Recent analysis suggests that [exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments](https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809). Currently, [species-assignment training fastas are available for the Silva and RDP 16S databases](training.html). To follow the optional species addition step, download the `silva_species_assignment_v128.fa.gz` file, and place it in the directory with the fastq files.</div>
+<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-top:30px;margin-bottom: 15px;"><span style="color:blue">**Extensions:**</span> The dada2 package also implements a method to make [species level assignments based on **exact matching**](assign.html#species-assignment) between ASVs and sequenced reference strains. Recent analysis suggests that [exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments](https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809). Currently, [species-assignment training fastas are available for the Silva and RDP 16S databases](training.html). To follow the optional species addition step, download the `silva_species_assignment_v132.fa.gz` file, and place it in the directory with the fastq files.
 
 ```{r species}
-taxa <- addSpecies(taxa, "~/tax/silva_species_assignment_v128.fa.gz")
+taxa <- addSpecies(taxa, "~/tax/silva_species_assignment_v132.fa.gz")
 ```
 
-<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-bottom: 30px;"></div>
+</div>
 
-<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;"><span style="color:green">**Alternatives:**</span> The recently developed `IdTaxa` taxonomic classification method is also available via [the DECIPHER Bioconductor package](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html). The paper introducing the IDTAXA algorithm [reports classification performance that is better than the long-time standard set by the naive Bayesian classifier](https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5). Here we include a code block that allows you to use `IdTaxa` as a drop-in replacement for `assignTaxonomy` (and it's faster as well!). Trained classifiers are available from http://DECIPHER.codes/Downloads.html. Download the SILVA SSU r132 (modified) file to follow along.</div>
+Let's inspect the taxonomic assignments:
+```{r see-tax}
+taxa.print <- taxa # Removing sequence rownames for display only
+rownames(taxa.print) <- NULL
+head(taxa.print)
+```
 
-```{r, message=FALSE, warning=FALSE}
+Unsurprisingly, the Bacteroidetes are well represented among the most abundant taxa in these fecal samples. Few species assignments were made, both because it is often not possible to make unambiguous species assignments from subsegments of the 16S gene, and because there is surprisingly little coverage of the indigenous mouse gut microbiota in reference databases.
+
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** If your reads do not seem to be appropriately assigned, for example lots of your bacterial 16S sequences are being assigned as `Eukaryota NA NA NA NA NA`, your reads may be in the opposite orientation as the reference database. Tell dada2 to try the reverse-complement orientation with `assignTaxonomy(..., tryRC=TRUE)` and see if this fixes the assignments. If using DECIPHER for taxonomy, try `IdTaxa (..., strand="both")`.</div>
+
+<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;"><span style="color:green">**Alternatives:**</span> The recently developed `IdTaxa` taxonomic classification method is also available via [the DECIPHER Bioconductor package](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html). The paper introducing the IDTAXA algorithm [reports classification performance that is better than the long-time standard set by the naive Bayesian classifier](https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5). Here we include a code block that allows you to use `IdTaxa` as a drop-in replacement for `assignTaxonomy` (and it's faster as well!). Trained classifiers are available from http://DECIPHER.codes/Downloads.html. Download the SILVA SSU r132 (modified) file to follow along.
+
+```{r decipher, message=FALSE, warning=FALSE}
 library(DECIPHER); packageVersion("DECIPHER")
 dna <- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
 load("~/tax/IDTaxa/SILVA_SSU_r132_March2018.RData") # CHANGE TO THE PATH OF YOUR TRAINING SET
@@ -241,18 +252,7 @@ taxid <- t(sapply(ids, function(x) {
 colnames(taxid) <- ranks; rownames(taxid) <- getSequences(seqtab.nochim)
 ```
 
-<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-bottom: 30px;">The `taxid` matrix from `IdTaxa` is a drop-in replacement for the `taxa` matrix from `assignTaxonomy`, simply set `taxa <- taxid` to carry on using the `IdTaxa` assignments. Read more about `IdTaxa` and other useful tools at [the DECIPHER R package website](http://www2.decipher.codes/).</div>
-
-Let's inspect the taxonomic assignments:
-```{r see-tax}
-taxa.print <- taxa # Removing sequence rownames for display only
-rownames(taxa.print) <- NULL
-head(taxa.print)
-```
-
-Unsurprisingly, the Bacteroidetes are well represented among the most abundant taxa in these fecal samples. Few species assignments were made, both because it is often not possible to make unambiguous species assignments from subsegments of the 16S gene, and because there is surprisingly little coverage of the indigenous mouse gut microbiota in reference databases.
-
-<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** If your reads do not seem to be appropriately assigned, for example lots of your bacterial 16S sequences are being assigned as `Eukaryota NA NA NA NA NA`, your reads may be in the opposite orientation as the reference database. Tell dada2 to try the reverse-complement orientation with `assignTaxonomy(..., tryRC=TRUE)` and see if this fixes the assignments. If using DECIPHER for taxonomy, try `IdTaxa (..., strand="both")`.</div>
+The `taxid` matrix from `IdTaxa` is a drop-in replacement for the `taxa` matrix from `assignTaxonomy`, simply set `taxa <- taxid` to carry on using the `IdTaxa` assignments. Read more about `IdTaxa` and other useful tools at [the DECIPHER R package website](http://www2.decipher.codes/).</div>
 
 &nbsp;
 
