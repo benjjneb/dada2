@@ -24,56 +24,29 @@ sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
 We'll trim and filter just the forward reads for simplicity:
 ```{r filter}
 filtFs <- file.path(path, "filtered", paste0(sample.names, "_filtered.fq.gz"))
+names(filtFs) <- sample.names
 filterAndTrim(fnFs, filtFs, maxEE=2, truncLen=240, multithread=TRUE)
 ```
 
-Dereplicate and name our samples:
-```{r derep}
-drps <- derepFastq(filtFs)
-names(drps) <- sample.names
+And we'll learn the error rates from these samples:
+```{r learn}
+err <- learnErrors(filtFs, multi=TRUE)
 ```
-
-&nbsp;
-
-# Pooling for error rate estimation
-
-The first type of pooling we'll consider is pooling samples for error rate estimation. This is the default functionality of the `learnErrors` function when passed a list of samples, but for comparison purposes we'll first look at what happens if we estimate error rates using just one sample alone.
-
-```{r estimate-1, warning=FALSE}
-err1 <- learnErrors(drps[[1]], multithread=TRUE)
-plotErrors(err1, nominalQ=TRUE)
-```
-
-The two things to look for in the output of `plotErrors` are that the observed error rates (black dots) are reasonably well fit by the modeled error rates (black line), and that the error rates are sensible, in particular that they are mostly decreasing with quality score.
-
-Now let's estimate error rates using all the samples:
-```{r estimate-pool, warning=FALSE}
-err <- learnErrors(drps, multithread=TRUE)
-plotErrors(err, nominalQ=TRUE)
-```
-
-The difference is not large, but the fit between the observed points and the modeled line has clearly improved by pooling together more data. 
-
-There are two additional things to note here. First, it is not advised to pool samples that don't share an "error history", in particular samples that come from different sequencing runs or different PCR protocols. Samples from different runs should typically be run through the `dada` function separately, so that the correct run-specific error rates can be learned.
-
-Second, it is generally not necessary to estimate error rates across an entire sequencing run. Because error rate estimation requires multiple loops through the core sample inference algorithm, it increases compute time significantly. Therefore it is often desirable to estimate error rates on a subset of the samples, and then use those error rates to process the rest of the samples. This subset is controlled by the `learnErrors(..., nbases=1e8)` parameter.
-
-&nbsp;
 
 # Pooling for sample inference
 
-De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won't be the same. DADA2 resolves sequence variants exactly, and [because DNA sequences are consistent labels samples can be processed independently and then combined](https://www.nature.com/articles/ismej2017119), and this is the default behavior.
+De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won't be the same. DADA2 resolves amplicon sequence variants exactly, and [because exact DNA sequences are consistent labels, samples can be processed independently by DADA2 and then combined](https://www.nature.com/articles/ismej2017119), and this is the default behavior.
 
-Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were seen just once or twice in one sample but many times across samples. Pooled sample inference is also supported by calling `dada(..., pool=TRUE)`. **See also [the pseudo-pooling approach](pseudo.html#pseudo-pooling) introduced in version 1.8 that approximates full pooling in linear time.**
+Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were present as singletons or doubletone in one sample but were present many times across samples. Pooled sample inference is supported by calling `dada(..., pool=TRUE)`. **See also [the pseudo-pooling approach](pseudo.html#pseudo-pooling) introduced in version 1.8 that approximates full pooling in linear time.**
 
 Let's start by processing our samples using the default sample-by-sample inference:
 ```{r dada-seperate}
-system.time(dd.sep <- dada(drps, err=err))
+system.time(dd.sep <- dada(filtFs, err=err))
 ```
 
 Now we pool the samples for sample inference:
 ```{r dada-pool}
-system.time(dd.pool <- dada(drps, err=err, pool=TRUE))
+system.time(dd.pool <- dada(filtFs, err=err, pool=TRUE))
 ```
 
 The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of multithreading) but sample-by-sample processing [remains computationally tractable out to any study size](bigdata.html) (eg. 20 Hiseq runs).
@@ -102,5 +75,5 @@ sum(st.pool[,sq.pool %in% sq.sep])
 sum(st.pool[,!sq.pool %in% sq.sep])
 ```
 
-The large majority of ASVs, and the vast majority of reads (>99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities.
+The large majority of ASVs, and the vast majority of reads (>99%) are commonly assigned between these methods. Either method provides an accurate reconstruction of your sampled communities.
 

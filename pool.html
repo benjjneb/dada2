@@ -204,6 +204,9 @@ $(document).ready(function () {
       <a href="assign.html">Taxonomy</a>
     </li>
     <li>
+      <a href="training.html">Taxonomic References</a>
+    </li>
+    <li>
       <a href="pool.html">Pooling</a>
     </li>
     <li>
@@ -221,10 +224,13 @@ $(document).ready(function () {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="http://dx.doi.org/10.1038/nmeth.3869">Manuscript</a>
+      <a href="http://dx.doi.org/10.1038/nmeth.3869">DADA2 Manuscript</a>
     </li>
     <li>
       <a href="http://dx.doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="https://doi.org/10.1101/392332">PacBio Long Reads</a>
     </li>
     <li>
       <a href="SMBS_DADA2.pdf">Symposium Slides</a>
@@ -274,58 +280,25 @@ $(document).ready(function () {
 <h1>Getting ready</h1>
 <p>Load the necessary libraries:</p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.8.0&#39;</code></pre>
+<pre><code>## [1] &#39;1.11.4&#39;</code></pre>
 <p>We’ll be working with the same data used in <a href="tutorial.html">the tutorial</a>, so grab that data if you don’t have it already and then set your working directory to its location:</p>
 <pre class="r"><code>path &lt;- &quot;~/MiSeq_SOP&quot; # CHANGE ME to the directory containing the fastq files after unzipping.
 fnFs &lt;- list.files(path, pattern=&quot;_R1_001.fastq$&quot;, full.names=TRUE)
 sample.names &lt;- sapply(strsplit(basename(fnFs), &quot;_&quot;), `[`, 1)</code></pre>
 <p>We’ll trim and filter just the forward reads for simplicity:</p>
 <pre class="r"><code>filtFs &lt;- file.path(path, &quot;filtered&quot;, paste0(sample.names, &quot;_filtered.fq.gz&quot;))
+names(filtFs) &lt;- sample.names
 filterAndTrim(fnFs, filtFs, maxEE=2, truncLen=240, multithread=TRUE)</code></pre>
-<p>Dereplicate and name our samples:</p>
-<pre class="r"><code>drps &lt;- derepFastq(filtFs)
-names(drps) &lt;- sample.names</code></pre>
-<p> </p>
-</div>
-<div id="pooling-for-error-rate-estimation" class="section level1">
-<h1>Pooling for error rate estimation</h1>
-<p>The first type of pooling we’ll consider is pooling samples for error rate estimation. This is the default functionality of the <code>learnErrors</code> function when passed a list of samples, but for comparison purposes we’ll first look at what happens if we estimate error rates using just one sample alone.</p>
-<pre class="r"><code>err1 &lt;- learnErrors(drps[[1]], multithread=TRUE)</code></pre>
-<pre><code>## 1734720 total bases in 7228 reads from 1 samples will be used for learning the error rates.
-## Initializing error rates to maximum possible estimate.
-## selfConsist step 1 .
-##    selfConsist step 2
-##    selfConsist step 3
-##    selfConsist step 4
-##    selfConsist step 5
-## Convergence after  5  rounds.</code></pre>
-<pre class="r"><code>plotErrors(err1, nominalQ=TRUE)</code></pre>
-<p><img src="pool_files/figure-html/estimate-1-1.png" width="672" /></p>
-<p>The two things to look for in the output of <code>plotErrors</code> are that the observed error rates (black dots) are reasonably well fit by the modeled error rates (black line), and that the error rates are sensible, in particular that they are mostly decreasing with quality score.</p>
-<p>Now let’s estimate error rates using all the samples:</p>
-<pre class="r"><code>err &lt;- learnErrors(drps, multithread=TRUE)</code></pre>
-<pre><code>## 34016400 total bases in 141735 reads from 20 samples will be used for learning the error rates.
-## Initializing error rates to maximum possible estimate.
-## selfConsist step 1 ....................
-##    selfConsist step 2
-##    selfConsist step 3
-##    selfConsist step 4
-##    selfConsist step 5
-##    selfConsist step 6
-## Convergence after  6  rounds.</code></pre>
-<pre class="r"><code>plotErrors(err, nominalQ=TRUE)</code></pre>
-<p><img src="pool_files/figure-html/estimate-pool-1.png" width="672" /></p>
-<p>The difference is not large, but the fit between the observed points and the modeled line has clearly improved by pooling together more data.</p>
-<p>There are two additional things to note here. First, it is not advised to pool samples that don’t share an “error history”, in particular samples that come from different sequencing runs or different PCR protocols. Samples from different runs should typically be run through the <code>dada</code> function separately, so that the correct run-specific error rates can be learned.</p>
-<p>Second, it is generally not necessary to estimate error rates across an entire sequencing run. Because error rate estimation requires multiple loops through the core sample inference algorithm, it increases compute time significantly. Therefore it is often desirable to estimate error rates on a subset of the samples, and then use those error rates to process the rest of the samples. This subset is controlled by the <code>learnErrors(..., nbases=1e8)</code> parameter.</p>
-<p> </p>
+<p>And we’ll learn the error rates from these samples:</p>
+<pre class="r"><code>err &lt;- learnErrors(filtFs, multi=TRUE)</code></pre>
+<pre><code>## 34016400 total bases in 141735 reads from 20 samples will be used for learning the error rates.</code></pre>
 </div>
 <div id="pooling-for-sample-inference" class="section level1">
 <h1>Pooling for sample inference</h1>
-<p>De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won’t be the same. DADA2 resolves sequence variants exactly, and <a href="https://www.nature.com/articles/ismej2017119">because DNA sequences are consistent labels samples can be processed independently and then combined</a>, and this is the default behavior.</p>
-<p>Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were seen just once or twice in one sample but many times across samples. Pooled sample inference is also supported by calling <code>dada(..., pool=TRUE)</code>. <strong>See also <a href="pseudo.html#pseudo-pooling">the pseudo-pooling approach</a> introduced in version 1.8 that approximates full pooling in linear time.</strong></p>
+<p>De novo OTU methods must pool samples before processing them, as without pooling the labels between samples are not consistent and cannot be compared, i.e. OTU1 in sample 1 and OTU1 sample 2 won’t be the same. DADA2 resolves amplicon sequence variants exactly, and <a href="https://www.nature.com/articles/ismej2017119">because exact DNA sequences are consistent labels, samples can be processed independently by DADA2 and then combined</a>, and this is the default behavior.</p>
+<p>Independent sample processing has two major advantages: Computation time is linear in the number of samples, and memory requirements are flat with the number of samples. However, pooling allows information to be shared across samples, which makes it easier to resolve rare variants that were present as singletons or doubletone in one sample but were present many times across samples. Pooled sample inference is supported by calling <code>dada(..., pool=TRUE)</code>. <strong>See also <a href="pseudo.html#pseudo-pooling">the pseudo-pooling approach</a> introduced in version 1.8 that approximates full pooling in linear time.</strong></p>
 <p>Let’s start by processing our samples using the default sample-by-sample inference:</p>
-<pre class="r"><code>system.time(dd.sep &lt;- dada(drps, err=err))</code></pre>
+<pre class="r"><code>system.time(dd.sep &lt;- dada(filtFs, err=err))</code></pre>
 <pre><code>## Sample 1 - 7228 reads in 2014 unique sequences.
 ## Sample 2 - 5382 reads in 1667 unique sequences.
 ## Sample 3 - 5539 reads in 1501 unique sequences.
@@ -347,12 +320,12 @@ names(drps) &lt;- sample.names</code></pre>
 ## Sample 19 - 6586 reads in 1739 unique sequences.
 ## Sample 20 - 4377 reads in 920 unique sequences.</code></pre>
 <pre><code>##    user  system elapsed 
-##  18.610   0.157  18.814</code></pre>
+##  20.927   0.618  21.699</code></pre>
 <p>Now we pool the samples for sample inference:</p>
-<pre class="r"><code>system.time(dd.pool &lt;- dada(drps, err=err, pool=TRUE))</code></pre>
+<pre class="r"><code>system.time(dd.pool &lt;- dada(filtFs, err=err, pool=TRUE))</code></pre>
 <pre><code>## 20 samples were pooled: 141735 reads in 23616 unique sequences.</code></pre>
 <pre><code>##    user  system elapsed 
-##  39.288   0.421  40.000</code></pre>
+##  39.847   0.714  40.619</code></pre>
 <p>The pooled sample inference took longer, about twice as long in this case, but the delta between independent and pooled processing grows as study size increases. In practice, pooled processing can be used for Miseq scale data (especially if taking advantage of multithreading) but sample-by-sample processing <a href="bigdata.html">remains computationally tractable out to any study size</a> (eg. 20 Hiseq runs).</p>
 <p>We’ll also take a quick look at the differences in output:</p>
 <pre class="r"><code>st &lt;- makeSequenceTable(dd.sep)
@@ -379,12 +352,13 @@ sum(!sq.sep %in% sq.pool);sum(sq.sep %in% sq.pool); sum(!sq.pool %in% sq.sep)</c
 <pre><code>## [1] 127450</code></pre>
 <pre class="r"><code>sum(st.pool[,!sq.pool %in% sq.sep])</code></pre>
 <pre><code>## [1] 1377</code></pre>
-<p>The large majority of ASVs, and the vast majority of reads (&gt;99% here) are commonly assigned between these methods. Either provides an accurate reconstruction of your sampled communities.</p>
+<p>The large majority of ASVs, and the vast majority of reads (&gt;99%) are commonly assigned between these methods. Either method provides an accurate reconstruction of your sampled communities.</p>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
   <hr>
   Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+  <br> Documentation License: <a href="https://creativecommons.org/licenses/by/4.0">CC-BY 4.0</a>
 </div>
 
 
