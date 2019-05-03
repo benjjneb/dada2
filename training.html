@@ -277,7 +277,7 @@ $(document).ready(function () {
 <p>The <code>assignTaxonomy</code> and <code>assignSpecies</code> functions require appropriately formatted fasta files describing the set of taxonomically assigned sequences to use as a training dataset. We provide appropriately formatted versions of several popular taxonomic databases, and describe the dada2-specific format for those who wish to use a custom database.</p>
 <div id="dada2-formatted-reference-databases" class="section level2">
 <h2>DADA2-formatted reference databases</h2>
-<p>We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes. As of version 1.3.3 the dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be “contibuted” and will be made available through this page if referencable by doi (eg. deposited at Zenodo or Figshare).</p>
+<p>We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes. The dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be “contibuted” and will be made available through this page if referencable by doi (eg. deposited at Zenodo or Figshare).</p>
 <p><em>Please note that the files provided here are just derivative reformattings of these taxonomic databases. If using these files for taxonomic assignment, the source database should also be cited.</em></p>
 <hr />
 <p><strong>Maintained:</strong></p>
@@ -285,7 +285,7 @@ $(document).ready(function () {
 <li><p><strong><a href="https://doi.org/10.5281/zenodo.1172782">Silva version 132</a></strong>, <strong><a href="https://doi.org/10.5281/zenodo.801831">Silva version 128</a></strong>, <a href="http://dx.doi.org/10.5281/zenodo.158958">Silva version 123</a> (<a href="https://www.arb-silva.de/silva-license-information/">Silva dual-license</a>)</p></li>
 <li><p><strong><a href="https://doi.org/10.5281/zenodo.801827">RDP trainset 16</a></strong>, <a href="http://dx.doi.org/10.5281/zenodo.158955">RDP trainset 14</a></p></li>
 <li><p><strong><a href="http://dx.doi.org/10.5281/zenodo.158955">GreenGenes version 13.8</a></strong></p></li>
-<li><p><strong><a href="https://unite.ut.ee/repository.php">UNITE: General Fasta releases</a></strong> (<strong><span style="color:red">version 1.3.3 or later of the dada2 package</span></strong>)</p></li>
+<li><p><strong><a href="https://unite.ut.ee/repository.php">UNITE (use the General Fasta releases)</a></strong></p></li>
 </ul>
 <p><strong>Contributed</strong>:</p>
 <ul>
@@ -298,8 +298,8 @@ $(document).ready(function () {
 </ul>
 <p><strong>Note:</strong> PR2 has different <code>taxLevels</code> than the dada2 default. When assigning taxonomy against PR2, use the following: <code>assignTaxonomy(..., taxLevels = c(&quot;Kingdom&quot;,&quot;Supergroup&quot;,&quot;Division&quot;,&quot;Class&quot;,&quot;Order&quot;,&quot;Family&quot;,&quot;Genus&quot;,&quot;Species&quot;))</code></p>
 <hr />
-<p>In addition to thanking the folks at RDP, Silva, GreenGenes and UNITE for making these datasets available, we also want to thank Pat Schloss and the <a href="http://www.mothur.org">mothur</a> team for their work compiling the Silva data. We created the dada2-compatible training fastas from <a href="http://www.mothur.org/wiki/Silva_reference_files">the mothur-compatible Silva training data</a> (<a href="http://blog.mothur.org/2017/03/22/SILVA-v128-reference-files/">described here</a>, and <a href="https://www.arb-silva.de/silva-license-information/">license here</a>), the <a href="http://rdp.cme.msu.edu/misc/resources.jsp">RDP trainset 16 and release 11.5 database</a>, and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
-<p>As of version 1.5.1, the scripts to parse and produce the officially maintained training fastas are included as private functions within the dada2 R package. Inspect <code>taxonomy.R</code> to see the code. Currently training fastas for <code>assignSpecies</code> are only available for the Silva and RDP databases.</p>
+<p>Many thanks to the folks at RDP, Silva, GreenGenes, UNITE, GTDB, PR2 and others for making these amazing reference datbases available to the community. We also want to thank Pat Schloss and the <a href="http://www.mothur.org">mothur</a> team for their work compiling the Silva data into a more easily usable form. We created the dada2-compatible training fastas from <a href="http://www.mothur.org/wiki/Silva_reference_files">the mothur-compatible Silva training data</a> (<a href="http://blog.mothur.org/2017/03/22/SILVA-v128-reference-files/">described here</a>, and <a href="https://www.arb-silva.de/silva-license-information/">license here</a>), the <a href="http://rdp.cme.msu.edu/misc/resources.jsp">RDP trainset 16 and release 11.5 database</a>, and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
+<p>The scripts to parse and produce the officially maintained training fastas are included as private functions within the dada2 R package. Inspect <code>taxonomy.R</code> to see the code. Currently training fastas for <code>assignSpecies</code> are only available for the Silva and RDP databases.</p>
 </div>
 <div id="formatting-custom-databases" class="section level2">
 <h2>Formatting custom databases</h2>
