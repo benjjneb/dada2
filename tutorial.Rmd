@@ -284,6 +284,7 @@ The [phyloseq R package is a powerful framework for further analysis of microbio
 **Import into phyloseq**:
 ```{r phyloseq, message=FALSE, warning=FALSE}
 library(phyloseq); packageVersion("phyloseq")
+library(Biostrings); packageVersion("Biostrings")
 library(ggplot2); packageVersion("ggplot2")
 theme_set(theme_bw())
 ```
@@ -307,6 +308,14 @@ ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE),
                sample_data(samdf), 
                tax_table(taxa))
 ps <- prune_samples(sample_names(ps) != "Mock", ps) # Remove mock sample
+```
+
+It is more convenient to use short names for our ASVs (e.g. ASV21) rather than the full DNA sequence when working with some of the tables and visualizations from phyloseq, but we want to keep the full DNA sequences for other purposes like merging with other datasets or indexing into reference databases like [the Earth Microbiome Project](http://www.earthmicrobiome.org/). For that reason we'll store the DNA sequences of our ASVs in the refseq slot of the phyloseq object, and then rename our taxa to a short string. That way, the short new taxa names will appear in tables and plots, and we can still recover the DNA sequences corresponding to each ASV as needed with `refseq(ps)`.
+```{r refseq}
+dna <- Biostrings::DNAStringSet(taxa_names(ps))
+names(dna) <- taxa_names(ps)
+ps <- merge_phyloseq(ps, dna)
+taxa_names(ps) <- paste0("ASV", seq(ntaxa(ps)))
 ps
 ```
 

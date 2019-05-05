@@ -543,24 +543,6 @@ head(track)</code></pre>
 <p><span style="color:blue"><strong>Extensions:</strong></span> The dada2 package also implements a method to make <a href="assign.html#species-assignment">species level assignments based on <strong>exact matching</strong></a> between ASVs and sequenced reference strains. Recent analysis suggests that <a href="https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809">exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments</a>. Currently, <a href="training.html">species-assignment training fastas are available for the Silva and RDP 16S databases</a>. To follow the optional species addition step, download the <code>silva_species_assignment_v132.fa.gz</code> file, and place it in the directory with the fastq files.</p>
 <pre class="r"><code>taxa &lt;- addSpecies(taxa, &quot;~/tax/silva_species_assignment_v132.fa.gz&quot;)</code></pre>
 </div>
-<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;">
-<p><span style="color:green"><strong>Alternatives:</strong></span> The recently developed <code>IdTaxa</code> taxonomic classification method is also available via <a href="https://bioconductor.org/packages/release/bioc/html/DECIPHER.html">the DECIPHER Bioconductor package</a>. The paper introducing the IDTAXA algorithm <a href="https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5">reports classification performance that is better than the long-time standard set by the naive Bayesian classifier</a>. Here we include a code block that allows you to use <code>IdTaxa</code> as a drop-in replacement for <code>assignTaxonomy</code> (and it’s faster as well!). Trained classifiers are available from <a href="http://DECIPHER.codes/Downloads.html" class="uri">http://DECIPHER.codes/Downloads.html</a>. Download the SILVA SSU r132 (modified) file to follow along.</p>
-<pre class="r"><code>library(DECIPHER); packageVersion(&quot;DECIPHER&quot;)</code></pre>
-<pre><code>## [1] &#39;2.6.0&#39;</code></pre>
-<pre class="r"><code>dna &lt;- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
-load(&quot;~/tax/IDTaxa/SILVA_SSU_r132_March2018.RData&quot;) # CHANGE TO THE PATH OF YOUR TRAINING SET
-ids &lt;- IdTaxa(dna, trainingSet, strand=&quot;top&quot;, processors=NULL, verbose=FALSE) # use all processors
-ranks &lt;- c(&quot;domain&quot;, &quot;phylum&quot;, &quot;class&quot;, &quot;order&quot;, &quot;family&quot;, &quot;genus&quot;, &quot;species&quot;) # ranks of interest
-# Convert the output object of class &quot;Taxa&quot; to a matrix analogous to the output from assignTaxonomy
-taxid &lt;- t(sapply(ids, function(x) {
-        m &lt;- match(ranks, x$rank)
-        taxa &lt;- x$taxon[m]
-        taxa[startsWith(taxa, &quot;unclassified_&quot;)] &lt;- NA
-        taxa
-}))
-colnames(taxid) &lt;- ranks; rownames(taxid) &lt;- getSequences(seqtab.nochim)</code></pre>
-The <code>taxid</code> matrix from <code>IdTaxa</code> is a drop-in replacement for the <code>taxa</code> matrix from <code>assignTaxonomy</code>, simply set <code>taxa &lt;- taxid</code> to carry on using the <code>IdTaxa</code> assignments. Read more about <code>IdTaxa</code> and other useful tools at <a href="http://www2.decipher.codes/">the DECIPHER R package website</a>.
-</div>
 <p>Let’s inspect the taxonomic assignments:</p>
 <pre class="r"><code>taxa.print &lt;- taxa # Removing sequence rownames for display only
 rownames(taxa.print) &lt;- NULL
@@ -582,6 +564,24 @@ head(taxa.print)</code></pre>
 <p>Unsurprisingly, the Bacteroidetes are well represented among the most abundant taxa in these fecal samples. Few species assignments were made, both because it is often not possible to make unambiguous species assignments from subsegments of the 16S gene, and because there is surprisingly little coverage of the indigenous mouse gut microbiota in reference databases.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
 <strong><span style="color:red">Considerations for your own data:</span></strong> If your reads do not seem to be appropriately assigned, for example lots of your bacterial 16S sequences are being assigned as <code>Eukaryota NA NA NA NA NA</code>, your reads may be in the opposite orientation as the reference database. Tell dada2 to try the reverse-complement orientation with <code>assignTaxonomy(..., tryRC=TRUE)</code> and see if this fixes the assignments. If using DECIPHER for taxonomy, try <code>IdTaxa (..., strand=&quot;both&quot;)</code>.
+</div>
+<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;">
+<p><span style="color:green"><strong>Alternatives:</strong></span> The recently developed <code>IdTaxa</code> taxonomic classification method is also available via <a href="https://bioconductor.org/packages/release/bioc/html/DECIPHER.html">the DECIPHER Bioconductor package</a>. The paper introducing the IDTAXA algorithm <a href="https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5">reports classification performance that is better than the long-time standard set by the naive Bayesian classifier</a>. Here we include a code block that allows you to use <code>IdTaxa</code> as a drop-in replacement for <code>assignTaxonomy</code> (and it’s faster as well!). Trained classifiers are available from <a href="http://DECIPHER.codes/Downloads.html" class="uri">http://DECIPHER.codes/Downloads.html</a>. Download the SILVA SSU r132 (modified) file to follow along.</p>
+<pre class="r"><code>library(DECIPHER); packageVersion(&quot;DECIPHER&quot;)</code></pre>
+<pre><code>## [1] &#39;2.6.0&#39;</code></pre>
+<pre class="r"><code>dna &lt;- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
+load(&quot;~/tax/IDTaxa/SILVA_SSU_r132_March2018.RData&quot;) # CHANGE TO THE PATH OF YOUR TRAINING SET
+ids &lt;- IdTaxa(dna, trainingSet, strand=&quot;top&quot;, processors=NULL, verbose=FALSE) # use all processors
+ranks &lt;- c(&quot;domain&quot;, &quot;phylum&quot;, &quot;class&quot;, &quot;order&quot;, &quot;family&quot;, &quot;genus&quot;, &quot;species&quot;) # ranks of interest
+# Convert the output object of class &quot;Taxa&quot; to a matrix analogous to the output from assignTaxonomy
+taxid &lt;- t(sapply(ids, function(x) {
+        m &lt;- match(ranks, x$rank)
+        taxa &lt;- x$taxon[m]
+        taxa[startsWith(taxa, &quot;unclassified_&quot;)] &lt;- NA
+        taxa
+}))
+colnames(taxid) &lt;- ranks; rownames(taxid) &lt;- getSequences(seqtab.nochim)</code></pre>
+The <code>taxid</code> matrix from <code>IdTaxa</code> is a drop-in replacement for the <code>taxa</code> matrix from <code>assignTaxonomy</code>, simply set <code>taxa &lt;- taxid</code> to carry on using the <code>IdTaxa</code> assignments. Read more about <code>IdTaxa</code> and other useful tools at <a href="http://www2.decipher.codes/">the DECIPHER R package website</a>.
 </div>
 <p> </p>
 </div>
@@ -607,6 +607,8 @@ cat(&quot;Of those,&quot;, sum(match.ref), &quot;were exact matches to the expec
 <p><strong>Import into phyloseq</strong>:</p>
 <pre class="r"><code>library(phyloseq); packageVersion(&quot;phyloseq&quot;)</code></pre>
 <pre><code>## [1] &#39;1.25.2&#39;</code></pre>
+<pre class="r"><code>library(Biostrings); packageVersion(&quot;Biostrings&quot;)</code></pre>
+<pre><code>## [1] &#39;2.46.0&#39;</code></pre>
 <pre class="r"><code>library(ggplot2); packageVersion(&quot;ggplot2&quot;)</code></pre>
 <pre><code>## [1] &#39;3.1.0&#39;</code></pre>
 <pre class="r"><code>theme_set(theme_bw())</code></pre>
@@ -624,12 +626,18 @@ rownames(samdf) &lt;- samples.out</code></pre>
 <pre class="r"><code>ps &lt;- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
                sample_data(samdf), 
                tax_table(taxa))
-ps &lt;- prune_samples(sample_names(ps) != &quot;Mock&quot;, ps) # Remove mock sample
+ps &lt;- prune_samples(sample_names(ps) != &quot;Mock&quot;, ps) # Remove mock sample</code></pre>
+<p>It is more convenient to use short names for our ASVs (e.g. ASV21) rather than the full DNA sequence when working with some of the tables and visualizations from phyloseq, but we want to keep the full DNA sequences for other purposes like merging with other datasets or indexing into reference databases like <a href="http://www.earthmicrobiome.org/">the Earth Microbiome Project</a>. For that reason we’ll store the DNA sequences of our ASVs in the refseq slot of the phyloseq object, and then rename our taxa to a short string. That way, the short new taxa names will appear in tables and plots, and we can still recover the DNA sequences corresponding to each ASV as needed with <code>refseq(ps)</code>.</p>
+<pre class="r"><code>dna &lt;- Biostrings::DNAStringSet(taxa_names(ps))
+names(dna) &lt;- taxa_names(ps)
+ps &lt;- merge_phyloseq(ps, dna)
+taxa_names(ps) &lt;- paste0(&quot;ASV&quot;, seq(ntaxa(ps)))
 ps</code></pre>
 <pre><code>## phyloseq-class experiment-level object
 ## otu_table()   OTU Table:         [ 232 taxa and 19 samples ]
 ## sample_data() Sample Data:       [ 19 samples by 4 sample variables ]
-## tax_table()   Taxonomy Table:    [ 232 taxa by 7 taxonomic ranks ]</code></pre>
+## tax_table()   Taxonomy Table:    [ 232 taxa by 7 taxonomic ranks ]
+## refseq()      DNAStringSet:      [ 232 reference sequences ]</code></pre>
 <p>We are now ready to use phyloseq!</p>
 <p><strong>Visualize alpha-diversity</strong>:</p>
 <pre class="r"><code>plot_richness(ps, x=&quot;Day&quot;, measures=c(&quot;Shannon&quot;, &quot;Simpson&quot;), color=&quot;When&quot;)</code></pre>
@@ -640,31 +648,35 @@ ps</code></pre>
 ps.prop &lt;- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.nmds.bray &lt;- ordinate(ps.prop, method=&quot;NMDS&quot;, distance=&quot;bray&quot;)</code></pre>
 <pre><code>## Run 0 stress 0.08072627 
-## Run 1 stress 0.08602577 
-## Run 2 stress 0.08995023 
-## Run 3 stress 0.1214515 
-## Run 4 stress 0.08602584 
-## Run 5 stress 0.08995023 
-## Run 6 stress 0.09462696 
-## Run 7 stress 0.08995033 
-## Run 8 stress 0.08053039 
+## Run 1 stress 0.09462672 
+## Run 2 stress 0.08995041 
+## Run 3 stress 0.08053038 
 ## ... New best solution
-## ... Procrustes: rmse 0.009081884  max resid 0.02974578 
-## Run 9 stress 0.08995024 
-## Run 10 stress 0.1320382 
-## Run 11 stress 0.1214508 
-## Run 12 stress 0.1214508 
-## Run 13 stress 0.08072376 
-## ... Procrustes: rmse 0.008661193  max resid 0.02829186 
-## Run 14 stress 0.1214509 
-## Run 15 stress 0.08995024 
-## Run 16 stress 0.08995023 
-## Run 17 stress 0.08053048 
-## ... Procrustes: rmse 0.0001704875  max resid 0.000480406 
+## ... Procrustes: rmse 0.009082099  max resid 0.02974371 
+## Run 4 stress 0.09462672 
+## Run 5 stress 0.1214508 
+## Run 6 stress 0.09462673 
+## Run 7 stress 0.08602581 
+## Run 8 stress 0.08053065 
+## ... Procrustes: rmse 0.0002505497  max resid 0.0006981581 
 ## ... Similar to previous best
-## Run 18 stress 0.08995027 
-## Run 19 stress 0.1320382 
-## Run 20 stress 0.09462673 
+## Run 9 stress 0.08602597 
+## Run 10 stress 0.09462673 
+## Run 11 stress 0.0805305 
+## ... Procrustes: rmse 0.0001300329  max resid 0.0003597124 
+## ... Similar to previous best
+## Run 12 stress 0.08602579 
+## Run 13 stress 0.08995027 
+## Run 14 stress 0.08602581 
+## Run 15 stress 0.08995044 
+## Run 16 stress 0.08602578 
+## Run 17 stress 0.08053055 
+## ... Procrustes: rmse 0.0001189188  max resid 0.0003301359 
+## ... Similar to previous best
+## Run 18 stress 0.1214511 
+## Run 19 stress 0.08602578 
+## Run 20 stress 0.08072649 
+## ... Procrustes: rmse 0.00913078  max resid 0.02975814 
 ## *** Solution reached</code></pre>
 <pre class="r"><code>plot_ordination(ps.prop, ord.nmds.bray, color=&quot;When&quot;, title=&quot;Bray NMDS&quot;)</code></pre>
 <p><img src="tutorial_files/figure-html/ordinate-1.png" width="672" /></p>
