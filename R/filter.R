@@ -97,101 +97,114 @@ removePrimers <- function(fn, fout,
   if(any(fout %in% fn)) stop("Output files must be distinct from the input files.")
   # Check and enforce primers
   if(!is.character(primer.fwd)) stop("Primer sequences must be provided as base R strings.")
-  if(!is.null(primer.rev)) {
+  if(is.null(primer.rev)) { 
+    has.rev <- FALSE
+  } else {
     has.rev <- TRUE
     if(!is.character(primer.rev)) stop("Primer sequences must be provided as base R strings.")
   }
   fixed.fwd <- C_isACGT(primer.fwd)
   if(has.rev) fixed.rev <- C_isACGT(primer.rev)
-  # Read in file
-  fq <- readFastq(fn)
-  inseqs <- length(fq)
-  # Match patterns
-  match.fwd <- as(vmatchPattern(primer.fwd, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
-  if(has.rev) {
-    match.rev <- as(vmatchPattern(primer.rev, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev), "list")
-  }
-  # If orient, match reverse complement as well
-  if(orient) {
-    fq.rc <- reverseComplement(fq)
-    match.fwd.rc <- as(vmatchPattern(primer.fwd, sread(fq.rc), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
+  rval <- matrix(0L, nrow=length(fn), ncol=2)
+  colnames(rval) <- c("reads.in", "reads.out")
+  rownames(rval) <- basename(fn)
+  for(i in seq_along(fn)) {
+    # Read in file
+    fq <- readFastq(fn[[i]])
+    inseqs <- length(fq)
+    # Match patterns
+    match.fwd <- as(vmatchPattern(primer.fwd, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
     if(has.rev) {
-      match.rev.rc <- as(vmatchPattern(primer.rev, sread(fq.rc), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev), "list")
+      match.rev <- as(vmatchPattern(primer.rev, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev), "list")
     }
-  }
-  # Tally up hits
-  # Check for possible mis-oriented primer sequences?
-  hits.fwd <- sapply(match.fwd, length)
-  if(has.rev) hits.rev <- sapply(match.rev, length)
-  if(!require.fwd) stop("Currently, only require.fwd=TRUE is supported.")
-  if(has.rev && !require.rev) stop("Currently, only require.rev=TRUE is supported when a reverse primer sequence is provided.")
-  if(require.fwd && sum(hits.fwd) == 0) stop("No sequences matched the provided forward primer sequence.")
-  if(has.rev && require.rev && sum(hits.rev) == 0) stop("Reverse primer sequences were provided, but no sequences matched the provided reverse primer sequence.")
-  if(any(hits.fwd>1) || (has.rev && any(hits.rev>1))) {
-    if(verbose) message("Multiple matches to the primer(s) in some sequences. Using the longest possible match.")
-    match.fwd[hits.fwd>1] <- sapply(match.fwd[hits.fwd>1], `[`, 1)
-    if(has.rev) match.rev[hits.rev>1] <- sapply(match.rev[hits.rev>1], function(x) rev(x)[1])
-  }
-  if(orient) {
-    hits.fwd.rc <- sapply(match.fwd.rc, length)
-    if(has.rev) hits.rev.rc <- sapply(match.rev.rc, length)
-    if(any(hits.fwd.rc>1) || (has.rev && any(hits.rev.rc>1))) {
-      if(verbose) message("Multiple matches to the primer(s) in some reverse-complement sequences. Using the longest possible match.")
-      match.fwd.rc[hits.fwd.rc>1] <- sapply(match.fwd.rc[hits.fwd.rc>1], `[`, 1)
-      match.rev.rc[hits.rev.rc>1] <- sapply(match.rev.rc[hits.rev.rc>1], function(x) rev(x)[1])
+    # If orient, match reverse complement as well
+    if(orient) {
+      fq.rc <- reverseComplement(fq)
+      match.fwd.rc <- as(vmatchPattern(primer.fwd, sread(fq.rc), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
+      if(has.rev) {
+        match.rev.rc <- as(vmatchPattern(primer.rev, sread(fq.rc), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev), "list")
+      }
     }
-  }
-  # If orient, replace non-matches with rc matches where they exist
-  if(orient) {
-    flip <- !hits.fwd & hits.fwd.rc
-    if(any(flip) && verbose) cat(sum(flip), "sequences out of", length(flip), "are being reverse-complemented.\n")
-    fq[flip] <- fq.rc[flip]
-    match.fwd[flip] <- match.fwd.rc[flip]
+    # Tally up hits
+    # Check for possible mis-oriented primer sequences?
     hits.fwd <- sapply(match.fwd, length)
-    if(has.rev) {
-      match.rev[flip] <- match.rev.rc[flip]
-      hits.rev <- sapply(match.rev, length)
+    if(has.rev) hits.rev <- sapply(match.rev, length)
+    if(!require.fwd) stop("Currently, only require.fwd=TRUE is supported.")
+    if(has.rev && !require.rev) stop("Currently, only require.rev=TRUE is supported when a reverse primer sequence is provided.")
+    if(require.fwd && sum(hits.fwd) == 0) stop("No sequences matched the provided forward primer sequence.")
+    if(has.rev && require.rev && sum(hits.rev) == 0) stop("Reverse primer sequences were provided, but no sequences matched the provided reverse primer sequence.")
+    if(any(hits.fwd>1) || (has.rev && any(hits.rev>1))) {
+      if(verbose) message("Multiple matches to the primer(s) in some sequences. Using the longest possible match.")
+      match.fwd[hits.fwd>1] <- sapply(match.fwd[hits.fwd>1], `[`, 1)
+      if(has.rev) match.rev[hits.rev>1] <- sapply(match.rev[hits.rev>1], function(x) rev(x)[1])
     }
-  }
-  # If require, remove sequences w/o forward and reverse hits
-  keep <- rep(TRUE, length(fq))
-  if(require.fwd) keep <- keep & (hits.fwd > 0)
-  if(has.rev && require.rev) keep <- keep & (hits.rev > 0)
-  if(!all(keep)) {
-    fq <- fq[keep]
-    match.fwd <- match.fwd[keep]
-    if(has.rev) match.rev <- match.rev[keep]
-  }
-  # If trim, narrow to the desired subsequence
-  if(trim.fwd) {
-    first <- sapply(match.fwd, end) + 1
-  } else {
-    first <- rep(1L, length(fq))
-  }
-  if(has.rev && trim.rev) {
-    last <- sapply(match.rev, start) - 1
-  } else {
-    last <- width(fq)
-  }
-  keep <- last > first
-  if(!all(keep)) first <- first[keep]; last <- last[keep]; fq <- fq[keep]
-  fq <- narrow(fq, first, last) # Need to handle zero case gracefully, w/ informative error
-  # Delete fout if it already exists (since writeFastq doesn't overwrite)
-  if(file.exists(fout)) {
-    if(file.remove(fout)) {
-      if(verbose) message("Overwriting file:", fout)
+    if(orient) {
+      hits.fwd.rc <- sapply(match.fwd.rc, length)
+      if(has.rev) hits.rev.rc <- sapply(match.rev.rc, length)
+      if(any(hits.fwd.rc>1) || (has.rev && any(hits.rev.rc>1))) {
+        if(verbose) message("Multiple matches to the primer(s) in some reverse-complement sequences. Using the longest possible match.")
+        match.fwd.rc[hits.fwd.rc>1] <- sapply(match.fwd.rc[hits.fwd.rc>1], `[`, 1)
+        if(has.rev) match.rev.rc[hits.rev.rc>1] <- sapply(match.rev.rc[hits.rev.rc>1], function(x) rev(x)[1])
+      }
+    }
+    # If orient, replace non-matches with rc matches where they exist
+    if(orient) {
+      flip <- !hits.fwd & hits.fwd.rc
+      if(any(flip) && verbose) cat(sum(flip), "sequences out of", length(flip), "are being reverse-complemented.\n")
+      fq[flip] <- fq.rc[flip]
+      match.fwd[flip] <- match.fwd.rc[flip]
+      hits.fwd <- sapply(match.fwd, length)
+      if(has.rev) {
+        match.rev[flip] <- match.rev.rc[flip]
+        hits.rev <- sapply(match.rev, length)
+      }
+    }
+    # If require, remove sequences w/o forward and reverse hits
+    keep <- rep(TRUE, length(fq))
+    if(require.fwd) keep <- keep & (hits.fwd > 0)
+    if(has.rev && require.rev) keep <- keep & (hits.rev > 0)
+    if(!all(keep)) {
+      fq <- fq[keep]
+      match.fwd <- match.fwd[keep]
+      if(has.rev) match.rev <- match.rev[keep]
+    }
+    # If trim, narrow to the desired subsequence
+    if(trim.fwd) {
+      first <- sapply(match.fwd, end) + 1
     } else {
-      stop("Failed to overwrite file:", fout)
+      first <- rep(1L, length(fq))
+    }
+    if(has.rev && trim.rev) {
+      last <- sapply(match.rev, start) - 1
+    } else {
+      last <- width(fq)
+    }
+    keep <- last > first
+    if(!all(keep)) first <- first[keep]; last <- last[keep]; fq <- fq[keep]
+    fq <- narrow(fq, first, last) # Need to handle zero case gracefully, w/ informative error
+    # Delete fout if it already exists (since writeFastq doesn't overwrite)
+    if(file.exists(fout[[i]])) {
+      if(file.remove(fout[[i]])) {
+        if(verbose) message("Overwriting file:", fout[[i]])
+      } else {
+        stop("Failed to overwrite file:", fout[[i]])
+      }
+    }
+    writeFastq(fq, fout[[i]], "w", compress=compress)
+    outseqs <- length(fq)
+    rval[i,c("reads.in", "reads.out")] <- c(inseqs, outseqs)
+    if(verbose) {
+      outperc <- round(outseqs * 100 / inseqs, 1)
+      outperc <- paste(" (", outperc, "%)", sep="")
+      message("Read in ", inseqs, ", output ", outseqs, outperc, " filtered sequences.", sep="")
     }
   }
-  writeFastq(fq, fout, "w", compress=compress)
-  outseqs <- length(fq)
-  if(verbose) {
-    outperc <- round(outseqs * 100 / inseqs, 1)
-    outperc <- paste(" (", outperc, "%)", sep="")
-    message("Read in ", inseqs, ", output ", outseqs, outperc, " filtered sequences.", sep="")
+  if(all(rval[,"reads.out"]==0)) {
+    warning("No reads passed the primer detection.")
+  } else if(any(rval[,"reads.out"]==0)) {
+    message("Some input samples had no reads pass the primer detection.")
   }
-  return(invisible(c(reads.in=inseqs, reads.out=outseqs)))
+  return(invisible(rval))
 }  
 
 #' Filter and trim fastq file(s).

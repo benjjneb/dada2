@@ -34,8 +34,10 @@ assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
 #' If dada is run in selfConsist=TRUE mode, the algorithm will infer both the sample composition and
 #'  the parameters of its error model from the data.
 #'  
-#' @param derep (Required). A \code{\link{derep-class}} object, the output of \code{\link{derepFastq}}.
-#'  A list of such objects can be provided, in which case each will be denoised with a shared error model.
+#' @param derep (Required). The file path(s) to the fastq or fastq.gz file(s), or any file format supported 
+#'  by \code{\link[ShortRead]{FastqStreamer}}, corresponding to the samples to be denoised. 
+#'  A \code{\link{derep-class}} object (or list thereof) returned by \code{link{derepFastq}} can also be provided
+#'  If multiple samples are provided, each will be denoised with a shared error model.
 #'  
 #' @param err (Required). 16xN numeric matrix, or an object coercible by \code{\link{getErrors}} 
 #'  such as the output of the \code{\link{learnErrors}} function.
