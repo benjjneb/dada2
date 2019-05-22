@@ -56,7 +56,7 @@ list.files(path)
 
 If the packages loaded successfully and your listed files match those here, your are ready to follow along with the ITS workflow.
 
-Before proceeding, we will now due a bit of housekeeping, and generate matched lists of the forward and reverse read files, as well as parsing out the sample name. Here we assume forward and reverse read files are in the format `SAMPLENAME_1.fastq.gz` and `SAMPLENAME_2.fastq.gz`, respectively, so string parsing may have to be altered in your own data if your filenamess have a different format.
+Before proceeding, we will now do a bit of housekeeping, and generate matched lists of the forward and reverse read files, as well as parsing out the sample name. Here we assume forward and reverse read files are in the format `SAMPLENAME_1.fastq.gz` and `SAMPLENAME_2.fastq.gz`, respectively, so string parsing may have to be altered in your own data if your filenamess have a different format.
 
 ```{r Mock file names, warning=FALSE, message = FALSE, tidy=TRUE,comment= ""}
 fnFs <- sort(list.files(path, pattern = "_1.fastq.gz", full.names = TRUE))
@@ -178,7 +178,7 @@ We start by visualizing the quality profiles of the forward reads:
 plotQualityProfile(cutFs[1:2])
 ```
 
-The quality profile plot is a gray-scale heatmap of the frequency of each quality score at each base position. The median quality score at each position is shown by the green line, and the quartiles of the quality score distribution by the orange lines. The read line shows the scaled proportion of reads that extend to at least that position.
+The quality profile plot is a gray-scale heatmap of the frequency of each quality score at each base position. The median quality score at each position is shown by the green line, and the quartiles of the quality score distribution by the orange lines. The red line shows the scaled proportion of reads that extend to at least that position.
 
 The forward reads are of good quality. The red line shows that a significant chunk of reads were cutadapt-ed to about 150nts in length, likely reflecting the length of the amplified ITS region in one of the taxa present in these samples. Note that, unlike in the 16S Tutorial Workflow, we will not be truncating the reads to a fixed length, as the ITS region has significant biological length variation that is lost by such an appraoch. 
 
