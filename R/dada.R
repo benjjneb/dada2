@@ -544,7 +544,7 @@ dada <- function(derep,
 #' GREEDY: The DADA2 algorithm is not greedy, but a very restricted form of greediness can be turned
 #'  on via this option. If TRUE, unique sequences with reads less than those expected to be generated
 #'  by resequencing just the central unique in their partition are "locked" to that partition.
-#'  Modest (~30%) speedup, and almost no impact on output. Default is TRUE.
+#'  Modest (~30\%) speedup, and almost no impact on output. Default is TRUE.
 #' 
 #' **New Partition Conditions**
 #' 
