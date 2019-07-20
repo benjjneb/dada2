@@ -25,7 +25,7 @@ This function extracts the sequences from several different data objects, includ
  \code{data.frame} objects that have both $sequence and $abundance columns. This function 
  wraps the \code{\link{getUniques}} function, but return only the names (i.e. the sequences).
  Can also be provided the file path to a fasta or fastq file, a taxonomy table, or a
- DNAStringSet object.
+ DNAStringSet object. Sequences are coerced to upper-case characters.
 }
 \examples{
 derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))

@@ -65,7 +65,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
 #'  \code{data.frame} objects that have both $sequence and $abundance columns. This function 
 #'  wraps the \code{\link{getUniques}} function, but return only the names (i.e. the sequences).
 #'  Can also be provided the file path to a fasta or fastq file, a taxonomy table, or a
-#'  DNAStringSet object. 
+#'  DNAStringSet object. Sequences are coerced to upper-case characters.
 #' 
 #' @param object (Required). The object from which to extract the sequences.
 #' 
@@ -100,15 +100,15 @@ getSequences <- function(object, collapse=FALSE, silence=TRUE) {
       sr <- tryCatch(readFasta(object), error=function(err) { readFastq(object) })
       seqs <- toupper(as.character(sread(sr)))
       names(seqs) <- id(sr)
-      return(seqs)
+      rval <- seqs
     } else if(collapse) {
       if(any(duplicated(object)) && !silence) message("Duplicate sequences detected and merged.")
-      return(unique(object))
+      rval <- unique(object)
     } else {
-      return(object)
+      rval <- object
     }
   } else if(class(object) == "DNAStringSet") {
-    return(as.character(object))
+    rval <- as.character(object)
   } else if(class(object) == "matrix" && is.character(object) && !any(is.na(rownames(object)))) { # Taxonomy table
     seqs <- rownames(object)
     if(any(duplicated(seqs))) {
@@ -116,10 +116,11 @@ getSequences <- function(object, collapse=FALSE, silence=TRUE) {
       if(collapse && !silence) message("Duplicate sequences detected and merged.")
       if(!collapse && !silence) message("Duplicate sequences detected.")
     }
-    return(seqs)
+    rval <- seqs
   } else {
-    return(names(getUniques(object, collapse=collapse, silence=silence)))
+    rval <- names(getUniques(object, collapse=collapse, silence=silence))
   }
+  return(toupper(rval))
 }
 
 getAbund <- function(object) {
