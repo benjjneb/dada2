@@ -76,6 +76,10 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' @param vec (Optional). \code{logical(1)}. Default TRUE.
 #' Use the vectorized aligner. Should be turned off if sequences exceed 2kb in length.
 #' 
+#' @param band 	(Optional). \code{numeric(1)}. Default -1 (no banding). The Needleman-Wunsch 
+#' alignment can be banded. This value specifies the radius of that band. Set band = -1 
+#' to turn off banding.
+#' 
 #' @param verbose (Optional). \code{logical(1)}. Default FALSE.
 #' If TRUE, a summary of the function results are printed to standard output.
 #' 
@@ -95,7 +99,7 @@ makeSequenceTable <- function(samples, orderBy = "abundance") {
 #' seqtab <- makeSequenceTable(list(sample1=dada1, sample2=dada2))
 #' collapseNoMismatch(seqtab)
 #' 
-collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", identicalOnly=FALSE, vec=TRUE, verbose=FALSE) {
+collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", identicalOnly=FALSE, vec=TRUE, band=-1, verbose=FALSE) {
   # Collapse identical sequences (duplicates)
   dupes <- duplicated(colnames(seqtab))
   if(any(dupes)) { # Collapse duplicates first
@@ -123,7 +127,7 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", ident
       prefix.ref <- substr(ref, 1, minOverlap)
       # Prescreen to see if costly alignment worthwhile, this could all be moved C-side
       if(grepl(prefix, ref, fixed=TRUE) || grepl(prefix.ref, query, fixed=TRUE)) { 
-        if(nwhamming(query,ref,vec=vec,band=16) == 0) {  # band is arbitrary since need exact match
+        if(nwhamming(query,ref,vec=vec,band=band) == 0) {
           collapsed[,ref] <- collapsed[,ref] + seqtab[,query] 
           added=TRUE
           break
@@ -147,7 +151,7 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", ident
     }
   }
   
-  collapsed <- collapsed[,order(colSums(collapsed), decreasing=TRUE)]
+  collapsed <- collapsed[,order(colSums(collapsed), decreasing=TRUE),drop=FALSE]
   
   if(verbose) message("Output ", ncol(collapsed), " collapsed sequences out of ", ncol(seqtab), " input sequences.")
   collapsed

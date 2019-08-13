@@ -4,10 +4,11 @@
 \alias{isBimeraDenovoTable}
 \title{Identify bimeras in a sequence table.}
 \usage{
-isBimeraDenovoTable(seqtab, minSampleFraction = 0.9, ignoreNNegatives = 1,
-  minFoldParentOverAbundance = 1.5, minParentAbundance = 2,
-  allowOneOff = FALSE, minOneOffParentDistance = 4, maxShift = 16,
-  multithread = FALSE, verbose = FALSE)
+isBimeraDenovoTable(seqtab, minSampleFraction = 0.9,
+  ignoreNNegatives = 1, minFoldParentOverAbundance = 1.5,
+  minParentAbundance = 2, allowOneOff = FALSE,
+  minOneOffParentDistance = 4, maxShift = 16, multithread = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{seqtab}{(Required). A sequence table. That is, an integer matrix with colnames

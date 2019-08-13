@@ -286,6 +286,8 @@ dada <- function(derep,
         }
         qmax <- ceiling(max(drpi$quals, na.rm=TRUE))
         if(qmax > 250) { stop("Sample ", i, " has an invalid maximum Phred Quality Scores of ", qmax) }
+      } else { 
+        qmax <- 0 # For USE_QUALS=FALSE
       }
 
       # Initialize error matrix if necessary

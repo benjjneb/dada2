@@ -4,9 +4,9 @@
 \alias{dada}
 \title{High resolution sample inference from amplicon data.}
 \usage{
-dada(derep, err, errorEstimationFunction = loessErrfun, selfConsist = FALSE,
-  pool = FALSE, priors = character(0), multithread = FALSE,
-  verbose = TRUE, ...)
+dada(derep, err, errorEstimationFunction = loessErrfun,
+  selfConsist = FALSE, pool = FALSE, priors = character(0),
+  multithread = FALSE, verbose = TRUE, ...)
 }
 \arguments{
 \item{derep}{(Required). The file path(s) to the fastq or fastq.gz file(s), or any file format supported 

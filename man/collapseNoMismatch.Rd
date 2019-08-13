@@ -5,7 +5,7 @@
 \title{Combine together sequences that are identical up to shifts and/or length.}
 \usage{
 collapseNoMismatch(seqtab, minOverlap = 20, orderBy = "abundance",
-  identicalOnly = FALSE, vec = TRUE, verbose = FALSE)
+  identicalOnly = FALSE, vec = TRUE, band = -1, verbose = FALSE)
 }
 \arguments{
 \item{seqtab}{(Required). A sample by sequence matrix, the return of \code{\link{makeSequenceTable}}.}
@@ -22,6 +22,10 @@ If TRUE, only identical sequences (i.e. duplicates) are collapsed together.}
 
 \item{vec}{(Optional). \code{logical(1)}. Default TRUE.
 Use the vectorized aligner. Should be turned off if sequences exceed 2kb in length.}
+
+\item{band}{(Optional). \code{numeric(1)}. Default -1 (no banding). The Needleman-Wunsch 
+alignment can be banded. This value specifies the radius of that band. Set band = -1 
+to turn off banding.}
 
 \item{verbose}{(Optional). \code{logical(1)}. Default FALSE.
 If TRUE, a summary of the function results are printed to standard output.}

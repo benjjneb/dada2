@@ -5,7 +5,8 @@
 \title{Identify sequences that are identical to a more abundant sequence up to an
 overall shift.}
 \usage{
-isShiftDenovo(unqs, minOverlap = 20, flagSubseqs = FALSE, verbose = FALSE)
+isShiftDenovo(unqs, minOverlap = 20, flagSubseqs = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced

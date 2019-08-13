@@ -6,8 +6,8 @@
 \title{Writes a named character vector of DNA sequences to a fasta file.
 Values are the sequences, and names are used for the id lines.}
 \usage{
-\S4method{writeFasta}{character}(object, file, mode = "w", width = 20000L,
-  ...)
+\S4method{writeFasta}{character}(object, file, mode = "w",
+  width = 20000L, ...)
 }
 \arguments{
 \item{object}{(Required). A named \code{character} vector.}

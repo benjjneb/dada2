@@ -7,8 +7,8 @@
 fastqPairedFilter(fn, fout, maxN = c(0, 0), truncQ = c(2, 2),
   truncLen = c(0, 0), maxLen = c(Inf, Inf), minLen = c(20, 20),
   trimLeft = c(0, 0), trimRight = c(0, 0), minQ = c(0, 0),
-  maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), rm.lowcomplex = c(0, 0),
-  matchIDs = FALSE, orient.fwd = NULL, id.sep = "\\\\s",
+  maxEE = c(Inf, Inf), rm.phix = c(TRUE, TRUE), rm.lowcomplex = c(0,
+  0), matchIDs = FALSE, orient.fwd = NULL, id.sep = "\\\\s",
   id.field = NULL, n = 1e+06, OMP = TRUE, qualityType = "Auto",
   compress = TRUE, verbose = FALSE, ...)
 }

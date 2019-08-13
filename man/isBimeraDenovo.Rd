@@ -4,9 +4,10 @@
 \alias{isBimeraDenovo}
 \title{Identify bimeras from collections of unique sequences.}
 \usage{
-isBimeraDenovo(unqs, minFoldParentOverAbundance = 2, minParentAbundance = 8,
-  allowOneOff = FALSE, minOneOffParentDistance = 4, maxShift = 16,
-  multithread = FALSE, verbose = FALSE)
+isBimeraDenovo(unqs, minFoldParentOverAbundance = 2,
+  minParentAbundance = 8, allowOneOff = FALSE,
+  minOneOffParentDistance = 4, maxShift = 16, multithread = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{unqs}{(Required). A \code{\link{uniques-vector}} or any object that can be coerced
