@@ -116,7 +116,7 @@ The error rates for each possible transition (A&rarr;C, A&rarr;G, ...) are shown
 
 # Sample Inference
 
-We are now ready to apply [the core sample inference algorithm](https://www.nature.com/articles/nmeth.3869#methods) to the dereplicated data. 
+We are now ready to apply [the core sample inference algorithm](https://www.nature.com/articles/nmeth.3869#methods) to the filtered and trimmed sequence data. 
 
 ```{r dada}
 dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
