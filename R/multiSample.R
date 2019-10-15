@@ -200,12 +200,39 @@ combineDereps2 <- function(dereps) {
   rval
 }
 
-is.sequence.table <- function(tab) {
-  rval <- is.matrix(tab) && all(tab>=0) && 
-    !is.null(colnames(tab)) && !is.null(colnames(tab)) &&
-    all(sapply(colnames(tab), nchar)>0) &&
-    all(sapply(rownames(tab), nchar)>0)
-  rval
+# Check the validity of a putatitve sequence table object, provide useful diagnostic messages if invalid.
+is.sequence.table <- function(tab, verbose=TRUE) {
+  if(!(is.matrix(tab))) {
+    if(verbose) warning("Not a matrix.")
+    return(FALSE)
+  }
+  if(!(all(tab>=0))) {
+    if(verbose) warning("Negative entries.")
+    return(FALSE)
+  }
+  if(is.null(colnames(tab))) {
+    if(verbose) warning("Column (sequence) names are missing.")
+    return(FALSE)
+  }
+  if(is.null(rownames(tab))) {
+    if(verbose) warning("Row (sample) names are missing.")
+    return(FALSE)
+  }
+  if(!all(sapply(colnames(tab), nchar)>0)) {
+    if(verbose) warning("Some column (sequence) names are blank.")
+    return(FALSE)
+  }
+  if(!all(sapply(rownames(tab), nchar)>0)) {
+    if(verbose) warning("Some row (sample) names are blank.")
+    return(FALSE)
+  }
+  if(any(duplicated(colnames(tab)))) {
+    if(verbose) warning("Duplicated column (sequences) names.")
+  }
+  if(any(duplicated(rownames(tab)))) {
+    if(verbose) warning("Duplicated row (sample) names.")
+  }
+  return(TRUE)
 }
 
 ################################################################################
