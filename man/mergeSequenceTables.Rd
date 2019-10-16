@@ -5,7 +5,7 @@
 \title{Merge two or more sample-by-sequence observation matrices.}
 \usage{
 mergeSequenceTables(table1 = NULL, table2 = NULL, ..., tables = NULL,
-  repeats = "error", orderBy = "abundance")
+  repeats = "error", orderBy = "abundance", tryRC = FALSE)
 }
 \arguments{
 \item{table1}{(Optional, default=NULL). Named integer matrix. Rownames correspond to samples
@@ -28,6 +28,13 @@ If "sum", then samples with the same name are summed together in the merged tabl
 \item{orderBy}{(Optional). \code{character(1)}. Default "abundance".
 Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
 Valid values: "abundance", "nsamples", NULL.}
+
+\item{tryRC}{(Optional). \code{logical(1)}. Default FALSE.
+If tryRC=TRUE, sequences whose reverse complement matches an earlier sequence will be reverse-
+complemented and merged together with that earlier sequence. This is most useful when different
+runs sequenced the same gene region in different or mixed orientations. Note, this does not
+guarantee consistent orientatation from e.g. 5' to 3' on the gene, it just ensures that identical
+sequences in different orientations are merged.}
 }
 \value{
 Named integer matrix.

@@ -261,6 +261,13 @@ is.sequence.table <- function(tab, verbose=TRUE) {
 #' Specifies how the sequences (columns) of the returned table should be ordered (decreasing).
 #' Valid values: "abundance", "nsamples", NULL.
 #' 
+#' @param tryRC (Optional). \code{logical(1)}. Default FALSE.
+#' If tryRC=TRUE, sequences whose reverse complement matches an earlier sequence will be reverse-
+#' complemented and merged together with that earlier sequence. This is most useful when different
+#' runs sequenced the same gene region in different or mixed orientations. Note, this does not
+#' guarantee consistent orientatation from e.g. 5' to 3' on the gene, it just ensures that identical
+#' sequences in different orientations are merged.
+#' 
 #' @return Named integer matrix.
 #' A row for each sample, and a column for each unique sequence across all the samples.
 #' Note that the columns are named by the sequence which can make display unwieldy.
@@ -278,7 +285,7 @@ is.sequence.table <- function(tab, verbose=TRUE) {
 #'   mergetab <- mergeSequenceTables(tables=files) # vector of filenames
 #' }
 #' 
-mergeSequenceTables <- function( table1=NULL, table2=NULL, ..., tables=NULL, repeats="error", orderBy = "abundance") {
+mergeSequenceTables <- function( table1=NULL, table2=NULL, ..., tables=NULL, repeats="error", orderBy = "abundance", tryRC=FALSE) {
   # Convert to sequence tables if necessary
   if (is.null(tables) && (is.null(table1) || is.null(table2))) {
   	stop("Either 'tables' or 'table1' and 'table2' must be provided.")
@@ -309,6 +316,21 @@ mergeSequenceTables <- function( table1=NULL, table2=NULL, ..., tables=NULL, rep
     }
   }
   seqs <- unique(c(sapply(tables, colnames), recursive=TRUE))
+  if(tryRC && length(seqs) > 1) {
+    earlier.rc <- c(FALSE, sapply(seq(2, length(seqs)), function(i) rc(seqs[[i]]) %in% seqs[1:(i-1)]))
+    rc.seqs <- seqs[earlier.rc]
+    if(length(rc.seqs) > 0) {
+      message("Reverse complemented sequences detected and re-oriented.")
+      for(i in seq_along(tables)) {
+        do.rc <- colnames(tables[[i]]) %in% rc.seqs
+        if(any(do.rc)) {
+          colnames(tables[[i]])[do.rc] <- rc(colnames(tables[[i]])[do.rc])
+          tables[[i]] <- collapseNoMismatch(tables[[i]], identicalOnly=TRUE)
+        }
+      }
+      seqs <- seqs[!seqs %in% rc.seqs]
+    }
+  }
   # Make merged table
   rval <- matrix(0L, nrow=length(sample.names), ncol=length(seqs))
   rownames(rval) <- sample.names
