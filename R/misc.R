@@ -19,6 +19,8 @@
 #' @return \code{integer}.
 #'  An integer vector named by unique sequence and valued by abundance.
 #' 
+#' @importFrom methods is
+#' 
 #' @export
 #' 
 #' @examples
@@ -29,7 +31,9 @@
 #' getUniques(dada1$clustering)[1:3]
 #' 
 getUniques <- function(object, collapse=TRUE, silence=FALSE) {
-  if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
+  if(is(object, "character") && length(object)==1 && file.exists(object)) {
+      unqs <- derepFastq(object)$uniques
+  } else if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
     unqs <- object
   } else if(class(object) == "dada") {  # dada return 
     unqs <- object$denoised
@@ -43,7 +47,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
     names(unqs) <- colnames(object)
   }
   else {
-    stop("Unrecognized format: Requires named integer vector, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
+    stop("Unrecognized format: Requires named integer vector, fastq filename, dada-class, derep-class, sequence matrix, or a data.frame with $sequence and $abundance columns.")
   }
   #### ENFORCE UNIQUENESS HERE!!!
   if(any(duplicated(names(unqs)))) {

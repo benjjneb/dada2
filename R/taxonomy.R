@@ -271,6 +271,8 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
       if(tryRC) vhit <- vhit | (vcountPDict(seqdict, reverseComplement(sread(refsr)))>0)
       hits[i.loop] <- lapply(seq(nrow(vhit)), function(x) vhit[x,])
       j.lo <- j.lo + n; j.hi <- min(j.hi+n, n.len)
+      rm(seqdict)
+      gc()
     }
   }
   # Get genus species return strings
