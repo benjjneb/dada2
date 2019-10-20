@@ -370,21 +370,20 @@ dada <- function(derep,
     } else {
       err <- tryCatch(suppressWarnings(errorEstimationFunction(cur)),
               error = function(cond) {
-                if((verbose && selfConsist) || verbose >= 2) {
+                if(selfConsist || verbose >= 2) {
                   message("Error rates could not be estimated (this is usually because of very few reads).")
                 }
                 return(NULL)
       })
+    }
+    if(selfConsist) { # Validate err matrix
+      temp.var <- getErrors(err, enforce=TRUE); rm("temp.var")
     }
     if(initializeErr) {
       initializeErr <- FALSE
       err[c(1,6,11,16),] <- 1.0 # Set self-transitions (A2A, C2C, G2G, T2T) to max of 1
     }
 
-    if(selfConsist) { # Validate err matrix
-      temp.var <- getErrors(err, enforce=TRUE); rm("temp.var")
-    }
-    
     # Termination condition for selfConsist loop
     if((!selfConsist) || any(sapply(errs, identical, err)) || (nconsist >= opts$MAX_CONSIST)) {
       if(!pseudo || (pseudo && nconsist >= 2)) { # If pseudo, must go through first (full) loop to get pseudo priors
