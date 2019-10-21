@@ -68,6 +68,8 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
   int kmer, g, max_g = -1;
   unsigned int log_step = 50; ///! Need log10(ngenus+1) * log_step < 300 (max double ~ 10^308)
   double p, logp, max_logp = 1.0; // Init value to be replaced on first iteration
+  double rv; // Dummy random variable
+  unsigned int nmax=0; // Number of times the current max logp has been seen
     
   for(g=0;g<ngenus;g++) {
     genus_kv = &genus_kmers[g*n_kmers];
@@ -89,10 +91,16 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
     // Subtract the product of the denominators
     logp = logp - (arraylen * log(genus_num_plus1[g]));
     
-    // Store if new max
-    if(max_logp > 0 || logp>max_logp) {
+    if(max_logp > 0 || logp>max_logp) { // Store if new max
       max_logp = logp;
       max_g = g;
+      nmax=1;
+    } else if (max_logp == logp) { // With uniform prob, store if equal to current max
+      nmax++;
+      rv = (double) Rcpp::runif(1)[0];
+      if(rv < 1.0/nmax) {
+        max_g = g;
+      }
     }
   }
   *out_logp = max_logp;
@@ -198,8 +206,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
     max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
     if(try_rc) { // see if rev-comp is a better match to refs
       arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
-      if(arraylen != arraylen_rc) { ///!
-        Rprintf("F: %s (%i)\nR: %s (%i)\n", seqs[j].c_str(), arraylen, rcs[j].c_str(), arraylen_rc);
+      if(arraylen != arraylen_rc) { 
         Rcpp::stop("Discrepancy between forward and RC arraylen."); }
       max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
       if(logp_rc > logp) { // rev-comp is better, replace with it
