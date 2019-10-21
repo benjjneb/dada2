@@ -5,8 +5,8 @@
 \title{Removes primers and orients reads in a consistent direction.}
 \usage{
 removePrimers(fn, fout, primer.fwd, primer.rev = NULL,
-  max.mismatch = 2, trim.fwd = TRUE, trim.rev = TRUE,
-  orient = TRUE, compress = TRUE, verbose = FALSE)
+  max.mismatch = 2, allow.indels = FALSE, trim.fwd = TRUE,
+  trim.rev = TRUE, orient = TRUE, compress = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{fn}{(Required). \code{character}.
@@ -31,8 +31,12 @@ this function.}
 
 \item{max.mismatch}{(Optional). Default 2.
 The number of mismatches to tolerate when matching reads to primer sequences.
-Only substitution mismatches to the primers can be tolerated, indels are not tolerated.
 See \code{\link[Biostrings]{vmatchPattern}} for details.}
+
+\item{allow.indels}{(Optional). Default FALSE.
+If TRUE, indels ared allowed when matching the primer sequences to the read. If FALSE,
+no indels are allowed. Note that when `allow.indels=TRUE`, primer matching is significantly
+slower, currently about 4x slower.}
 
 \item{trim.fwd}{(Optional). Default TRUE.
 If TRUE, reads are trimmed to the end of the forward primer, i.e. the forward

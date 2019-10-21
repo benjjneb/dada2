@@ -27,8 +27,12 @@
 #' 
 #' @param max.mismatch (Optional). Default 2.
 #'  The number of mismatches to tolerate when matching reads to primer sequences.
-#'  Only substitution mismatches to the primers can be tolerated, indels are not tolerated.
 #'  See \code{\link[Biostrings]{vmatchPattern}} for details.
+#'  
+#' @param allow.indels (Optional). Default FALSE.
+#'  If TRUE, indels ared allowed when matching the primer sequences to the read. If FALSE,
+#'  no indels are allowed. Note that when `allow.indels=TRUE`, primer matching is significantly
+#'  slower, currently about 4x slower.
 #' 
 #' @param trim.fwd (Optional). Default TRUE.
 #'  If TRUE, reads are trimmed to the end of the forward primer, i.e. the forward
@@ -75,13 +79,12 @@
 # Further testing warranted for trimming of partial reverse primers, and sometimes present reverse primers
 removePrimers <- function(fn, fout, 
                           primer.fwd, primer.rev=NULL, max.mismatch=2, 
-                          ### allow.indels=FALSE, require.fwd=TRUE, require.rev=TRUE, 
+                          allow.indels=FALSE, ### require.fwd=TRUE, require.rev=TRUE, 
                           trim.fwd=TRUE, trim.rev=TRUE, orient=TRUE,
                           compress=TRUE, verbose = FALSE) {
   # Check and enforce filepaths
   if(length(fn) != length(fout)) stop("Every input file must have a corresponding output file.")
-  allow.indels <- FALSE ### see next line
-  if(allow.indels) stop("Primer matching with indels not currently supported (vmatchPattern).")
+  if(allow.indels) message("Primer matching with indels allowed is currently significantly (~4x) slower.")
   require.fwd <- TRUE; require.rev <- TRUE ###
   odirs <- unique(dirname(fout))
   for(odir in odirs) {
@@ -113,16 +116,32 @@ removePrimers <- function(fn, fout,
     fq <- readFastq(fn[[i]])
     inseqs <- length(fq)
     # Match patterns
-    match.fwd <- as(vmatchPattern(primer.fwd, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
+    if(allow.indels) { # Use slower matchPattern because it supports indels
+      match.fwd <- lapply(sread(fq), function(x) matchPattern(primer.fwd, x, max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd))
+    } else { # Use faster vmatchPattern that doesn't support indels
+      match.fwd <- as(vmatchPattern(primer.fwd, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
+    }
     if(has.rev) {
-      match.rev <- as(vmatchPattern(primer.rev, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev), "list")
+      if(allow.indels) { # Use slower matchPattern because it supports indels
+        match.rev <- lapply(sread(fq), function(x) matchPattern(primer.rev, x, max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev))
+      } else { # Use faster vmatchPattern that doesn't support indels
+        match.rev <- as(vmatchPattern(primer.rev, sread(fq), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev), "list")
+      }
     }
     # If orient, match reverse complement as well
     if(orient) {
       fq.rc <- reverseComplement(fq)
-      match.fwd.rc <- as(vmatchPattern(primer.fwd, sread(fq.rc), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
+      if(allow.indels) { # Use slower matchPattern because it supports indels
+        match.fwd.rc <- lapply(sread(fq.rc), function(x) matchPattern(primer.fwd, x, max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd))
+      } else { # Use faster vmatchPattern that doesn't support indels
+        match.fwd.rc <- as(vmatchPattern(primer.fwd, sread(fq.rc), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd), "list")
+      }
       if(has.rev) {
-        match.rev.rc <- as(vmatchPattern(primer.rev, sread(fq.rc), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev), "list")
+        if(allow.indels) { # Use slower matchPattern because it supports indels
+          match.rev.rc <- lapply(sread(fq.rc), function(x) matchPattern(primer.rev, x, max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev))
+        } else { # Use faster vmatchPattern that doesn't support indels
+          match.rev.rc <- as(vmatchPattern(primer.rev, sread(fq.rc), max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.rev), "list")
+        }
       }
     }
     # Tally up hits
