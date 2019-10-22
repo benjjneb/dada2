@@ -311,7 +311,7 @@ seqtab_to_mothur <- function(st, fout) {
   # mothur has OTUs as columns, and a couple required columns
   df.shared <- data.frame(label=rep("DADA2", nrow(st)), Group=rownames(st), numOtus=ncol(st))
   df.shared <- cbind(df.shared, st)
-  write.table(df.shared, four, row.names=FALSE, col.names=TRUE, quote=FALSE)
+  write.table(df.shared, fout, row.names=FALSE, col.names=TRUE, quote=FALSE)
 }
 
 #' @importFrom utils write.table

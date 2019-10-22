@@ -300,3 +300,28 @@ getDerep <- function(object, ...) {
   }
 }
 
+parseFastqDirectory <- function(path, pattern=c(".fastq.gz$", ".fastq.bz2$", ".fastq$")) {
+  # Validate inputs
+  if(!dir.exists(path)) stop("Provided path is not an existing directory.")
+  if(!is.character(pattern)) stop("File name pattern(s) must be provided in character format.")
+  # Initialize
+  fn <- character(0)
+  multi.ext <- FALSE
+  # Read in filenames
+  for(pat in pattern) {
+    foo <- list.files(path, pattern=pat)
+    if(length(foo) > 0) { # Files with this pattern detected
+      if(length(fn)==0) { fn <- foo }
+      else { multi.ext <- TRUE }
+    }
+  }
+  # Validate results and provide error messaging
+  if(length(fn) == 0) stop("No files found in this directory with the expected extension(s): ", paste(pattern, collapse=", "))
+  if(multi.ext) {
+    warning("Multiple fastq-type file extensions detected in this directory. Only those with extensions appearing earliest in
+             the search list were kept: ", paste(pattern, collapse=", "))
+  }
+  # Return
+  return(file.path(path, fn))
+}
+
