@@ -265,39 +265,6 @@ bool b_shuffle2(B *b) {
   return shuffled;
 }
 
-/* This crashes w/ >1 thread. R code not thread-safe?
-
-struct PUpdateParallel : public RcppParallel::Worker
-{
-  // source data / output
-  B *b;
-
-  // initialize with source and destination
-  PUpdateParallel(B *b) 
-    : b(b) {}
-  
-  // Perform sequence comparison
-  void operator()(std::size_t begin, std::size_t end) {
-    Raw *raw;
-
-    for(std::size_t i=begin;i<end;i++) {
-      if(b->bi[i]->update_e) {
-        for(unsigned int r=0;r<b->bi[i]->nraw;r++) {
-          raw = b->bi[i]->raw[r];
-          raw->p = get_pA(raw, b->bi[i]);
-        } // for(r=0;r<b->bi[i]->nraw;r++)
-        b->bi[i]->update_e = false;
-      }
-    }
-  }
-};
-
-void b_p_update_parallel(B *b) {
-  PUpdateParallel pUpdateParallel(b);
-  RcppParallel::parallelFor(0, b->nclust, pUpdateParallel, GRAIN_SIZE);
-}
-*/
- 
 /* b_bud:
  Finds the minimum p-value. If significant, creates a new cluster and moves the
  raws from the raw with the minimum p-value to the new cluster.

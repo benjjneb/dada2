@@ -33,6 +33,11 @@ The probability that each unique sequence
  to correcting all input sequences, and any value > 1 corresponds to performing no correction on sequences found to contain
  errors. Default is 1e-40 (same as OMEGA_A).
 
+DETECT_SINGLETONS: If set to TRUE, this removes the requirement for at least two reads with the same sequences to exist
+ in order for a new ASV to be detected. It also somewhat increases sensitivity to other low abundance sequences as well, 
+ e.g. those present in just 2/3/4/... reads. Note, this applies to all unique sequences, not just those supported by
+ prior evidence (see `priors` argument), and so it does make false-positive detections more likely.
+
 **Alignment**
 
 MATCH: The score of a match in the Needleman-Wunsch alignment. Default is 4.

@@ -11,7 +11,7 @@ Pval.cpp contains the functions related to calculating the abundance pval in DAD
  Calculates the abundance p-value for each raw in the clustering.
  Depends on the lambda between the raw and its cluster, and the reads of each.
  */
-void b_p_update(B *b, bool greedy) {
+void b_p_update(B *b, bool greedy, bool detect_singletons) {
   unsigned int i, r;
   Raw *raw;
   Bi *bi;
@@ -21,7 +21,7 @@ void b_p_update(B *b, bool greedy) {
     if(bi->update_e) {
       for(r=0;r<bi->nraw;r++) {
         raw = bi->raw[r];
-        raw->p = get_pA(raw, bi);
+        raw->p = get_pA(raw, bi, detect_singletons);
       } // for(r=0;r<b->bi[i]->nraw;r++)
       bi->update_e = false;
     } // if(bi->update_e)
@@ -64,14 +64,14 @@ double calc_pA(int reads, double E_reads, bool prior) {
 }
 
 // Find abundance pval from a Raw in a Bi
-double get_pA(Raw *raw, Bi *bi) {
+double get_pA(Raw *raw, Bi *bi, bool detect_singletons) {
   unsigned int hamming;
   double lambda, E_reads, pval = 1.;
   
   lambda = raw->comp.lambda;
   hamming = raw->comp.hamming;
 
-  if(raw->reads == 1 && !raw->prior) {   // Singleton. No abundance pval.
+  if(raw->reads == 1 && !raw->prior && !detect_singletons) {   // Singleton. No abundance pval.
     pval=1.;
   } 
   else if(hamming == 0) { // Cluster center (or no mismatch to center)
@@ -83,7 +83,7 @@ double get_pA(Raw *raw, Bi *bi) {
   else { // Calculate abundance pval.
     // E_reads is the expected number of reads for this raw
     E_reads = lambda * bi->reads;
-    pval = calc_pA(raw->reads, E_reads, raw->prior);
+    pval = calc_pA(raw->reads, E_reads, raw->prior || detect_singletons);
   }
   return pval;
 }

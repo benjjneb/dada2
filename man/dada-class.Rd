@@ -18,7 +18,6 @@ A multi-item List with the following named values...
  \item{$err_in: }{The err matrix used for this invocation of dada.}
  \item{$err_out: }{The err matrix estimated from the output of dada. NULL if err_function not provided.}
  \item{$opts: }{A list of the dada_opts used for this invocation of dada.}
- \item{$call: }{The function call used for this invocation of dada.}
 }
 }
 \seealso{

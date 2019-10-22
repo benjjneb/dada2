@@ -173,9 +173,9 @@ double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int 
 ///TEST uint16_t kmer_dist2(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k);
 
 // methods implemented in pval.cpp
-void b_p_update(B *b, bool greedy);
+void b_p_update(B *b, bool greedy, bool detect_singletons);
 double calc_pA(int reads, double E_reads, bool prior);
-double get_pA(Raw *raw, Bi *bi);
+double get_pA(Raw *raw, Bi *bi, bool detect_singletons);
 double compute_lambda(Raw *raw, Sub *sub, Rcpp::NumericMatrix errMat, bool use_quals, unsigned int ncol);
 double compute_lambda_ts(Raw *raw, Sub *sub, unsigned int ncol, double *err_mat, bool use_quals);
 double get_self(char *seq, double err[4][4]);

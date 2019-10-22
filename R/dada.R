@@ -2,6 +2,7 @@ dada_opts <- new.env()
 assign("OMEGA_A", 1e-40, envir = dada_opts)
 assign("OMEGA_P", 1e-4, envir = dada_opts)
 assign("OMEGA_C", 1e-40, envir=dada_opts)
+assign("DETECT_SINGLETONS", FALSE, envir=dada_opts)
 assign("USE_KMERS", TRUE, envir = dada_opts)
 assign("KDIST_CUTOFF", 0.42, envir = dada_opts)
 assign("MAX_CONSIST", 10, envir = dada_opts)
@@ -335,7 +336,7 @@ dada <- function(derep,
                           opts[["MATCH"]], opts[["MISMATCH"]], opts[["GAP_PENALTY"]],
                           opts[["USE_KMERS"]], opts[["KDIST_CUTOFF"]],
                           opts[["BAND_SIZE"]],
-                          opts[["OMEGA_A"]], opts[["OMEGA_P"]], opts[["OMEGA_C"]],
+                          opts[["OMEGA_A"]], opts[["OMEGA_P"]], opts[["OMEGA_C"]], opts[["DETECT_SINGLETONS"]],
                           if(initializeErr) { 1 } else { opts[["MAX_CLUST"]] },
                           opts[["MIN_FOLD"]], opts[["MIN_HAMMING"]], opts[["MIN_ABUNDANCE"]],
                           TRUE, #opts[["USE_QUALS"]],
@@ -511,6 +512,11 @@ dada <- function(derep,
 #'  probability is >= OMEGA_C, it is "corrected", i.e. replaced by the partition center sequence. The special value of 0 corresponds
 #'  to correcting all input sequences, and any value > 1 corresponds to performing no correction on sequences found to contain
 #'  errors. Default is 1e-40 (same as OMEGA_A).
+#' 
+#' DETECT_SINGLETONS: If set to TRUE, this removes the requirement for at least two reads with the same sequences to exist
+#'  in order for a new ASV to be detected. It also somewhat increases sensitivity to other low abundance sequences as well, 
+#'  e.g. those present in just 2/3/4/... reads. Note, this applies to all unique sequences, not just those supported by
+#'  prior evidence (see `priors` argument), and so it does make false-positive detections more likely.
 #' 
 #' **Alignment**
 #' 

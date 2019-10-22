@@ -16,7 +16,8 @@ using namespace Rcpp;
 
 B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, 
             int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, 
-            double omegaA, double omegaP, int max_clust, double min_fold, int min_hamming, int min_abund, 
+            double omegaA, double omegaP, bool detect_singletons, 
+            int max_clust, double min_fold, int min_hamming, int min_abund, 
             bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, 
             int SSE, bool gapless, bool greedy);
 
@@ -30,7 +31,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
                         int match, int mismatch, int gap,
                         bool use_kmers, double kdist_cutoff,
                         int band_size,
-                        double omegaA, double omegaP, double omegaC,
+                        double omegaA, double omegaP, double omegaC, bool detect_singletons,
                         int max_clust,
                         double min_fold, int min_hamming, int min_abund,
                         bool use_quals,
@@ -159,7 +160,11 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   }
   
   /********** RUN DADA *********/
-  B *bb = run_dada(raws, nraw, err, match, mismatch, gap, homo_gap, use_kmers, kdist_cutoff, band_size, omegaA, omegaP, max_clust, min_fold, min_hamming, min_abund, use_quals, final_consensus, vectorized_alignment, multithread, verbose, SSE, gapless, greedy);
+  B *bb = run_dada(raws, nraw, err, 
+                   match, mismatch, gap, homo_gap, use_kmers, kdist_cutoff, band_size, 
+                   omegaA, omegaP, detect_singletons,
+                   max_clust, min_fold, min_hamming, min_abund, use_quals, final_consensus, 
+                   vectorized_alignment, multithread, verbose, SSE, gapless, greedy);
 
   /********** MAKE OUTPUT *********/
   // Create subs for all the relevant alignments
@@ -288,7 +293,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
 
 B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat, 
             int match, int mismatch, int gap_pen, int homo_gap_pen, bool use_kmers, double kdist_cutoff, int band_size, 
-            double omegaA, double omegaP, int max_clust, double min_fold, int min_hamming, int min_abund, 
+            double omegaA, double omegaP, bool detect_singletons,
+            int max_clust, double min_fold, int min_hamming, int min_abund, 
             bool use_quals, bool final_consensus, bool vectorized_alignment, bool multithread, bool verbose, 
             int SSE, bool gapless, bool greedy) {
   int newi=0, nshuffle = 0;
@@ -300,7 +306,7 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat,
   if(multithread) { b_compare_parallel(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
   else { b_compare(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
 //  if(multithread) { b_p_update_parallel(bb); }
-  b_p_update(bb, greedy);       // Calculates abundance p-value for each raw in its cluster (consensuses)
+  b_p_update(bb, greedy, detect_singletons); // Calculates abundance p-value for each raw in its cluster (consensuses)
   
   if(max_clust < 1) { max_clust = bb->nraw; }
   
@@ -317,7 +323,7 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat,
     if(verbose && nshuffle >= MAX_SHUFFLE) { Rprintf("Warning: Reached maximum (%i) shuffles.\n", MAX_SHUFFLE); }
 
 //    if(multithread) { b_p_update_parallel(bb); }
-    b_p_update(bb, greedy);
+    b_p_update(bb, greedy, detect_singletons);
     Rcpp::checkUserInterrupt();
   } // while( (bb->nclust < max_clust) && (newi = b_bud(bb, min_fold, min_hamming, min_abund, verbose)) )
   
