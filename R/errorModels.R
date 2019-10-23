@@ -167,8 +167,9 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  The output of this function serves as input to the dada function call as the \code{err} parameter.
 #'   
 #' @param fls (Required). \code{character}.
-#'  The file path(s) to the fastq, fastq.gz file(s), or any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
-#'  A list of derep-class ojects can also be provided. 
+#'  The file path(s) to the fastq file(s), or a directory containing fastq file(s).
+#'  Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
+#'  A list of \code{\link{derep-class}} ojects can also be provided.
 #'  
 #' @param nbases (Optional). Default 1e8.
 #'  The minimum number of total bases to use for error rate learning. Samples are read into memory
@@ -248,6 +249,7 @@ learnErrors <- function(fls, nbases=1e8, nreads=NULL, errorEstimationFunction = 
   NBASES <- 0
   NREADS <- 0
   if(is(fls, "derep")) { fls <- list(fls) } # A single derep-class object
+  if(is.character(fls) && length(fls) == 1 && dir.exists(fls)) { fls <- parseFastqDirectory(fls) }
   drps <- vector("list", length(fls))
   if(randomize) { fls <- sample(fls) }
   for(i in seq_along(fls)) {

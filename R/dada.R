@@ -35,9 +35,10 @@ assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
 #' If dada is run in selfConsist=TRUE mode, the algorithm will infer both the sample composition and
 #'  the parameters of its error model from the data.
 #'  
-#' @param derep (Required). The file path(s) to the fastq or fastq.gz file(s), or any file format supported 
-#'  by \code{\link[ShortRead]{FastqStreamer}}, corresponding to the samples to be denoised. 
-#'  A \code{\link{derep-class}} object (or list thereof) returned by \code{link{derepFastq}} can also be provided
+#' @param derep (Required). \code{character} or \code{\link{derep-class}}.
+#'  The file path(s) to the fastq file(s), or a directory containing fastq file(s) corresponding to the
+#'  the samples to be denoised. Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
+#'  A \code{\link{derep-class}} object (or list thereof) returned by \code{link{derepFastq}} can also be provided.
 #'  If multiple samples are provided, each will be denoised with a shared error model.
 #'  
 #' @param err (Required). 16xN numeric matrix, or an object coercible by \code{\link{getErrors}} 
@@ -169,8 +170,9 @@ dada <- function(derep,
   
   # Validate the derep argument. If a single derep object, make into a length 1 list
   if(class(derep) == "derep") { derep <- list(derep) }
-  if(!(is.list.of(derep, "derep") || is(derep, "character"))) { stop("The derep argument must be a derep-class object, list of derep-class objects, or a character vector of fastq filenames.") }
+  if(!(is.list.of(derep, "derep") || is(derep, "character"))) { stop("The derep argument must be derep-class object, list of derep-class objects, or a character vector of fastq files or a directory containing fastq files.") }
   if(is.character(derep)) { 
+    if(length(derep) == 1 && dir.exists(derep)) { derep <- parseFastqDirectory(derep) }
     if(!all(file.exists(derep))) {
       stop("Some of the filenames provided do not exist. This may have happened because some samples had zero reads after filtering.")
     }

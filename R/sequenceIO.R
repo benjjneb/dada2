@@ -6,8 +6,8 @@
 #' while also controlling peak memory requirement to support large files.
 #'
 #' @param fls (Required). \code{character}.
-#'  The file path(s) to the fastq or fastq.gz file(s).
-#'  Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
+#'  The file path(s) to the fastq file(s), or a directory containing fastq file(s).
+#'  Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
 #' 
 #' @param n (Optional). \code{numeric(1)}.
 #'  The maximum number of records (reads) to parse and dereplicate
@@ -43,7 +43,8 @@
 #' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
 derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto"){
-  if(!is.character(fls)) { stop("Filenames must be provided in character format.") }
+  if(!is.character(fls)) { stop("File paths must be provided in character format.") }
+  if(length(fls)==1 && dir.exists(fls)) { fls <- parseFastqDirectory(fls) }
   if(!all(file.exists(fls))) { stop("Not all provided files exist.") }
   rval <- list()
   for(i in seq_along(fls)) {
@@ -296,12 +297,25 @@ getDerep <- function(object, ...) {
   else if(is.list.of(object, "derep")) { object }
   else if(is(object, "character")) { derepFastq(object, ...) }
   else{
-    stop("Unrecognized format: Requires derep-class object, list of derep-class objects, or a character vector of file names.")
+    stop("Unrecognized format: Requires derep-class object, list of derep-class objects, a directory containing fastq files, or a character vector of fastq files.")
   }
 }
 
+################################################################################
+## Get file paths to the fastq files or compressed fastq files in a directory.
+## 
+## @param path (Required). The directory containing the (potentially compressed) fastq files.
+## 
+## @param pattern (Optional). Default c(".fastq.gz$", ".fastq.bz2$", ".fastq$").
+##  The ordered list of filename patterns to search for in the directory, see \code{\link{list.files}}.
+##  Patterns are searched for in order, and only files matching the first pattern for which any files
+##  were detected are returned.
+## 
+## @return A \code{\link{character}} vector of file paths to the (potentially compressed) fastq files..
+## 
 parseFastqDirectory <- function(path, pattern=c(".fastq.gz$", ".fastq.bz2$", ".fastq$")) {
   # Validate inputs
+  if(length(path)>1) stop("If providing a directory, only one file path can be provided.")
   if(!dir.exists(path)) stop("Provided path is not an existing directory.")
   if(!is.character(pattern)) stop("File name pattern(s) must be provided in character format.")
   # Initialize

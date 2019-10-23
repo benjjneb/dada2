@@ -8,8 +8,8 @@ derepFastq(fls, n = 1e+06, verbose = FALSE, qualityType = "Auto")
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
-The file path(s) to the fastq or fastq.gz file(s).
-Actually, any file format supported by \code{\link[ShortRead]{FastqStreamer}}.}
+The file path(s) to the fastq file(s), or a directory containing fastq file(s).
+Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.}
 
 \item{n}{(Optional). \code{numeric(1)}.
 The maximum number of records (reads) to parse and dereplicate

@@ -14,19 +14,24 @@ filterAndTrim(fwd, filt, rev = NULL, filt.rev = NULL,
 }
 \arguments{
 \item{fwd}{(Required). \code{character}.
-The path(s) to the input fastq file(s).}
+The file path(s) to the fastq file(s), or the directory containing the fastq file(s). 
+Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.}
 
 \item{filt}{(Required). \code{character}.
-The path(s) to the output filtered file(s) corresponding to the \code{fwd} input files.
+The path(s) to the output filtered file(s) corresponding to the \code{fwd} input files, or a directory
+that will contain those files.
 If containing directory does not exist, it will be created.}
 
 \item{rev}{(Optional). Default NULL.
-The path(s) to the input reverse fastq file(s) from paired-end sequence data corresponding to those
-provided to the \code{fwd} argument. If NULL, the \code{fwd} files are processed as single-reads.}
+The file path(s) to the reverse fastq file(s) from paired-end sequence data corresponding to those
+provided to the \code{fwd} argument, or the directory containing those fastq file(s). 
+Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
+If NULL, the \code{fwd} files are processed as single-reads.}
 
 \item{filt.rev}{(Optional). Default NULL, but required if \code{rev} is provided.
-The path(s) to the output fastq file(s) corresponding to the \code{rev} input.
-Can also provide a directory, which if not existing will be created (how to differentiate between dir/file in len1 case?).}
+The path(s) to the output filtered file(s) corresponding to the \code{rev} input files, or a directory
+that will contain those files.
+If containing directory does not exist, it will be created.}
 
 \item{compress}{(Optional). Default TRUE.
  If TRUE, the output fastq file(s) are gzipped.

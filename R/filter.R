@@ -242,20 +242,25 @@ removePrimers <- function(fn, fout,
 #' troubleshoot the issue.
 #' 
 #' @param fwd (Required). \code{character}.
-#' The path(s) to the input fastq file(s).
-#'   
+#'  The file path(s) to the fastq file(s), or the directory containing the fastq file(s). 
+#'  Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
+#'     
 #' @param filt (Required). \code{character}.
-#'  The path(s) to the output filtered file(s) corresponding to the \code{fwd} input files.
+#'  The path(s) to the output filtered file(s) corresponding to the \code{fwd} input files, or a directory
+#'  that will contain those files.
 #'  If containing directory does not exist, it will be created.
 #'   
 #' @param rev (Optional). Default NULL.
-#'  The path(s) to the input reverse fastq file(s) from paired-end sequence data corresponding to those
-#'  provided to the \code{fwd} argument. If NULL, the \code{fwd} files are processed as single-reads.
+#'  The file path(s) to the reverse fastq file(s) from paired-end sequence data corresponding to those
+#'  provided to the \code{fwd} argument, or the directory containing those fastq file(s). 
+#'  Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
+#'  If NULL, the \code{fwd} files are processed as single-reads.
 #' 
 #' @param filt.rev (Optional). Default NULL, but required if \code{rev} is provided.
-#'  The path(s) to the output fastq file(s) corresponding to the \code{rev} input.
-#'  Can also provide a directory, which if not existing will be created (how to differentiate between dir/file in len1 case?).
-#' 
+#'  The path(s) to the output filtered file(s) corresponding to the \code{rev} input files, or a directory
+#'  that will contain those files.
+#'  If containing directory does not exist, it will be created.
+#'   
 #' @param compress (Optional). Default TRUE.
 #'  If TRUE, the output fastq file(s) are gzipped.
 #' 
@@ -388,6 +393,11 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
                         matchIDs=FALSE, id.sep="\\s", id.field=NULL,
                         multithread=FALSE, n = 1e5, OMP=TRUE, qualityType = "Auto", verbose = FALSE) {
   PAIRED <- FALSE
+  # Validate inputs
+  if(!(is.character(fwd) && is.character(filt))) stop("File paths must be provided as character vectors.")
+  if(length(fwd)==1 && dir.exists(fwd)) fwd <- parseFastqDirectory(fwd)
+  if(!all(file.exists(fwd))) stop("Some input files do not exist.")
+  if(length(filt)==1 && length(fwd)>1) filt <- file.path(filt, basename(fwd)) # Interpret filt as a directory
   if(length(fwd) != length(filt)) stop("Every input file must have a corresponding output file.")
   odirs <- unique(dirname(filt))
   for(odir in odirs) {
@@ -396,16 +406,18 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
       dir.create(odir, recursive=TRUE, mode="0777")
     }
   }
-  if(!all(file.exists(fwd))) stop("Some input files do not exist.")
   fwd <- normalizePath(fwd, mustWork=TRUE)
   filt <- suppressWarnings(normalizePath(filt, mustWork=FALSE))
   if(any(duplicated(filt))) stop("All output files must be distinct.")
   if(any(filt %in% fwd)) stop("Output files must be distinct from the input files.")
   if(!is.null(rev)) {
     PAIRED <- TRUE
-    if(!all(file.exists(rev))) stop("Some input files do not exist.")
     if(is.null(filt.rev)) stop("Output files for the reverse reads are required.")
+    if(!(is.character(rev) && is.character(filt.rev))) stop("File paths (rev/filt.rev) must be provided as character vectors.")
+    if(length(rev)==1 && dir.exists(rev)) rev <- parseFastqDirectory(rev)
+    if(!all(file.exists(rev))) stop("Some input files (rev) do not exist.")
     if(length(rev) != length(fwd)) stop("Paired forward and reverse input files must correspond.")
+    if(length(filt.rev)==1 && length(rev)>1) filt.rev <- file.path(filt.rev, basename(rev)) # Interpret filt.rev as a directory
     if(length(rev) != length(filt.rev)) stop("Every input file (rev) must have a corresponding output file (filt.rev).")
     odirs <- unique(dirname(filt.rev))
     for(odir in odirs) {

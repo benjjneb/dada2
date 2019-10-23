@@ -9,9 +9,10 @@ dada(derep, err, errorEstimationFunction = loessErrfun,
   multithread = FALSE, verbose = TRUE, ...)
 }
 \arguments{
-\item{derep}{(Required). The file path(s) to the fastq or fastq.gz file(s), or any file format supported 
-by \code{\link[ShortRead]{FastqStreamer}}, corresponding to the samples to be denoised. 
-A \code{\link{derep-class}} object (or list thereof) returned by \code{link{derepFastq}} can also be provided
+\item{derep}{(Required). \code{character} or \code{\link{derep-class}}.
+The file path(s) to the fastq file(s), or a directory containing fastq file(s) corresponding to the
+the samples to be denoised. Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
+A \code{\link{derep-class}} object (or list thereof) returned by \code{link{derepFastq}} can also be provided.
 If multiple samples are provided, each will be denoised with a shared error model.}
 
 \item{err}{(Required). 16xN numeric matrix, or an object coercible by \code{\link{getErrors}} 

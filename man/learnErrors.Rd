@@ -11,8 +11,9 @@ learnErrors(fls, nbases = 1e+08, nreads = NULL,
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
-The file path(s) to the fastq, fastq.gz file(s), or any file format supported by \code{\link[ShortRead]{FastqStreamer}}.
-A list of derep-class ojects can also be provided.}
+The file path(s) to the fastq file(s), or a directory containing fastq file(s).
+Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
+A list of \code{\link{derep-class}} ojects can also be provided.}
 
 \item{nbases}{(Optional). Default 1e8.
 The minimum number of total bases to use for error rate learning. Samples are read into memory
