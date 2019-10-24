@@ -1,3 +1,47 @@
+CHANGES IN VERSION 1.14.0
+-----------------------
+
+NEW FEATURES
+
+    o Directories containing fastq files (possibly compressed) can now be provided to core dada2 functions instead of a character vector of the fastq filenames. This functionality is supported by `filterAndTrim`, `learnErrors`, `dada`, `mergePairs` and `derepFastq`. Note, this feature requires fastqs in the provided directory to have standard file extensions: `.fastq`, `.fastq.gz` or `.fastq.bz2`.
+
+    o The new `DETECT_SINGLETONS` option removes the removes the “conditional” in the calculation of probabilties used in the core dada algorithm, which effectively discounts the first read of any novel sequence. In practice, setting `DETECT_SINGLETONS = TRUE` allows singletons to be detected (of course) and also increases sensitivity to other low abundance sequences slightly, i.e. those present in just 2/3/4 reads. Note, we do not generally recommend this option as it will result in a large increase in false positives in typical datasets. Instead we recommend `pool = "pseudo"` or `pool=TRUE` for typical datasets to increase sensitivity to rare sequences with less impact on specificity.
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The `removePrimers` function has been improved in several ways. Indels are now allowed when matching the primers with the `allow.indels=TRUE` flag, which can increase primer matching but at a roughly 4x cost in speed. Multiple files are now properly handled, and a previous bug in handling the absence of a reverse primer sequence has been rectified. Note, `removePrimers` is still only recommended for PacBio or other long-read technologies for speed reasons. For deeper short-read data (e.g. Illumina) we recommend external solutions such as cutadapt or trimmomatic.
+
+    o Sequence lengths up to 9999 nucleotides are now supported throughout the dada2 package.
+
+    o The new `tryRC` option in the `mergeSequenceTables` function will collapse together sequences that are identical up to reverse-complementation. This is most useful for combining datasets from the same gene region, but that may have been sequenced in different orientations.
+
+BUG FIXES
+
+    o `collapseNoMismatch` no properly collapses sequence together that substantially vary in length.
+
+    o `getSequences` now coerces sequences to upper case, as expected by other dada2 functions. 
+
+CHANGES IN VERSION 1.12.0
+-----------------------
+
+NEW FEATURES
+
+    o The new `seqComplexity` function quantifies the complexity of sequences in terms of the Shannon richness of their kmers. `plotComplexity` interrogates the distribution of sequences complexities in fastq files, and the `rm.lowcomplex` argument in the `filterAndTrim` function allows filtering of low complexity sequences.
+
+    o The new `removePrimers` function removes forward and reverse primers from sequencing reads, and can orient reads based on the location of the forward primer. Currently we recommend removePrimers for use with PacBio CCS data, but external solutions remain recommended for Illumina data.
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The `dada` function can now accept fastq filenames rather than requiring files be dereplicated and stored into memory first. This allows memory requirements to remain flat when processing large numbers of samples.
+
+    o Pseudo-pooling, an algorithmic approximation to sample inference from pooled samples, now has memory requirements that remain flat with sample number when invoked using filenames, e.g. `dada(fastqFiles, err=err, pool="pseudo")`. We now recommend pseudo-pooling for those interested in detecting singleton ASVs in their samples.
+    
+BUG FIXES
+
+    o Pooled sample inference with `dada(..., pool=TRUE)` no longer fails to output the most abundant ASV in the first sample under certain conditions.
+
+    o The data.frame returned by `mergePairs` is now properly formatted even when only one sample was provided as a list.
+
 CHANGES IN VERSION 1.9.2
 -----------------------
 
