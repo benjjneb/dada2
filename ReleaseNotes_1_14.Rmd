@@ -5,11 +5,11 @@ DADA2 1.14 RELEASE NOTES
 
 * Directories containing fastq files (possibly compressed) can now be provided to core dada2 functions instead of a character vector of the fastq filenames. This functionality is supported by `filterAndTrim`, `learnErrors`, `dada`, `mergePairs` and `derepFastq`. Note, this feature requires fastqs in the provided directory to have standard file extensions: `.fastq`, `.fastq.gz` or `.fastq.bz2`.
 
-* The new `DETECT_SINGLETONS` option removes the removes the “conditional” in the calculation of probabilties used in the core dada algorithm, which effectively discounts the first read of any novel sequence. In practice, setting `DETECT_SINGLETONS = TRUE` allows singletons to be detected (of course) and also increases sensitivity to other low abundance sequences slightly, i.e. those present in just 2/3/4 reads. Note, we do not generally recommend this option as it will result in a large increase in false positives in typical datasets. Instead we recommend `pool = "pseudo"` or `pool=TRUE` for typical datasets to increase sensitivity to rare sequences with less impact on specificity.
+* The new `DETECT_SINGLETONS` option removes the removes the conditional in the calculation of probabilties used in the core dada algorithm, which effectively discounts the first read of any novel sequence. In practice, setting `DETECT_SINGLETONS = TRUE` allows singletons to be detected (of course) and also increases sensitivity to other low abundance sequences slightly, i.e. those present in just 2/3/4 reads. Note, we do not generally recommend this option as it will also result in a large increase in false positives in typical datasets. Instead we recommend `pool = "pseudo"` or `pool=TRUE` for typical datasets to increase sensitivity to rare sequences with less impact on specificity. But, for the prepared, this is a useful new option to increase sensitivity to rare sequences, and may be particulary effective in certain contexts (e.g. very low depth samples, very well-behaved sequencing techs).
 
 #### SIGNIFICANT USER-VISIBLE CHANGES
 
-* The `removePrimers` function has been improved in several ways. Indels are now allowed when matching the primers with the `allow.indels=TRUE` flag, which can increase primer matching but at a roughly 4x cost in speed. Multiple files are now properly handled, and a previous bug in handling the absence of a reverse primer sequence has been rectified. Note, `removePrimers` is still only recommended for PacBio or other long-read technologies for speed reasons. For deeper short-read data (e.g. Illumina) we recommend external solutions such as cutadapt or trimmomatic.
+* The `removePrimers` function has been improved in several ways. Indels are now allowed when matching primers with the `allow.indels=TRUE` flag. This option can increase primer matching, but at a roughly 4x cost in speed. Multiple files are now properly handled, and a previous bug in handling the absence of a reverse primer sequence has been rectified. Note, `removePrimers` is still only recommended for PacBio or other long-read technologies for speed reasons. For deeper short-read data (e.g. Illumina) we recommend external solutions such as cutadapt or trimmomatic.
 
 * Sequence lengths up to 9999 nucleotides are now supported throughout the dada2 package.
 
@@ -17,6 +17,6 @@ DADA2 1.14 RELEASE NOTES
 
 #### BUG FIXES
 
-* `collapseNoMismatch` no properly collapses sequence together that substantially vary in length.
+* `collapseNoMismatch` no properly collapses sequences together that substantially vary in length.
 
 * `getSequences` now coerces sequences to upper case, as expected by other dada2 functions. 

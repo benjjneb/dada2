@@ -374,13 +374,13 @@ $(document).ready(function () {
 <h4>NEW FEATURES</h4>
 <ul>
 <li><p>Directories containing fastq files (possibly compressed) can now be provided to core dada2 functions instead of a character vector of the fastq filenames. This functionality is supported by <code>filterAndTrim</code>, <code>learnErrors</code>, <code>dada</code>, <code>mergePairs</code> and <code>derepFastq</code>. Note, this feature requires fastqs in the provided directory to have standard file extensions: <code>.fastq</code>, <code>.fastq.gz</code> or <code>.fastq.bz2</code>.</p></li>
-<li><p>The new <code>DETECT_SINGLETONS</code> option removes the removes the “conditional” in the calculation of probabilties used in the core dada algorithm, which effectively discounts the first read of any novel sequence. In practice, setting <code>DETECT_SINGLETONS = TRUE</code> allows singletons to be detected (of course) and also increases sensitivity to other low abundance sequences slightly, i.e. those present in just 2/3/4 reads. Note, we do not generally recommend this option as it will result in a large increase in false positives in typical datasets. Instead we recommend <code>pool = &quot;pseudo&quot;</code> or <code>pool=TRUE</code> for typical datasets to increase sensitivity to rare sequences with less impact on specificity.</p></li>
+<li><p>The new <code>DETECT_SINGLETONS</code> option removes the removes the conditional in the calculation of probabilties used in the core dada algorithm, which effectively discounts the first read of any novel sequence. In practice, setting <code>DETECT_SINGLETONS = TRUE</code> allows singletons to be detected (of course) and also increases sensitivity to other low abundance sequences slightly, i.e. those present in just 2/3/4 reads. Note, we do not generally recommend this option as it will also result in a large increase in false positives in typical datasets. Instead we recommend <code>pool = &quot;pseudo&quot;</code> or <code>pool=TRUE</code> for typical datasets to increase sensitivity to rare sequences with less impact on specificity. But, for the prepared, this is a useful new option to increase sensitivity to rare sequences, and may be particulary effective in certain contexts (e.g. very low depth samples, very well-behaved sequencing techs).</p></li>
 </ul>
 </div>
 <div id="significant-user-visible-changes" class="section level4">
 <h4>SIGNIFICANT USER-VISIBLE CHANGES</h4>
 <ul>
-<li><p>The <code>removePrimers</code> function has been improved in several ways. Indels are now allowed when matching the primers with the <code>allow.indels=TRUE</code> flag, which can increase primer matching but at a roughly 4x cost in speed. Multiple files are now properly handled, and a previous bug in handling the absence of a reverse primer sequence has been rectified. Note, <code>removePrimers</code> is still only recommended for PacBio or other long-read technologies for speed reasons. For deeper short-read data (e.g. Illumina) we recommend external solutions such as cutadapt or trimmomatic.</p></li>
+<li><p>The <code>removePrimers</code> function has been improved in several ways. Indels are now allowed when matching primers with the <code>allow.indels=TRUE</code> flag. This option can increase primer matching, but at a roughly 4x cost in speed. Multiple files are now properly handled, and a previous bug in handling the absence of a reverse primer sequence has been rectified. Note, <code>removePrimers</code> is still only recommended for PacBio or other long-read technologies for speed reasons. For deeper short-read data (e.g. Illumina) we recommend external solutions such as cutadapt or trimmomatic.</p></li>
 <li><p>Sequence lengths up to 9999 nucleotides are now supported throughout the dada2 package.</p></li>
 <li><p>The new <code>tryRC</code> option in the <code>mergeSequenceTables</code> function will collapse together sequences that are identical up to reverse-complementation. This is most useful for combining datasets from the same gene region, but that may have been sequenced in different orientations.</p></li>
 </ul>
@@ -388,7 +388,7 @@ $(document).ready(function () {
 <div id="bug-fixes" class="section level4">
 <h4>BUG FIXES</h4>
 <ul>
-<li><p><code>collapseNoMismatch</code> no properly collapses sequence together that substantially vary in length.</p></li>
+<li><p><code>collapseNoMismatch</code> no properly collapses sequences together that substantially vary in length.</p></li>
 <li><p><code>getSequences</code> now coerces sequences to upper case, as expected by other dada2 functions.</p></li>
 </ul>
 </div>
