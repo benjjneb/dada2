@@ -7,11 +7,12 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
 
 
-<title></title>
+<title>index.utf8.md</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,7 +23,8 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
 <style type="text/css">code{white-space: pre;}</style>
@@ -71,9 +73,7 @@ h6 {
 </style>
 
 
-</head>
 
-<body>
 
 <style type = "text/css">
 .main-container {
@@ -87,13 +87,18 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
 }
+.html-widget {
+  margin-bottom: 20px;
+}
 button.code-folding-btn:focus {
   outline: none;
+}
+summary {
+  display: list-item;
 }
 </style>
 
@@ -109,7 +114,6 @@ body {
   padding-top: 65px;
   margin-top: -65px;
 }
-
 .section h2 {
   padding-top: 65px;
   margin-top: -65px;
@@ -129,6 +133,43 @@ body {
 .section h6 {
   padding-top: 65px;
   margin-top: -65px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
 }
 </style>
 
@@ -150,19 +191,73 @@ $(document).ready(function () {
 });
 </script>
 
-
-<div class="container-fluid main-container">
-
 <!-- tabsets -->
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-</script>
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
 
 <!-- code folding -->
 
 
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
 
 
 
@@ -275,23 +370,21 @@ $(document).ready(function () {
 
  
 <center>
-<img src="images/DADA2_Logo_Text_1_12_640px.png" alt="The DADA2 R package" />
+<img src="images/DADA2_Logo_Text_1_14_640px.png" alt="The DADA2 R package" />
 </center>
 <hr />
 <div id="fast-and-accurate-sample-inference-from-amplicon-data-with-single-nucleotide-resolution" class="section level2">
 <h2>Fast and accurate sample inference from amplicon data with single-nucleotide resolution</h2>
 <hr />
-<div id="the-dada2-1.12-release-is-live-with-efficient-pseudo-pooling-that-detects-singleton-asvs-in-your-samples-see-the-release-notes." class="section level4">
-<h4><strong><span style="color:red">The DADA2 1.12 release is live, with efficient pseudo-pooling that detects singleton ASVs in your samples! <br> See <a href="ReleaseNotes_1_12.html">the release notes</a>.</span></strong></h4>
+<p><strong><span style="color:red">The DADA2 1.14 release is live, with support for fastq directories and reads up to 9999nts, and a new tool to use (with caution) to detect the rarest variants! See <a href="ReleaseNotes_1_14.html">the release notes</a>.</span></strong></p>
 <p> </p>
-</div>
 </div>
 <div id="installation" class="section level2">
 <h2>Installation</h2>
-<p>Binaries for the current release version of DADA2 (1.12) are available from Bioconductor. Note that you must have R 3.6.0 or newer, and <a href="https://www.bioconductor.org/install/">Bioconductor version 3.9</a>, to install the current release from Bioconductor.</p>
+<p>Binaries for the current release version of DADA2 (1.14) are available from Bioconductor. Note that you must have R 3.6.1 or newer, and <a href="https://www.bioconductor.org/install/">Bioconductor version 3.10</a>, to install the current release from Bioconductor.</p>
 <pre class="s"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
     install.packages(&quot;BiocManager&quot;)
-BiocManager::install(&quot;dada2&quot;, version = &quot;3.9&quot;)</code></pre>
+BiocManager::install(&quot;dada2&quot;, version = &quot;3.10&quot;)</code></pre>
 <p>If you wish to install the latest and greatest development version, or to install to earlier versions of R, see our <a href="dada-installation.html">from-source installation instructions</a>.</p>
 <p> </p>
 </div>
@@ -310,10 +403,7 @@ BiocManager::install(&quot;dada2&quot;, version = &quot;3.9&quot;)</code></pre>
 <p>We evaluate <a href="https://www.biorxiv.org/content/early/2018/08/15/392332">the high accuracy and resolution that is achievable by sequencing the full-length 16S rRNA gene with PacBio and DADA2</a>.</p>
 <p>Further <a href="SotA.html">benchmarking of DADA2 against the methods evaluated in a recent QIIME1 benchmarking paper</a> is available.</p>
 <p>And sometimes a picture says a thousand word:</p>
-<div class="figure">
-<img src="dada2_accuracy.jpg" />
-
-</div>
+<p><img src="dada2_accuracy.jpg" /></p>
 <p> </p>
 </div>
 <div id="advantages" class="section level2">
@@ -361,6 +451,23 @@ $(document).ready(function () {
 
 
 </script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>

@@ -7,6 +7,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
 
@@ -22,7 +23,8 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
 <style type="text/css">code{white-space: pre;}</style>
@@ -71,9 +73,7 @@ h6 {
 </style>
 
 
-</head>
 
-<body>
 
 <style type = "text/css">
 .main-container {
@@ -87,13 +87,18 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
 }
+.html-widget {
+  margin-bottom: 20px;
+}
 button.code-folding-btn:focus {
   outline: none;
+}
+summary {
+  display: list-item;
 }
 </style>
 
@@ -109,7 +114,6 @@ body {
   padding-top: 65px;
   margin-top: -65px;
 }
-
 .section h2 {
   padding-top: 65px;
   margin-top: -65px;
@@ -129,6 +133,43 @@ body {
 .section h6 {
   padding-top: 65px;
   margin-top: -65px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
 }
 </style>
 
@@ -150,19 +191,73 @@ $(document).ready(function () {
 });
 </script>
 
-
-<div class="container-fluid main-container">
-
 <!-- tabsets -->
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-</script>
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
 
 <!-- code folding -->
 
 
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
 
 
 
@@ -277,12 +372,12 @@ $(document).ready(function () {
 <hr />
 <div id="install-binaries-from-bioconductor" class="section level2">
 <h2><strong>Install binaries from Bioconductor</strong></h2>
-<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current release version (1.12) requires R 3.6.0 and Bioconductor version 3.9:</p>
+<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current release version (1.14) requires R 3.6.1 and Bioconductor version 3.10:</p>
 <pre class="s"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
     install.packages(&quot;BiocManager&quot;)
-BiocManager::install(&quot;dada2&quot;, version = &quot;3.9&quot;)</code></pre>
+BiocManager::install(&quot;dada2&quot;, version = &quot;3.10&quot;)</code></pre>
 <p>Allow installation of any additional packages requested. You are ready to start using DADA2!</p>
-<p><em>If the above installed an early version of dada2 (e.g. 1.6 or 1.10) you can get the current dada2 release by updating to <a href="https://www.bioconductor.org/news/bioc_3_9_release/">Bioconductor 3.9</a>. This may require updating to R 3.6.0 as well.</em></p>
+<p><em>If the above installed an early version of dada2 (e.g. 1.6 or 1.10) you can get the current dada2 release by updating to <a href="https://www.bioconductor.org/news/bioc_3_10_release/">Bioconductor 3.10</a>. This may require updating to R 3.6.1 as well.</em></p>
 <hr />
 </div>
 <div id="install-from-source" class="section level2">
@@ -293,14 +388,14 @@ BiocManager::install(&quot;dada2&quot;, version = &quot;3.9&quot;)</code></pre>
 <p>The easiest method is to use the devtools package to install and compile directly from github:</p>
 <pre class="r"><code>install.packages(&quot;devtools&quot;)
 library(&quot;devtools&quot;)
-devtools::install_github(&quot;benjjneb/dada2&quot;, ref=&quot;v1.12&quot;) # change the ref argument to get other versions</code></pre>
+devtools::install_github(&quot;benjjneb/dada2&quot;, ref=&quot;v1.14&quot;) # change the ref argument to get other versions</code></pre>
 <p>If that worked you’re done (see step 4)! If it failed on missing dependencies, goto step 3. If devtools isn’t an option, you can also install directly from the source (goto step 1).</p>
 </div>
 <div id="download" class="section level3">
 <h3>1. Download</h3>
 <ul>
-<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.12)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.12.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.12.tar.gz">tarball</a>.</p></li>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.13)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.14)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.14.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.14.tar.gz">tarball</a>.</p></li>
+<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.15)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
 </ul>
 </div>
 <div id="install-manually-from-source" class="section level3">
@@ -319,7 +414,7 @@ devtools::install_github(&quot;benjjneb/dada2&quot;, ref=&quot;v1.12&quot;) # ch
                  dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
 <p>Check Package Version</p>
 <pre class="r"><code>packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.11.4&#39;</code></pre>
+<pre><code>## [1] &#39;1.13.5&#39;</code></pre>
 </div>
 <div id="troubleshoot-dependencies" class="section level3">
 <h3>3. Troubleshoot Dependencies</h3>
@@ -327,9 +422,9 @@ devtools::install_github(&quot;benjjneb/dada2&quot;, ref=&quot;v1.12&quot;) # ch
 <p>For Bioconductor, start a fresh R session, and enter the following.</p>
 <pre class="r"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
     install.packages(&quot;BiocManager&quot;)
-BiocManager::install(&quot;ShortRead&quot;, version = &quot;3.9&quot;) 
+BiocManager::install(&quot;ShortRead&quot;, version = &quot;3.10&quot;) 
 # Or you can use earlier versions of Biocondcutor, e.g. if you have a pre-3.6 version of R
-BiocManager::install(&quot;additional_missing_package_1&quot;, version = &quot;3.9&quot;) 
+BiocManager::install(&quot;additional_missing_package_1&quot;, version = &quot;3.10&quot;) 
 # ... and so on</code></pre>
 </div>
 <div id="re-attempt-dada2-installation" class="section level3">
@@ -348,7 +443,6 @@ devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
 <div id="load-package-explore-function-documentation" class="section level3">
 <h3>5. Load Package, Explore Function Documentation</h3>
 <pre class="r"><code>library(&quot;dada2&quot;)</code></pre>
-<pre><code>## Warning: package &#39;Rcpp&#39; was built under R version 3.4.4</code></pre>
 <p>Now that the package is loaded, you can explore the documentation using the R help system.</p>
 <pre class="r"><code>help(package=&quot;dada2&quot;)
 ?derepFastq
@@ -379,6 +473,23 @@ $(document).ready(function () {
 
 
 </script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
