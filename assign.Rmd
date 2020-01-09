@@ -69,7 +69,7 @@ genus.species <- assignSpecies(seqs, "Training/rdp_species_assignment_16.fa.gz")
 unname(genus.species)
 ```
 
-By default the `assignSpecies` method only returns species assignments if there is no ambiguity, i.e. all exact matches were to the same species. However, given that we are generally working with fragments of the 16S gene, it is common that exact matches are made to multiple sequences that are identical over the sequenced region. This is often still useful information, so to have all sequence hits returned the `returnMultiple=TRUE` argument can be passed to the `assignSpecies` function:
+By default the `assignSpecies` method only returns species assignments if there is no ambiguity, i.e. all exact matches were to the same species. However, given that we are generally working with fragments of the 16S gene, it is common that exact matches are made to multiple sequences that are identical over the sequenced region. This is often still useful information, so to have all sequence hits returned the `allowMultiple=TRUE` argument can be passed to the `assignSpecies` function:
 
 ```{r assign-species-multi}
 unname(assignSpecies(seqs, "Training/rdp_species_assignment_16.fa.gz", allowMultiple=TRUE))
