@@ -192,7 +192,7 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
     q50s <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.5), simplify=TRUE)
     q75s <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.75), simplify=TRUE)
     cums <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) sum(foo$Count), simplify=TRUE)
-    statdf.summary <- data.frame(Cycle=as.integer(rownames(means)), Mean=means, Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s), Cum=10*as.vector(cums)/rc)
+    statdf.summary <- data.frame(Cycle=as.integer(rownames(means)), Mean=means, Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s), Cum=10*as.vector(cums)/sum(pmin(anndf$rc, n)))
     p <- ggplot(data=plotdf.summary, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
 		  scale_fill_gradient(low="#F5F5F5", high="black") + 
 		  geom_line(data=statdf.summary, aes(y=Mean), color="#66C2A5") +
@@ -204,7 +204,7 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
 		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) + 
       facet_wrap(~label) + ylim(c(0,NA))
     if(length(unique(statdf$Cum))>1) {
-      p <- p + geom_line(data=statdf.summary, aes(y=Cum/nrow(anndf)), color="red", size=0.25, linetype="solid") +
+      p <- p + geom_line(data=statdf.summary, aes(y=Cum), color="red", size=0.25, linetype="solid") +
         scale_y_continuous(sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
         theme(axis.text.y.right = element_text(color = "red"), axis.title.y.right = element_text(color = "red"))
     }
