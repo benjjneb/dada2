@@ -303,16 +303,28 @@ mergeSequenceTables <- function( table1=NULL, table2=NULL, ..., tables=NULL, rep
 		tables <- list(table1, table2)
 		tables <- c(tables, list(...))
 	}
+ 
   # Validate tables
-  if(!(all(sapply(tables, is.sequence.table)))) {
-    stop("At least two valid sequence tables, and no invalid objects, are expected.")
+  if(length(tables)<2){
+    stop("At least two sequence tables are expected")
+  }
+  tablesValid <- sapply(tables, is.sequence.table)
+  if(!(all(tablesValid))) {
+    errorMessage <- paste0(names(tables[which(!tablesValid)]), collapse=", ")
+    if(nchar(errorMessage) > 0){
+      errorMessage <- paste0(": ", errorMessage)
+    }
+    stop("Some sequence tables found invalid", errorMessage)
   }
   sample.names <- c(sapply(tables, rownames), recursive=TRUE)
-  if(any(duplicated(sample.names))) {
-    if(repeats=="error") { stop("Duplicated sample names detected in the rownames.") }
+  namesDuplicated <- duplicated(sample.names)
+  if(any(namesDuplicated)) {
+    if(repeats=="error") {
+      stop("Duplicated sample names detected in the sequence table row names: ", paste0(unique(sample.names[which(namesDuplicated)]), collapse=", "))
+    }
     else { 
       sample.names <- unique(sample.names)
-      message("Duplicated sample names detected in the rownames.") 
+      message("Duplicated sample names detected in the sequence table row names.")
     }
   }
   seqs <- unique(c(sapply(tables, colnames), recursive=TRUE))
