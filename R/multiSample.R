@@ -311,7 +311,7 @@ mergeSequenceTables <- function( table1=NULL, table2=NULL, ..., tables=NULL, rep
   tablesValid <- sapply(tables, is.sequence.table)
   if(!(all(tablesValid))) {
     errorMessage <- paste0(names(tables[which(!tablesValid)]), collapse=", ")
-    if(length(errorMessage)){
+    if(nchar(errorMessage) > 0){
       errorMessage <- paste0(": ", errorMessage)
     }
     stop("Some sequence tables found invalid", errorMessage)
