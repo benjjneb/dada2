@@ -17,7 +17,7 @@ SIGNIFICANT USER-VISIBLE CHANGES
 
 BUG FIXES
 
-    o `collapseNoMismatch` no properly collapses sequence together that substantially vary in length.
+    o `collapseNoMismatch` now properly collapses sequence together that substantially vary in length.
 
     o `getSequences` now coerces sequences to upper case, as expected by other dada2 functions. 
 
