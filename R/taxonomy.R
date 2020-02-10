@@ -257,7 +257,7 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
     }
   }
   genus <- sapply(strsplit(ids, "\\s"), `[`, 2)
-  species <- sapply(strsplit(ids, "\\s"), `[`, 3)
+  species <- gsub("^\\S*\\s\\S*\\s", "", ids)
   # Identify the exact hits
   hits <- vector("list", length(seqs))
   lens <- nchar(seqs)
