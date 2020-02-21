@@ -1,6 +1,8 @@
 #include "dada.h"
 #include <Rcpp.h>
 #include <RcppParallel.h>
+#include <random>
+  
 using namespace Rcpp;
 
 // Gets kmer index
@@ -70,6 +72,9 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
   double p, logp, max_logp = 1.0; // Init value to be replaced on first iteration
   double rv; // Dummy random variable
   unsigned int nmax=0; // Number of times the current max logp has been seen
+  std::random_device rd;  //Will be used to obtain a seed for the random number engine
+  std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+  std::uniform_real_distribution<> cunif(0.0, 1.0);
     
   for(g=0;g<ngenus;g++) {
     genus_kv = &genus_kmers[g*n_kmers];
@@ -97,7 +102,8 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
       nmax=1;
     } else if (max_logp == logp) { // With uniform prob, store if equal to current max
       nmax++;
-      rv = (double) Rcpp::runif(1)[0];
+      rv = (double) cunif(gen);
+      ///!      rv = (double) Rcpp::runif(1)[0];
       if(rv < 1.0/nmax) {
         max_g = g;
       }
