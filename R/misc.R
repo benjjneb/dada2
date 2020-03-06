@@ -31,9 +31,9 @@
 #' getUniques(dada1$clustering)[1:3]
 #' 
 getUniques <- function(object, collapse=TRUE, silence=FALSE) {
-  if(is(object, "character") && length(object)==1 && file.exists(object)) {
-      unqs <- derepFastq(object)$uniques
-  } else if(is.integer(object) && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
+  if(is.character(object) && length(object)==1 && file.exists(object)) {
+    unqs <- derepFastq(object)$uniques
+  } else if(is.vector(object, "integer") && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
     unqs <- object
   } else if(class(object) == "dada") {  # dada return 
     unqs <- object$denoised
@@ -42,7 +42,7 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
   } else if(is.data.frame(object) && all(c("sequence", "abundance") %in% colnames(object))) {
     unqs <- as.integer(object$abundance)
     names(unqs) <- object$sequence
-  } else if(class(object) == "matrix" && is.numeric(object) && !any(is.na(colnames(object)))) { # Tabled sequences
+  } else if(is.matrix(object) && is.numeric(object) && !any(is.na(colnames(object)))) { # Tabled sequences
     unqs <- as.integer(colSums(object))
     names(unqs) <- colnames(object)
   }
