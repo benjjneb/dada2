@@ -202,11 +202,13 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
 		  ylab("Quality Score") + xlab("Cycle") + 
 		  annotate("text", x=0, y=0, label=sprintf("Total reads: %d", sum(anndf$rc)), color="red", hjust=0) + 
 		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) + 
-      facet_wrap(~label) + ylim(c(0,NA))
+      facet_wrap(~label))
     if(length(unique(statdf$Cum))>1) {
       p <- p + geom_line(data=statdf.summary, aes(y=Cum), color="red", size=0.25, linetype="solid") +
-        scale_y_continuous(sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
+        scale_y_continuous(limits = c(0,NA), sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
         theme(axis.text.y.right = element_text(color = "red"), axis.title.y.right = element_text(color = "red"))
+    } else {
+      p <- p + ylim(c(0,NA))
     }
   } else {
   	p <- ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
@@ -218,11 +220,13 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
       ylab("Quality Score") + xlab("Cycle") +
 		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) +
 		  geom_text(data=anndf, aes(x=0, label=rclabel, y=0), color="red", hjust=0) + 
-      facet_wrap(~file) + ylim(c(0,NA))
+      facet_wrap(~file))
     if(length(unique(statdf$Cum))>1) {
       p <- p + geom_line(data=statdf, aes(y=Cum), color="red", size=0.25, linetype="solid") +
-        scale_y_continuous(sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
+        scale_y_continuous(limits = c(0,NA), sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
         theme(axis.text.y.right = element_text(color = "red"), axis.title.y.right = element_text(color = "red"))
+    } else {
+      p <- p + ylim(c(0,NA))
     }
   }
   p
