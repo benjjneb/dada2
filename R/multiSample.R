@@ -278,7 +278,7 @@ is.sequence.table <- function(tab, verbose=TRUE) {
 #' @examples
 #' 
 #' \dontrun{
-#'   mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3) # unnamed arguments are assumed to be individual sequence tables
+#'   mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3) # unnamed arguments assumed to be sequence tables
 #'   input_tables <- list(seqtab1, seqtab2, seqtab3)
 #'   mergetab <- mergeSequenceTables(tables=input_tables) # list of sequence tables
 #'   files <- c(file1, file2, file3)

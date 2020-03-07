@@ -57,6 +57,7 @@
 #'  Rows correspond to the input files, columns record the number of reads.in and reads.out after
 #'  discarding reads that didn't match the provided primers.
 #' 
+#' @importFrom Biostrings matchPattern
 #' @importFrom Biostrings vmatchPattern
 #' @importFrom ShortRead sread
 #' @importFrom ShortRead reverseComplement
