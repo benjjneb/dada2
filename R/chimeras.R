@@ -325,7 +325,7 @@ removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
       	outs[[i]] <- unqs[[i]][,!bim,drop=FALSE]
       } else if (method %in% c("per-sample")) {
       	outs[[i]] <- unqs[[i]]
-      	outs[[i]][which(bim, arr.ind=T)] <- 0
+      	outs[[i]][which(bim, arr.ind=TRUE)] <- 0
       	cbim <- colSums(outs[[i]])==0
       	outs[[i]] <- outs[[i]][,!cbim,drop=FALSE]
       }
