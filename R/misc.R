@@ -35,9 +35,9 @@ getUniques <- function(object, collapse=TRUE, silence=FALSE) {
     unqs <- derepFastq(object)$uniques
   } else if(is.vector(object, "integer") && length(names(object)) != 0 && !any(is.na(names(object)))) { # Named integer vector already
     unqs <- object
-  } else if(class(object) == "dada") {  # dada return 
+  } else if(is(object, "dada")) {  # dada return 
     unqs <- object$denoised
-  } else if(class(object) == "derep") {
+  } else if(is(object, "derep")) {
     unqs <- object$uniques
   } else if(is.data.frame(object) && all(c("sequence", "abundance") %in% colnames(object))) {
     unqs <- as.integer(object$abundance)
@@ -111,9 +111,9 @@ getSequences <- function(object, collapse=FALSE, silence=TRUE) {
     } else {
       rval <- object
     }
-  } else if(class(object) == "DNAStringSet") {
+  } else if(is(object, "DNAStringSet")) {
     rval <- as.character(object)
-  } else if(class(object) == "matrix" && is.character(object) && !any(is.na(rownames(object)))) { # Taxonomy table
+  } else if(is.matrix(object) && is.character(object) && !any(is.na(rownames(object)))) { # Taxonomy table
     seqs <- rownames(object)
     if(any(duplicated(seqs))) {
       if(collapse) seqs <- unique(seqs)
