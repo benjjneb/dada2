@@ -14,13 +14,13 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 **Maintained:**
 
-* **[Silva version 132](https://doi.org/10.5281/zenodo.1172782)**, **[Silva version 128](https://doi.org/10.5281/zenodo.801831)**,  [Silva version 123](http://dx.doi.org/10.5281/zenodo.158958)  ([Silva dual-license](https://www.arb-silva.de/silva-license-information/))
+* **[Silva version 138](https://zenodo.org/record/3731176)**, [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958)  ([Silva dual-license](https://www.arb-silva.de/silva-license-information/))
 
 * **[RDP trainset 16](https://doi.org/10.5281/zenodo.801827)**, [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955)
 
-* **[GreenGenes version 13.8](http://dx.doi.org/10.5281/zenodo.158955)**
-
 * **[UNITE (use the General Fasta releases)](https://unite.ut.ee/repository.php)**
+
+* *Deprecated: [GreenGenes version 13.8](http://dx.doi.org/10.5281/zenodo.158955) (the source GreenGenes database is no longer being maintained)*
 
 **Contributed**:
 
