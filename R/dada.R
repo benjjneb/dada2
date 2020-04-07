@@ -169,7 +169,7 @@ dada <- function(derep,
   }
   
   # Validate the derep argument. If a single derep object, make into a length 1 list
-  if(class(derep) == "derep") { derep <- list(derep) }
+  if(is(derep, "derep")) { derep <- list(derep) }
   if(!(is.list.of(derep, "derep") || is(derep, "character"))) { stop("The derep argument must be derep-class object, list of derep-class objects, or a character vector of fastq files or a directory containing fastq files.") }
   if(is.character(derep)) { 
     if(length(derep) == 1 && dir.exists(derep)) { derep <- parseFastqDirectory(derep) }
@@ -615,11 +615,11 @@ dada <- function(derep,
 setDadaOpt <- function(...) {
   opts <- getDadaOpt()
   args <- list(...)
-  if(length(args)==1 && class(args[[1]]) == "list") { # Arguments were passed in as a list, as returned by getDadaOpt
+  if(length(args)==1 && is.list(args[[1]])) { # Arguments were passed in as a list, as returned by getDadaOpt
     args <- args[[1]]
   }
   for(opnm in names(args)) {
-    if(opnm %in% names(opts)) {
+    if(opnm %in% names(opts)) { # class() OK here, since all dada-opts are simple objects with single classes
       if( (class(getDadaOpt(opnm)) == class(args[[opnm]])) ||
          (opnm == "HOMOPOLYMER_GAP_PENALTY" && # Allow numeric or NULL for HOMOPOLYMER_GAP_PENALTY
           (is.numeric(args[["HOMOPOLYMER_GAP_PENALTY"]])) || is.null(args[["HOMOPOLYMER_GAP_PENALTY"]])) ) {
