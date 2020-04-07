@@ -19,6 +19,8 @@
 #' @seealso \code{\link{dada}}, \code{\link{getUniques}}
 #' @export
 #' 
+#' @importFrom methods is
+#' 
 #' @examples
 #' derep1 <- derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' derep2 <- derepFastq(system.file("extdata", "sam2F.fastq.gz", package="dada2"))
@@ -27,7 +29,7 @@
 #' seqtab <- makeSequenceTable(list(sample1=dada1, sample2=dada2))
 #' 
 makeSequenceTable <- function(samples, orderBy = "abundance") {
-  if(class(samples) %in% c("dada", "derep", "data.frame")) { samples <- list(samples) }
+  if(is(samples, "dada") || is(samples, "derep") || is(samples, "data.frame")) { samples <- list(samples) }
   if(!is.list(samples)) { stop("Requires a list of samples.") }
   unqs <- lapply(samples, getUniques)
   unqsqs <- unique(do.call(c, lapply(unqs, names)))
@@ -161,8 +163,8 @@ collapseNoMismatch <- function(seqtab, minOverlap=20, orderBy="abundance", ident
 #' @importFrom methods as
 #' @keywords internal
 combineDereps2 <- function(dereps) {
-  if(class(dereps) == "derep") dereps <- list(dereps)
-  if(!all(sapply(dereps, function(x) class(x)=="derep"))) stop("Requires derep-class objects.")
+  if(is(dereps, "derep")) dereps <- list(dereps)
+  if(!all(sapply(dereps, function(x) is(x,"derep")))) stop("Requires derep-class objects.")
   maxlen <- max(sapply(dereps, function(x) ncol(x$quals)))
 
   # Generate the unique sequences and make the output $uniques vector

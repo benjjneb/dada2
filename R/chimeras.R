@@ -292,9 +292,9 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' out.nobim <- removeBimeraDenovo(dada1$clustering, method="pooled", minFoldParentOverAbundance = 2)
 #' 
 removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
-  if(!is.list(unqs) || is(unqs, "dada") || is(unqs, "derep") || is.data.frame(unqs)) {
-    unqs <- list(unqs)
-  } # Should consider removing the list-wise functionality here. Adds unnecessary complexity.
+  if(is(unqs, "dada") || is(unqs, "derep") || is(unqs, "data.frame")) { unqs <- list(unqs) }
+  if(!is.list(unqs)) { unqs <- list(unqs) } 
+  # Should consider removing the list-wise functionality here. Adds unnecessary complexity.
   if("tableMethod" %in% names(list(...))) {
     stop("DEFUNCT: The tableMethod argument has been replaced by the method argument. Please update your code.")
   }
