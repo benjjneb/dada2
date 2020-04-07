@@ -44,6 +44,7 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
   Rcpp::IntegerVector Rbirth_hams(b->nclust);  // hamming distance at birth
   Rcpp::NumericVector Rbirth_es(b->nclust);    // expected number at birth
   Rcpp::CharacterVector Rbirth_types;           // DEPRECATED
+  Rcpp::IntegerVector Rbirth_froms(b->nclust); // cluster from which this new cluster was born
   Rcpp::NumericVector Rbirth_qaves(b->nclust); // average quality of substitutions that drove birth
   Rcpp::NumericVector Rpvals(b->nclust);       // post-hoc pvalue
 
@@ -67,11 +68,13 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
     Rbirth_types.push_back(std::string(b->bi[i]->birth_type));
     if(i==0) {  // 0-clust wasn't born normally
       Rbirth_pvals[i] = NA_REAL; 
+      Rbirth_froms[i] = NA_INTEGER;
       Rbirth_folds[i] = NA_REAL; 
       Rbirth_hams[i] = NA_INTEGER; 
       Rbirth_es[i] = NA_REAL;
       Rbirth_qaves[i] = NA_REAL;
     } else { 
+      Rbirth_froms[i] = b->bi[i]->birth_from + 1; // R 1-based indexing
       Rbirth_pvals[i] = b->bi[i]->birth_pval;
       Rbirth_folds[i] = b->bi[i]->birth_fold;
       Rbirth_hams[i] = b->bi[i]->birth_comp.hamming;
@@ -115,7 +118,12 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
     Rpvals[i] = calc_pA(b->bi[i]->center->reads, tot_e[i], true); // prior=true to get non-conditional p-val
   }
   
-  return(Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, _["pval"] = Rpvals, _["birth_type"] = Rbirth_types, _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves));
+  return(Rcpp::DataFrame::create(_["sequence"] = Rseqs, _["abundance"] = Rabunds, 
+                                 _["n0"] = Rzeros, _["n1"] = Rones, _["nunq"] = Rraws, 
+                                 _["pval"] = Rpvals, /// _["birth_type"] = Rbirth_types, 
+                                 _["birth_from"] = Rbirth_froms,
+                                 _["birth_pval"] = Rbirth_pvals, _["birth_fold"] = Rbirth_folds, 
+                                 _["birth_ham"] = Rbirth_hams, _["birth_qave"] = Rbirth_qaves));
 }
 
 // Returns a 16xN matrix with the observed counts of each transition categorized by

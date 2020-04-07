@@ -317,6 +317,7 @@ int b_bud(B *b, double min_fold, int min_hamming, int min_abund, bool verbose) {
     raw = bi_pop_raw(b->bi[mini], minr);
     i = b_add_bi(b, bi_new(b->nraw));
     strcpy(b->bi[i]->birth_type, "A");
+    b->bi[i]->birth_from = mini;
     b->bi[i]->birth_pval = pA;
     b->bi[i]->birth_fold = raw->reads/expected;
     b->bi[i]->birth_e = expected;

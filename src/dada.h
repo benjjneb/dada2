@@ -87,6 +87,7 @@ typedef struct {
   double self; // self-production genotype error probability
   unsigned int totraw; // number of total raws in the clustering
   char birth_type[2]; // encoding of how this Bi was created: "I": Initial cluster, "A": Abundance pval, "S": Singleton pval
+  unsigned int birth_from; // the cluster from which this new cluster was born
   double birth_pval; // the Bonferonni-corrected pval that led to this cluster being initialized
   double birth_fold; // the multiple of expectations at birth
   double birth_e; // the expected number of reads at birth
