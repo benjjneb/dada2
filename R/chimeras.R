@@ -283,6 +283,8 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' 
 #' @export
 #' 
+#' @importFrom methods is
+#' 
 #' @examples
 #' derep1 = derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1, errorEstimationFunction=loessErrfun, selfConsist=TRUE)
@@ -290,9 +292,9 @@ isBimeraDenovoTable <- function(seqtab, minSampleFraction=0.9, ignoreNNegatives=
 #' out.nobim <- removeBimeraDenovo(dada1$clustering, method="pooled", minFoldParentOverAbundance = 2)
 #' 
 removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
-  if(class(unqs)!="list") {
+  if(!is.list(unqs) || is(unqs, "dada") || is(unqs, "derep") || is.data.frame(unqs)) {
     unqs <- list(unqs)
-  }
+  } # Should consider removing the list-wise functionality here. Adds unnecessary complexity.
   if("tableMethod" %in% names(list(...))) {
     stop("DEFUNCT: The tableMethod argument has been replaced by the method argument. Please update your code.")
   }
@@ -302,16 +304,16 @@ removeBimeraDenovo <- function(unqs, method = "consensus", ..., verbose=FALSE) {
     if(is.integer(unqs[[i]]) && length(names(unqs[[i]])) != 0 && !any(is.na(names(unqs[[i]])))) { # Named integer vector already
       bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]][!bim]
-    } else if(class(unqs[[i]]) == "dada") {  # dada return 
+    } else if(is(unqs[[i]], "dada")) {  # dada return 
       bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]]$denoised[!bim]
-    } else if(class(unqs[[i]]) == "derep") {
+    } else if(is(unqs[[i]], "derep")) {
       bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]]$uniques[!bim]
     } else if(is.data.frame(unqs[[i]]) && all(c("sequence", "abundance") %in% colnames(unqs[[i]]))) {
       bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       outs[[i]] <- unqs[[i]][!bim,]
-    } else if(class(unqs[[i]]) == "matrix" && !any(is.na(colnames(unqs[[i]])))) { # Tabled sequences
+    } else if(is.matrix(unqs[[i]]) && !any(is.na(colnames(unqs[[i]])))) { # Tabled sequences
       if(method == "pooled") {
         bim <- isBimeraDenovo(unqs[[i]], ..., verbose=verbose)
       } else if(method == "consensus") {
