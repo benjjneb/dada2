@@ -117,6 +117,9 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
 // Assigns taxonomy to sequence based on provided ref seqs and corresponding taxonomies.
 //
 // [[Rcpp::export]]
+//
+// DEPRECATED DEPREECATED DEPRECATED DEPRECATED DEPREECATED DEPRECATED DEPRECATED
+//
 Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose) {
   size_t i, j, g;
   int kmer;
@@ -179,7 +182,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   unsigned int seqlen;
   for(i=0;i<nseq;i++) {
     seqlen = seqs[i].size();
-    if(seqlen < 50) Rcpp::stop("Sequences must be at least 50 nts to classify.");
+///    if(seqlen < 50) Rcpp::stop("Sequences must be at least 50 nts to classify.");
     if((seqlen-k+1) > max_arraylen) { max_arraylen = seqlen-k+1; }
   }
 
@@ -203,44 +206,58 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   if(bootarray == NULL) Rcpp::stop("Memory allocation failed.");
   
   // Rprintf("Classify the sequences.\n");
+  bool first_warning = true;
   for(j=0;j<nseq;j++) {
     seqlen = seqs[j].size();
-    arraylen = tax_karray(seqs[j].c_str(), k, karray);
-    if(arraylen<40) { Rcpp::stop("Sequences must have at least 40 valid kmers to classify."); }
-    
-    // Find best hit
-    max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-    if(try_rc) { // see if rev-comp is a better match to refs
-      arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
-      if(arraylen != arraylen_rc) { 
-        Rcpp::stop("Discrepancy between forward and RC arraylen."); }
-      max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-      if(logp_rc > logp) { // rev-comp is better, replace with it
-        max_g = max_g_rc;
-        memcpy(karray, karray_rc, arraylen * sizeof(int));
+    if(seqlen < 50) { // No assignment made for very short seqeunces
+      if(first_warning) {
+        Rcpp::warning("Some sequences were less than 50nts and were not taxonomically classified."); 
+        first_warning=false;
       }
-    }
-    
-    rval(j) = max_g+1; // 1-index for return
-
-    // Generate random indices to be used for subsampling
-    unifs = Rcpp::runif(100*(arraylen/8));
-    booti = 0;
-    boot_match = 0;
-    for(boot=0;boot<100;boot++) {
-      for(i=0;i<(arraylen/8);i++,booti++) {
-        bootarray[i] = karray[(int) (arraylen*unifs[booti])];
+      // Now enter NA assignments and 0 bootstrap confidences for this sequence
+      rval(j) = NA_INTEGER;
+      for(i=0;i<genusmat.ncol();i++) {
+        rboot(j, i) = 0;
       }
-      boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-      rboot_tax(j,boot) = boot_g+1; // 1-index for return
-      for(i=0;i<(genusmat.ncol());i++) {
-        if(genusmat(boot_g,i) == genusmat(max_g,i)) {
-          rboot(j,i)++;
-        } else {
-          break;
+      for(boot=0;boot<100;boot++) {
+        rboot_tax(j, boot) = NA_INTEGER;
+      }
+    } else {
+      arraylen = tax_karray(seqs[j].c_str(), k, karray);
+      // Find best hit
+      max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+      if(try_rc) { // see if rev-comp is a better match to refs
+        arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
+        if(arraylen != arraylen_rc) { 
+          Rcpp::stop("Discrepancy between forward and RC arraylen."); }
+        max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+        if(logp_rc > logp) { // rev-comp is better, replace with it
+          max_g = max_g_rc;
+          memcpy(karray, karray_rc, arraylen * sizeof(int));
         }
       }
-      if(boot_g == max_g) { boot_match++; }
+      
+      rval(j) = max_g+1; // 1-index for return
+  
+      // Generate random indices to be used for subsampling
+      unifs = Rcpp::runif(100*(arraylen/8));
+      booti = 0;
+      boot_match = 0;
+      for(boot=0;boot<100;boot++) {
+        for(i=0;i<(arraylen/8);i++,booti++) {
+          bootarray[i] = karray[(int) (arraylen*unifs[booti])];
+        }
+        boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+        rboot_tax(j,boot) = boot_g+1; // 1-index for return
+        for(i=0;i<(genusmat.ncol());i++) {
+          if(genusmat(boot_g,i) == genusmat(max_g,i)) {
+            rboot(j,i)++;
+          } else {
+            break;
+          }
+        }
+        if(boot_g == max_g) { boot_match++; }
+      }
     }
     Rcpp::checkUserInterrupt();
   }
@@ -250,6 +267,7 @@ Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::str
   free(kmer_prior);
   free(ref_kv);
   free(karray);
+  free(karray_rc);
   
   return(Rcpp::List::create(_["tax"]=rval, _["boot"]=rboot, _["boot_tax"]=rboot_tax));
 }
@@ -298,40 +316,50 @@ struct AssignParallel : public RcppParallel::Worker
 
     for(std::size_t j=begin;j<end;j++) {
       seqlen = seqs[j].size();
-      arraylen = tax_karray(seqs[j].c_str(), k, karray);
-///!      if(arraylen<40) { Rcpp::stop("Sequences must have at least 40 valid kmers to classify."); }
-      
-      // Find best hit
-      max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-      if(try_rc) { // see if rev-comp is a better match to refs
-        arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
-        if(arraylen != arraylen_rc) { Rcpp::stop("Discrepancy between forward and RC arraylen."); }
-        max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-        if(logp_rc > logp) { // rev-comp is better, replace with it
-          max_g = max_g_rc;
-          memcpy(karray, karray_rc, arraylen * sizeof(int));
-        }
-      }
-      
-      C_rval[j] = max_g+1; // 1-index for return
-      
-      unifs = &C_unifs[j*max_arraylen];
-      booti = 0;
-      boot_match = 0;
-      for(boot=0;boot<100;boot++) {
-        for(i=0;i<(arraylen/8);i++,booti++) {
-          bootarray[i] = karray[(int) (arraylen*unifs[booti])];
-        }
-        boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-        C_rboot_tax[j*100+boot] = boot_g+1; // 1-index for return
+      if(seqlen < 50) { // No assignment made for very short seqeunces
+        // Now enter NA assignments and 0 bootstrap confidences for this sequence
+        C_rval[j] = NA_INTEGER;
         for(i=0;i<nlevel;i++) {
-          if(C_genusmat[boot_g*nlevel+i] == C_genusmat[max_g*nlevel+i]) {
-            C_rboot[j*nlevel+i]++;
-          } else {
-            break;
+          C_rboot[j*nlevel+i] = 0;
+        }
+        for(boot=0;boot<100;boot++) {
+          C_rboot_tax[j*100 + boot] = NA_INTEGER;
+        }
+      } else {
+        arraylen = tax_karray(seqs[j].c_str(), k, karray);
+  
+        // Find best hit
+        max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+        if(try_rc) { // see if rev-comp is a better match to refs
+          arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
+          if(arraylen != arraylen_rc) { Rcpp::stop("Discrepancy between forward and RC arraylen."); }
+          max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+          if(logp_rc > logp) { // rev-comp is better, replace with it
+            max_g = max_g_rc;
+            memcpy(karray, karray_rc, arraylen * sizeof(int));
           }
         }
-      } // for(boot=0;boot<100;boot++)
+        
+        C_rval[j] = max_g+1; // 1-index for return
+        
+        unifs = &C_unifs[j*max_arraylen];
+        booti = 0;
+        boot_match = 0;
+        for(boot=0;boot<100;boot++) {
+          for(i=0;i<(arraylen/8);i++,booti++) {
+            bootarray[i] = karray[(int) (arraylen*unifs[booti])];
+          }
+          boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+          C_rboot_tax[j*100+boot] = boot_g+1; // 1-index for return
+          for(i=0;i<nlevel;i++) {
+            if(C_genusmat[boot_g*nlevel+i] == C_genusmat[max_g*nlevel+i]) {
+              C_rboot[j*nlevel+i]++;
+            } else {
+              break;
+            }
+          }
+        } // for(boot=0;boot<100;boot++)
+      }
     } // for(std::size_t j=begin;j<end;j++)
   }
 };
@@ -403,13 +431,13 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   unsigned int seqlen;
   for(i=0;i<nseq;i++) {
     seqlen = seqs[i].size();
-    if(seqlen < 50) {
-      free(genus_num_plus1);
-      free(genus_kmers);
-      free(kmer_prior);
-      free(ref_kv);
-      Rcpp::stop("Sequences must be at least 50 nts to classify.");
-    }
+///    if(seqlen < 50) {
+///      free(genus_num_plus1);
+///      free(genus_kmers);
+///      free(kmer_prior);
+///      free(ref_kv);
+///      Rcpp::stop("Sequences must be at least 50 nts to classify.");
+///    }
     if((seqlen-k+1) > max_arraylen) { max_arraylen = seqlen-k+1; }
   }
   

@@ -66,8 +66,12 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootst
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
                            multithread=FALSE, verbose=FALSE) {
   MIN_REF_LEN <- 20 # Enforced minimum length of reference seqs. Must be bigger than the kmer-size used (8).
+  MIN_TAX_LEN <- 50 # Minimum length of input sequences to get a taxonomic assignment
   # Get character vector of sequences
   seqs <- getSequences(seqs)
+  if(min(nchar(seqs)) < MIN_TAX_LEN) {
+    warning("Some sequences were shorter than ", MIN_TAX_LEN, " nts and will not receive a taxonomic classification.")
+  }
   # Read in the reference fasta
   refsr <- readFasta(refFasta)
   lens <- width(sread(refsr))
@@ -116,22 +120,19 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootst
     tax.df[,i] <- as.integer(tax.df[,i])
   }
   tax.mat.int <- as.matrix(tax.df)
-  # Assign
+  ### Assign
   # Parse multithreading argument
   if(is.logical(multithread)) {
     if(multithread==TRUE) { RcppParallel::setThreadOptions(numThreads = "auto") }
+    else { RcppParallel::setThreadOptions(numThreads = 1) }
   } else if(is.numeric(multithread)) {
     RcppParallel::setThreadOptions(numThreads = multithread)
-    multithread <- TRUE
   } else {
     warning("Invalid multithread parameter. Running as a single thread.")
-    multithread <- FALSE
+    RcppParallel::setThreadOptions(numThreads = 1)
   }
-  if(multithread) {
-    assignment <- C_assign_taxonomy2(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose)
-  } else {
-    assignment <- C_assign_taxonomy(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose)
-  }
+  # Run C assignemnt code
+  assignment <- C_assign_taxonomy2(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose)
   # Parse results and return tax consistent with minBoot
   bestHit <- genus.unq[assignment$tax]
   boots <- assignment$boot
