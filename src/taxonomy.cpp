@@ -115,11 +115,10 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
 
 //------------------------------------------------------------------
 // Assigns taxonomy to sequence based on provided ref seqs and corresponding taxonomies.
-//
-// [[Rcpp::export]]
-//
+// Single-threaded only.
 // DEPRECATED DEPREECATED DEPRECATED DEPRECATED DEPREECATED DEPRECATED DEPRECATED
 //
+// [[Rcpp::export]]
 Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose) {
   size_t i, j, g;
   int kmer;

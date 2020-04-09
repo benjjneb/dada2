@@ -43,7 +43,7 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
   Rcpp::NumericVector Rbirth_folds(b->nclust); // fold over-abundance at birth
   Rcpp::IntegerVector Rbirth_hams(b->nclust);  // hamming distance at birth
   Rcpp::NumericVector Rbirth_es(b->nclust);    // expected number at birth
-  Rcpp::CharacterVector Rbirth_types;           // DEPRECATED
+///  Rcpp::CharacterVector Rbirth_types;           // DEPRECATED
   Rcpp::IntegerVector Rbirth_froms(b->nclust); // cluster from which this new cluster was born
   Rcpp::NumericVector Rbirth_qaves(b->nclust); // average quality of substitutions that drove birth
   Rcpp::NumericVector Rpvals(b->nclust);       // post-hoc pvalue
@@ -65,7 +65,7 @@ Rcpp::DataFrame b_make_clustering_df(B *b, Sub **subs, Sub **birth_subs, bool ha
       }
     }
     // Record information from the cluster's birth
-    Rbirth_types.push_back(std::string(b->bi[i]->birth_type));
+///    Rbirth_types.push_back(std::string(b->bi[i]->birth_type));
     if(i==0) {  // 0-clust wasn't born normally
       Rbirth_pvals[i] = NA_REAL; 
       Rbirth_froms[i] = NA_INTEGER;

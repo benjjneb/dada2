@@ -185,16 +185,16 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     // parameters
     int match, mismatch, gap, homo_gap;
     int band_size;
-    bool vectorized_alignment;
+    bool use_kmers, vectorized_alignment;
     int SSE;
     bool gapless;
     
     // initialize with source and destination
     FinalSubsParallel(B *b, Sub **subs, Sub **birth_subs,
                     int match, int mismatch, int gap, int homo_gap,
-                    int band_size, bool vectorized_alignment, int SSE, bool gapless) 
+                    bool use_kmers, int band_size, bool vectorized_alignment, int SSE, bool gapless) 
       : b(b), subs(subs), birth_subs(birth_subs), match(match), mismatch(mismatch), gap(gap), homo_gap(homo_gap), 
-        band_size(band_size), vectorized_alignment(vectorized_alignment), SSE(SSE), gapless(gapless) {}
+        use_kmers(use_kmers), band_size(band_size), vectorized_alignment(vectorized_alignment), SSE(SSE), gapless(gapless) {}
     
     // Perform sequence comparison
     void operator()(std::size_t begin, std::size_t end) {
@@ -203,31 +203,31 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
       for(std::size_t i=begin;i<end;i++) {
         for(unsigned int r=0;r<b->bi[i]->nraw;r++) {
           raw = b->bi[i]->raw[r];
-          subs[raw->index] = sub_new(b->bi[i]->center, raw, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+          subs[raw->index] = sub_new(b->bi[i]->center, raw, match, mismatch, gap, homo_gap, use_kmers, 1.0, band_size, vectorized_alignment, SSE, gapless);
         }
         // Make birth sub for that cluster
         if(i==0) { birth_subs[i] = NULL; }
         else {
-          birth_subs[i] = sub_new(b->bi[b->bi[i]->birth_comp.i]->center, b->bi[i]->center, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+          birth_subs[i] = sub_new(b->bi[b->bi[i]->birth_comp.i]->center, b->bi[i]->center, match, mismatch, gap, homo_gap, use_kmers, 1.0, band_size, vectorized_alignment, SSE, gapless);
         }
       } // for(std::size_t i=begin;i<end;i++)
     }
   };
   
   if(multithread) {
-    FinalSubsParallel finalSubsParallel(bb, subs, birth_subs, match, mismatch, gap, homo_gap, band_size, vectorized_alignment, SSE, gapless);
+    FinalSubsParallel finalSubsParallel(bb, subs, birth_subs, match, mismatch, gap, homo_gap, use_kmers, band_size, vectorized_alignment, SSE, gapless);
     RcppParallel::parallelFor(0, bb->nclust, finalSubsParallel, GRAIN_SIZE);
   } else { // Non-Parallel implementation
     for(i=0;i<bb->nclust;i++) {
       // Make subs for members of that cluster
       for(r=0;r<bb->bi[i]->nraw;r++) {
         raw = bb->bi[i]->raw[r];
-        subs[raw->index] = sub_new(bb->bi[i]->center, raw, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+        subs[raw->index] = sub_new(bb->bi[i]->center, raw, match, mismatch, gap, homo_gap, use_kmers, 1.0, band_size, vectorized_alignment, SSE, gapless);
       }
       // Make birth sub for that cluster
       if(i==0) { birth_subs[i] = NULL; }
       else {
-        birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
+        birth_subs[i] = sub_new(bb->bi[bb->bi[i]->birth_comp.i]->center, bb->bi[i]->center, match, mismatch, gap, homo_gap, use_kmers, 1.0, band_size, vectorized_alignment, SSE, gapless);
       }
     }
   }
@@ -303,8 +303,8 @@ B *run_dada(Raw **raws, int nraw, Rcpp::NumericMatrix errMat,
   B *bb;
   bb = b_new(raws, nraw, omegaA, omegaP, use_quals); // New cluster with all sequences in 1 bi
   // Everyone gets aligned within the initial cluster, no KMER screen
-  if(multithread) { b_compare_parallel(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
-  else { b_compare(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, FALSE, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
+  if(multithread) { b_compare_parallel(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
+  else { b_compare(bb, 0, errMat, match, mismatch, gap_pen, homo_gap_pen, use_kmers, 1.0, band_size, vectorized_alignment, SSE, gapless, greedy, verbose); }
 //  if(multithread) { b_p_update_parallel(bb); }
   b_p_update(bb, greedy, detect_singletons); // Calculates abundance p-value for each raw in its cluster (consensuses)
   
