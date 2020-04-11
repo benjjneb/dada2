@@ -194,7 +194,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
                     int match, int mismatch, int gap, int homo_gap,
                     bool use_kmers, int band_size, bool vectorized_alignment, int SSE, bool gapless) 
       : b(b), subs(subs), birth_subs(birth_subs), match(match), mismatch(mismatch), gap(gap), homo_gap(homo_gap), 
-        use_kmers(use_kmers), band_size(band_size), vectorized_alignment(vectorized_alignment), SSE(SSE), gapless(gapless) {}
+        band_size(band_size), use_kmers(use_kmers), vectorized_alignment(vectorized_alignment), SSE(SSE), gapless(gapless) {}
     
     // Perform sequence comparison
     void operator()(std::size_t begin, std::size_t end) {
@@ -215,7 +215,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   };
   
   if(multithread) {
-    FinalSubsParallel finalSubsParallel(bb, subs, birth_subs, match, mismatch, gap, homo_gap, use_kmers, band_size, vectorized_alignment, SSE, gapless);
+    FinalSubsParallel finalSubsParallel(bb, subs, birth_subs, match, mismatch, gap, homo_gap, band_size, use_kmers, vectorized_alignment, SSE, gapless);
     RcppParallel::parallelFor(0, bb->nclust, finalSubsParallel, GRAIN_SIZE);
   } else { // Non-Parallel implementation
     for(i=0;i<bb->nclust;i++) {
