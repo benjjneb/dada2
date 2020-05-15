@@ -1,0 +1,16 @@
+DADA2 1.16 RELEASE NOTES
+-----------------------
+
+#### SIGNIFICANT USER-VISIBLE CHANGES
+
+* The `dada-class$clustering` data.frame includes a new column `$birth_from` which encodes the cluster (ASV) from which the associated cluster (ASV) was divided (or "born").
+
+* Short sequences are now given `NA` assignments at all levels, rather than stopping the `assignTaxonomy` function entirely.
+    
+#### BUG FIXES
+
+* All uses of the `class(x) == "y"` idiom have been replaced by `is(x, "y")` to conform to current R best practices and Bioconductor build requirements.
+
+* A rare error in how the `dada-class$clustering$birth_pval` was calculated has been fixed.
+
+* Read lengths are now visualized correctly by `plotQualityProfile(..., aggregate=TRUE)`.

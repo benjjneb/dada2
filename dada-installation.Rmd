@@ -7,17 +7,17 @@ title: "DADA2 Installation"
 ## **Install binaries from Bioconductor**
 
 Binary installation is available through [the Bioconductor package repository](https://bioconductor.org/). 
-Binary installation of the current release version (1.14) requires R 3.6.1 and Bioconductor version 3.10:
+Binary installation of the current release version (1.16) requires R 4.0.0 and Bioconductor version 3.11:
 
 ```S
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("dada2", version = "3.10")
+BiocManager::install("dada2", version = "3.11")
 ```
 
 Allow installation of any additional packages requested. You are ready to start using DADA2!
 
-*If the above installed an early version of dada2 (e.g. 1.6 or 1.10) you can get the current dada2 release by updating to [Bioconductor 3.10](https://www.bioconductor.org/news/bioc_3_10_release/). This may require updating to R 3.6.1 as well.*
+*If the above installed an early version of dada2 (e.g. 1.10 or 1.14) you can get the current dada2 release by updating to [Bioconductor 3.11](https://www.bioconductor.org/news/bioc_3_11_release/). This may require updating to R 4.0.0 as well.*
 
 -----------------------------
 
@@ -32,16 +32,16 @@ The easiest method is to use the devtools package to install and compile directl
 ```{r devtools-install, eval=FALSE}
 install.packages("devtools")
 library("devtools")
-devtools::install_github("benjjneb/dada2", ref="v1.14") # change the ref argument to get other versions
+devtools::install_github("benjjneb/dada2", ref="v1.16") # change the ref argument to get other versions
 ```
 
 If that worked you're done (see step 4)! If it failed on missing dependencies, goto step 3. If devtools isn't an option, you can also install directly from the source (goto step 1).
 
 ### 1. Download
 
-* Current Release [(1.14)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.14.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.14.tar.gz).
+* Current Release [(1.16)](https://github.com/benjjneb/dada2/releases): [Zipped](https://github.com/benjjneb/dada2/archive/v1.16.zip) or [tarball](https://github.com/benjjneb/dada2/archive/v1.16.tar.gz).
 
-* Development Branch [(1.15)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
+* Development Branch [(1.17)](https://github.com/benjjneb/dada2): [Zipped](https://github.com/benjjneb/dada2/archive/master.zip) or [tarball](https://github.com/benjjneb/dada2/archive/master.tar.gz).
 
 ### 2. Install manually from source
 
@@ -96,9 +96,9 @@ start a fresh R session, and enter the following.
 ```{r bioc-install, eval=FALSE}
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("ShortRead", version = "3.10") 
+BiocManager::install("ShortRead", version = "3.11") 
 # Or you can use earlier versions of Biocondcutor, e.g. if you have a pre-3.6 version of R
-BiocManager::install("additional_missing_package_1", version = "3.10") 
+BiocManager::install("additional_missing_package_1", version = "3.11") 
 # ... and so on
 ```
 

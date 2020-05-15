@@ -11,7 +11,7 @@
 
 
 
-<title>DADA2 Installation</title>
+<title>ReleaseNotes_1_16.utf8</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -364,90 +364,26 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">DADA2 Installation</h1>
 
 </div>
 
 
-<hr />
-<div id="install-binaries-from-bioconductor" class="section level2">
-<h2><strong>Install binaries from Bioconductor</strong></h2>
-<p>Binary installation is available through <a href="https://bioconductor.org/">the Bioconductor package repository</a>. Binary installation of the current release version (1.16) requires R 4.0.0 and Bioconductor version 3.11:</p>
-<pre class="s"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
-    install.packages(&quot;BiocManager&quot;)
-BiocManager::install(&quot;dada2&quot;, version = &quot;3.11&quot;)</code></pre>
-<p>Allow installation of any additional packages requested. You are ready to start using DADA2!</p>
-<p><em>If the above installed an early version of dada2 (e.g. 1.10 or 1.14) you can get the current dada2 release by updating to <a href="https://www.bioconductor.org/news/bioc_3_11_release/">Bioconductor 3.11</a>. This may require updating to R 4.0.0 as well.</em></p>
-<hr />
-</div>
-<div id="install-from-source" class="section level2">
-<h2><strong>Install from source</strong></h2>
-<p>Source installation is available for R 3.4 or later, and the latest and greatest features will be available first through source installs of the development branch.</p>
-<div id="install-using-devtools" class="section level3">
-<h3>0. Install using devtools</h3>
-<p>The easiest method is to use the devtools package to install and compile directly from github:</p>
-<pre class="r"><code>install.packages(&quot;devtools&quot;)
-library(&quot;devtools&quot;)
-devtools::install_github(&quot;benjjneb/dada2&quot;, ref=&quot;v1.16&quot;) # change the ref argument to get other versions</code></pre>
-<p>If that worked you’re done (see step 4)! If it failed on missing dependencies, goto step 3. If devtools isn’t an option, you can also install directly from the source (goto step 1).</p>
-</div>
-<div id="download" class="section level3">
-<h3>1. Download</h3>
+<div id="dada2-1.16-release-notes" class="section level2">
+<h2>DADA2 1.16 RELEASE NOTES</h2>
+<div id="significant-user-visible-changes" class="section level4">
+<h4>SIGNIFICANT USER-VISIBLE CHANGES</h4>
 <ul>
-<li><p>Current Release <a href="https://github.com/benjjneb/dada2/releases">(1.16)</a>: <a href="https://github.com/benjjneb/dada2/archive/v1.16.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/v1.16.tar.gz">tarball</a>.</p></li>
-<li><p>Development Branch <a href="https://github.com/benjjneb/dada2">(1.17)</a>: <a href="https://github.com/benjjneb/dada2/archive/master.zip">Zipped</a> or <a href="https://github.com/benjjneb/dada2/archive/master.tar.gz">tarball</a>.</p></li>
+<li><p>The <code>dada-class$clustering</code> data.frame includes a new column <code>$birth_from</code> which encodes the cluster (ASV) from which the associated cluster (ASV) was divided (or “born”).</p></li>
+<li><p>Short sequences are now given <code>NA</code> assignments at all levels, rather than stopping the <code>assignTaxonomy</code> function entirely.</p></li>
 </ul>
 </div>
-<div id="install-manually-from-source" class="section level3">
-<h3>2. Install manually from source</h3>
-<p>The following instructions assume that you have installed R and have installed <a href="https://developer.apple.com/xcode/downloads/">Xcode</a> (Mac) or <a href="http://cran.r-project.org/bin/windows/Rtools/">Rtools</a> (Windows); as well as <a href="http://bioconductor.org/install/">Bioconductor</a>.</p>
-<p>Alternatively, you can install from the source by hand. First <a href="download.html">download the zipped package</a> and unzip it (or expand the tarball).</p>
-<p>Start a fresh R session, and enter the following.</p>
-<pre class="r"><code>install.packages(&quot;path/to/dada2&quot;,
-                 repos = NULL,
-                 type = &quot;source&quot;,
-                 dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
-<p>For example, if the dada2 source code directory was in <code>~/github/dada2</code>, then the following would work.</p>
-<pre class="r"><code>install.packages(&quot;~/github/dada2&quot;,
-                 repos = NULL,
-                 type = &quot;source&quot;,
-                 dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
-<p>Check Package Version</p>
-<pre class="r"><code>packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.16.0&#39;</code></pre>
-</div>
-<div id="troubleshoot-dependencies" class="section level3">
-<h3>3. Troubleshoot Dependencies</h3>
-<p>At this point, there may be complaints about missing dependencies. To install missing dependencies on either <a href="http://cran.r-project.org/">CRAN</a> or <a href="http://bioconductor.org/install/">Bioconductor</a>, start a fresh R session, and enter the following.</p>
-<p>For Bioconductor, start a fresh R session, and enter the following.</p>
-<pre class="r"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
-    install.packages(&quot;BiocManager&quot;)
-BiocManager::install(&quot;ShortRead&quot;, version = &quot;3.11&quot;) 
-# Or you can use earlier versions of Biocondcutor, e.g. if you have a pre-3.6 version of R
-BiocManager::install(&quot;additional_missing_package_1&quot;, version = &quot;3.11&quot;) 
-# ... and so on</code></pre>
-</div>
-<div id="re-attempt-dada2-installation" class="section level3">
-<h3>4. Re-attempt dada2 Installation</h3>
-<p>Install again, after dependencies have been installed.</p>
-<p>Devtools method:</p>
-<pre class="r"><code>library(&quot;devtools&quot;)
-devtools::install_github(&quot;benjjneb/dada2&quot;)</code></pre>
-<p>Manual install from source method:</p>
-<pre class="r"><code>install.packages(&quot;path/to/dada2&quot;,
-                 repos = NULL,
-                 type = &quot;source&quot;,
-                 dependencies = c(&quot;Depends&quot;, &quot;Suggests&quot;,&quot;Imports&quot;))</code></pre>
-<p>You should now be done, if installation was successful. If not, do not panic, and post a message to <a href="https://github.com/benjjneb/dada2/issues">the issue tracker</a>.</p>
-</div>
-<div id="load-package-explore-function-documentation" class="section level3">
-<h3>5. Load Package, Explore Function Documentation</h3>
-<pre class="r"><code>library(&quot;dada2&quot;)</code></pre>
-<p>Now that the package is loaded, you can explore the documentation using the R help system.</p>
-<pre class="r"><code>help(package=&quot;dada2&quot;)
-?derepFastq
-?dada</code></pre>
-<p>You are ready to use dada2!</p>
+<div id="bug-fixes" class="section level4">
+<h4>BUG FIXES</h4>
+<ul>
+<li><p>All uses of the <code>class(x) == &quot;y&quot;</code> idiom have been replaced by <code>is(x, &quot;y&quot;)</code> to conform to current R best practices and Bioconductor build requirements.</p></li>
+<li><p>A rare error in how the <code>dada-class$clustering$birth_pval</code> was calculated has been fixed.</p></li>
+<li><p>Read lengths are now visualized correctly by <code>plotQualityProfile(..., aggregate=TRUE)</code>.</p></li>
+</ul>
 </div>
 </div>
 
