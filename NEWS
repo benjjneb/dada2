@@ -1,3 +1,29 @@
+CHANGES IN VERSION 1.16.0
+-----------------------
+
+SIGNIFICANT USER-VISIBLE CHANGES
+
+    o The `dada-class$clustering` data.frame includes a new column `$birth_from` which encodes the cluster (ASV) from which the associated cluster (ASV) was divided (or "born").
+
+    o Short sequences are now given `NA` assignments at all levels, rather than stopping the `assignTaxonomy` function entirely.
+    
+BUG FIXES
+
+    o All uses of the `class(x) == "y"` idiom have been replaced by `is(x, "y")` to conform to current R best practices and Bioconductor build requirements.
+
+    o A rare error in how the `dada-class$clustering$birth_pval` was calculated has been fixed.
+
+    o Read lengths are now visualized correctly by `plotQualityProfile(..., aggregate=TRUE)`.
+
+
+CHANGES IN VERSION 1.14.1
+-----------------------
+
+BUG FIXES
+
+    o A segfault bug in `assignTaxonomy` has been fixed. This segfault occurred when multithreading was enabled and multiple exact matches to the query sequence existed in the reference database being queried against.
+
+
 CHANGES IN VERSION 1.14.0
 -----------------------
 
@@ -5,7 +31,7 @@ NEW FEATURES
 
     o Directories containing fastq files (possibly compressed) can now be provided to core dada2 functions instead of a character vector of the fastq filenames. This functionality is supported by `filterAndTrim`, `learnErrors`, `dada`, `mergePairs` and `derepFastq`. Note, this feature requires fastqs in the provided directory to have standard file extensions: `.fastq`, `.fastq.gz` or `.fastq.bz2`.
 
-    o The new `DETECT_SINGLETONS` option removes the removes the “conditional” in the calculation of probabilties used in the core dada algorithm, which effectively discounts the first read of any novel sequence. In practice, setting `DETECT_SINGLETONS = TRUE` allows singletons to be detected (of course) and also increases sensitivity to other low abundance sequences slightly, i.e. those present in just 2/3/4 reads. Note, we do not generally recommend this option as it will result in a large increase in false positives in typical datasets. Instead we recommend `pool = "pseudo"` or `pool=TRUE` for typical datasets to increase sensitivity to rare sequences with less impact on specificity.
+    o The new `DETECT_SINGLETONS` option removes the “conditional” in the calculation of probabilties used in the core dada algorithm, which effectively discounts the first read of any novel sequence. In practice, setting `DETECT_SINGLETONS = TRUE` allows singletons to be detected (of course) and also increases sensitivity to other low abundance sequences slightly, i.e. those present in just 2/3/4 reads. Note, we do not generally recommend this option as it will result in a large increase in false positives in typical datasets. Instead we recommend `pool = "pseudo"` or `pool=TRUE` for typical datasets to increase sensitivity to rare sequences with less impact on specificity.
 
 SIGNIFICANT USER-VISIBLE CHANGES
 
