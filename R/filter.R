@@ -87,6 +87,7 @@ removePrimers <- function(fn, fout,
   if(length(fn) != length(fout)) stop("Every input file must have a corresponding output file.")
   if(allow.indels) message("Primer matching with indels allowed is currently significantly (~4x) slower.")
   require.fwd <- TRUE; require.rev <- TRUE ###
+  first.multi.msg <- TRUE
   odirs <- unique(dirname(fout))
   for(odir in odirs) {
     if(!dir.exists(odir)) { 
@@ -113,9 +114,11 @@ removePrimers <- function(fn, fout,
   colnames(rval) <- c("reads.in", "reads.out")
   rownames(rval) <- basename(fn)
   for(i in seq_along(fn)) {
-    # Read in file
+    # Read in file and init filtering stats
     fq <- readFastq(fn[[i]])
     inseqs <- length(fq)
+    outseqs <- 0
+    rval[i,c("reads.in", "reads.out")] <- c(inseqs, outseqs)
     # Match patterns
     if(allow.indels) { # Use slower matchPattern because it supports indels
       match.fwd <- lapply(sread(fq), function(x) matchPattern(primer.fwd, x, max.mismatch=max.mismatch, with.indels=allow.indels, fixed=fixed.fwd))
@@ -151,10 +154,13 @@ removePrimers <- function(fn, fout,
     if(has.rev) hits.rev <- sapply(match.rev, length)
     if(!require.fwd) stop("Currently, only require.fwd=TRUE is supported.")
     if(has.rev && !require.rev) stop("Currently, only require.rev=TRUE is supported when a reverse primer sequence is provided.")
-    if(require.fwd && sum(hits.fwd) == 0) stop("No sequences matched the provided forward primer sequence.")
-    if(has.rev && require.rev && sum(hits.rev) == 0) stop("Reverse primer sequences were provided, but no sequences matched the provided reverse primer sequence.")
+    if(require.fwd && sum(hits.fwd) == 0) { filt.print(inseqs, outseqs); next }
+    if(has.rev && require.rev && sum(hits.rev) == 0) { filt.print(inseqs, outseqs); next }
     if(any(hits.fwd>1) || (has.rev && any(hits.rev>1))) {
-      if(verbose) message("Multiple matches to the primer(s) in some sequences. Using the longest possible match.")
+      if(verbose && first.multi.msg) {
+        message("Multiple matches to the primer(s) in some sequences. Using the longest possible match.")
+        first.multi.msg <- FALSE
+      }
       match.fwd[hits.fwd>1] <- sapply(match.fwd[hits.fwd>1], `[`, 1)
       if(has.rev) match.rev[hits.rev>1] <- sapply(match.rev[hits.rev>1], function(x) rev(x)[1])
     }
@@ -162,7 +168,10 @@ removePrimers <- function(fn, fout,
       hits.fwd.rc <- sapply(match.fwd.rc, length)
       if(has.rev) hits.rev.rc <- sapply(match.rev.rc, length)
       if(any(hits.fwd.rc>1) || (has.rev && any(hits.rev.rc>1))) {
-        if(verbose) message("Multiple matches to the primer(s) in some reverse-complement sequences. Using the longest possible match.")
+        if(verbose && first.multi.msg) {
+          message("Multiple matches to the primer(s) in some sequences. Using the longest possible match.")
+          first.multi.msg <- FALSE
+        }
         match.fwd.rc[hits.fwd.rc>1] <- sapply(match.fwd.rc[hits.fwd.rc>1], `[`, 1)
         if(has.rev) match.rev.rc[hits.rev.rc>1] <- sapply(match.rev.rc[hits.rev.rc>1], function(x) rev(x)[1])
       }
@@ -213,11 +222,7 @@ removePrimers <- function(fn, fout,
     writeFastq(fq, fout[[i]], "w", compress=compress)
     outseqs <- length(fq)
     rval[i,c("reads.in", "reads.out")] <- c(inseqs, outseqs)
-    if(verbose) {
-      outperc <- round(outseqs * 100 / inseqs, 1)
-      outperc <- paste(" (", outperc, "%)", sep="")
-      message("Read in ", inseqs, ", output ", outseqs, outperc, " filtered sequences.", sep="")
-    }
+    if(verbose) filt.print(inseqs, outseqs)
   }
   if(all(rval[,"reads.out"]==0)) {
     warning("No reads passed the primer detection.")
@@ -226,6 +231,12 @@ removePrimers <- function(fn, fout,
   }
   return(invisible(rval))
 }  
+
+filt.print <- function(inseqs, outseqs) {
+  outperc <- round(outseqs * 100 / inseqs, 1)
+  outperc <- paste(" (", outperc, "%)", sep="")
+  message("Read in ", inseqs, ", output ", outseqs, outperc, " filtered sequences.", sep="")
+}
 
 #' Filter and trim fastq file(s).
 #' 
