@@ -179,7 +179,7 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
       FIRST <- FALSE
     } else { plotdf <- rbind(plotdf, cbind(df, file=basename(f))) }
     statdf <- rbind(statdf, data.frame(Cycle=as.integer(rownames(means)), Mean=means, 
-                                       Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s), Cum=10*as.vector(cums)/rc, file=basename(f)))
+                                       Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s), Cum=10*as.vector(cums)/min(rc, n), file=basename(f)))
     anndf <- rbind(anndf, data.frame(minScore=min(df$Score), label=basename(f), rclabel=rclabel, rc=rc, file=basename(f)))
   }
   anndf$minScore <- min(anndf$minScore)
