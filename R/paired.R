@@ -113,8 +113,9 @@ mergePairs <- function(dadaF, derepF, dadaR, derepR, minOverlap = 12, maxMismatc
     mapR <- getDerep(derepR[[i]])$map
     if(!(is.integer(mapF) && is.integer(mapR))) stop("Incorrect format of $map in derep-class arguments.")
 #    if(any(is.na(rF)) || any(is.na(rR))) stop("Non-corresponding maps and dada-outputs.")
-    if(!(length(mapF) == length(mapR) && max(mapF) == length(dadaF[[i]]$map) &&
-         max(mapR) == length(dadaR[[i]]$map))) {
+    if(!(length(mapF) == length(mapR) && 
+         max(mapF, na.rm=TRUE) == length(dadaF[[i]]$map) &&
+         max(mapR, na.rm=TRUE) == length(dadaR[[i]]$map))) {
       stop("Non-corresponding derep-class and dada-class objects.")
     }
     rF <- dadaF[[i]]$map[mapF]

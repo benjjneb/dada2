@@ -42,7 +42,7 @@
 #' derep1.35 = derepFastq(testFastq, 35, TRUE)
 #' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
-derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto"){
+derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto", handle.zerolen=TRUE){
   if(!is.character(fls)) { stop("File paths must be provided in character format.") }
   if(length(fls)==1 && dir.exists(fls)) { fls <- parseFastqDirectory(fls) }
   if(!all(file.exists(fls))) { stop("Not all provided files exist.") }
@@ -56,7 +56,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto"){
     f <- FastqStreamer(fl, n = n)
     suppressWarnings(fq <- yield(f, qualityType = qualityType))
     
-    out <- qtables2(fq, FALSE) ###ITS
+    out <- qtables2(fq, FALSE, handle.zerolen=handle.zerolen) ###ITS
     
     derepCounts <- out$uniques
     derepQuals <- out$cum_quals
@@ -68,7 +68,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto"){
       if(verbose){
         message(".", appendLF = FALSE)
       }
-      out <- qtables2(fq, FALSE)
+      out <- qtables2(fq, FALSE, handle.zerolen=handle.zerolen)
       # Augment quality matrices with NAs as needed to match ncol
       if(ncol(out$cum_quals) > ncol(derepQuals)) {
         derepQuals <- cbind(derepQuals, matrix(NA, nrow=nrow(derepQuals), ncol=(ncol(out$cum_quals)-ncol(derepQuals))))
@@ -144,7 +144,15 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto"){
 #' 
 #' @keywords internal
 #' 
-qtables2 <- function(x, qeff = FALSE) {
+qtables2 <- function(x, qeff = FALSE, handle.zerolen=TRUE) {
+  nread <- length(x)
+  npos <- sum(width(x) > 0)
+  if(npos == 0) { stop("Only zero-length sequences detected during dereplication.") }
+  if(handle.zerolen && npos < nread) { ######! Some zero length sequences
+    warning("Zero-length sequences detected during dereplication. They will be ignored.")
+    is.pos <- width(x) > 0
+    x <- x[is.pos]
+  }
   # ranks are lexical rank
   srt <- srsort(x) # map from rank to sequence/quality/id
   rnk <- srrank(x) # map from read_i to rank (integer vec of ranks, ties take top rank)
@@ -158,6 +166,11 @@ qtables2 <- function(x, qeff = FALSE) {
   rnk2unqi <- rep(seq(length(uniques)), tab[tab>0]) # map from rank to uniques index
   map <- rnk2unqi[rnk] # map from read index to unique index
   
+  if(handle.zerolen && npos < nread) { ######! Fix mapping to include NAs for the zero-length input reads
+    foo <- map
+    map <- rep(as.integer(NA), nread)
+    map[is.pos] <- foo
+  }
   # do matrices
   qmat <- as(quality(srt), "matrix") # map from read_i to quality
   if(qeff) qmat <- 10^(-qmat/10)  # Convert to nominal error probability first
