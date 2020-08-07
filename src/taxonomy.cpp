@@ -36,6 +36,7 @@ void tax_kvec(const char *seq, unsigned int k, unsigned char *kvec) {
   int kmer = 0;
   size_t n_kmers = (1 << (2*k));  // 4^k kmers
   for(i=0;i<n_kmers;i++) { kvec[i] = 0; }
+  ///!    memset(kvec, 0, n_kmers);   ///! Seems slower at first glance, but could use better head-to-head. No major change anyway.
 
   for(i=0; i<klen; i++) {
     kmer = tax_kmer(&seq[i], k);
@@ -64,9 +65,10 @@ unsigned int tax_karray(const char *seq, unsigned int k, int *karray) {
   return(j);
 }
 
-int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigned int n_kmers, unsigned int *genus_kmers, unsigned int ngenus, double *kmer_prior, double *genus_num_plus1) {
+int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigned int n_kmers, unsigned int *genus_kmers, unsigned int ngenus, double *kmer_prior, double *genus_num_plus1, double *lgk_numerator) {
   unsigned int pos;
   unsigned int *genus_kv;
+  double *lgk_v;
   int kmer, g, max_g = -1;
   unsigned int log_step = 50; ///! Need log10(ngenus+1) * log_step < 300 (max double ~ 10^308)
   double p, logp, max_logp = 1.0; // Init value to be replaced on first iteration
@@ -78,12 +80,13 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
     
   for(g=0;g<ngenus;g++) {
     genus_kv = &genus_kmers[g*n_kmers];
+    lgk_v = &lgk_numerator[g*n_kmers];
     logp = 0.0;
     p = 1.0;
     
     // Take the product of the numerators
     // Convert to log to avoid double overflow
-    for(pos=0;pos<arraylen;pos++) {
+/****    for(pos=0;pos<arraylen;pos++) {
       kmer = karray[pos];
       if(kmer < 0) { Rcpp::stop("Sequences to be classifed must be ACGT only."); }
       p *= (genus_kv[kmer] + kmer_prior[kmer]);
@@ -92,7 +95,27 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
         p = 1.0;
       }
     }
-    logp += log(p);
+    logp += log(p); ***/
+    for(pos=0;pos<arraylen;pos++) {
+      kmer = karray[pos];
+      if(kmer < 0) { Rcpp::stop("Sequences to be classifed must be ACGT only."); }
+      logp += lgk_v[kmer];
+    }
+/* ///!!!!!!!!  ADDD new code ABOVE
+    double foo; 
+    double bar;
+    for(pos=0;pos<arraylen;pos++) {
+      kmer = karray[pos];
+      if(kmer < 0) { Rcpp::stop("Sequences to be classifed must be ACGT only."); }
+      foo = genus_kv[kmer]; // only foo lookup plus addition ~145s elapsed (and this only adds only ~15s to bar lookup/+)
+      bar = kmer_prior[kmer]; // only bar lookup plus addition ~102s elapsed (and this adds only ~15s to foo lookup/+)
+      foo += bar;
+//      bar = log(bar); // log not trivial, but not the big issue... adds ~30s
+      foo = log(foo); // OK... this log adds ~60s?
+      logp += foo;
+///!      logp += ((double) kmer)/n_kmers; ///!
+    } */
+
     // Subtract the product of the denominators
     logp = logp - (arraylen * log(genus_num_plus1[g]));
     
@@ -113,169 +136,13 @@ int get_best_genus(int *karray, double *out_logp, unsigned int arraylen, unsigne
   return max_g;
 }
 
-//------------------------------------------------------------------
-// Assigns taxonomy to sequence based on provided ref seqs and corresponding taxonomies.
-// Single-threaded only.
-// DEPRECATED DEPREECATED DEPRECATED DEPRECATED DEPREECATED DEPRECATED DEPRECATED
-//
-// [[Rcpp::export]]
-Rcpp::List C_assign_taxonomy(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose) {
-  size_t i, j, g;
-  int kmer;
-  unsigned int k=8;
-  size_t n_kmers = (1 << (2*k));
-  size_t nseq = seqs.size();
-  if(nseq == 0) Rcpp::stop("No seqs provided to classify.");
-  size_t nref = refs.size();
-  if(nref != ref_to_genus.size()) Rcpp::stop("Length mismatch between number of references and map to genus.");
-  size_t ngenus = genusmat.nrow();
-
-  // Rprintf("Validated and 0-index ref_to_genus map.\n");
-  for(i=0;i<ref_to_genus.size();i++) {
-    ref_to_genus[i] = ref_to_genus[i]-1; // -> 0-index
-    if(ref_to_genus[i]<0 || ref_to_genus[i] >= ngenus) {
-      Rcpp::stop("Invalid map from references to genus.");
-    }
-  }
-  
-  // Rprintf("Count seqs in each genus (M_g).\n");
-  double *genus_num_plus1 = (double *) calloc(ngenus, sizeof(double));
-  if(genus_num_plus1 == NULL) Rcpp::stop("Memory allocation failed.");  
-  for(i=0;i<nref;i++) {
-    genus_num_plus1[ref_to_genus[i]]++;
-  }
-  for(g=0;g<ngenus;g++) {
-    genus_num_plus1[g]++;
-  }
-  
-  unsigned int *genus_kmers = (unsigned int *) calloc((ngenus * n_kmers), sizeof(unsigned int));
-  if(genus_kmers == NULL) Rcpp::stop("Memory allocation failed.");
-  unsigned int *genus_kv;
-  double *kmer_prior = (double *) calloc(n_kmers, sizeof(double));
-  if(kmer_prior == NULL) Rcpp::stop("Memory allocation failed.");
-  
-  unsigned char *ref_kv = (unsigned char *) malloc(n_kmers * sizeof(unsigned char));
-  if(ref_kv == NULL) Rcpp::stop("Memory allocation failed.");
-  for(i=0;i<nref;i++) {
-    // Calculate kmer-vector of this reference sequences
-    tax_kvec(refs[i].c_str(), k, ref_kv);
-    // Assign the kmer-counts to the appropriate "genus" and kmer-prior
-    g = ref_to_genus[i];
-    genus_kv = &genus_kmers[g*n_kmers];
-    for(kmer=0;kmer<n_kmers;kmer++) {
-      if(ref_kv[kmer]) { 
-        genus_kv[kmer]++;
-        kmer_prior[kmer]++;
-      }
-    }
-  }
-  
-  // Correct word priors
-  for(kmer=0;kmer<n_kmers;kmer++) {
-    kmer_prior[kmer] = (kmer_prior[kmer] + 0.5)/(1.0 + nref);
-  }
-  if(verbose) { Rprintf("Finished processing reference fasta."); }
-  
-  // Rprintf("Get size of the kmer arrays for the sequences to be classified.\n");
-  unsigned int max_arraylen = 0;
-  unsigned int seqlen;
-  for(i=0;i<nseq;i++) {
-    seqlen = seqs[i].size();
-///    if(seqlen < 50) Rcpp::stop("Sequences must be at least 50 nts to classify.");
-    if((seqlen-k+1) > max_arraylen) { max_arraylen = seqlen-k+1; }
-  }
-
-  // Rprintf("Allocate kmer array to be used by the seqs.");
-  int *karray = (int *) malloc(max_arraylen * sizeof(int));
-  if(karray == NULL) Rcpp::stop("Memory allocation failed.");
-  int *karray_rc = (int *) malloc(max_arraylen * sizeof(int));
-  if(karray_rc == NULL) Rcpp::stop("Memory allocation failed.");
-  
-  Rcpp::IntegerVector rval(nseq);
-  Rcpp::NumericVector unifs;
-  Rcpp::IntegerMatrix rboot(nseq, genusmat.ncol());
-  Rcpp::IntegerMatrix rboot_tax(nseq, 100);
-  
-  int max_g, max_g_rc, boot_g;
-  unsigned int boot, booti, boot_match, arraylen, arraylen_rc;
-  double logp, logp_rc;
-  
-  // Rprintf("Allocate bootstrap array to be used by the seqs.\n");
-  int *bootarray = (int *) malloc((max_arraylen/8) * sizeof(int));
-  if(bootarray == NULL) Rcpp::stop("Memory allocation failed.");
-  
-  // Rprintf("Classify the sequences.\n");
-  bool first_warning = true;
-  for(j=0;j<nseq;j++) {
-    seqlen = seqs[j].size();
-    if(seqlen < 50) { // No assignment made for very short seqeunces
-      if(first_warning) {
-        Rcpp::warning("Some sequences were less than 50nts and were not taxonomically classified."); 
-        first_warning=false;
-      }
-      // Now enter NA assignments and 0 bootstrap confidences for this sequence
-      rval(j) = NA_INTEGER;
-      for(i=0;i<genusmat.ncol();i++) {
-        rboot(j, i) = 0;
-      }
-      for(boot=0;boot<100;boot++) {
-        rboot_tax(j, boot) = NA_INTEGER;
-      }
-    } else {
-      arraylen = tax_karray(seqs[j].c_str(), k, karray);
-      // Find best hit
-      max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-      if(try_rc) { // see if rev-comp is a better match to refs
-        arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
-        if(arraylen != arraylen_rc) { 
-          Rcpp::stop("Discrepancy between forward and RC arraylen."); }
-        max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-        if(logp_rc > logp) { // rev-comp is better, replace with it
-          max_g = max_g_rc;
-          memcpy(karray, karray_rc, arraylen * sizeof(int));
-        }
-      }
-      
-      rval(j) = max_g+1; // 1-index for return
-  
-      // Generate random indices to be used for subsampling
-      unifs = Rcpp::runif(100*(arraylen/8));
-      booti = 0;
-      boot_match = 0;
-      for(boot=0;boot<100;boot++) {
-        for(i=0;i<(arraylen/8);i++,booti++) {
-          bootarray[i] = karray[(int) (arraylen*unifs[booti])];
-        }
-        boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
-        rboot_tax(j,boot) = boot_g+1; // 1-index for return
-        for(i=0;i<(genusmat.ncol());i++) {
-          if(genusmat(boot_g,i) == genusmat(max_g,i)) {
-            rboot(j,i)++;
-          } else {
-            break;
-          }
-        }
-        if(boot_g == max_g) { boot_match++; }
-      }
-    }
-    Rcpp::checkUserInterrupt();
-  }
-  
-  free(genus_num_plus1);
-  free(genus_kmers);
-  free(kmer_prior);
-  free(ref_kv);
-  free(karray);
-  free(karray_rc);
-  
-  return(Rcpp::List::create(_["tax"]=rval, _["boot"]=rboot, _["boot_tax"]=rboot_tax));
-}
 
 struct AssignParallel : public RcppParallel::Worker
 {
   // source data
   std::vector<std::string> seqs;
   std::vector<std::string> rcs;
+  double *lgk_numerator;
   double *genus_num_plus1;
   unsigned int *genus_kmers;
   double *kmer_prior;
@@ -295,10 +162,10 @@ struct AssignParallel : public RcppParallel::Worker
   bool try_rc;
   
   // initialize with source and destination
-  AssignParallel(std::vector<std::string> seqs, std::vector<std::string> rcs, double *genus_num_plus1, unsigned int *genus_kmers,
+  AssignParallel(std::vector<std::string> seqs, std::vector<std::string> rcs, double *lgk_numerator, double *genus_num_plus1, unsigned int *genus_kmers,
                  double *kmer_prior, int *C_genusmat, double *C_unifs, int *C_rboot, int *C_rboot_tax, int *C_rval, 
                  unsigned int k, size_t n_kmers, size_t ngenus, size_t nlevel, unsigned int max_arraylen, bool try_rc)
-    : seqs(seqs), rcs(rcs), genus_num_plus1(genus_num_plus1), genus_kmers(genus_kmers), kmer_prior(kmer_prior), 
+    : seqs(seqs), rcs(rcs), lgk_numerator(lgk_numerator), genus_num_plus1(genus_num_plus1), genus_kmers(genus_kmers), kmer_prior(kmer_prior), 
       C_genusmat(C_genusmat), C_unifs(C_unifs), C_rboot(C_rboot), C_rboot_tax(C_rboot_tax), C_rval(C_rval), 
       k(k), n_kmers(n_kmers), ngenus(ngenus), nlevel(nlevel), max_arraylen(max_arraylen), try_rc(try_rc) {}
 
@@ -328,11 +195,11 @@ struct AssignParallel : public RcppParallel::Worker
         arraylen = tax_karray(seqs[j].c_str(), k, karray);
   
         // Find best hit
-        max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+        max_g = get_best_genus(karray, &logp, arraylen, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1, lgk_numerator);
         if(try_rc) { // see if rev-comp is a better match to refs
           arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
           if(arraylen != arraylen_rc) { Rcpp::stop("Discrepancy between forward and RC arraylen."); }
-          max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+          max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1, lgk_numerator);
           if(logp_rc > logp) { // rev-comp is better, replace with it
             max_g = max_g_rc;
             memcpy(karray, karray_rc, arraylen * sizeof(int));
@@ -348,7 +215,7 @@ struct AssignParallel : public RcppParallel::Worker
           for(i=0;i<(arraylen/8);i++,booti++) {
             bootarray[i] = karray[(int) (arraylen*unifs[booti])];
           }
-          boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1);
+          boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, genus_kmers, ngenus, kmer_prior, genus_num_plus1, lgk_numerator);
           C_rboot_tax[j*100+boot] = boot_g+1; // 1-index for return
           for(i=0;i<nlevel;i++) {
             if(C_genusmat[boot_g*nlevel+i] == C_genusmat[max_g*nlevel+i]) {
@@ -423,6 +290,19 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   for(kmer=0;kmer<n_kmers;kmer++) {
     kmer_prior[kmer] = (kmer_prior[kmer] + 0.5)/(1.0 + nref);
   }
+  
+  ///! Create log genus-kmer numerator
+  double *lgk_v;
+  double *lgk_numerator = (double *) malloc((ngenus * n_kmers) * sizeof(double)); //E
+  if(lgk_numerator == NULL) Rcpp::stop("Memory allocation failed.");
+  for(g=0;g<ngenus;g++) {
+    genus_kv = &genus_kmers[g*n_kmers];
+    lgk_v = &lgk_numerator[g*n_kmers];
+    for(kmer=0;kmer<n_kmers;kmer++) {
+      lgk_v[kmer] = log(genus_kv[kmer] + kmer_prior[kmer]);
+    }
+  }
+  
   if(verbose) { Rprintf("Finished processing reference fasta."); }
   
   // Rprintf("Get size of the kmer arrays for the sequences to be classified.\n");
@@ -461,7 +341,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
     }
   }
   
-  AssignParallel assignParallel(seqs, rcs, genus_num_plus1, genus_kmers, kmer_prior, C_genusmat, C_unifs, C_rboot, C_rboot_tax, C_rval, k, n_kmers, ngenus, nlevel, max_arraylen, try_rc);
+  AssignParallel assignParallel(seqs, rcs, lgk_numerator, genus_num_plus1, genus_kmers, kmer_prior, C_genusmat, C_unifs, C_rboot, C_rboot_tax, C_rval, k, n_kmers, ngenus, nlevel, max_arraylen, try_rc);
   int INTERRUPT_BLOCK_SIZE=128;
   for(i=0;i<nseq;i+=INTERRUPT_BLOCK_SIZE) {
     j = i+INTERRUPT_BLOCK_SIZE;
@@ -494,6 +374,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   free(genus_kmers);
   free(kmer_prior);
   free(ref_kv);
+  free(lgk_numerator);
 
   return(Rcpp::List::create(_["tax"]=rval, _["boot"]=rboot, _["boot_tax"]=rboot_tax));
 }
