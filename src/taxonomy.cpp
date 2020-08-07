@@ -29,6 +29,7 @@ int tax_kmer(const char *seq, unsigned int k) {
   return(kmer);
 }
 
+// Sets to 1 (TRUE) the value of kvec corresponding to each valid kmer index in the provided sequence
 void tax_kvec(const char *seq, unsigned int k, unsigned char *kvec) {
   unsigned int i;
   unsigned int len = strlen(seq);
@@ -48,6 +49,7 @@ void tax_kvec(const char *seq, unsigned int k, unsigned char *kvec) {
   }
 }
 
+// Writes all valid (>=0) kmer indices in the provided sequence to karray. Returns number written.
 unsigned int tax_karray(const char *seq, unsigned int k, int *karray) {
   unsigned int i, j;
   int kmer;
@@ -75,20 +77,36 @@ int get_best_genus(int *karray, float *out_logp, unsigned int arraylen, unsigned
   std::random_device rd;  //Will be used to obtain a seed for the random number engine
   std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
   std::uniform_real_distribution<> cunif(0.0, 1.0);
-    
+  
   for(g=0;g<ngenus;g++) {
     lgk_v = &lgk_numerator[g*n_kmers];
     logp = 0.0;
 
     // Take the product of the numerators -> sum of logs
+    // This is the rate limiting step of the entire assignTaxonomy (on query sets of non-trival size)
     for(pos=0;pos<arraylen;pos++) {
       kmer = karray[pos];
-      if(kmer < 0) { Rcpp::stop("Sequences to be classifed must be ACGT only."); }
       logp += lgk_v[kmer];
     }
 
+/* Can't manage a speedup here. Most time below spent on the second loop, moving values around...
+  size_t *kst;
+  size_t kst_array[9999];
+  float *lgk;
+  float lgk_array[9999]; ///!
+    for(pos=0;pos<arraylen;pos++) {
+      kst_array[pos] = (size_t) karray[pos];
+    }
+    for(kst=&kst_array[0],lgk=&lgk_array[0];kst<&kst_array[arraylen];kst++,lgk++) {
+      *lgk = lgk_v[*kst];
+    }
+    for(lgk=&lgk_array[0];lgk<&lgk_array[arraylen];lgk++) {
+      logp += *lgk;
+    }
+*/
+
     // Subtract the product of the denominators
-    logp = logp - (arraylen * log(genus_num_plus1[g]));
+    logp = logp - (arraylen * logf(genus_num_plus1[g]));
     
     if(max_logp > 0 || logp>max_logp) { // Store if new max
       max_logp = logp;
@@ -266,7 +284,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   for(g=0;g<ngenus;g++) {
     lgk_v = &lgk_numerator[g*n_kmers];
     for(kmer=0;kmer<n_kmers;kmer++) {
-      lgk_v[kmer] = log(lgk_v[kmer] + kmer_prior[kmer]);
+      lgk_v[kmer] = logf(lgk_v[kmer] + kmer_prior[kmer]);
     }
   }
   
@@ -277,13 +295,6 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   unsigned int seqlen;
   for(i=0;i<nseq;i++) {
     seqlen = seqs[i].size();
-///    if(seqlen < 50) {
-///      free(genus_num_plus1);
-///      free(genus_kmers);
-///      free(kmer_prior);
-///      free(ref_kv);
-///      Rcpp::stop("Sequences must be at least 50 nts to classify.");
-///    }
     if((seqlen-k+1) > max_arraylen) { max_arraylen = seqlen-k+1; }
   }
   
@@ -338,7 +349,6 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   free(C_rval);
   free(C_genusmat);
   free(genus_num_plus1);
-//  free(genus_kmers);
   free(kmer_prior);
   free(ref_kv);
   free(lgk_numerator);
