@@ -61,10 +61,6 @@ C_nwvec <- function(s1, s2, match, mismatch, gap_p, band, endsfree) {
     .Call('_dada2_C_nwvec', PACKAGE = 'dada2', s1, s2, match, mismatch, gap_p, band, endsfree)
 }
 
-C_assign_taxonomy <- function(seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose) {
-    .Call('_dada2_C_assign_taxonomy', PACKAGE = 'dada2', seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose)
-}
-
 C_assign_taxonomy2 <- function(seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose) {
     .Call('_dada2_C_assign_taxonomy2', PACKAGE = 'dada2', seqs, rcs, refs, ref_to_genus, genusmat, try_rc, verbose)
 }
