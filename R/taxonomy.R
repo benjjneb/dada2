@@ -465,6 +465,136 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
              width=20000L, compress=compress)
 }
 
+#' This function creates the dada2 assignTaxonomy training fasta for the official Silva NR99
+#' release files. If `include.species`=TRUE, a 7th taxonomic level (species) will be added based on the
+#' Genus species binomial in the Silva taxonomy string, if present and valid.
+#' 
+#' ## Silva release v138
+#' path <- "~/tax/Silva/v138"
+#' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138_SSURef_NR99_tax_silva.fasta.gz"), 
+#'     file.path(path, "tax_slv_ssu_138.txt"), 
+#'     "~/Desktop/silva_nr99_v138_train_set.fa.gz")
+#' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138_SSURef_NR99_tax_silva.fasta.gz"), 
+#'     file.path(path, "tax_slv_ssu_138.txt"), 
+#'     include.species=TRUE, "~/Desktop/silva_nr99_v138_wSpecies_train_set.fa.gz")
+#' 
+#' @importFrom ShortRead readFasta
+#' @importFrom ShortRead writeFasta
+#' @importFrom ShortRead sread
+#' @importFrom Biostrings BStringSet
+#' @importFrom utils read.table
+#' @keywords internal
+makeTaxonomyFasta_SilvaNR <- function(fin, ftax, fout, include.species=FALSE, compress=TRUE) {
+  xset <- DNAStringSet(readRNAStringSet(fin, format="fasta"))
+  # taxl: The taxonmic strings or (l)ines associated with each entry. Named by the sequence ID/accession.
+  taxl <- names(xset)
+  names(taxl) <- sapply(strsplit(names(xset), "\\s"), `[`, 1)
+  if(any(duplicated(names(taxl)))) stop("Duplicated sequence IDs detected.")
+  names(xset) <- names(taxl)
+  taxl <- gsub("^[A-Za-z0-9.]+\\s", "", taxl)
+  # Fix Silva- or release-specific errors
+  taxl <- gsub(";YM;", ";", taxl) # YM bacterial suborder included in 138 Release in error (confirmed by Silva)
+  ##  taxl <- gsub(";Rahnella1", ";Rahnella", taxl) # Rahnella1 genus seems like an error, shares same species w/ Rahnella, 
+  ##  But! also in official tax file. Maybe check with Silva on this one.
+  # taxa: A list of the ordered taxonomic levels corresponding to each reference sequence. Named by the sequence ID/accession.
+  taxa <- strsplit(taxl, ";")
+  # Read in the defined Silva taxonomic levels, e.g. Bacteria;Desulfobacterota;Desulfobulbia;Desulfobulbales;Desulfurivibrionaceae;
+  silva.taxa <- read.table(ftax, sep="\t", col.names=c("Taxon", "V2", "Level", "V4", "V5"), stringsAsFactors=FALSE)
+  silva.taxa <- silva.taxa[,c("Taxon", "Level")]
+  # Subset down to Bacteria and Archaea
+  kingdom <- sapply(strsplit(taxl, ";"), `[`, 1)
+  taxl.ba <- taxl[kingdom %in% c("Bacteria", "Archaea")]
+  taxa.ba <- taxa[names(taxl.ba)]
+  # Create 6-column matrix with Silva taxonomic assignment for each sequence at each level from Kingdom to Genus (NA if no assignment)
+  taxa.ba.mat <- matrix(sapply(taxa.ba, function(flds) {
+    c(flds[1], flds[2], flds[3], flds[4], flds[5], flds[6])
+  }), ncol=6, byrow=TRUE)
+  rownames(taxa.ba.mat) <- names(taxl.ba)
+  # Create 6-column matrix with full Silva taxonomic string at each level for each sequence, from Kingdom to Genus
+  # Strings will include NA levels if no assignment at that level, e.g. Bacteria;Firmicutes;NA;NA
+  taxa.ba.mat.string <- matrix("UNDEF", nrow=nrow(taxa.ba.mat), ncol=ncol(taxa.ba.mat))
+  rownames(taxa.ba.mat.string) <- names(taxl.ba)
+  taxa.ba.mat.string[,1] <- paste0(taxa.ba.mat[,1],";")
+  for(col in seq(2,6)) {
+    taxa.ba.mat.string[,col] <- paste0(taxa.ba.mat.string[,col-1], taxa.ba.mat[,col],";")
+  }
+  if(any(taxa.ba.mat.string == "UNDEF")) stop("Taxon string matrix was not fully initialized.")
+  # Define the set of valid taxonomic assignment by their appearance in the list of valid Silva taxonomic levels
+  taxa.ba.mat.is_valid <- matrix(taxa.ba.mat.string %in% silva.taxa$Taxon, ncol=6)
+  # Update taxa.ba.mat matrix by replacing invalid entries with NAs
+  taxa.ba.mat[!taxa.ba.mat.is_valid] <- NA
+  # Also replace "uncultured" taxonomic ranks with NAs (note, uncultured only shows up as the terminal "assigned" rank)
+  taxa.ba.mat[taxa.ba.mat %in% c("Uncultured", "uncultured")] <- NA
+  
+  ######### ADD SPECIES PART HERE ##############
+  if(include.species) {
+    # Add the 7th column, which will be the species column
+    taxa.ba.mat <- cbind(taxa.ba.mat, 
+                         matrix(sapply(taxa.ba, `[`, 7), ncol=1, byrow=TRUE))
+    # Get validated genus from the matrix
+    genus <- taxa.ba.mat[,6]
+    genus <- gsub("Candidatus ", "", genus)
+    genus <- gsub("\\[", "", genus)
+    genus <- gsub("\\]", "", genus)
+    # Get the "binomial" string from the 7th field in the Silva taxonomic annotation
+    # The "binomial" field is not curated like the other Silva taxonomic levels, and can have varying info
+    # We assume that the first two words are the Genus species binomial, when there is a valid one in the field
+    # NOTE: the binomial is actually not always in the 7th field, so this isn't strictly correct.
+    # the binomial is in the "last" field, which may be <7 when not all the levels down to genus are assigned.
+    # But we are throwing away everything that doesn't match the genus anyway, so that case
+    # doesn't need to be handled correctly here.
+    binom <- taxa.ba.mat[,7]
+    binom <- gsub("Candidatus ", "", binom)
+    binom <- gsub("\\[", "", binom)
+    binom <- gsub("\\]", "", binom)
+    # Pull out the first two fields, and turn binom into a two column matrix (Genus, species)
+    binom <- cbind(sapply(strsplit(binom, "\\s"), `[`, 1),
+                   sapply(strsplit(binom, "\\s"), `[`, 2))
+    # Identify binomials that match the curated genus
+    gen.match <- mapply(dada2:::matchGenera, genus, binom[,1], split.glyph="-")
+    # Identify some other types of invalid species names
+    is.NA <- apply(binom, 1, function(x) any(is.na(x)))
+    is.sp <- grepl("sp\\.", binom[,2]) # "sp." is not a valid species name, just a generic
+    is.endo <- binom[,1] %in% "endosymbiont" | binom[,2] %in% "endosymbiont"
+    is.uncult <- grepl("[Uu]ncultured", binom[,1]) | grepl("[Uu]ncultured", binom[,2])
+    is.unident <- grepl("[Uu]nidentified", binom[,1]) | grepl("[Uu]nidentified", binom[,2])
+    # Define the "valid" species, and set invalid species to NA in the taxonomic matrix
+    valid.spec <- gen.match & !is.NA & !is.sp & !is.endo & !is.uncult & !is.unident
+    binom[!valid.spec,2] <- NA
+    taxa.ba.mat[,7] <- binom[,2]
+  }
+  # Organize a small number of Eukaryota sequences for outgroup purposes, keeping only the Eukaryota Kingdom taxonomic assignment
+  set.seed(100); N_EUK <- 100
+  euk.keep <- sample(names(taxl)[kingdom %in% "Eukaryota"], N_EUK)
+  taxa.euk.mat <- matrix("", nrow=N_EUK, ncol=ncol(taxa.ba.mat))
+  rownames(taxa.euk.mat) <- euk.keep
+  taxa.euk.mat[,1] <- "Eukaryota"
+  taxa.euk.mat[,2:ncol(taxa.euk.mat)] <- NA
+  
+  # Now need to make the final training fasta in DADA2 format.
+  taxa.mat.final <- rbind(taxa.ba.mat, taxa.euk.mat)
+  taxa.string.final <- apply(taxa.mat.final, 1, function(x) {
+    tst <- paste(x, collapse=";")
+    tst <- paste0(tst, ";")
+    tst <- gsub("NA;", "", tst)
+    tst
+  })
+  
+  if(any(is.na(names(taxa.string.final)))) stop("NA names in the final set of taxon strings.")
+  if(!all(names(taxa.string.final) %in% names(xset))) stop("Some names of the final set of taxon strings don't match sequence names.")
+  xset.out <- xset[names(taxa.string.final)]
+  
+  ## Add some verbose output describing what happened.
+  cat(length(xset.out), "reference sequences were output.\n")
+  print(table(taxa.mat.final[,1], useNA="ifany"))
+  if(include.species) cat(sum(!is.na(taxa.mat.final[,7])), "entries include species names.\n")
+  
+  writeFasta(ShortRead(unname(xset.out), BStringSet(taxa.string.final)), fout,
+             width=20000L, compress=compress)
+}
+
+#' DEPRECATED in favor of `makeTaxonomyFasta_SilvaNR``
+#' 
 #' This function creates the dada2 assignTaxonomy training fasta for the Silva .align file
 #' generated by the Mothur project.
 #' 
