@@ -2,6 +2,8 @@
 #include <Rcpp.h>
 #include <RcppParallel.h>
 #include <random>
+#include <algorithm>
+#define NBOOT 100
   
 using namespace Rcpp;
 
@@ -64,14 +66,15 @@ unsigned int tax_karray(const char *seq, unsigned int k, int *karray) {
       j++;
     }
   }
+  std::sort(karray, karray+j);
   return(j);
 }
 
-int get_best_genus(int *karray, float *out_logp, unsigned int arraylen, unsigned int n_kmers, unsigned int ngenus, float *kmer_prior, float *genus_num_plus1, float *lgk_numerator) {
+int get_best_genus(int *karray, float *out_logp, unsigned int arraylen, unsigned int n_kmers, unsigned int ngenus, float *lgk_probability) {
   unsigned int pos;
   float *lgk_v;
   int kmer, g, max_g = -1;
-  float logp, max_logp = 1.0; // Init value to be replaced on first iteration
+  float logp, max_logp = -FLT_MAX; // Init value to be replaced on first iteration
   double rv; // Dummy random variable
   unsigned int nmax=0; // Number of times the current max logp has been seen
   std::random_device rd;  //Will be used to obtain a seed for the random number engine
@@ -79,35 +82,17 @@ int get_best_genus(int *karray, float *out_logp, unsigned int arraylen, unsigned
   std::uniform_real_distribution<> cunif(0.0, 1.0);
   
   for(g=0;g<ngenus;g++) {
-    lgk_v = &lgk_numerator[g*n_kmers];
+    lgk_v = &lgk_probability[g*n_kmers];
     logp = 0.0;
 
-    // Take the product of the numerators -> sum of logs
+    // Take the product of the probabilitys -> sum of logs
     // This is the rate limiting step of the entire assignTaxonomy (on query sets of non-trival size)
     for(pos=0;pos<arraylen;pos++) {
       kmer = karray[pos];
       logp += lgk_v[kmer];
+      if(logp < max_logp) { break; }
     }
 
-/* Can't manage a speedup here. Most time below spent on the second loop, moving values around...
-  size_t *kst;
-  size_t kst_array[9999];
-  float *lgk;
-  float lgk_array[9999]; ///!
-    for(pos=0;pos<arraylen;pos++) {
-      kst_array[pos] = (size_t) karray[pos];
-    }
-    for(kst=&kst_array[0],lgk=&lgk_array[0];kst<&kst_array[arraylen];kst++,lgk++) {
-      *lgk = lgk_v[*kst];
-    }
-    for(lgk=&lgk_array[0];lgk<&lgk_array[arraylen];lgk++) {
-      logp += *lgk;
-    }
-*/
-
-    // Subtract the product of the denominators
-    logp = logp - (arraylen * logf(genus_num_plus1[g]));
-    
     if(max_logp > 0 || logp>max_logp) { // Store if new max
       max_logp = logp;
       max_g = g;
@@ -115,7 +100,6 @@ int get_best_genus(int *karray, float *out_logp, unsigned int arraylen, unsigned
     } else if (max_logp == logp) { // With uniform prob, store if equal to current max
       nmax++;
       rv = (double) cunif(gen);
-      ///!      rv = (double) Rcpp::runif(1)[0];
       if(rv < 1.0/nmax) {
         max_g = g;
       }
@@ -131,9 +115,7 @@ struct AssignParallel : public RcppParallel::Worker
   // source data
   std::vector<std::string> seqs;
   std::vector<std::string> rcs;
-  float *lgk_numerator;
-  float *genus_num_plus1;
-  float *kmer_prior;
+  float *lgk_probability;
   int *C_genusmat;
   double *C_unifs;
   int *C_rboot;
@@ -150,10 +132,10 @@ struct AssignParallel : public RcppParallel::Worker
   bool try_rc;
   
   // initialize with source and destination
-  AssignParallel(std::vector<std::string> seqs, std::vector<std::string> rcs, float *lgk_numerator, float *genus_num_plus1,
-                 float *kmer_prior, int *C_genusmat, double *C_unifs, int *C_rboot, int *C_rboot_tax, int *C_rval, 
+  AssignParallel(std::vector<std::string> seqs, std::vector<std::string> rcs, float *lgk_probability,
+                 int *C_genusmat, double *C_unifs, int *C_rboot, int *C_rboot_tax, int *C_rval, 
                  unsigned int k, size_t n_kmers, size_t ngenus, size_t nlevel, unsigned int max_arraylen, bool try_rc)
-    : seqs(seqs), rcs(rcs), lgk_numerator(lgk_numerator), genus_num_plus1(genus_num_plus1), kmer_prior(kmer_prior), 
+    : seqs(seqs), rcs(rcs), lgk_probability(lgk_probability), 
       C_genusmat(C_genusmat), C_unifs(C_unifs), C_rboot(C_rboot), C_rboot_tax(C_rboot_tax), C_rval(C_rval), 
       k(k), n_kmers(n_kmers), ngenus(ngenus), nlevel(nlevel), max_arraylen(max_arraylen), try_rc(try_rc) {}
 
@@ -176,18 +158,18 @@ struct AssignParallel : public RcppParallel::Worker
         for(i=0;i<nlevel;i++) {
           C_rboot[j*nlevel+i] = 0;
         }
-        for(boot=0;boot<100;boot++) {
-          C_rboot_tax[j*100 + boot] = NA_INTEGER;
+        for(boot=0;boot<NBOOT;boot++) {
+          C_rboot_tax[j*NBOOT + boot] = NA_INTEGER;
         }
       } else {
         arraylen = tax_karray(seqs[j].c_str(), k, karray);
   
         // Find best hit
-        max_g = get_best_genus(karray, &logp, arraylen, n_kmers, ngenus, kmer_prior, genus_num_plus1, lgk_numerator);
+        max_g = get_best_genus(karray, &logp, arraylen, n_kmers, ngenus, lgk_probability);
         if(try_rc) { // see if rev-comp is a better match to refs
           arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
           if(arraylen != arraylen_rc) { Rcpp::stop("Discrepancy between forward and RC arraylen."); }
-          max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, ngenus, kmer_prior, genus_num_plus1, lgk_numerator);
+          max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, ngenus, lgk_probability);
           if(logp_rc > logp) { // rev-comp is better, replace with it
             max_g = max_g_rc;
             memcpy(karray, karray_rc, arraylen * sizeof(int));
@@ -199,12 +181,12 @@ struct AssignParallel : public RcppParallel::Worker
         unifs = &C_unifs[j*max_arraylen];
         booti = 0;
         boot_match = 0;
-        for(boot=0;boot<100;boot++) {
+        for(boot=0;boot<NBOOT;boot++) {
           for(i=0;i<(arraylen/8);i++,booti++) {
             bootarray[i] = karray[(int) (arraylen*unifs[booti])];
           }
-          boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, ngenus, kmer_prior, genus_num_plus1, lgk_numerator);
-          C_rboot_tax[j*100+boot] = boot_g+1; // 1-index for return
+          boot_g = get_best_genus(bootarray, &logp, (arraylen/8), n_kmers, ngenus, lgk_probability);
+          C_rboot_tax[j*NBOOT+boot] = boot_g+1; // 1-index for return
           for(i=0;i<nlevel;i++) {
             if(C_genusmat[boot_g*nlevel+i] == C_genusmat[max_g*nlevel+i]) {
               C_rboot[j*nlevel+i]++;
@@ -212,7 +194,7 @@ struct AssignParallel : public RcppParallel::Worker
               break;
             }
           }
-        } // for(boot=0;boot<100;boot++)
+        } // for(boot=0;boot<NBOOT;boot++)
       }
     } // for(std::size_t j=begin;j<end;j++)
   }
@@ -255,8 +237,8 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   float *kmer_prior = (float *) calloc(n_kmers, sizeof(float)); //E
   if(kmer_prior == NULL) Rcpp::stop("Memory allocation failed.");
   float *lgk_v;
-  float *lgk_numerator = (float *) calloc((ngenus * n_kmers), sizeof(float)); //E
-  if(lgk_numerator == NULL) Rcpp::stop("Memory allocation failed.");
+  float *lgk_probability = (float *) calloc((ngenus * n_kmers), sizeof(float)); //E
+  if(lgk_probability == NULL) Rcpp::stop("Memory allocation failed.");
   
   unsigned char *ref_kv = (unsigned char *) malloc(n_kmers * sizeof(unsigned char)); //E
   if(ref_kv == NULL) Rcpp::stop("Memory allocation failed.");
@@ -266,7 +248,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
     tax_kvec(refs[i].c_str(), k, ref_kv);
     // Assign the kmer-counts to the appropriate "genus" and kmer-prior
     g = ref_to_genus[i];
-    lgk_v = &lgk_numerator[g*n_kmers];
+    lgk_v = &lgk_probability[g*n_kmers];
     for(kmer=0;kmer<n_kmers;kmer++) {
       if(ref_kv[kmer]) { 
         lgk_v[kmer]++;
@@ -280,11 +262,11 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
     kmer_prior[kmer] = (kmer_prior[kmer] + 0.5)/(1.0 + nref);
   }
   
-  ///! Create log genus-kmer numerator
+  ///! Create log genus-kmer probability
   for(g=0;g<ngenus;g++) {
-    lgk_v = &lgk_numerator[g*n_kmers];
+    lgk_v = &lgk_probability[g*n_kmers];
     for(kmer=0;kmer<n_kmers;kmer++) {
-      lgk_v[kmer] = logf(lgk_v[kmer] + kmer_prior[kmer]);
+      lgk_v[kmer] = logf((lgk_v[kmer] + kmer_prior[kmer])/genus_num_plus1[g]);
     }
   }
   
@@ -300,7 +282,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   
   // Rprintf("Generate random numbers for bootstrapping.");
   Rcpp::NumericVector unifs;
-  unifs = Rcpp::runif(nseq*100*(max_arraylen/8));
+  unifs = Rcpp::runif(nseq*NBOOT*(max_arraylen/8));
   double *C_unifs = (double *) malloc(unifs.size() * sizeof(double)); //E
   for(i=0;i<unifs.size();i++) { C_unifs[i] = unifs(i); }
   
@@ -309,8 +291,8 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   int *C_rval = (int *) malloc(nseq * sizeof(int)); //E
   Rcpp::IntegerMatrix rboot(nseq, nlevel);
   int *C_rboot = (int *) calloc(nseq * nlevel, sizeof(int)); //E
-  Rcpp::IntegerMatrix rboot_tax(nseq, 100);
-  int *C_rboot_tax = (int *) malloc(nseq * 100 * sizeof(int)); //E
+  Rcpp::IntegerMatrix rboot_tax(nseq, NBOOT);
+  int *C_rboot_tax = (int *) malloc(nseq * NBOOT * sizeof(int)); //E
   int *C_genusmat = (int *) malloc(ngenus * nlevel * sizeof(int)); //E
   if(C_rval == NULL || C_rboot == NULL || C_rboot_tax == NULL || C_genusmat == NULL) Rcpp::stop("Memory allocation failed.");
   for(i=0;i<ngenus;i++) {
@@ -319,7 +301,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
     }
   }
   
-  AssignParallel assignParallel(seqs, rcs, lgk_numerator, genus_num_plus1, kmer_prior, C_genusmat, C_unifs, C_rboot, C_rboot_tax, C_rval, k, n_kmers, ngenus, nlevel, max_arraylen, try_rc);
+  AssignParallel assignParallel(seqs, rcs, lgk_probability, C_genusmat, C_unifs, C_rboot, C_rboot_tax, C_rval, k, n_kmers, ngenus, nlevel, max_arraylen, try_rc);
   int INTERRUPT_BLOCK_SIZE=128;
   for(i=0;i<nseq;i+=INTERRUPT_BLOCK_SIZE) {
     j = i+INTERRUPT_BLOCK_SIZE;
@@ -338,8 +320,8 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
     }
   }
   for(i=0;i<nseq;i++) {
-    for(j=0;j<100;j++) {
-      rboot_tax(i,j) = C_rboot_tax[i*100 + j];
+    for(j=0;j<NBOOT;j++) {
+      rboot_tax(i,j) = C_rboot_tax[i*NBOOT + j];
     }
   }
   
@@ -351,7 +333,7 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   free(genus_num_plus1);
   free(kmer_prior);
   free(ref_kv);
-  free(lgk_numerator);
+  free(lgk_probability);
 
   return(Rcpp::List::create(_["tax"]=rval, _["boot"]=rboot, _["boot_tax"]=rboot_tax));
 }
