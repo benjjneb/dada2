@@ -42,7 +42,7 @@
 #' derep1.35 = derepFastq(testFastq, 35, TRUE)
 #' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
-derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto", handle.zerolen=TRUE){
+derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto") {
   if(!is.character(fls)) { stop("File paths must be provided in character format.") }
   if(length(fls)==1 && dir.exists(fls)) { fls <- parseFastqDirectory(fls) }
   if(!all(file.exists(fls))) { stop("Not all provided files exist.") }
@@ -56,7 +56,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto", hand
     f <- FastqStreamer(fl, n = n)
     suppressWarnings(fq <- yield(f, qualityType = qualityType))
     
-    out <- qtables2(fq, FALSE, handle.zerolen=handle.zerolen) ###ITS
+    out <- qtables2(fq, FALSE, handle.zerolen=TRUE) ###ITS
     
     derepCounts <- out$uniques
     derepQuals <- out$cum_quals
@@ -134,6 +134,9 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto", hand
 #' @param qeff \code{logical(1)}.
 #'  Calculate average quality by first transforming to expected error rate.
 #' 
+#' @param handle.zerolen \code{logical(1)}.
+#' Default TRUE. If TRUE, gracefully excludes zero-length sequences.
+#' 
 #' @return List.
 #'  Matches format of derep-class object.
 #' 
@@ -148,7 +151,7 @@ qtables2 <- function(x, qeff = FALSE, handle.zerolen=TRUE) {
   nread <- length(x)
   npos <- sum(width(x) > 0)
   if(npos == 0) { stop("Only zero-length sequences detected during dereplication.") }
-  if(handle.zerolen && npos < nread) { ######! Some zero length sequences
+  if(handle.zerolen && npos < nread) { # Some zero length sequences in input
     warning("Zero-length sequences detected during dereplication. They will be ignored.")
     is.pos <- width(x) > 0
     x <- x[is.pos]
@@ -166,7 +169,7 @@ qtables2 <- function(x, qeff = FALSE, handle.zerolen=TRUE) {
   rnk2unqi <- rep(seq(length(uniques)), tab[tab>0]) # map from rank to uniques index
   map <- rnk2unqi[rnk] # map from read index to unique index
   
-  if(handle.zerolen && npos < nread) { ######! Fix mapping to include NAs for the zero-length input reads
+  if(handle.zerolen && npos < nread) { # Fix mapping to include NAs for the zero-length input reads
     foo <- map
     map <- rep(as.integer(NA), nread)
     map[is.pos] <- foo
