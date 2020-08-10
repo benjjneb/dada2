@@ -4,10 +4,19 @@
 \alias{learnErrors}
 \title{Learns the error rates from an input list, or vector, of file names or a list of \code{\link{derep-class}} objects.}
 \usage{
-learnErrors(fls, nbases = 1e+08, nreads = NULL,
-  errorEstimationFunction = loessErrfun, multithread = FALSE,
-  randomize = FALSE, MAX_CONSIST = 10, OMEGA_C = 0,
-  qualityType = "Auto", verbose = FALSE, ...)
+learnErrors(
+  fls,
+  nbases = 1e+08,
+  nreads = NULL,
+  errorEstimationFunction = loessErrfun,
+  multithread = FALSE,
+  randomize = FALSE,
+  MAX_CONSIST = 10,
+  OMEGA_C = 0,
+  qualityType = "Auto",
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.

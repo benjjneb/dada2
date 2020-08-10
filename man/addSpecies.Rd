@@ -4,8 +4,14 @@
 \alias{addSpecies}
 \title{Add species-level annotation to a taxonomic table.}
 \usage{
-addSpecies(taxtab, refFasta, allowMultiple = FALSE, tryRC = FALSE,
-  n = 2000, verbose = FALSE)
+addSpecies(
+  taxtab,
+  refFasta,
+  allowMultiple = FALSE,
+  tryRC = FALSE,
+  n = 2000,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{taxtab}{(Required). A taxonomic table, the output of \code{\link{assignTaxonomy}}.}

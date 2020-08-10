@@ -3,9 +3,11 @@
 \name{tperr1}
 \alias{tperr1}
 \title{An empirical error matrix.}
-\format{A numerical matrix with 16 rows and 41 columns.
+\format{
+A numerical matrix with 16 rows and 41 columns.
  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
- Columns correspond to consensus quality scores 0 to 40.}
+ Columns correspond to consensus quality scores 0 to 40.
+}
 \description{
 A dataset containing the error matrix estimated by fitting a piecewise linear model to
 the errors observed in the mock community featured in Schirmer 2015 (metaID 35).

@@ -3,9 +3,11 @@
 \name{errBalancedF}
 \alias{errBalancedF}
 \title{An empirical error matrix.}
-\format{A numerical matrix with 16 rows and 41 columns.
+\format{
+A numerical matrix with 16 rows and 41 columns.
  Rows correspond to the 16 transition (eg. A2A, A2C, ...)
- Columns correspond to consensus quality scores 0 to 40.}
+ Columns correspond to consensus quality scores 0 to 40.
+}
 \description{
 A dataset containing the error matrix estimated by DADA2 from the forward reads of the
 Illumina Miseq 2x250 sequenced Balanced mock community (see manuscript).

@@ -4,9 +4,15 @@
 \alias{plotErrors}
 \title{Plot observed and estimated error rates.}
 \usage{
-plotErrors(dq, nti = c("A", "C", "G", "T"), ntj = c("A", "C", "G",
-  "T"), obs = TRUE, err_out = TRUE, err_in = FALSE,
-  nominalQ = FALSE)
+plotErrors(
+  dq,
+  nti = c("A", "C", "G", "T"),
+  ntj = c("A", "C", "G", "T"),
+  obs = TRUE,
+  err_out = TRUE,
+  err_in = FALSE,
+  nominalQ = FALSE
+)
 }
 \arguments{
 \item{dq}{(Required). An object from which error rates can be extracted. Valid inputs are

@@ -4,8 +4,13 @@
 \alias{isBimera}
 \title{Determine if input sequence is a bimera of putative parent sequences.}
 \usage{
-isBimera(sq, parents, allowOneOff = FALSE, minOneOffParentDistance = 4,
-  maxShift = 16)
+isBimera(
+  sq,
+  parents,
+  allowOneOff = FALSE,
+  minOneOffParentDistance = 4,
+  maxShift = 16
+)
 }
 \arguments{
 \item{sq}{(Required). A \code{character(1)}.

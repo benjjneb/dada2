@@ -4,10 +4,16 @@
 \alias{assignTaxonomy}
 \title{Classifies sequences against reference training dataset.}
 \usage{
-assignTaxonomy(seqs, refFasta, minBoot = 50, tryRC = FALSE,
-  outputBootstraps = FALSE, taxLevels = c("Kingdom", "Phylum", "Class",
-  "Order", "Family", "Genus", "Species"), multithread = FALSE,
-  verbose = FALSE)
+assignTaxonomy(
+  seqs,
+  refFasta,
+  minBoot = 50,
+  tryRC = FALSE,
+  outputBootstraps = FALSE,
+  taxLevels = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
+  multithread = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 

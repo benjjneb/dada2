@@ -4,9 +4,17 @@
 \alias{nwalign}
 \title{Needleman-Wunsch alignment.}
 \usage{
-nwalign(s1, s2, match = getDadaOpt("MATCH"),
-  mismatch = getDadaOpt("MISMATCH"), gap = getDadaOpt("GAP_PENALTY"),
-  homo_gap = NULL, band = -1, endsfree = TRUE, vec = FALSE)
+nwalign(
+  s1,
+  s2,
+  match = getDadaOpt("MATCH"),
+  mismatch = getDadaOpt("MISMATCH"),
+  gap = getDadaOpt("GAP_PENALTY"),
+  homo_gap = NULL,
+  band = -1,
+  endsfree = TRUE,
+  vec = FALSE
+)
 }
 \arguments{
 \item{s1}{(Required). \code{character(1)}. The first sequence to align. A/C/G/T only.}

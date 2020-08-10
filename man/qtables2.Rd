@@ -4,7 +4,7 @@
 \alias{qtables2}
 \title{Internal tables function}
 \usage{
-qtables2(x, qeff = FALSE)
+qtables2(x, qeff = FALSE, handle.zerolen = TRUE)
 }
 \arguments{
 \item{x}{ShortReadQ.
@@ -12,6 +12,9 @@ The ShortReadQ-class object to table (or dereplicate).}
 
 \item{qeff}{\code{logical(1)}.
 Calculate average quality by first transforming to expected error rate.}
+
+\item{handle.zerolen}{\code{logical(1)}.
+Default TRUE. If TRUE, gracefully excludes zero-length sequences.}
 }
 \value{
 List.

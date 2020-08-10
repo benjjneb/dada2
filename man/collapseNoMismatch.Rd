@@ -4,8 +4,15 @@
 \alias{collapseNoMismatch}
 \title{Combine together sequences that are identical up to shifts and/or length.}
 \usage{
-collapseNoMismatch(seqtab, minOverlap = 20, orderBy = "abundance",
-  identicalOnly = FALSE, vec = TRUE, band = -1, verbose = FALSE)
+collapseNoMismatch(
+  seqtab,
+  minOverlap = 20,
+  orderBy = "abundance",
+  identicalOnly = FALSE,
+  vec = TRUE,
+  band = -1,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{seqtab}{(Required). A sample by sequence matrix, the return of \code{\link{makeSequenceTable}}.}

@@ -4,8 +4,7 @@
 \alias{uniquesToFasta}
 \title{Write a uniques vector to a FASTA file}
 \usage{
-uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000,
-  ...)
+uniquesToFasta(unqs, fout, ids = NULL, mode = "w", width = 20000, ...)
 }
 \arguments{
 \item{unqs}{(Required).

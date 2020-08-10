@@ -42,7 +42,7 @@ while also controlling peak memory requirement to support large files.
 # Test that chunk-size, `n`, does not affect the result.
 testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
 derep1 = derepFastq(testFastq, verbose = TRUE)
-derep1.35 = derepFastq(testFastq, 35, TRUE)
+derep1.35 = derepFastq(testFastq, n = 35, verbose = TRUE)
 all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 
 }

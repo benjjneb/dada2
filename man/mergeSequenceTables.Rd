@@ -4,8 +4,15 @@
 \alias{mergeSequenceTables}
 \title{Merge two or more sample-by-sequence observation matrices.}
 \usage{
-mergeSequenceTables(table1 = NULL, table2 = NULL, ..., tables = NULL,
-  repeats = "error", orderBy = "abundance", tryRC = FALSE)
+mergeSequenceTables(
+  table1 = NULL,
+  table2 = NULL,
+  ...,
+  tables = NULL,
+  repeats = "error",
+  orderBy = "abundance",
+  tryRC = FALSE
+)
 }
 \arguments{
 \item{table1}{(Optional, default=NULL). Named integer matrix. Rownames correspond to samples
@@ -47,7 +54,7 @@ This function combines sequence tables together into one merged sequences table.
 \examples{
 
 \dontrun{
-  mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3) # unnamed arguments are assumed to be individual sequence tables
+  mergetab <- mergeSequenceTables(seqtab1, seqtab2, seqtab3) # unnamed arguments assumed to be sequence tables
   input_tables <- list(seqtab1, seqtab2, seqtab3)
   mergetab <- mergeSequenceTables(tables=input_tables) # list of sequence tables
   files <- c(file1, file2, file3)

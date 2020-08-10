@@ -4,8 +4,7 @@
 \alias{isPhiX}
 \title{Determine if input sequence(s) match the phiX genome.}
 \usage{
-isPhiX(seqs, wordSize = 16, minMatches = 2, nonOverlapping = TRUE,
-  ...)
+isPhiX(seqs, wordSize = 16, minMatches = 2, nonOverlapping = TRUE, ...)
 }
 \arguments{
 \item{seqs}{(Required). A \code{character} vector of A/C/G/T sequences.}

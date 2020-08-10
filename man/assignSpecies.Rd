@@ -4,8 +4,14 @@
 \alias{assignSpecies}
 \title{Taxonomic assignment to the species level by exact matching.}
 \usage{
-assignSpecies(seqs, refFasta, allowMultiple = FALSE, tryRC = FALSE,
-  n = 2000, verbose = FALSE)
+assignSpecies(
+  seqs,
+  refFasta,
+  allowMultiple = FALSE,
+  tryRC = FALSE,
+  n = 2000,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 

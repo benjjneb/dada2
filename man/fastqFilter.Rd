@@ -4,11 +4,28 @@
 \alias{fastqFilter}
 \title{Filter and trim a fastq file.}
 \usage{
-fastqFilter(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf,
-  minLen = 20, trimLeft = 0, trimRight = 0, maxN = 0, minQ = 0,
-  maxEE = Inf, rm.phix = TRUE, rm.lowcomplex = 0,
-  orient.fwd = NULL, n = 1e+06, OMP = TRUE, qualityType = "Auto",
-  compress = TRUE, verbose = FALSE, ...)
+fastqFilter(
+  fn,
+  fout,
+  truncQ = 2,
+  truncLen = 0,
+  maxLen = Inf,
+  minLen = 20,
+  trimLeft = 0,
+  trimRight = 0,
+  maxN = 0,
+  minQ = 0,
+  maxEE = Inf,
+  rm.phix = TRUE,
+  rm.lowcomplex = 0,
+  orient.fwd = NULL,
+  n = 1e+06,
+  OMP = TRUE,
+  qualityType = "Auto",
+  compress = TRUE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{fn}{(Required). The path to the input fastq file.}

@@ -4,10 +4,20 @@
 \alias{mergePairs}
 \title{Merge denoised forward and reverse reads.}
 \usage{
-mergePairs(dadaF, derepF, dadaR, derepR, minOverlap = 12,
-  maxMismatch = 0, returnRejects = FALSE,
-  propagateCol = character(0), justConcatenate = FALSE,
-  trimOverhang = FALSE, verbose = FALSE, ...)
+mergePairs(
+  dadaF,
+  derepF,
+  dadaR,
+  derepR,
+  minOverlap = 12,
+  maxMismatch = 0,
+  returnRejects = FALSE,
+  propagateCol = character(0),
+  justConcatenate = FALSE,
+  trimOverhang = FALSE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{dadaF}{(Required). A \code{\link{dada-class}} object, or a list of such objects.

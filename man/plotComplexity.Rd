@@ -4,8 +4,16 @@
 \alias{plotComplexity}
 \title{Plot sequence complexity profile of a fastq file.}
 \usage{
-plotComplexity(fl, kmerSize = 2, window = NULL, by = 5, n = 1e+05,
-  bins = 100, aggregate = FALSE, ...)
+plotComplexity(
+  fl,
+  kmerSize = 2,
+  window = NULL,
+  by = 5,
+  n = 1e+05,
+  bins = 100,
+  aggregate = FALSE,
+  ...
+)
 }
 \arguments{
 \item{fl}{(Required). \code{character}.

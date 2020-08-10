@@ -4,9 +4,19 @@
 \alias{removePrimers}
 \title{Removes primers and orients reads in a consistent direction.}
 \usage{
-removePrimers(fn, fout, primer.fwd, primer.rev = NULL,
-  max.mismatch = 2, allow.indels = FALSE, trim.fwd = TRUE,
-  trim.rev = TRUE, orient = TRUE, compress = TRUE, verbose = FALSE)
+removePrimers(
+  fn,
+  fout,
+  primer.fwd,
+  primer.rev = NULL,
+  max.mismatch = 2,
+  allow.indels = FALSE,
+  trim.fwd = TRUE,
+  trim.rev = TRUE,
+  orient = TRUE,
+  compress = TRUE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{fn}{(Required). \code{character}.
