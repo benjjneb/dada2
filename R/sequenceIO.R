@@ -39,7 +39,7 @@
 #' # Test that chunk-size, `n`, does not affect the result.
 #' testFastq = system.file("extdata", "sam1F.fastq.gz", package="dada2")
 #' derep1 = derepFastq(testFastq, verbose = TRUE)
-#' derep1.35 = derepFastq(testFastq, 35, TRUE)
+#' derep1.35 = derepFastq(testFastq, n = 35, verbose = TRUE)
 #' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
 derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto") {
@@ -56,7 +56,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto") {
     f <- FastqStreamer(fl, n = n)
     suppressWarnings(fq <- yield(f, qualityType = qualityType))
     
-    out <- qtables2(fq, FALSE, handle.zerolen=TRUE) ###ITS
+    out <- qtables2(fq) ###ITS
     
     derepCounts <- out$uniques
     derepQuals <- out$cum_quals
@@ -68,7 +68,7 @@ derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto") {
       if(verbose){
         message(".", appendLF = FALSE)
       }
-      out <- qtables2(fq, FALSE, handle.zerolen=handle.zerolen)
+      out <- qtables2(fq)
       # Augment quality matrices with NAs as needed to match ncol
       if(ncol(out$cum_quals) > ncol(derepQuals)) {
         derepQuals <- cbind(derepQuals, matrix(NA, nrow=nrow(derepQuals), ncol=(ncol(out$cum_quals)-ncol(derepQuals))))
