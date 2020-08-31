@@ -14,7 +14,7 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 **Maintained:**
 
-* **[Silva version 138](https://zenodo.org/record/3731176)**, [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958)  ([Silva dual-license](https://www.arb-silva.de/silva-license-information/))
+* **[Silva version 138 - UPDATED Aug 15, 2020](https://zenodo.org/record/3986799)**, [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958)
 
 * **[RDP trainset 16](https://doi.org/10.5281/zenodo.801827)**, [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955)
 
@@ -38,6 +38,8 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 * [Silva Eukaryotic 18S, v132 & v128](https://zenodo.org/record/1447330)
 
+* [nifH ARB, version 1](https://doi.org/10.5281/zenodo.3958364)
+
 * [PR2 version 4.7.2+](https://github.com/vaulot/pr2_database/releases). SEE NOTE BELOW.
 
 **Note:** PR2 has different `taxLevels` than the dada2 default. When assigning taxonomy against PR2, use the following: `assignTaxonomy(..., taxLevels = c("Kingdom","Supergroup","Division","Class","Order","Family","Genus","Species"))`
@@ -45,13 +47,13 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 --------------------------
 
-Many thanks to the folks at RDP, Silva, GreenGenes, UNITE, GTDB, PR2 and others for making these amazing reference datbases available to the community. We also want to thank Pat Schloss and the [mothur](http://www.mothur.org) team for their work compiling the Silva data into a more easily usable form. We created the dada2-compatible training fastas from [the mothur-compatible Silva training data](http://www.mothur.org/wiki/Silva_reference_files) ([described here](http://blog.mothur.org/2017/03/22/SILVA-v128-reference-files/), and [license here](https://www.arb-silva.de/silva-license-information/)), the [RDP trainset 16 and release 11.5 database](http://rdp.cme.msu.edu/misc/resources.jsp), and [the GreenGenes 13.8 OTUs clustered at 97\%](ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/).
+Many thanks to the folks at RDP, Silva, GreenGenes, UNITE, GTDB, PR2 and others for making these amazing reference datbases available to the community. We created the dada2-compatible training fastas from [the Silva NR99 and taxonomy files](https://www.arb-silva.de/no_cache/download/archive/release_138/Exports/), the [RDP trainset 16 and release 11.5 database](http://rdp.cme.msu.edu/misc/resources.jsp), and [the GreenGenes 13.8 OTUs clustered at 97\%](ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/).
 
 The scripts to parse and produce the officially maintained training fastas are included as private functions within the dada2 R package. Inspect `taxonomy.R` to see the code. Currently training fastas for `assignSpecies` are only available for the Silva and RDP databases. 
 
 ## Formatting custom databases
 
-Custom databases can be used with `assignTaxonomy` and `assignSpecies` provided they are in the dada2-compatible training fasta format.
+Custom databases can be used with `assignTaxonomy` and `assignSpecies` provided they are in the dada2-compatible training fasta format. We thank the many contributors who have created custom databases suitable for use with DADA2, several of which are linked above.
 
 `assignTaxonomy(...)` expects a training fasta file (or compressed fasta file) in which the taxonomy corresponding to each sequence is encoded in the id line in the following fashion (the second sequence is not assigned down to level 6):
 

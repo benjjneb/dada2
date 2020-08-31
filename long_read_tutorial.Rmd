@@ -1,0 +1,118 @@
+---
+title: "DADA2 Long-read Amplicon Sequencing Tutorial (1.17.3.0)"
+---
+
+--------------------------
+
+For a decade at least, amplicon sequencing has been defined and limited by the short-read lengths of "next generation" sequencing platforms such as 454, Illumina and Ion Torrent. Although long-read sequencing instruments such as PacBio have been around for years now, the high error rates associated with these technologies precluded their usage in mainstream amplicon sequencing applications. This is because in typical amplicon sequencing applications, such as 16S profiling of microbial communities, every amplicon sequencing read potentially arises from a novel sequence, and thus errors cannot be eventually defeated by dint of sequencing depth alone as they can be in (re)-sequencing of single organisms.
+
+Today, the short-read limit on amplicon sequencing is no more. Long-read amplicon sequencing with accuracy above and beyond that of short-read sequencers (>99.9% accuracy) is now a reality. Pioneered by [PacBio "HiFi" CCS sequencing](https://doi.org/10.1093/nar/gkz569), and now joined by [Loop Genomics' LoopSeq SLR technology](https://doi.org/10.1101/2020.07.07.192286) and the [marriage of UMIs with PacBio and ONT sequencing](), high-fidelity long-read amplicon sequencing can produce amplicon reads 10-times as long and 10-times as accurate as Illumina amplicon reads. Here we present a workflow for the processing and interpretation of amplicon sequencing reads of the full-length 16S rRNA gene, but that should be applicable to high-fidelity long-read amplicon sequencing of many other genetic loci.
+
+*This workflow takes advantage of functionality added in the 1.16 release. In addition, improvements in the performance of `assignTaxonomy` in the current development branch (1.17.3+) will significantly improve the speed of that step.*
+
+--------------------------
+
+## A preamble on long-read amplicon analysis in DADA2
+
+The longer the read, the higher the accuracy needed for DADA2-style inference of exact sequence variants at single nucleotide resolution to be approipriate. A fundamental assumption of the DADA2 method (and about all extant ASV methods) is that the reads being analyzed are sufficiently accurate that multiple error-free reads can be expected to be observed, at least from non-rare members of the sequenced community. This is an even higher bar to clear for long reads, because for each additional nucleotide there is an additional (small) change of an error and that the entire read is not error-free.
+
+It is only because long-read sequencing has progressed so profoundly in the realm of error rates that DADA2 analysis of long-read amplicons sequencing data makes sense, and one should be realistic that some long-read amplicon sequencing data may not be appropriate for such high-resoultion analysis. In particular, older sequencing approaches (e.g. PacBio in the RSII days, especially before the P6C4 chemistry), and some hyper-diverse communities (e.g. sediment samples) might not work well with DADA2, because there is little to no repeated observation of sequences. If familiar with using DADA2 on short reads, the need for low-enough error rates and high-enough repeated observations of sequences for appropriate analysis is the most important new thing to consider with long-rea data. Note that in this workflow, the dereplication step is specifically included to sanity check those assumptions.
+
+## Starting point
+
+This workflow expects demultiplexed, per-sample, gzipped fastq files for the primer-free forward reads of a Hiseq run to be in the directory `path` (defined below). The string parsing expects filenames of the following format: `samplename_XXX.fastq.gz`. Here we specifically consider two technologies, PacBio CCS on the Sequel/2 platform, and Loop Genomics LoopSeq SLR reads. In both cases, we assume that standard bioinformatics (anlaogous to running bcl2fastq on Illumina data to produce fastq files) has been performed, with the default QC parameters (PacBio: minPasses=3, minPredictedAccuracy=0.999).
+
+To follow along with this workflow, first download the example PacBio CCS data from the vaginal microbiome: LINK.
+
+# Getting ready
+
+First we load the `dada2` package. If you don't already have it, see the [dada2 installation instructions](dada-installation.html).
+```{r libraries, message=FALSE, warning=FALSE}
+library(dada2); packageVersion("dada2")
+library(ggplot2)
+```
+
+## Remove primers and orient
+
+```{r}
+path <- "~/Desktop/0_deidentify" # CHANGE ME to location of the First Replicate fastq files
+fns <- list.files(path, pattern="fq.gz", full.names=TRUE)
+F27 <- "AGRGTTYGATYMTGGCTCAG"
+R1492 <- "RGYTACCTTGTTACGACTT"
+rc <- dada2:::rc
+theme_set(theme_bw())
+```
+
+```{r}
+plotQualityProfile(fns[8:10])
+```
+
+```{r}
+nops <- file.path(path, "noprimers", basename(fns))
+prim <- removePrimers(fns, nops, primer.fwd=F27, primer.rev=dada2:::rc(R1492), orient=TRUE, verbose=TRUE)
+```
+
+```{r}
+prim
+```
+
+```{r}
+lens.fn <- lapply(nops, function(fn) nchar(getSequences(fn)))
+lens <- do.call(c, lens.fn)
+hist(lens, 100)
+```
+
+Length histogram is quite clean, although some small modes at very low and about double lengths that we'll remove with a length filter.
+
+```{r}
+filt <- file.path(path, "noprimers", "filtered", basename(fns))
+track <- filterAndTrim(nops, filt, minQ=3, minLen=1000, maxLen=1600, maxN=0, maxEE=2,
+                       rm.phix=FALSE, multi=TRUE)
+track
+```
+
+Evaluate suitability of the long-read data by dereplication and comparing unique sequences to total reads:
+```{r}
+set.seed(100)
+foo <- derepFastq(sample(filt, 5), verbose=TRUE)
+rm(foo)
+```
+
+This looks fine. The number of unique sequences is much lower than the number of total reads, quite in line with previous reports that ~50% of all PacBio CCS reads (default processing, Sequel chemistry) will be error-free at this length (~1.5Kb). We proceed to apply DADA2 with confidence.
+
+```{r}
+err <- learnErrors(filt, errorEstimationFunction = PacBioErrfun, BAND_SIZE=32, 
+                   qualityType="FastqQuality", multi=TRUE)
+```
+
+The quality encoding of the fastq file(s). "Auto" (the default) means to attempt to auto-detect the encoding. This may fail for PacBio files with uniformly high quality scores, in which case use "FastqQuality". This parameter is passed on to readFastq; see information there for details.
+
+```{r}
+plotErrors(err)
+```
+
+Why do the quality scores go up to 93? I don't know actually. Might want to ask PacBio.
+
+Now we can denoise the sequences with DADA2. Two options will be shown, "default" independent processing, and "high-sensitivity" pseudo-pooling. (TODO HIGH-SENSITIVITY OPTION).
+
+```{r}
+dd <- dada(filt, err=err, BAND_SIZE=32, 
+           qualityType="FastqQuality", multi=TRUE)
+```
+
+Eff. Will need update to set qualityType in the `dada` function. Doesn't pass that option through to `derepFastq` currently...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
