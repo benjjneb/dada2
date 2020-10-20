@@ -192,7 +192,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
     // initialize with source and destination
     FinalSubsParallel(B *b, Sub **subs, Sub **birth_subs,
                     int match, int mismatch, int gap, int homo_gap,
-                    bool use_kmers, int band_size, bool vectorized_alignment, int SSE, bool gapless) 
+                    int band_size, bool use_kmers, bool vectorized_alignment, int SSE, bool gapless) 
       : b(b), subs(subs), birth_subs(birth_subs), match(match), mismatch(mismatch), gap(gap), homo_gap(homo_gap), 
         band_size(band_size), use_kmers(use_kmers), vectorized_alignment(vectorized_alignment), SSE(SSE), gapless(gapless) {}
     
