@@ -203,7 +203,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
       for(std::size_t i=begin;i<end;i++) {
         for(unsigned int r=0;r<b->bi[i]->nraw;r++) {
           raw = b->bi[i]->raw[r];
-          subs[raw->index] = sub_new(b->bi[i]->center, raw, match, mismatch, gap, homo_gap, use_kmers, 1.0, band_size, vectorized_alignment, SSE, gapless);
+          subs[raw->index] = sub_new(b->bi[i]->center, raw, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
         }
         // Make birth sub for that cluster
         if(i==0) { birth_subs[i] = NULL; }
@@ -222,7 +222,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
       // Make subs for members of that cluster
       for(r=0;r<bb->bi[i]->nraw;r++) {
         raw = bb->bi[i]->raw[r];
-        subs[raw->index] = sub_new(bb->bi[i]->center, raw, match, mismatch, gap, homo_gap, use_kmers, 1.0, band_size, vectorized_alignment, SSE, gapless);
+        subs[raw->index] = sub_new(bb->bi[i]->center, raw, match, mismatch, gap, homo_gap, false, 1.0, band_size, vectorized_alignment, SSE, gapless);
       }
       // Make birth sub for that cluster
       if(i==0) { birth_subs[i] = NULL; }
