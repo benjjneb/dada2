@@ -577,7 +577,7 @@ dada <- function(derep,
 #'  
 #' **Pseudo-pooling Behavior**
 #'  
-#' PSEUDO_PREVALENCE: When performing pseudo-pooling, all sequence variants found in at least two
+#' PSEUDO_PREVALENCE: When performing pseudo-pooling, all sequence variants found in at least this many
 #'  samples are used as priors for a subsequent round of sample inference. 
 #'  Only relevant if `pool="pseudo"`. Default is 2.
 #' 
