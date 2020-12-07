@@ -11,7 +11,7 @@
 
 
 
-<title>Taxonomic reference data</title>
+<title>ReleaseNotes_1_18.utf8</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -364,60 +364,26 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Taxonomic reference data</h1>
 
 </div>
 
 
-<p>The <code>assignTaxonomy</code> and <code>assignSpecies</code> functions require appropriately formatted fasta files describing the set of taxonomically assigned sequences to use as a training dataset. We provide appropriately formatted versions of several popular taxonomic databases, and describe the dada2-specific format for those who wish to use a custom database.</p>
-<div id="dada2-formatted-reference-databases" class="section level2">
-<h2>DADA2-formatted reference databases</h2>
-<p>We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes. The dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be “contibuted” and will be made available through this page if referencable by doi (eg. deposited at Zenodo or Figshare).</p>
-<p><em>Please note that the files provided here are just derivative reformattings of these taxonomic databases. If using these files for taxonomic assignment, the source database should also be cited.</em></p>
-<hr />
-<p><strong>Maintained:</strong></p>
+<div id="dada2-1.18-release-notes" class="section level2">
+<h2>DADA2 1.18 RELEASE NOTES</h2>
+<div id="significant-user-visible-changes" class="section level4">
+<h4>SIGNIFICANT USER-VISIBLE CHANGES</h4>
 <ul>
-<li><p><strong><a href="https://zenodo.org/record/3986799">Silva version 138 - UPDATED Aug 15, 2020</a></strong>, <a href="https://doi.org/10.5281/zenodo.1172782">version 132</a>, <a href="https://doi.org/10.5281/zenodo.801831">version 128</a>, <a href="http://dx.doi.org/10.5281/zenodo.158958">version 123</a></p></li>
-<li><p><strong><a href="https://doi.org/10.5281/zenodo.4310150">RDP trainset 18</a></strong>, <a href="https://doi.org/10.5281/zenodo.801827">RDP trainset 16</a>, <a href="http://dx.doi.org/10.5281/zenodo.158955">RDP trainset 14</a></p></li>
-<li><p><strong><a href="https://unite.ut.ee/repository.php">UNITE (use the General Fasta releases)</a></strong></p></li>
-<li><p><em>Deprecated: <a href="http://dx.doi.org/10.5281/zenodo.158955">GreenGenes version 13.8</a> (the source GreenGenes database is no longer being maintained)</em></p></li>
+<li>The <code>assignTaxonomy</code> function is significantly faster.</li>
 </ul>
-<p><strong>Contributed</strong>:</p>
-<ul>
-<li>RefSeq + RDP (NCBI RefSeq 16S rRNA database supplemented by RDP)
-<ul>
-<li><a href="https://zenodo.org/record/2541239">Reference files formatted for <code>assignTaxonomy</code></a></li>
-<li><a href="https://zenodo.org/record/2658728#.XM7qtBNKhYh">Reference files formatted for <code>assignSpecies</code></a></li>
-</ul></li>
-<li>GTDB: Genome Taxonomy Database (More info: <a href="http://gtdb.ecogenomic.org/" class="uri">http://gtdb.ecogenomic.org/</a>)
-<ul>
-<li><a href="https://zenodo.org/record/2541239">Reference files formatted for <code>assignTaxonomy</code></a></li>
-<li><a href="https://zenodo.org/record/2658728#.XM7qtBNKhYh">Reference files formatted for <code>assignSpecies</code></a></li>
-</ul></li>
-<li><p><a href="http://doi.org/10.5281/zenodo.159205">HitDB version 1</a> (Human InTestinal 16S rRNA)</p></li>
-<li><p><a href="https://doi.org/10.5281/zenodo.835612">RDP fungi LSU trainset 11</a></p></li>
-<li><p><a href="https://zenodo.org/record/1447330">Silva Eukaryotic 18S, v132 &amp; v128</a></p></li>
-<li><p><a href="https://doi.org/10.5281/zenodo.3958364">nifH ARB, version 1</a></p></li>
-<li><p><a href="https://github.com/vaulot/pr2_database/releases">PR2 version 4.7.2+</a>. SEE NOTE BELOW.</p></li>
-</ul>
-<p><strong>Note:</strong> PR2 has different <code>taxLevels</code> than the dada2 default. When assigning taxonomy against PR2, use the following: <code>assignTaxonomy(..., taxLevels = c(&quot;Kingdom&quot;,&quot;Supergroup&quot;,&quot;Division&quot;,&quot;Class&quot;,&quot;Order&quot;,&quot;Family&quot;,&quot;Genus&quot;,&quot;Species&quot;))</code></p>
-<hr />
-<p>Many thanks to the folks at RDP, Silva, GreenGenes, UNITE, GTDB, PR2 and others for making these amazing reference datbases available to the community. We created the dada2-compatible training fastas from <a href="https://www.arb-silva.de/no_cache/download/archive/release_138/Exports/">the Silva NR99 and taxonomy files</a>, the <a href="http://rdp.cme.msu.edu/misc/resources.jsp">RDP trainset 16 and release 11.5 database</a>, and <a href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
-<p>The scripts to parse and produce the officially maintained training fastas are included as private functions within the dada2 R package. Inspect <code>taxonomy.R</code> to see the code. Currently training fastas for <code>assignSpecies</code> are only available for the Silva and RDP databases.</p>
 </div>
-<div id="formatting-custom-databases" class="section level2">
-<h2>Formatting custom databases</h2>
-<p>Custom databases can be used with <code>assignTaxonomy</code> and <code>assignSpecies</code> provided they are in the dada2-compatible training fasta format. We thank the many contributors who have created custom databases suitable for use with DADA2, several of which are linked above.</p>
-<p><code>assignTaxonomy(...)</code> expects a training fasta file (or compressed fasta file) in which the taxonomy corresponding to each sequence is encoded in the id line in the following fashion (the second sequence is not assigned down to level 6):</p>
-<pre><code>&gt;Level1;Level2;Level3;Level4;Level5;Level6;
-ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC
-&gt;Level1;Level2;Level3;Level4;Level5;
-CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC</code></pre>
-<p><code>assignSpecies(...)</code> expects the training data to be provided in the form of a fasta file (or compressed fasta file), with the id line formatted as follows:</p>
-<pre><code>&gt;ID Genus species
-ACCTAGAAAGTCGTAGATCGAAGTTGAAGCATCGCCCGATGATCGTCTGAAGCTGTAGCATGAGTCGATTTTCACATTCAGGGATACCATAGGATAC
-&gt;ID Genus species
-CGCTAGAAAGTCGTAGAAGGCTCGGAGGTTTGAAGCATCGCCCGATGGGATCTCGTTGCTGTAGCATGAGTACGGACATTCAGGGATCATAGGATAC</code></pre>
+<div id="bug-fixes" class="section level4">
+<h4>BUG FIXES</h4>
+<ul>
+<li><p><code>plotQualityProfile</code> now appropriately handles y-axis scaling even when some sampes have few reads.</p></li>
+<li><p><code>derepFastq</code> gracefully handles zero-length reads in the input.</p></li>
+<li><p>The bug introduced in the last release that created (small) differences between the output of <code>learnErrors(..., multi=TRUE)</code> and <code>learnErrors(..., multi=FALSE)</code> has been fixed.</p></li>
+</ul>
+</div>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">

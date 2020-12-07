@@ -1,0 +1,14 @@
+DADA2 1.18 RELEASE NOTES
+-----------------------
+
+#### SIGNIFICANT USER-VISIBLE CHANGES
+
+* The `assignTaxonomy` function is significantly faster.
+
+#### BUG FIXES
+
+* `plotQualityProfile` now appropriately handles y-axis scaling even when some sampes have few reads.
+
+* `derepFastq` gracefully handles zero-length reads in the input.
+
+* The bug introduced in the last release that created (small) differences between the output of `learnErrors(..., multi=TRUE)` and `learnErrors(..., multi=FALSE)` has been fixed.

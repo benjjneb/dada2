@@ -16,7 +16,7 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 * **[Silva version 138 - UPDATED Aug 15, 2020](https://zenodo.org/record/3986799)**, [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958)
 
-* **[RDP trainset 16](https://doi.org/10.5281/zenodo.801827)**, [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955)
+* **[RDP trainset 18](https://doi.org/10.5281/zenodo.4310150)**, [RDP trainset 16](https://doi.org/10.5281/zenodo.801827), [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955)
 
 * **[UNITE (use the General Fasta releases)](https://unite.ut.ee/repository.php)**
 
