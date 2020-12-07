@@ -358,6 +358,14 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=200
 }
 
 #' This function creates the dada2 assignTaxonomy training fasta for the RDP trainset .fa file
+#' The RDP trainset data was downloaded from: https://sourceforge.net/projects/rdp-classifier/files/RDP_Classifier_TrainingData/
+#' 
+#' ## RDP Trainset 18
+#' path <- "~/Desktop/RDP/RDPClassifier_16S_trainsetNo18_rawtrainingdata"
+#' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset18_062020.fa"), 
+#'     file.path(path, "trainset18_db_taxid.txt"), 
+#'     "~/tax/rdp_train_set_18.fa.gz")
+#' dada2:::tax.check("~/tax/rdp_train_set_18.fa.gz", "~/Desktop/ten_16s.100.fa")
 #' 
 #' ## RDP Trainset 16
 #' path <- "~/Desktop/RDP/RDPClassifier_16S_trainsetNo16_rawtrainingdata"
@@ -397,6 +405,12 @@ makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
 
 #' This function creates the dada2 assignSpecies fasta file for the RDP
 #' from the RDP's _Bacteria_unaligned.fa file.
+#' 
+#' ## RDP Trainset 18/Release 11.5
+#' ## The RDP documentation does not make clear whether the updates to the taxonomy from training set release 18 were
+#' ## propagated to the current Bacterial alignment.
+#' dada2:::makeSpeciesFasta_RDP("~/Desktop/RDP/current_Bacteria_unaligned.fa", "~/tax/rdp_species_assignment_18.fa.gz")
+#' dada2:::tax.check("~/tax/rdp_species_assignment_18.fa.gz", "~/Desktop/ten_16s.100.fa", mode="species")
 #' 
 #' ## RDP Trainset 16/Release 11.5
 #' dada2:::makeSpeciesFasta_RDP("~/Desktop/RDP/current_Bacteria_unaligned.fa", "~/tax/rdp_species_assignment_16.fa.gz")
@@ -711,3 +725,17 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
   writeFasta(ShortRead(unname(xset), BStringSet(paste(ids, binom))), fout,
              width=20000L, compress=compress)
 }
+
+## Download "ten_16s.100.fa" from Robert Edgar's taxonomy testing page: https://drive5.com/taxxi/doc/fasta_index.html
+tax.check <- function(fn.tax, fn.test="~/Desktop/ten_16s.100.fa", nseq=100, level=6, mode="taxonomy") {
+  sq.test <- sample(getSequences(fn.test), nseq)
+  if(mode == "taxonomy") {
+    tax <- assignTaxonomy(sq.test, fn.tax, multi=TRUE)
+    cbind(unname(tax[,level]), sapply(strsplit(names(sq.test), ":"), `[`, level+1))
+  } else if (mode=="species") {
+    sq.acgt <- sq.test[dada2:::C_isACGT(sq.test)]
+    spc <- assignSpecies(sq.acgt, fn.spc)
+    cbind(unname(spc[,level-5]), sapply(strsplit(names(sq.acgt), ":"), `[`, level+1))
+  } else { stop("Valid modes are taxonomy or species.") }
+}
+
