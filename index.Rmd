@@ -1,17 +1,17 @@
+---
+title: "DADA2: Fast and accurate sample inference from amplicon data with single-nucleotide resolution"
+---
+
 &nbsp;
 <center>
-![The DADA2 R package](images/DADA2_Logo_Text_1_14_640px.png)
+![The DADA2 R package](images/DADA2_Logo_Text_1_18_640px.png)
 </center>
 
 --------------------------
 
-## Fast and accurate sample inference from amplicon data with single-nucleotide resolution
+**<span style="color:red">The DADA2 1.18 release is live, with improved performance of `assignTaxonomy`! See [the release notes](ReleaseNotes_1_18.html).</span>**
 
 --------------------------
-
-**<span style="color:red">The DADA2 1.14 release is live, with support for fastq directories and reads up to 9999nts, and a new tool to use (with caution) to detect the rarest variants! See [the release notes](ReleaseNotes_1_14.html).</span>**
-
-&nbsp;
 
 ## Installation
 
