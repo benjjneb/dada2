@@ -6,7 +6,7 @@ The `assignTaxonomy` and `assignSpecies` functions require appropriately formatt
 
 ## DADA2-formatted reference databases
 
-We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes. The dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be "contibuted" and will be made available through this page if referencable by doi (eg. deposited at Zenodo or Figshare). 
+We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes. The dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be "contributed" and will be made available through this page if referencable by doi (eg. deposited at Zenodo or Figshare). 
 
 *Please note that the files provided here are just derivative reformattings of these taxonomic databases. If using these files for taxonomic assignment, the source database should also be cited.*
 
@@ -14,7 +14,9 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 **Maintained:**
 
-* **[Silva version 138 - UPDATED Aug 15, 2020](https://zenodo.org/record/3986799)**, [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958)
+* **[Silva version 138.1 - UPDATED Mar 10, 2021](https://doi.org/10.5281/zenodo.4587954)**, [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958)
+  - NOTE: As of Silva version 138, the official DADA2-formatted reference fastas are optimized for classification of Bacteria and Archaea, and are not suitable for classifying Eukaryotes.
+
 
 * **[RDP trainset 18](https://doi.org/10.5281/zenodo.4310150)**, [RDP trainset 16](https://doi.org/10.5281/zenodo.801827), [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955)
 
