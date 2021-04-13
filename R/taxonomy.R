@@ -726,8 +726,9 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
              width=20000L, compress=compress)
 }
 
-## Download "ten_16s.100.fa" from Robert Edgar's taxonomy testing page: https://drive5.com/taxxi/doc/fasta_index.html
-tax.check <- function(fn.tax, fn.test="~/Desktop/ten_16s.100.fa", nseq=100, level=6, mode="taxonomy") {
+## This uses the "ten_16s.100.fa" originally from Robert Edgar's taxonomy testing page: https://drive5.com/taxxi/doc/fasta_index.html
+## This file is relicensed here under the DADA2 LGPL2 license on permission from Robert Edgar.
+tax.check <- function(fn.tax, fn.test=system.file("extdata", "example_seqs.fa", package="dada2"), nseq=100, level=6, mode="taxonomy") {
   sq.test <- sample(getSequences(fn.test), nseq)
   if(mode == "taxonomy") {
     tax <- assignTaxonomy(sq.test, fn.tax, multi=TRUE)
