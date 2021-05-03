@@ -97,7 +97,7 @@ PacBioErrfun <- function(trans) {
     if(i.93 != ncol(trans)) stop("Max qual score of 93 not the last column as expected.")
     err <- loessErrfun(trans[,1:(i.93-1)])
     tot93 <- rep(c(sum(trans[1:4,"93"]), sum(trans[5:8,"93"]), sum(trans[9:12,"93"]), sum(trans[13:16,"93"])), each=4)
-    err93 <- (trans[,"93"] + 1)/(tot93 + 1)
+    err93 <- (trans[,"93"] + 1)/(tot93 + 4)
     err <- cbind(err, "93"=err93)
   } else {
     message("The max qual score of 93 was not detected. Using standard error fitting.")
