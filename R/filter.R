@@ -596,7 +596,6 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
 #' @importFrom ShortRead yield
 #' @importFrom ShortRead writeFastq
 #' @importFrom ShortRead trimTails
-#' @importFrom ShortRead nFilter
 #' @importFrom ShortRead encoding
 #' @importFrom ShortRead narrow
 #' @importFrom IRanges narrow
@@ -685,7 +684,7 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
     fq <- fq[width(fq) >= minLen]
     
     # Filter based on minQ and Ns and maxEE
-    fq <- fq[nFilter(maxN)(fq)]
+    fq <- fq[.nFilter(fq, maxN)]
     keep <- rep(TRUE, length(fq))
     qq <- as(quality(fq), "matrix")
     if(minQ > truncQ) keep <- keep & (apply(qq, 1, min, na.rm=TRUE)>minQ) # Prob a faster trimTails trick
@@ -856,7 +855,6 @@ fastqFilter <- function(fn, fout, truncQ = 2, truncLen = 0, maxLen = Inf, minLen
 #' @importFrom ShortRead yield
 #' @importFrom ShortRead writeFastq
 #' @importFrom ShortRead trimTails
-#' @importFrom ShortRead nFilter
 #' @importFrom ShortRead encoding
 #' @importFrom ShortRead append
 #' @importFrom ShortRead ShortReadQ
@@ -1070,7 +1068,7 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     fqR <- fqR[keep]
 
     # Filter based on minQ and Ns and maxEE
-    suppressWarnings(keep <- nFilter(maxN[[1]])(fqF) & nFilter(maxN[[2]])(fqR))
+    keep <- .nFilter(fqF, maxN[[1]]) & .nFilter(fqR, maxN[[2]])
     fqF <- fqF[keep]; fqR <- fqR[keep]
     keep <- rep(TRUE, length(fqF))
     qmat <- as(quality(fqF), "matrix")
@@ -1274,4 +1272,24 @@ sindex <- function(x) {
   y <- x/sum(x)
   y <- y[y>0]
   exp(sum(-y*log(y)))
+}
+
+## Helper function to calculate number of Ns in fastq file
+## Near drop-in replacement for ShortRead::nFilter (and uses that functions internal code)
+##   but avoids the srFilter step within that function that is causing issues with different Matrix package versions
+## Note important differences in return format (logical instead of SRFilterResult) and argument format (x, max.n) from ShortRead::nread
+## But functionally should act identical, and does in testing. E.g.:
+## fq <- readFastq(fn[[1]]); maxN <- 1
+## keep.old <- ShortRead::nFilter(maxN)(fq) ### Note this errors with Matrix 1.3.3
+## keep.new <- dada2:::.nFilter(fq, maxN)
+## identical(fq[keep.old], fq[keep.new]) ## TRUE
+#'
+#' @importFrom ShortRead sread
+#' @importFrom Biostrings alphabetFrequency
+#' @importFrom methods is
+#'
+.nFilter <- function(x, max.n=0) {
+  if (is(x, "ShortRead")) 
+    alphabetFrequency(sread(x), baseOnly=TRUE)[,"other"] <= max.n
+  else alphabetFrequency(x, baseOnly=TRUE)[,"other"] <= max.n
 }
