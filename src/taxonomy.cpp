@@ -4,6 +4,7 @@
 #include <random>
 #include <algorithm>
 #define NBOOT 100
+#define NSEQ 65536
   
 using namespace Rcpp;
 
@@ -115,6 +116,7 @@ struct AssignParallel : public RcppParallel::Worker
   // source data
   std::vector<std::string> seqs;
   std::vector<std::string> rcs;
+  size_t seqs_offset;
   float *lgk_probability;
   int *C_genusmat;
   double *C_unifs;
@@ -132,11 +134,11 @@ struct AssignParallel : public RcppParallel::Worker
   bool try_rc;
   
   // initialize with source and destination
-  AssignParallel(std::vector<std::string> seqs, std::vector<std::string> rcs, float *lgk_probability,
-                 int *C_genusmat, double *C_unifs, int *C_rboot, int *C_rboot_tax, int *C_rval, 
+  AssignParallel(std::vector<std::string> seqs, std::vector<std::string> rcs, size_t seqs_offset, float *lgk_probability,
+                 int *C_genusmat, double *C_unifs, int *C_rboot, int *C_rboot_tax, int *C_rval,
                  unsigned int k, size_t n_kmers, size_t ngenus, size_t nlevel, unsigned int max_arraylen, bool try_rc)
-    : seqs(seqs), rcs(rcs), lgk_probability(lgk_probability), 
-      C_genusmat(C_genusmat), C_unifs(C_unifs), C_rboot(C_rboot), C_rboot_tax(C_rboot_tax), C_rval(C_rval), 
+    : seqs(seqs), rcs(rcs), seqs_offset(seqs_offset), lgk_probability(lgk_probability),
+      C_genusmat(C_genusmat), C_unifs(C_unifs), C_rboot(C_rboot), C_rboot_tax(C_rboot_tax), C_rval(C_rval),
       k(k), n_kmers(n_kmers), ngenus(ngenus), nlevel(nlevel), max_arraylen(max_arraylen), try_rc(try_rc) {}
 
   // Rprintf("Classify the sequences.\n");
@@ -151,23 +153,23 @@ struct AssignParallel : public RcppParallel::Worker
     float logp, logp_rc;
 
     for(std::size_t j=begin;j<end;j++) {
-      seqlen = seqs[j].size();
+      seqlen = seqs[seqs_offset + j].size();
+      for(i=0;i<nlevel;i++) {
+        C_rboot[j*nlevel+i] = 0;
+      }
       if(seqlen < 50) { // No assignment made for very short seqeunces
-        // Now enter NA assignments and 0 bootstrap confidences for this sequence
+        // Return NA assignments and 0 bootstrap confidences for this sequence
         C_rval[j] = NA_INTEGER;
-        for(i=0;i<nlevel;i++) {
-          C_rboot[j*nlevel+i] = 0;
-        }
         for(boot=0;boot<NBOOT;boot++) {
           C_rboot_tax[j*NBOOT + boot] = NA_INTEGER;
         }
       } else {
-        arraylen = tax_karray(seqs[j].c_str(), k, karray);
+        arraylen = tax_karray(seqs[seqs_offset + j].c_str(), k, karray);
   
         // Find best hit
         max_g = get_best_genus(karray, &logp, arraylen, n_kmers, ngenus, lgk_probability);
         if(try_rc) { // see if rev-comp is a better match to refs
-          arraylen_rc = tax_karray(rcs[j].c_str(), k, karray_rc);
+          arraylen_rc = tax_karray(rcs[seqs_offset + j].c_str(), k, karray_rc);
           if(arraylen != arraylen_rc) { Rcpp::stop("Discrepancy between forward and RC arraylen."); }
           max_g_rc = get_best_genus(karray_rc, &logp_rc, arraylen_rc, n_kmers, ngenus, lgk_probability);
           if(logp_rc > logp) { // rev-comp is better, replace with it
@@ -205,12 +207,12 @@ struct AssignParallel : public RcppParallel::Worker
 //
 // [[Rcpp::export]]
 Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose) {
-  size_t i, j, g;
+  size_t i, j, g, b;
   int kmer;
   unsigned int k=8;
   size_t n_kmers = (1 << (2*k));
-  size_t nseq = seqs.size();
-  if(nseq == 0) Rcpp::stop("No seqs provided to classify.");
+  size_t n_input_seqs = seqs.size();
+  if(n_input_seqs == 0) Rcpp::stop("No seqs provided to classify.");
   size_t nref = refs.size();
   if(nref != ref_to_genus.size()) Rcpp::stop("Length mismatch between number of references and map to genus.");
   size_t ngenus = genusmat.nrow();
@@ -275,24 +277,26 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
   // Rprintf("Get size of the kmer arrays for the sequences to be classified.\n");
   unsigned int max_arraylen = 0;
   unsigned int seqlen;
-  for(i=0;i<nseq;i++) {
+  for(i=0;i<n_input_seqs;i++) {
     seqlen = seqs[i].size();
     if((seqlen-k+1) > max_arraylen) { max_arraylen = seqlen-k+1; }
   }
-  
+
   // Rprintf("Generate random numbers for bootstrapping.");
   Rcpp::NumericVector unifs;
-  unifs = Rcpp::runif(nseq*NBOOT*(max_arraylen/8));
+  unifs = Rcpp::runif(NSEQ*NBOOT*(max_arraylen/8));
   double *C_unifs = (double *) malloc(unifs.size() * sizeof(double)); //E
   for(i=0;i<unifs.size();i++) { C_unifs[i] = unifs(i); }
   
-  // Allocate return values, plus thread-safe C versions of source data
-  Rcpp::IntegerVector rval(nseq);
-  int *C_rval = (int *) malloc(nseq * sizeof(int)); //E
-  Rcpp::IntegerMatrix rboot(nseq, nlevel);
-  int *C_rboot = (int *) calloc(nseq * nlevel, sizeof(int)); //E
-  Rcpp::IntegerMatrix rboot_tax(nseq, NBOOT);
-  int *C_rboot_tax = (int *) malloc(nseq * NBOOT * sizeof(int)); //E
+  // Allocate return values
+  Rcpp::IntegerVector rval(n_input_seqs);
+  Rcpp::IntegerMatrix rboot(n_input_seqs, nlevel);
+  Rcpp::IntegerMatrix rboot_tax(n_input_seqs, NBOOT);
+
+  // Allocate thread-safe C versions of source data
+  int *C_rval = (int *) malloc(NSEQ * sizeof(int)); //E
+  int *C_rboot = (int *) malloc(NSEQ * nlevel * sizeof(int)); //E
+  int *C_rboot_tax = (int *) malloc(NSEQ * NBOOT * sizeof(int)); //E
   int *C_genusmat = (int *) malloc(ngenus * nlevel * sizeof(int)); //E
   if(C_rval == NULL || C_rboot == NULL || C_rboot_tax == NULL || C_genusmat == NULL) Rcpp::stop("Memory allocation failed.");
   for(i=0;i<ngenus;i++) {
@@ -300,31 +304,37 @@ Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::st
       C_genusmat[i*nlevel + j] = genusmat(i,j);
     }
   }
-  
-  AssignParallel assignParallel(seqs, rcs, lgk_probability, C_genusmat, C_unifs, C_rboot, C_rboot_tax, C_rval, k, n_kmers, ngenus, nlevel, max_arraylen, try_rc);
-  int INTERRUPT_BLOCK_SIZE=128;
-  for(i=0;i<nseq;i+=INTERRUPT_BLOCK_SIZE) {
-    j = i+INTERRUPT_BLOCK_SIZE;
-    if(j > nseq) { j = nseq; }
-    RcppParallel::parallelFor(i, j, assignParallel, 1); // GRAIN_SIZE=1
-    Rcpp::checkUserInterrupt();
-  }
-  
-  // Copy from C-versions back to R objects
-  for(i=0;i<nseq;i++) {
-    rval(i) = C_rval[i];
-  }
-  for(i=0;i<nseq;i++) {
-    for(j=0;j<nlevel;j++) {
-      rboot(i,j) = C_rboot[i*nlevel + j];
+  for(b=0;b*NSEQ < n_input_seqs;b++){
+    size_t seqs_offset = b*NSEQ;
+    size_t nseq;
+    if((b+1)*NSEQ > n_input_seqs){
+      nseq = n_input_seqs - b*NSEQ;
+    } else {
+      nseq = NSEQ; 
+    };
+    AssignParallel assignParallel(seqs, rcs, seqs_offset, lgk_probability, C_genusmat, C_unifs, C_rboot, C_rboot_tax, C_rval, k, n_kmers, ngenus, nlevel, max_arraylen, try_rc);
+    int INTERRUPT_BLOCK_SIZE=128;
+    for(i=0;i<nseq;i+=INTERRUPT_BLOCK_SIZE) {
+      j = i+INTERRUPT_BLOCK_SIZE;
+      if(j > nseq) { j = nseq; }
+      RcppParallel::parallelFor(i, j, assignParallel, 1); // GRAIN_SIZE=1
+      Rcpp::checkUserInterrupt();
     }
-  }
-  for(i=0;i<nseq;i++) {
-    for(j=0;j<NBOOT;j++) {
-      rboot_tax(i,j) = C_rboot_tax[i*NBOOT + j];
+    // Copy from C-versions back to R objects
+    for(i=0;i<nseq;i++) {
+      rval(seqs_offset+i) = C_rval[i];
     }
-  }
-  
+    for(i=0;i<nseq;i++) {
+      for(j=0;j<nlevel;j++) {
+        rboot(seqs_offset+i,j) = C_rboot[i*nlevel + j];
+      }
+    }
+    for(i=0;i<nseq;i++) {
+      for(j=0;j<NBOOT;j++) {
+        rboot_tax(seqs_offset+i,j) = C_rboot_tax[i*NBOOT + j];
+      }
+    }
+  } 
   free(C_rboot);
   free(C_rboot_tax);
   free(C_unifs);
