@@ -4,7 +4,7 @@
 #include <random>
 #include <algorithm>
 #define NBOOT 100
-#define NSEQ 65536
+#define NSEQ 8192
   
 using namespace Rcpp;
 
