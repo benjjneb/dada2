@@ -1,0 +1,6 @@
+DADA2 1.20 RELEASE NOTES
+-----------------------
+
+#### BUG FIXES
+
+* A bug in `filterAndTrim` introduced by a regression in an underlying package was fixed by replacing all calls to the offending function.
