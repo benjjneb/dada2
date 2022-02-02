@@ -31,10 +31,11 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 * RefSeq + RDP (NCBI RefSeq 16S rRNA database supplemented by RDP)
     + [Reference files formatted for `assignTaxonomy`](https://zenodo.org/record/2541239)
-    + [Reference files formatted for `assignSpecies`](https://zenodo.org/record/2658728#.XM7qtBNKhYh)
+    + [Reference files formatted for `assignSpecies`](https://zenodo.org/record/2658728#.XM7qtBNKhYh)  
     
-
 * [HitDB version 1](http://doi.org/10.5281/zenodo.159205) (Human InTestinal 16S rRNA)
+
+* [MiDAS: Field Guide to the Microbes of Activated Sludge and Anaerobic Digesters](https://midasfieldguide.org/guide/downloads)
 
 * [RDP fungi LSU trainset 11](https://doi.org/10.5281/zenodo.835612)
 
