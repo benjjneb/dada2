@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include "dada.h"
-#include "emmintrin.h"
 // #if _WIN32
 // #include <intrin.h>
 // #endif
@@ -26,7 +25,7 @@ double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   return (1. - dot);
 }
 
-// Computes kmer distance with SSE2 intrinsics.
+#ifdef __x86_64 //  Computes kmer distance with SSE2 intrinsics.
 double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   size_t n_kmer = 1 << (2*k); // 4^k kmers
   int16_t dst[64];
@@ -48,8 +47,13 @@ double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   return (1. - dot);
 }
+#else // not X64, define dummy functions that won't be called
+double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
+  return 0.0;
+}
+#endif
 
-// Computes kmer distance with SSE2 intrinsics.
+#ifdef __x86_64 //  Computes kmer distance with SSE2 intrinsics.
 // Uses kmers packed into 8 bit integers. Can overflow, in which case negative value is returned.
 double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
   size_t n_kmer = 1 << (2*k); // 4^k kmers
@@ -87,8 +91,13 @@ double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   return (1. - dot);
 }
+#else // not X64, define dummy functions that won't be called
+double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
+  return 0.0;
+}
+#endif
 
-// Computes "kmer distance" with SSE2 intrinsics, based on ordered kmers (e.g. gapless align)
+// Computes kmer distance based on ordered kmers (e.g. gapless align)
 // If different lengths, returns -1 (invalid)
 double kord_dist(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
   int i;
@@ -106,7 +115,8 @@ double kord_dist(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
   return (1. - dot);
 }
 
-// Computes "kmer distance" with SSE2 intrinsics, based on ordered kmers (e.g. gapless align)
+#ifdef __x86_64
+// Computes kmer distance with SSE2 intrinsics, based on ordered kmers (e.g. gapless align)
 // If different lengths, returns -1 (invalid)
 double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
   int i;
@@ -138,6 +148,12 @@ double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int 
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   return (1. - dot);
 }
+#else // not X64, define dummy functions that won't be called
+double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k)
+{
+  return 0.0;
+}
+#endif
 
 void assign_kmer8(uint8_t *kvec8, const char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
   int i, j, nti;

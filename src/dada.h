@@ -11,6 +11,15 @@
 #include <unordered_set>
 //#include <gsl/gsl_cdf.h>
 
+// Define a variable that is true of SSE2 supported
+// Assuming X64 has SSE2, effectively dropping support for pre-SSE X64 arch
+#ifdef __x86_64
+#define X64 1
+include "emmintrin.h"
+#else
+#define X64 0
+#endif
+
 #define VERBOSE 0
 #define SEQLEN 9999 // Buffer size for DNA sequences read in from uniques files
 #define TAIL_APPROX_CUTOFF 1e-7 // Should test to find optimal

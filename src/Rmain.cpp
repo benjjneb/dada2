@@ -1,6 +1,8 @@
 #include "dada.h"
 #include <Rcpp.h>
 ///#ifdef _WIN32 //  Windows
+/*  //do arm stuff
+#endif
 #if defined(_WIN32) && !defined(__MINGW32__) //  Windows and not MINGW
 #define cpuid(info, x)    __cpuidex(info, x, 0)
 #else //  GCC Intrinsics
@@ -8,7 +10,7 @@
 void cpuid(int info[4], int InfoType){
   __cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
 }
-#endif
+#endif */
 
 using namespace Rcpp;
 //' @useDynLib dada2
@@ -80,7 +82,7 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   bool HW_SSE = false;
   bool HW_SSE2 = false;
   bool HW_SSE3 = false;
-  int info[4];
+/*  int info[4];
   cpuid(info, 0);
   int nIds = info[0];
 
@@ -94,7 +96,8 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   if(!(HW_SSE && HW_SSE2)) { 
     Rprintf("SSE2 not supported.\n");
     SSE = 0;
-  }
+  } */
+  if(!X64) { SSE=0; }
   
   /********** CONSTRUCT RAWS *********/
   char seq[SEQLEN];
