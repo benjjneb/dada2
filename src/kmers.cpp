@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "dada.h"
+#if ! (defined(__ppc64__) || defined(__PPC64__) || defined(__s390x__) || defined(__aarch64__))
 #include "emmintrin.h"
+#endif
 // #if _WIN32
 // #include <intrin.h>
 // #endif
@@ -26,6 +28,15 @@ double kmer_dist(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   return (1. - dot);
 }
 
+// These should never be called, but the symbols will have to exist
+#if (defined(__ppc64__) || defined(__PPC64__) || defined(__s390x__) || defined(__aarch64__))
+double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
+    return 0.0;
+}
+double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
+    return 0.0;
+}
+#else
 // Computes kmer distance with SSE2 intrinsics.
 double kmer_dist_SSEi(uint16_t *kv1, int len1, uint16_t *kv2, int len2, int k) {
   size_t n_kmer = 1 << (2*k); // 4^k kmers
@@ -87,6 +98,8 @@ double kmer_dist_SSEi_8(uint8_t *kv1, int len1, uint8_t *kv2, int len2, int k) {
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   return (1. - dot);
 }
+#endif
+
 
 // Computes "kmer distance" with SSE2 intrinsics, based on ordered kmers (e.g. gapless align)
 // If different lengths, returns -1 (invalid)
@@ -106,6 +119,11 @@ double kord_dist(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
   return (1. - dot);
 }
 
+#if (defined(__ppc64__) || defined(__PPC64__) || defined(__s390x__) || defined(__aarch64__))
+double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
+    return 0.0;
+}
+#else
 // Computes "kmer distance" with SSE2 intrinsics, based on ordered kmers (e.g. gapless align)
 // If different lengths, returns -1 (invalid)
 double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int k) {
@@ -138,6 +156,7 @@ double kord_dist_SSEi(uint16_t *kord1, int len1, uint16_t *kord2, int len2, int 
   dot = ((double) dotsum)/((len1 < len2 ? len1 : len2) - k + 1.);
   return (1. - dot);
 }
+#endif
 
 void assign_kmer8(uint8_t *kvec8, const char *seq, int k) {  // Assumes a clean seq (just 1s,2s,3s,4s)
   int i, j, nti;

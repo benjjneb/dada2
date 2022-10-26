@@ -3,7 +3,12 @@
 ///#ifdef _WIN32 //  Windows
 #if defined(_WIN32) && !defined(__MINGW32__) //  Windows and not MINGW
 #define cpuid(info, x)    __cpuidex(info, x, 0)
-#else //  GCC Intrinsics
+#elif defined(__ppc64__) || defined(__PPC64__) || defined(__s390x__) || defined(__aarch64__)
+void cpuid(int32_t out[4], int32_t x) {
+     // Just disable it as anything better is unimplemented.
+     out[0] = 0;
+}
+#else // GCC Intrinsics on x86_64
 #include <cpuid.h>
 void cpuid(int info[4], int InfoType){
   __cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
