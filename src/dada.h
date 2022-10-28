@@ -15,7 +15,7 @@
 // Assuming X64 has SSE2, effectively dropping support for pre-SSE X64 arch
 #ifdef __x86_64
 #define X64 1
-include "emmintrin.h"
+#include "emmintrin.h"
 #else
 #define X64 0
 #endif
