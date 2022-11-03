@@ -4,23 +4,23 @@ title: "DADA2: Fast and accurate sample inference from amplicon data with single
 
 &nbsp;
 <center>
-![The DADA2 R package](images/DADA2_Logo_Text_1_18_640px.png)
+![](images/DADA2_Logo_Text_noVer_640px.png)
 </center>
 
 --------------------------
 
-**<span style="color:red">The DADA2 1.18 release is live, with improved performance of `assignTaxonomy`! See [the release notes](ReleaseNotes_1_18.html).</span>**
+**<span style="color:red">The DADA2 1.26 release is live, with native support for ARM architectures such as the Apple M1/M2 chips! [Release notes](ReleaseNotes_1_26.html).</span>**
 
 --------------------------
 
 ## Installation
 
-Binaries for the current release version of DADA2 (1.14) are available from Bioconductor. Note that you must have R 3.6.1 or newer, and [Bioconductor version 3.10](https://www.bioconductor.org/install/), to install the current release from Bioconductor.
+Binaries for the current release version of DADA2 (1.26) are available from Bioconductor. Note that you must have R 4.2.0 or newer, and [Bioconductor version 3.16](https://www.bioconductor.org/install/), to install the most current release from Bioconductor.
 
 ```S
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("dada2", version = "3.10")
+BiocManager::install("dada2", version = "3.16")
 ```
 
 If you wish to install the latest and greatest development version, or to install to earlier versions of R, see our [from-source installation instructions](dada-installation.html).

@@ -3,3 +3,4 @@
 *.Rhistory
 .Rapp.history
 .Rproj.user
+.DS_Store

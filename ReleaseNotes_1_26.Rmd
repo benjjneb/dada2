@@ -1,0 +1,6 @@
+DADA2 1.26 RELEASE NOTES
+-----------------------
+
+#### BUG FIXES
+
+* The dada2 R package now compiles and runs natively on ARM architectures, including the M1/M2 chipsets now being used by Apple.

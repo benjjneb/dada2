@@ -11,7 +11,7 @@
 
 
 
-<title>DADA2: Fast and accurate sample inference from amplicon data with single-nucleotide resolution</title>
+<title>ReleaseNotes_1_26.knit</title>
 
 <script src="site_libs/header-attrs-2.17/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -335,128 +335,20 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">DADA2: Fast and accurate sample inference
-from amplicon data with single-nucleotide resolution</h1>
 
 </div>
 
 
- 
-<center>
-<img src="images/DADA2_Logo_Text_noVer_640px.png" />
-</center>
-<hr />
-<p><strong><span style="color:red">The DADA2 1.26 release is live, with
-native support for ARM architectures such as the Apple M1/M2 chips! <a
-href="ReleaseNotes_1_26.html">Release notes</a>.</span></strong></p>
-<hr />
-<div id="installation" class="section level2">
-<h2>Installation</h2>
-<p>Binaries for the current release version of DADA2 (1.26) are
-available from Bioconductor. Note that you must have R 4.2.0 or newer,
-and <a href="https://www.bioconductor.org/install/">Bioconductor version
-3.16</a>, to install the most current release from Bioconductor.</p>
-<pre class="s"><code>if (!requireNamespace(&quot;BiocManager&quot;, quietly = TRUE))
-    install.packages(&quot;BiocManager&quot;)
-BiocManager::install(&quot;dada2&quot;, version = &quot;3.16&quot;)</code></pre>
-<p>If you wish to install the latest and greatest development version,
-or to install to earlier versions of R, see our <a
-href="dada-installation.html">from-source installation
-instructions</a>.</p>
-<p> </p>
-</div>
-<div id="tutorials" class="section level2">
-<h2>Tutorials</h2>
-<p><strong><span style="color:red">Start here:</span></strong> The <a
-href="tutorial.html">DADA2 tutorial</a> goes through a typical workflow
-for paired end Illumina Miseq data: raw amplicon sequencing data is
-processed into the table of exact <strong>amplicon sequence variants
-(ASVs)</strong> present in each sample.</p>
-<p>The <a href="bigdata.html">DADA2 Workflow on Big Data</a> goes
-through workflow optimized to run on large datasets (10s of millions to
-billions of reads).</p>
-<p>An <a href="ITS_workflow.html">ITS-specific version of the DADA2
-workflow</a> identifies and verifiably removes primers on both ends of
-each ITS read, a key step due to the variable length of the ITS
-region.</p>
-<p>Short demonstrations of <a href="assign.html">assigning taxonomy</a>
-and <a href="assign.html">assigning species</a> to sequences.</p>
-<p> </p>
-</div>
-<div id="benchmarking" class="section level2">
-<h2>Benchmarking</h2>
-<p>Our <a href="http://dx.doi.org/10.1038/nmeth.3869">manuscript
-introducing DADA2</a> (<a
-href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4927377/">OA
-link</a>) compares the accuracy of DADA2 and other methods on several
-mock community datasets.</p>
-<p>We describe <a href="http://dx.doi.org/10.1038/ismej.2017.119">the
-broad advantages of exact sequence variants over OTUs in our recent
-open-access ISMEJ paper</a>.</p>
-<p>We evaluate <a
-href="https://www.biorxiv.org/content/early/2018/08/15/392332">the high
-accuracy and resolution that is achievable by sequencing the full-length
-16S rRNA gene with PacBio and DADA2</a>.</p>
-<p>Further <a href="SotA.html">benchmarking of DADA2 against the methods
-evaluated in a recent QIIME1 benchmarking paper</a> is available.</p>
-<p>And sometimes a picture says a thousand word:</p>
-<p><img src="dada2_accuracy.jpg" /></p>
-<p> </p>
-</div>
-<div id="advantages" class="section level2">
-<h2>Advantages</h2>
+<div id="dada2-1.26-release-notes" class="section level2">
+<h2>DADA2 1.26 RELEASE NOTES</h2>
+<div id="bug-fixes" class="section level4">
+<h4>BUG FIXES</h4>
 <ul>
-<li><p><strong>Resolution</strong>: DADA2 infers exact amplicon sequence
-variants (ASVs) from amplicon data, resolving biological differences of
-even 1 or 2 nucleotides.</p></li>
-<li><p><strong>Accuracy</strong>: DADA2 reports fewer false positive
-sequence variants than other methods report false OTUs.</p></li>
-<li><p><strong>Comparability</strong>: The ASVs output by DADA2 can be
-directly compared between studies, without the need to reprocess the
-pooled data.</p></li>
-<li><p><strong>Computational Scaling</strong>: The compute time of DADA2
-scales linearly sample number, and memory requirements are essentially
-flat.</p></li>
-<li><p><strong>Open Source</strong>: DADA2 is licensed under the <a
-href="http://www.gnu.org/licenses/lgpl-3.0.en.html">LGPL version
-3</a>.</p></li>
+<li>The dada2 R package now compiles and runs natively on ARM
+architectures, including the M1/M2 chipsets now being used by
+Apple.</li>
 </ul>
-<p> </p>
 </div>
-<div id="support-and-development" class="section level2">
-<h2>Support and Development</h2>
-<p>Planned feature improvements are publicly catalogued at the main
-DADA2 development site on github; specifically on the <a
-href="https://github.com/benjjneb/dada2/issues">issues tracker for
-DADA2</a>. If the feature you are hoping for is not listed, you are
-welcome to add it as a feature request on this page.</p>
-<p>Bug reports and problems using DADA2 are also welcome on <a
-href="https://github.com/benjjneb/dada2/issues">the issues tracker</a>.
-We prefer posting to the issue tracker over email as these posts are
-searchable by other users who may experience the same problems.</p>
-<p> </p>
-</div>
-<div id="how" class="section level2">
-<h2>How?</h2>
-<p><strong>Accuracy:</strong> DADA2’s crucial advantage is that it uses
-more of the data. The DADA2 error model incorporates quality
-information, which is ignored by all other methods after filtering. The
-DADA2 error model incorporates quantitative abundances, whereas most
-other methods use abundance ranks if they use abundance at all. The
-DADA2 error model identifies the differences between sequences, eg.
-A-&gt;C, whereas other methods merely count the mismatches. DADA2 can
-parameterize its error model from the data itself, rather than relying
-on previous datasets that may or may not reflect the PCR and sequencing
-protocols used in your study.</p>
-<p><strong>Performance:</strong> DADA2’s computational scaling gains
-come from the fact that it infers sequences exactly rather than
-constructing OTUs. De novo OTUs cannot be compared across samples unless
-all samples were pooled during OTU construction. However, <a
-href="http://dx.doi.org/10.1038/ismej.2017.119">exact sequences
-<strong>are</strong> comparable across samples, as exact sequences are
-consistent labels</a>. Thus DADA2 can analyze each sample independently,
-resulting in linear scaling with sample number and trivial
-parallelization.</p>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
