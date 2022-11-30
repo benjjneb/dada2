@@ -35,7 +35,11 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
     
 * [HitDB version 1](http://doi.org/10.5281/zenodo.159205) (Human InTestinal 16S rRNA)
 
+* [Human Oral Microbiome Database: HOMD](https://doi.org/10.5281/zenodo.7380291)
+
 * [MiDAS: Field Guide to the Microbes of Activated Sludge and Anaerobic Digesters](https://midasfieldguide.org/guide/downloads)
+
+* [MIDORI Reference 2](http://www.reference-midori.info/index.html) (for taxonomic assignments of Eukaryota mitochondrial DNA sequences)
 
 * [RDP fungi LSU trainset 11](https://doi.org/10.5281/zenodo.835612)
 
