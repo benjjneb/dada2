@@ -20,7 +20,7 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 * **[RDP trainset 18](https://doi.org/10.5281/zenodo.4310150)**, [RDP trainset 16](https://doi.org/10.5281/zenodo.801827), [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955)
 
-* **[UNITE (use the General Fasta releases)](https://unite.ut.ee/repository.php)**
+* **[UNITE (use the General Fasta releases, "All eukaryotes")](https://unite.ut.ee/repository.php)**
 
 * *Deprecated: [GreenGenes version 13.8](http://dx.doi.org/10.5281/zenodo.158955) (the source GreenGenes database is no longer being maintained)*
 
