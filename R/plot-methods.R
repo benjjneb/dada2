@@ -196,15 +196,15 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
     p <- ggplot(data=plotdf.summary, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
 		  scale_fill_gradient(low="#F5F5F5", high="black") + 
 		  geom_line(data=statdf.summary, aes(y=Mean), color="#66C2A5") +
-		  geom_line(data=statdf.summary, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
-		  geom_line(data=statdf.summary, aes(y=Q50), color="#FC8D62", size=0.25) +
-		  geom_line(data=statdf.summary, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
+		  geom_line(data=statdf.summary, aes(y=Q25), color="#FC8D62", linewidth=0.25, linetype="dashed") +
+		  geom_line(data=statdf.summary, aes(y=Q50), color="#FC8D62", linewidth=0.25) +
+		  geom_line(data=statdf.summary, aes(y=Q75), color="#FC8D62", linewidth=0.25, linetype="dashed") +
 		  ylab("Quality Score") + xlab("Cycle") + 
 		  annotate("text", x=0, y=0, label=sprintf("Total reads: %d", sum(anndf$rc)), color="red", hjust=0) + 
-		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) + 
+		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill="none") + 
       facet_wrap(~label)
     if(length(unique(statdf$Cum))>1) {
-      p <- p + geom_line(data=statdf.summary, aes(y=Cum), color="red", size=0.25, linetype="solid") +
+      p <- p + geom_line(data=statdf.summary, aes(y=Cum), color="red", linewidth=0.25, linetype="solid") +
         scale_y_continuous(limits = c(0,NA), sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
         theme(axis.text.y.right = element_text(color = "red"), axis.title.y.right = element_text(color = "red"))
     } else {
@@ -214,15 +214,15 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
   	p <- ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
 		  scale_fill_gradient(low="#F5F5F5", high="black") + 
 		  geom_line(data=statdf, aes(y=Mean), color="#66C2A5") +
-		  geom_line(data=statdf, aes(y=Q25), color="#FC8D62", size=0.25, linetype="dashed") +
-		  geom_line(data=statdf, aes(y=Q50), color="#FC8D62", size=0.25) +
-      geom_line(data=statdf, aes(y=Q75), color="#FC8D62", size=0.25, linetype="dashed") +
+		  geom_line(data=statdf, aes(y=Q25), color="#FC8D62", linewidth=0.25, linetype="dashed") +
+		  geom_line(data=statdf, aes(y=Q50), color="#FC8D62", linewidth=0.25) +
+      geom_line(data=statdf, aes(y=Q75), color="#FC8D62", linewidth=0.25, linetype="dashed") +
       ylab("Quality Score") + xlab("Cycle") +
-		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill=FALSE) +
+		  theme_bw() + theme(panel.grid=element_blank()) + guides(fill="none") +
 		  geom_text(data=anndf, aes(x=0, label=rclabel, y=0), color="red", hjust=0) + 
       facet_wrap(~file)
     if(length(unique(statdf$Cum))>1) {
-      p <- p + geom_line(data=statdf, aes(y=Cum), color="red", size=0.25, linetype="solid") +
+      p <- p + geom_line(data=statdf, aes(y=Cum), color="red", linewidth=0.25, linetype="solid") +
         scale_y_continuous(limits = c(0,NA), sec.axis=sec_axis(~.*10, breaks=c(0,100), labels=c("0%", "100%"))) + 
         theme(axis.text.y.right = element_text(color = "red"), axis.title.y.right = element_text(color = "red"))
     } else {
