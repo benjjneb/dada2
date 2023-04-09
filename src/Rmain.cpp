@@ -79,10 +79,10 @@ Rcpp::List dada_uniques(std::vector< std::string > seqs, std::vector<int> abunda
   // Check for SSE2+ support
   // Code adapted from Stack Overflow (Mysticial) 
   // https://stackoverflow.com/questions/6121792/how-to-check-if-a-cpu-supports-the-sse3-instruction-set
-  bool HW_SSE = false;
+/*  bool HW_SSE = false;
   bool HW_SSE2 = false;
   bool HW_SSE3 = false;
-/*  int info[4];
+  int info[4];
   cpuid(info, 0);
   int nIds = info[0];
 
