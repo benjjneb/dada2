@@ -50,7 +50,7 @@ The [dataset](https://www.ebi.ac.uk/ena/data/view/PRJNA377530) used here is the 
 To follow along, download the forward and reverse fastq files from the 31 samples listed [in the ENA Project](https://www.ebi.ac.uk/ena/data/view/PRJNA377530). Define the following path variable so that it points to the directory containing those files on **your** machine:
 
 ```{r N removal, warning=FALSE, message=FALSE, tidy=TRUE,comment= ""}
-path <- "~/Desktop/Amplicon_sequencing_library_1" ## CHANGE ME to the directory containing the fastq files.
+path <- "~/test/ITS_tutorial" ## CHANGE ME to the directory containing the fastq files.
 list.files(path)
 ```
 
@@ -78,7 +78,10 @@ In theory if you understand your amplicon sequencing setup, this is sufficient t
 allOrients <- function(primer){ # Create all orientations of the input sequence
   require(Biostrings)
   dna <- DNAString(primer) # The Biostrings works w/ DNAString objects rather than character vectors
-  orients <- c(Forward=dna, Complement=complement(dna), Reverse=reverse(dna), RevComp=reverseComplement(dna))
+  orients <- c(Forward=dna, 
+               Complement=Biostrings::complement(dna), 
+               Reverse=Biostrings::reverse(dna), 
+               RevComp=Biostrings::reverseComplement(dna))
   return(sapply(orients, toString)) # Convert back to character vector
 }
 FWD.orients <- allOrients(FWD)
@@ -89,7 +92,7 @@ FWD.orients
 The presence of ambiguous bases (Ns) in the sequencing reads makes accurate mapping of short primer sequences difficult. Next we are going to "pre-filter" the sequences just to remove those with Ns, but perform no other filtering.
 
 ```{r}
-fnFs.filtN <- file.path(path, "filtN", basename(fnFs)) # Put N-filterd files in filtN/ subdirectory
+fnFs.filtN <- file.path(path, "filtN", basename(fnFs)) # Put N-filtered files in filtN/ subdirectory
 fnRs.filtN <- file.path(path, "filtN", basename(fnRs))
 filterAndTrim(fnFs, fnFs.filtN, fnRs, fnRs.filtN, maxN = 0, multithread = TRUE)
 ```
@@ -118,7 +121,7 @@ These primers can be now removed using a specialized primer/adapter removal tool
 Install cutadapat if you don't have it already. After installing cutadapt, we need to tell R the path to the cutadapt command.
 
 ```{r Define cutadapt, echo=TRUE}
-cutadapt <- "/Users/nbetrap/miniconda2/bin/cutadapt" # CHANGE ME to the cutadapt path on your machine
+cutadapt <- "/usr/local/bin/cutadapt" # CHANGE ME to the cutadapt path on your machine
 system2(cutadapt, args = "--version") # Run shell commands from R
 ```
 
@@ -232,29 +235,19 @@ plotErrors(errF, nominalQ=TRUE)
 
 Everything looks reasonable and we proceed with confidence.
 
-## Dereplicate identical reads
-
-```{r Dereplication, echo=TRUE, warning=FALSE, message=FALSE, tidy=TRUE, results="hide", comment= ""}
-derepFs <- derepFastq(filtFs, verbose=TRUE)
-derepRs <- derepFastq(filtRs, verbose=TRUE)
-# Name the derep-class objects by the sample names
-names(derepFs) <- sample.names
-names(derepRs) <- sample.names
-```
-
 ## Sample Inference
 
 At this step, [the core sample inference algorithm](https://www.nature.com/articles/nmeth.3869#methods) is applied to the dereplicated data. 
 
 ```{r dada2, warning=FALSE, message=FALSE, tidy=TRUE, results = "hide", comment= ""}
-dadaFs <- dada(derepFs, err=errF, multithread=TRUE)
-dadaRs <- dada(derepRs, err=errR, multithread=TRUE)
+dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
+dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
 ```
 
 ## Merge paired reads
 
 ```{r Mergers, warning=FALSE, message=FALSE,comment= ""}
-mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs, verbose=TRUE)
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
 ```
 
 ## Construct Sequence Table
@@ -305,7 +298,7 @@ DADA2 supports fungal taxonmic assignment using the UNITE database! The DADA2 pa
 *We also maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database](https://benjjneb.github.io/dada2/training.html) for 16S, and additional trainings fastas suitable for protists and certain specific environments have been contributed.*
 
 ```{r Taxa assignment, message=FALSE, warning=FALSE, tidy=TRUE,comment= ""}
-unite.ref <- "~/tax/sh_general_release_dynamic_s_01.12.2017.fasta" # CHANGE ME to location on your machine
+unite.ref <- "~/tax/sh_general_release_dynamic_s_all_29.11.2022.fasta" # CHANGE ME to location on your machine
 taxa <- assignTaxonomy(seqtab.nochim, unite.ref, multithread=TRUE, tryRC = TRUE)
 ```
 
