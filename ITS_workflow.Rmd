@@ -7,7 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 ```
 
-This workflow is an ITS-specific variation of [version 1.8 of the DADA2 tutorial workflow](tutorial_1_8.html). The starting point is a set of Illumina-sequenced paired-end fastq files that have been split ("demultiplexed") by sample and from which the barcodes have already been removed. The end product is an amplicon sequence variant (ASV) table, a higher-resolution analogue of the traditional OTU table, providing records of the number of times each exact [amplicon sequence variant](https://www.nature.com/articles/ismej2017119) was observed in each sample. We also assign taxanomy to the output ITS sequence variants using the UNITE database. **The key addition to this workflow (compared to the tutorial) is the identification and removal of primers from the reads, and the verification of primer orientation and removal.**
+This workflow is an ITS-specific variation of [version 1.8 of the DADA2 tutorial workflow](tutorial_1_8.html). The starting point is a set of Illumina-sequenced paired-end fastq files that have been split ("demultiplexed") by sample and from which the barcodes have already been removed. The end product is an amplicon sequence variant (ASV) table, a higher-resolution analogue of the traditional OTU table, providing records of the number of times each exact [amplicon sequence variant](https://www.nature.com/articles/ismej2017119) was observed in each sample. We also assign taxanomy to the output ITS sequence variants using the UNITE database. **The key addition to this workflow compared to the tutorial is the identification and removal of primers from the reads, and the verification of primer orientation and removal.**
 
 -----------------------
 
