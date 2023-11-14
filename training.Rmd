@@ -47,9 +47,9 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 * [nifH ARB, version 1](https://doi.org/10.5281/zenodo.3958364)
 
-* [PR2 version 4.7.2+](https://github.com/vaulot/pr2_database/releases). SEE NOTE BELOW.
+* [PR2 version 5.0.0+](https://github.com/vaulot/pr2_database/releases). SEE NOTE BELOW.
 
-**Note:** PR2 has different `taxLevels` than the dada2 default. When assigning taxonomy against PR2, use the following: `assignTaxonomy(..., taxLevels = c("Kingdom","Supergroup","Division","Class","Order","Family","Genus","Species"))`
+**Note:** PR2 has different `taxLevels` than the dada2 default. When assigning taxonomy against PR2, use the following: `assignTaxonomy(..., taxLevels = c("Domain","Supergroup","Division","Subdivision","Class","Order","Family","Genus","Species"))`
 
 
 --------------------------
