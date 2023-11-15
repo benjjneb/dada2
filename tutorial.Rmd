@@ -212,16 +212,16 @@ Looks good! We kept the majority of our raw reads, and there is no over-large dr
 
 It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to assign taxonomy to the sequence variants. The DADA2 package provides a native implementation of the [naive Bayesian classifier method](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes as input a set of sequences to be classified and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least `minBoot` bootstrap confidence. 
 
-We maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97\% identity, and the Silva reference database](training.html), and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be used as is. To follow along, download the `silva_nr_v132_train_set.fa.gz` file, and place it in the directory with the fastq files.
+We maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97\% identity, and the Silva reference database](training.html), and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be used as is. To follow along, download the `silva_nr99_v138.1_train_set.fa.gz` file, and place it in the directory with the fastq files.
 
 ```{r taxify}
-taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr_v132_train_set.fa.gz", multithread=TRUE)
+taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr99_v138.1_train_set.fa.gz", multithread=TRUE)
 ```
 
-<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-top:30px;margin-bottom: 15px;"><span style="color:blue">**Extensions:**</span> The dada2 package also implements a method to make [species level assignments based on **exact matching**](assign.html#species-assignment) between ASVs and sequenced reference strains. Recent analysis suggests that [exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments](https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809). Currently, [species-assignment training fastas are available for the Silva and RDP 16S databases](training.html). To follow the optional species addition step, download the `silva_species_assignment_v132.fa.gz` file, and place it in the directory with the fastq files.
+<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-top:30px;margin-bottom: 15px;"><span style="color:blue">**Extensions:**</span> The dada2 package also implements a method to make [species level assignments based on **exact matching**](assign.html#species-assignment) between ASVs and sequenced reference strains. Recent analysis suggests that [exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments](https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809). Currently, [species-assignment training fastas are available for the Silva and RDP 16S databases](training.html). To follow the optional species addition step, download the `silva_species_assignment_v138.1.fa.gz` file, and place it in the directory with the fastq files.
 
 ```{r species}
-taxa <- addSpecies(taxa, "~/tax/silva_species_assignment_v132.fa.gz")
+taxa <- addSpecies(taxa, "~/tax/silva_species_assignment_v138.1.fa.gz")
 ```
 
 </div>
@@ -242,7 +242,7 @@ Unsurprisingly, the Bacteroidetes are well represented among the most abundant t
 ```{r decipher, message=FALSE, warning=FALSE}
 library(DECIPHER); packageVersion("DECIPHER")
 dna <- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
-load("~/tax/IDTaxa/SILVA_SSU_r132_March2018.RData") # CHANGE TO THE PATH OF YOUR TRAINING SET
+load("~/tax/IDTaxa/SILVA_SSU_r138_2019.RData") # CHANGE TO THE PATH OF YOUR TRAINING SET
 ids <- IdTaxa(dna, trainingSet, strand="top", processors=NULL, verbose=FALSE) # use all processors
 ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species") # ranks of interest
 # Convert the output object of class "Taxa" to a matrix analogous to the output from assignTaxonomy
@@ -351,4 +351,72 @@ plot_bar(ps.top20, x="Day", fill="Family") + facet_wrap(~When, scales="free_x")
 
 Nothing glaringly obvious jumps out from the taxonomic distribution of the top 20 sequences to explain the early-late differentiation.
 
-These were minimal examples of what can be done with phyloseq, as our purpose here was just to show how the results of DADA2 can be easily imported into phyloseq and interrogated further. For examples of the many analyses possible with phyloseq, see [the phyloseq web site](https://joey711.github.io/phyloseq/)!
+
+# Using external packages
+
+A variety of other packages are available, extending phyloseq. Dr. Sudarshan Shetty maintains a comprehensive [list of R tools for microbiome data science](https://microsud.github.io/Tools-Microbiome-Analysis/). One widely used package is the [microbiome R/Bioconductor package](https://bioconductor.org/packages/devel/bioc/html/microbiome.html), which has a more extensive  [tutorial](https://microbiome.github.io/tutorials/) of its own. The package provides tools for microbiome data manipulation, transformations, and visualization. 
+
+Let us first load the package, and transform the original count data into relative abundances. Other common transformations are also available, including e.g. clr, hellinger, and log10p.
+
+
+```{r microbiomeexamples1}
+library(microbiome)
+
+# Transform into compositional data (relative abundances)
+ps.rel <- microbiome::transform(ps, "compositional")
+```
+
+Let us then calculate prevalence of the taxa (i.e. relative population frequencies), using 0.1% compositional abundance as a detection threshold:
+
+```{r microbiomeprevalence}
+# Sorted from the most prevalent to the least prevalent
+head(prevalence(ps.rel, detection = 0.1/100, sort = TRUE), 20)
+```
+
+
+We can also subset the phyloseq object to the prevalent taxa (detected in 50% of the population at higher than 0.1% relative abundance):
+
+```{r microbiomecore}
+# Subset to prevalent (core) taxa
+ps.core <- core(ps.rel, detection = 0.1/100, prevalence = 50/100)
+
+# Compare the objects before and after subsetting to the core:
+print(ps.rel)
+print(ps.core)
+```
+
+
+We can also aggregate data to Genus level, and collapse rare taxa into an “Other” category.
+
+```{r microbiomecollapse}
+ps.core2 <- aggregate_rare(ps.rel, "Genus", detection = 0.1/100, prevalence = 50/100)
+print(ps.core2)
+```
+
+Finally, the microbiome package provides complementary visualization methods. One example is a heatmap that can be used to visualize relations between the size of the core microbiota at various detection and prevalence thresholds ([Shetty et al. FEMS Microbiology Reviews fuw045, 2017](https://academic.oup.com/femsre/article/doi/10.1093/femsre/fuw045/2979411/Intestinal-microbiome-landscaping-insight-in#58802539)). 
+
+```{r microbiomecoreheatmap, fig.width=15, fig.height=4}
+# Core with absolute counts and horizontal view:
+# and minimum population prevalence (given as percentage)
+# In the end we add some ggplot formatting for the figure
+library(RColorBrewer)
+prevalences <- seq(.05, 1, .05)
+detections <- seq(from = 0, to = round(max(abundances(ps.rel))/10, 2), by = 0.002)
+p <- plot_core(ps.rel, plot.type = "heatmap",
+               prevalences = prevalences,
+               detections = detections,
+               colours = rev(brewer.pal(5, "Spectral")),
+               min.prevalence = .2, horizontal = TRUE) +
+  theme(axis.text.x= element_text(size=8, face="italic", hjust=1),
+        axis.text.y= element_text(size=8),
+        axis.title = element_text(size=10),
+        legend.text = element_text(size=8),
+        legend.title = element_text(size=10))
+print(p)
+```
+
+
+These were some minimal examples of what can be done with phyloseq, as our purpose here was just to show how the results of DADA2 can be easily imported into phyloseq and interrogated further. For examples of the many analyses possible with phyloseq, see [the phyloseq web site](https://joey711.github.io/phyloseq/)!
+
+
+
