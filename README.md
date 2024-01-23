@@ -1,5 +1,5 @@
 
-[![Build Status](https://travis-ci.org/benjjneb/dada2.svg?branch=master)](https://travis-ci.org/benjjneb/dada2)
+[![Build Status](https://app.travis-ci.com/benjjneb/dada2.svg?branch=master)](https://app.travis-ci.com/benjjneb/dada2)
 
 # dada2
 
