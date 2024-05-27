@@ -13,7 +13,7 @@
 
 <title>Taxonomic reference data</title>
 
-<script src="site_libs/header-attrs-2.17/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.27/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
@@ -32,8 +32,8 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
-<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.4.2/css/v4-shims.min.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
 <style type="text/css">
@@ -418,20 +418,20 @@ v132 &amp; v128</a></p></li>
 <li><p><a href="https://doi.org/10.5281/zenodo.3958364">nifH ARB,
 version 1</a></p></li>
 <li><p><a href="https://github.com/vaulot/pr2_database/releases">PR2
-version 4.7.2+</a>. SEE NOTE BELOW.</p></li>
+version 5.0.0+</a>. SEE NOTE BELOW.</p></li>
 </ul>
 <p><strong>Note:</strong> PR2 has different <code>taxLevels</code> than
 the dada2 default. When assigning taxonomy against PR2, use the
 following:
-<code>assignTaxonomy(..., taxLevels = c("Kingdom","Supergroup","Division","Class","Order","Family","Genus","Species"))</code></p>
+<code>assignTaxonomy(..., taxLevels = c("Domain","Supergroup","Division","Subdivision", "Class","Order","Family","Genus","Species"))</code></p>
 <hr />
 <p>Many thanks to the folks at RDP, Silva, GreenGenes, UNITE, GTDB, PR2
 and others for making these amazing reference datbases available to the
 community. We created the dada2-compatible training fastas from <a
-href="https://www.arb-silva.de/no_cache/download/archive/release_138/Exports/">the
+href="https://www.arb-silva.de/no_cache/download/archive/release_138_1/Exports/">the
 Silva NR99 and taxonomy files</a>, the <a
-href="http://rdp.cme.msu.edu/misc/resources.jsp">RDP trainset 16 and
-release 11.5 database</a>, and <a
+href="https://sourceforge.net/p/rdp-classifier/news/2020/07/rdp-classifier-213-july-2020-release-note/">RDP
+trainset 18 database</a>, and <a
 href="ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/">the
 GreenGenes 13.8 OTUs clustered at 97%</a>.</p>
 <p>The scripts to parse and produce the officially maintained training

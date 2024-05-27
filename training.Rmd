@@ -49,12 +49,12 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 * [PR2 version 5.0.0+](https://github.com/vaulot/pr2_database/releases). SEE NOTE BELOW.
 
-**Note:** PR2 has different `taxLevels` than the dada2 default. When assigning taxonomy against PR2, use the following: `assignTaxonomy(..., taxLevels = c("Domain","Supergroup","Division","Subdivision","Class","Order","Family","Genus","Species"))`
+**Note:** PR2 has different `taxLevels` than the dada2 default. When assigning taxonomy against PR2, use the following: `assignTaxonomy(..., taxLevels = c("Domain","Supergroup","Division","Subdivision", "Class","Order","Family","Genus","Species"))`
 
 
 --------------------------
 
-Many thanks to the folks at RDP, Silva, GreenGenes, UNITE, GTDB, PR2 and others for making these amazing reference datbases available to the community. We created the dada2-compatible training fastas from [the Silva NR99 and taxonomy files](https://www.arb-silva.de/no_cache/download/archive/release_138/Exports/), the [RDP trainset 16 and release 11.5 database](http://rdp.cme.msu.edu/misc/resources.jsp), and [the GreenGenes 13.8 OTUs clustered at 97\%](ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/).
+Many thanks to the folks at RDP, Silva, GreenGenes, UNITE, GTDB, PR2 and others for making these amazing reference datbases available to the community. We created the dada2-compatible training fastas from [the Silva NR99 and taxonomy files](https://www.arb-silva.de/no_cache/download/archive/release_138_1/Exports/), the [RDP trainset 18 database](https://sourceforge.net/p/rdp-classifier/news/2020/07/rdp-classifier-213-july-2020-release-note/), and [the GreenGenes 13.8 OTUs clustered at 97\%](ftp://greengenes.microbio.me/greengenes_release/gg_13_8_otus/).
 
 The scripts to parse and produce the officially maintained training fastas are included as private functions within the dada2 R package. Inspect `taxonomy.R` to see the code. Currently training fastas for `assignSpecies` are only available for the Silva and RDP databases. 
 
