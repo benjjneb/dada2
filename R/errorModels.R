@@ -258,8 +258,8 @@ learnErrors <- function(fls, nbases=1e8, nreads=NULL, errorEstimationFunction = 
     } else {
         drps[[i]] <- derepFastq(fls[[i]], qualityType = qualityType)
     }
-    NREADS <- NREADS + sum(drps[[i]]$uniques)
-    NBASES <- NBASES + sum(drps[[i]]$uniques * nchar(names(drps[[i]]$uniques)))
+    NREADS <- NREADS + sum(as.numeric(drps[[i]]$uniques))
+    NBASES <- NBASES + sum(as.numeric(drps[[i]]$uniques) * as.numeric(nchar(names(drps[[i]]$uniques))))
     if(is.null(nreads) && NBASES > nbases) { break }
     if(!is.null(nreads) && NREADS > nreads) { break }
   }
@@ -372,7 +372,7 @@ inflateErr <- function(err, inflation, inflateSelfTransitions = FALSE) {
 ## 
 accumulateTrans <- function(trans) {
   maxcol <- max(sapply(trans, ncol))
-  rval <- matrix(0L, nrow=16, ncol=maxcol)
+  rval <- matrix(0, nrow=16, ncol=maxcol)
   rownames(rval) <- c("A2A", "A2C", "A2G", "A2T", "C2A", "C2C", "C2G", "C2T", "G2A", "G2C", "G2G", "G2T", "T2A", "T2C", "T2G", "T2T")
   colnames(rval) <- seq(0, maxcol-1)  # One col for each integer starting at 0
   for(tt in trans) {
