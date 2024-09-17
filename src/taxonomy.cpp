@@ -77,7 +77,7 @@ int get_best_genus(int *karray, float *out_logp, unsigned int arraylen, unsigned
   float logp, max_logp = -FLT_MAX; // Init value to be replaced on first iteration
   double rv; // Dummy random variable
   unsigned int nmax=0; // Number of times the current max logp has been seen
-  std::random_device rd;  //Will be used to obtain a seed for the random number engine
+  std::random_device rd("rdrand");  //Will be used to obtain a seed for the random number engine
   std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
   std::uniform_real_distribution<> cunif(0.0, 1.0);
   
