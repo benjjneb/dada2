@@ -483,14 +483,14 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
 #' release files. If `include.species`=TRUE, a 7th taxonomic level (species) will be added based on the
 #' Genus species binomial in the Silva taxonomy string, if present and valid.
 #' 
-#' ## Silva release v138
-#' path <- "~/tax/Silva/v138"
-#' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138_SSURef_NR99_tax_silva.fasta.gz"), 
-#'     file.path(path, "tax_slv_ssu_138.txt"), 
-#'     "~/Desktop/silva_nr99_v138_train_set.fa.gz")
-#' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138_SSURef_NR99_tax_silva.fasta.gz"), 
-#'     file.path(path, "tax_slv_ssu_138.txt"), 
-#'     include.species=TRUE, "~/Desktop/silva_nr99_v138_wSpecies_train_set.fa.gz")
+#' ## Silva release v138.2
+#' path <- "~/tax/Silva/v138_2"
+#' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138.2_SSURef_NR99_tax_silva.fasta.gz"), 
+#'     file.path(path, "tax_slv_ssu_138.2.txt"), 
+#'     "~/Desktop/silva_nr99_v138.2_train_set.fa.gz")
+#' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138.2_SSURef_NR99_tax_silva.fasta.gz"), 
+#'     file.path(path, "tax_slv_ssu_138.2.txt"), 
+#'     include.species=TRUE, "~/Desktop/silva_nr99_v138.2_wSpecies_train_set.fa.gz")
 #' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
@@ -506,10 +506,6 @@ makeTaxonomyFasta_SilvaNR <- function(fin, ftax, fout, include.species=FALSE, co
   if(any(duplicated(names(taxl)))) stop("Duplicated sequence IDs detected.")
   names(xset) <- names(taxl)
   taxl <- gsub("^[A-Za-z0-9.]+\\s", "", taxl)
-  # Fix Silva- or release-specific errors
-  taxl <- gsub(";YM;", ";", taxl) # YM bacterial suborder included in 138 Release in error (confirmed by Silva)
-  ##  taxl <- gsub(";Rahnella1", ";Rahnella", taxl) # Rahnella1 genus seems like an error, shares same species w/ Rahnella, 
-  ##  But! also in official tax file. Maybe check with Silva on this one.
   # taxa: A list of the ordered taxonomic levels corresponding to each reference sequence. Named by the sequence ID/accession.
   taxa <- strsplit(taxl, ";")
   # Read in the defined Silva taxonomic levels, e.g. Bacteria;Desulfobacterota;Desulfobulbia;Desulfobulbales;Desulfurivibrionaceae;
@@ -533,12 +529,29 @@ makeTaxonomyFasta_SilvaNR <- function(fin, ftax, fout, include.species=FALSE, co
     taxa.ba.mat.string[,col] <- paste0(taxa.ba.mat.string[,col-1], taxa.ba.mat[,col],";")
   }
   if(any(taxa.ba.mat.string == "UNDEF")) stop("Taxon string matrix was not fully initialized.")
+
+  ##### SILVA 138_2 CLEANUP NO LONGER NEEDS THIS BLOCK, DEPRECATING IN COMMENTS FOR NOW, SHOULD REMOVE LATER
   # Define the set of valid taxonomic assignment by their appearance in the list of valid Silva taxonomic levels
   taxa.ba.mat.is_valid <- matrix(taxa.ba.mat.string %in% silva.taxa$Taxon, ncol=6)
   # Update taxa.ba.mat matrix by replacing invalid entries with NAs
   taxa.ba.mat[!taxa.ba.mat.is_valid] <- NA
   # Also replace "uncultured" taxonomic ranks with NAs (note, uncultured only shows up as the terminal "assigned" rank)
   taxa.ba.mat[taxa.ba.mat %in% c("Uncultured", "uncultured")] <- NA
+  #####
+  
+  ##### SILVA 138_2 ADDED CONSISTNET USE OF INCERTAE SEDIS -- NEW PROCESSING FOR THAT
+  # Change terminal "Incertae Sedis" assignments to NA
+  # Note: Non-terminal "Incertae Sedis" assignments will remain
+  #  That is, when "Incertae Sedis" appears at an intermediate rank, but lower ranks are assigned a valid name
+  # Example: AF282253.1.1503  "Bacteria" "Bacillota" "Incertae Sedis" "Thermolithobacterales" "Thermolithobacteraceae" "Thermolithobacter"
+  taxa.ba.mat.is_incertae <- matrix(taxa.ba.mat %in% "Incertae Sedis", ncol=ncol(taxa.ba.mat))
+  # Define make_na as TRUE when rank is "Incertae Sedis" and all lower ranks are also "Incertae Sedis"
+  taxa.ba.mat.make_na <- taxa.ba.mat.is_incertae
+  for(col in seq(6,2)) {
+    taxa.ba.mat.make_na[,col-1] <- taxa.ba.mat.make_na[,col-1] & taxa.ba.mat.make_na[,col]
+  }
+  taxa.ba.mat[taxa.ba.mat.make_na] <- NA
+  #####
   
   ######### ADD SPECIES PART HERE ##############
   if(include.species) {
@@ -578,7 +591,7 @@ makeTaxonomyFasta_SilvaNR <- function(fin, ftax, fout, include.species=FALSE, co
     taxa.ba.mat[,7] <- binom[,2]
   }
   # Organize a small number of Eukaryota sequences for outgroup purposes, keeping only the Eukaryota Kingdom taxonomic assignment
-  set.seed(100); N_EUK <- 100
+  set.seed(500); N_EUK <- 500
   euk.keep <- sample(names(taxl)[kingdom %in% "Eukaryota"], N_EUK)
   taxa.euk.mat <- matrix("", nrow=N_EUK, ncol=ncol(taxa.ba.mat))
   rownames(taxa.euk.mat) <- euk.keep
@@ -604,55 +617,6 @@ makeTaxonomyFasta_SilvaNR <- function(fin, ftax, fout, include.species=FALSE, co
   if(include.species) cat(sum(!is.na(taxa.mat.final[,7])), "entries include species names.\n")
   
   writeFasta(ShortRead(unname(xset.out), BStringSet(taxa.string.final)), fout,
-             width=20000L, compress=compress)
-}
-
-#' DEPRECATED in favor of `makeTaxonomyFasta_SilvaNR``
-#' 
-#' This function creates the dada2 assignTaxonomy training fasta for the Silva .align file
-#' generated by the Mothur project.
-#' 
-#' ## Silva release v128
-#' path <- "~/Desktop/Silva/Silva.nr_v128"
-#' dada2:::makeTaxonomyFasta_Silva(file.path(path, "silva.nr_v128.align"), 
-#'     file.path(path, "silva.nr_v128.tax"), 
-#'     "~/tax/silva_nr_v128_train_set.fa.gz")
-#' 
-#' ## Silva release v132
-#' path <- "~/Desktop/Silva/Silva.nr_v132"
-#' dada2:::makeTaxonomyFasta_Silva(file.path(path, "silva.nr_v132.align"), 
-#'     file.path(path, "silva.nr_v132.tax"), 
-#'     "~/tax/silva_nr_v132_train_set.fa.gz")
-#' 
-#' @importFrom ShortRead readFasta
-#' @importFrom ShortRead writeFasta
-#' @importFrom ShortRead sread
-#' @importFrom Biostrings BStringSet
-#' @importFrom utils read.table
-#' @keywords internal
-makeTaxonomyFasta_Silva <- function(fin, ftax, fout, compress=TRUE) {
-  # Read in the fasta and pull out the taxonomy entries
-  sr <- readFasta(fin) # ~10GB to read in
-  ids <- sapply(strsplit(as.character(id(sr)), "\\t"), `[`, 1)
-  seqs <- gsub("[.-]", "", sread(sr)) # Takes a while
-  rm(sr);gc()
-  # Read in the taxnoomy file
-  taxdf <- read.table(ftax, sep="\t", header=FALSE, stringsAsFactors = FALSE)
-  colnames(taxdf) <- c("id", "tax")
-  taxdf$tax <- gsub("^\\s+|\\s+$", "", taxdf$tax)
-  if(!identical(taxdf$id, ids)) stop("Input align and taxonomy files don't match.")
-  # Final formatting
-  tax <- taxdf$tax
-  tax <- gsub("Escherichia-Shigella", "Escherichia/Shigella", tax)
-  # Remove faux-assignments added by new Mothur processing script
-  tax <- gsub("[^;]*_ge;$", "", tax)
-  tax <- gsub("[^;]*_fa;$", "", tax)
-  tax <- gsub("[^;]*_or;$", "", tax)
-  tax <- gsub("[^;]*_cl;$", "", tax)
-  tax <- gsub("[^;]*_ph;$", "", tax)
-  tax <- gsub(";uncultured;$", ";", tax)
-  # Write to disk
-  writeFasta(ShortRead(DNAStringSet(seqs), BStringSet(tax)), fout,
              width=20000L, compress=compress)
 }
 
@@ -728,15 +692,18 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
 
 ## This uses the "ten_16s.100.fa" originally from Robert Edgar's taxonomy testing page: https://drive5.com/taxxi/doc/fasta_index.html
 ## This file is relicensed here under the DADA2 LGPL2 license on permission from Robert Edgar.
-tax.check <- function(fn.tax, fn.test=system.file("extdata", "example_seqs.fa", package="dada2"), nseq=100, level=6, mode="taxonomy") {
+## Test file only contains taxonomy assigned to genus level (level=6), no species information
+tax.check <- function(fn.tax, fn.test=system.file("extdata", "ten_16s.100.fa", package="dada2"), nseq=100, level=6, mode="taxonomy") {
   sq.test <- sample(getSequences(fn.test), nseq)
   if(mode == "taxonomy") {
     tax <- assignTaxonomy(sq.test, fn.tax, multi=TRUE)
-    cbind(unname(tax[,level]), sapply(strsplit(names(sq.test), ":"), `[`, level+1))
+    rval <- cbind(unname(tax[,level]), sapply(strsplit(names(sq.test), ":"), `[`, level+1))
   } else if (mode=="species") {
     sq.acgt <- sq.test[dada2:::C_isACGT(sq.test)]
     spc <- assignSpecies(sq.acgt, fn.spc)
-    cbind(unname(spc[,level-5]), sapply(strsplit(names(sq.acgt), ":"), `[`, level+1))
+    rval <- cbind(unname(spc[,level-5]), sapply(strsplit(names(sq.acgt), ":"), `[`, level+1))
   } else { stop("Valid modes are taxonomy or species.") }
+  colnames(rval) <- c("assigned", "reference")
+  rval
 }
 
