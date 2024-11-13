@@ -1,7 +1,7 @@
 #'
 #' Classifies sequences against reference training dataset.
 #' 
-#' assignTaxonomy implements the RDP Naive Bayesian Classifier algorithm described in
+#' assignTaxonomy implements the Naive Bayesian Classifier algorithm described in
 #' Wang et al. Applied and Environmental Microbiology 2007, with kmer size 8 and 100 bootstrap
 #' replicates. Properly formatted reference files for several popular taxonomic databases
 #' are available \url{http://benjjneb.github.io/dada2/training.html}
@@ -357,21 +357,14 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=200
   taxtab
 }
 
-#' This function creates the dada2 assignTaxonomy training fasta for the RDP trainset .fa file
-#' The RDP trainset data was downloaded from: https://sourceforge.net/projects/rdp-classifier/files/RDP_Classifier_TrainingData/
+#' This function creates the dada2 assignTaxonomy training fasta from the RDP trainset .fa file
+#' The RDP trainset data was downloaded from: https://sourceforge.net/projects/rdp-classifier/
 #' 
-#' ## RDP Trainset 18
-#' path <- "~/Desktop/RDP/RDPClassifier_16S_trainsetNo18_rawtrainingdata"
-#' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset18_062020.fa"), 
-#'     file.path(path, "trainset18_db_taxid.txt"), 
-#'     "~/tax/rdp_train_set_18.fa.gz")
-#' dada2:::tax.check("~/tax/rdp_train_set_18.fa.gz", "~/Desktop/ten_16s.100.fa")
-#' 
-#' ## RDP Trainset 16
-#' path <- "~/Desktop/RDP/RDPClassifier_16S_trainsetNo16_rawtrainingdata"
-#' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset16_022016.fa"), 
-#'     file.path(path, "trainset16_db_taxid.txt"), 
-#'     "~/tax/rdp_train_set_16.fa.gz")
+#' ## RDP Trainset 19
+#' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset19_072023.fa"), 
+#'                               file.path(path, "trainset19_db_taxid.txt"), 
+#'                               "~/tax/rdp_train_set_19.fa.gz", compress=TRUE)
+#' dada2:::tax.check("~/tax/rdp_train_set_19.fa.gz")
 #' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
@@ -693,7 +686,7 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
 ## This uses the "ten_16s.100.fa" originally from Robert Edgar's taxonomy testing page: https://drive5.com/taxxi/doc/fasta_index.html
 ## This file is relicensed here under the DADA2 LGPL2 license on permission from Robert Edgar.
 ## Test file only contains taxonomy assigned to genus level (level=6), no species information
-tax.check <- function(fn.tax, fn.test=system.file("extdata", "ten_16s.100.fa", package="dada2"), nseq=100, level=6, mode="taxonomy") {
+tax.check <- function(fn.tax, fn.test=system.file("extdata", "ten_16s.100.fa.gz", package="dada2"), nseq=100, level=6, mode="taxonomy") {
   sq.test <- sample(getSequences(fn.test), nseq)
   if(mode == "taxonomy") {
     tax <- assignTaxonomy(sq.test, fn.tax, multi=TRUE)

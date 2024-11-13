@@ -324,7 +324,6 @@ Rcpp::IntegerVector kmer_matches(std::vector< std::string > s1, std::vector< std
 Rcpp::IntegerVector kdist_matches(std::vector< std::string > s1, std::vector< std::string > s2, int kmer_size) {
   int i, j;
   uint16_t dotsum = 0;
-  size_t len1 = 0, len2 = 0;
   char *seq1, *seq2;
   size_t n_kmers = (1 << (2*kmer_size));  // 4^k kmers
   
@@ -338,10 +337,8 @@ Rcpp::IntegerVector kdist_matches(std::vector< std::string > s1, std::vector< st
   
   for(i=0;i<nseqs;i++) {
     seq1 = intstr(s1[i].c_str());
-    len1 = s1[i].size();
     assign_kmer(kv1, seq1, kmer_size);
     seq2 = intstr(s2[i].c_str());
-    len2 = s2[i].size();
     assign_kmer(kv2, seq2, kmer_size);
     // code from kmer_dist
     dotsum = 0;
