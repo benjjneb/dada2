@@ -361,6 +361,7 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=200
 #' The RDP trainset data was downloaded from: https://sourceforge.net/projects/rdp-classifier/
 #' 
 #' ## RDP Trainset 19
+#' path <- ~/tax/rdp/v19
 #' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset19_072023.fa"), 
 #'                               file.path(path, "trainset19_db_taxid.txt"), 
 #'                               "~/tax/rdp_train_set_19.fa.gz", compress=TRUE)
@@ -391,6 +392,8 @@ makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
   tax <- paste0(tax, ";") # Ending semicolon
   tax <- gsub("[^;]*_incertae_sedis;$", "", tax) # Uncertain lowest-level assignment is better to leave blank
   tax <- gsub(" ", "_", tax)
+  ## Add some verbose output describing what happened.
+  cat(length(tax), "reference sequences were output.\n")
   # Write to disk
   writeFasta(ShortRead(sread(sr), BStringSet(tax)), fout,
              width=20000L, compress=compress)
@@ -399,11 +402,14 @@ makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
 #' This function creates the dada2 assignSpecies fasta file for the RDP
 #' from the RDP's _Bacteria_unaligned.fa file.
 #' 
+#' THE WAY RDP RELEASES SPECIES LEVEL INFORMATION APPEARS TO HAVE CHANGED IN RELEASE 19
+#' AS A RESULT, THIS OUTPUT IS NOT CURRENTLY BEING MAINTAINED
+#' 
 #' ## RDP Trainset 18/Release 11.5
 #' ## The RDP documentation does not make clear whether the updates to the taxonomy from training set release 18 were
 #' ## propagated to the current Bacterial alignment.
 #' dada2:::makeSpeciesFasta_RDP("~/Desktop/RDP/current_Bacteria_unaligned.fa", "~/tax/rdp_species_assignment_18.fa.gz")
-#' dada2:::tax.check("~/tax/rdp_species_assignment_18.fa.gz", "~/Desktop/ten_16s.100.fa", mode="species")
+#' dada2:::tax.check("~/tax/rdp_species_assignment_18.fa.gz", mode="species")
 #' 
 #' ## RDP Trainset 16/Release 11.5
 #' dada2:::makeSpeciesFasta_RDP("~/Desktop/RDP/current_Bacteria_unaligned.fa", "~/tax/rdp_species_assignment_16.fa.gz")
@@ -474,7 +480,7 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
 
 #' This function creates the dada2 assignTaxonomy training fasta for the official Silva NR99
 #' release files. If `include.species`=TRUE, a 7th taxonomic level (species) will be added based on the
-#' Genus species binomial in the Silva taxonomy string, if present and valid.
+#' Genus species binomial in the Silva taxonomy string (if consistent with the genus assignment).
 #' 
 #' ## Silva release v138.2
 #' path <- "~/tax/Silva/v138_2"
@@ -532,7 +538,7 @@ makeTaxonomyFasta_SilvaNR <- function(fin, ftax, fout, include.species=FALSE, co
   taxa.ba.mat[taxa.ba.mat %in% c("Uncultured", "uncultured")] <- NA
   #####
   
-  ##### SILVA 138_2 ADDED CONSISTNET USE OF INCERTAE SEDIS -- NEW PROCESSING FOR THAT
+  ##### PROCESSING FOR UPDATES USE OF INCERTAE SEDIS IN SILVA 138_2
   # Change terminal "Incertae Sedis" assignments to NA
   # Note: Non-terminal "Incertae Sedis" assignments will remain
   #  That is, when "Incertae Sedis" appears at an intermediate rank, but lower ranks are assigned a valid name
