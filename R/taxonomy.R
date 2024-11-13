@@ -361,11 +361,11 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=200
 #' The RDP trainset data was downloaded from: https://sourceforge.net/projects/rdp-classifier/
 #' 
 #' ## RDP Trainset 19
-#' path <- ~/tax/rdp/v19
+#' path <- "~/tax/rdp/v19"
 #' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset19_072023.fa"), 
 #'                               file.path(path, "trainset19_db_taxid.txt"), 
-#'                               "~/tax/rdp_train_set_19.fa.gz", compress=TRUE)
-#' dada2:::tax.check("~/tax/rdp_train_set_19.fa.gz")
+#'                               "~/Desktop/rdp_train_set_19.fa.gz", compress=TRUE)
+#' dada2:::tax.check("~/Desktop/rdp_train_set_19.fa.gz")
 #' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
@@ -487,9 +487,12 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
 #' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138.2_SSURef_NR99_tax_silva.fasta.gz"), 
 #'     file.path(path, "tax_slv_ssu_138.2.txt"), 
 #'     "~/Desktop/silva_nr99_v138.2_train_set.fa.gz")
+#' dada2:::tax.check("~/Desktop/silva_nr99_v138.2_train_set.fa.gz")
+#'     
 #' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138.2_SSURef_NR99_tax_silva.fasta.gz"), 
 #'     file.path(path, "tax_slv_ssu_138.2.txt"), 
 #'     include.species=TRUE, "~/Desktop/silva_nr99_v138.2_wSpecies_train_set.fa.gz")
+#' dada2:::tax.check("~/Desktop/silva_nr99_v138.2_wSpecies_train_set.fa.gz")
 #' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
@@ -687,6 +690,81 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
   ids <- sapply(strsplit(as.character(names(xset)), "\\s"), `[`, 1)
   writeFasta(ShortRead(unname(xset), BStringSet(paste(ids, binom))), fout,
              width=20000L, compress=compress)
+}
+
+#' This function creates the dada2 assignTaxonomy training fasta from the GreenGenes2
+#' release files. If `include.species`=TRUE, the 7th taxonomic level (species) will be output.
+#' Otherwise only the first 6 taxonomic levels (down to genus) will output.
+#' 
+#' ## Greengenes2 release 2024_09
+#' path <- "~/tax/GG2/2024_09"
+#' setwd(path)
+#' # download.file("http://ftp.microbio.me/greengenes_release/current/2024.09.backbone.full-length.fna.qza", 
+#'               "2024.09.backbone.full-length.fna.qza")
+#' download.file("http://ftp.microbio.me/greengenes_release/current/2024.09.backbone.tax.qza",
+#'               "2024.09.backbone.tax.qza")
+#' unzip("2024.09.backbone.full-length.fna.qza")
+#' unzip("2024.09.backbone.tax.qza")
+#' fn <- "5b42d9b6-2f24-4f01-b989-9b4dafca7d5e/data/dna-sequences.fasta"
+#' txfn <- "b7c3e691-ea51-4547-94dd-f79f49e41a36/data/taxonomy.tsv"
+#' 
+#' fn.out <- "~/Desktop/greengenes2_2024_09_trainset.fa.gz"
+#' dada2:::makeTaxonomyFasta_GG2(fn, txfn, fn.out, include.species=FALSE, compress=TRUE)
+#' dada2:::tax.check(fn.out)
+#' 
+#' fn.out.spc <- "~/Desktop/greengenes2_2024_09_wSpecies_trainset.fa.gz"
+#' dada2:::makeTaxonomyFasta_GG2(fn, txfn, fn.out.spc, include.species=TRUE, compress=TRUE)
+#' dada2:::tax.check(fn.out.spc)
+#' 
+#' @importFrom ShortRead readFasta
+#' @importFrom ShortRead writeFasta
+#' @importFrom utils read.csv
+#' @keywords internal
+makeTaxonomyFasta_GG2 <- function(fn, txfn, fout, include.species=FALSE, compress=TRUE) {
+  # tx is 2 column, id and taxonomy, taxonomy is 7 level, domain -- species
+  sq <- getSequences(fn)
+  tdf <- read.csv(txfn, sep="\t", header=TRUE)
+  tax <- tdf[,2]
+  names(tax) <- tdf[,1]
+  sq <- sq[names(tax)]
+  if(!identical(names(sq), names(tax))) stop("Mismatch between reference sequences and taxonomy file.")  ###!
+  
+  # Parse the taxonomies from the id string
+  taxes <- strsplit(tax, "; ")
+  tax.depth <- sapply(taxes, length)
+  table(tax.depth) 
+  # All taxonomies are 7-level
+  # Note: A significant number of unassigned taxonomic levels here, which are encoded as e.g. "g__"
+  # Note: Species has genus name duplicated, i.e. species level has genus [SPACE] species binomial, rather than just species
+  # Note: Leaving GG2 species binomials as is (other than replacing spaces with underscores).
+  #       There are some inconsistencies between the binomial genus and the assigned genus.
+  #       But given the multiple causes of this, going to skip fixing this in the interest of easing maintenance of future GG2 releases.
+  for(i in seq(length(taxes))) {
+    taxes[[i]][[7]] <- gsub(" ", "_", taxes[[i]][[7]])
+  }
+  # Identify unassigned taxonomic levels
+  tax_pre <- c("d__", "p__", "c__", "o__", "f__", "g__", "s__")
+  is.unassigned <- sapply(taxes, function(tx) {
+    tx == tax_pre
+  }) |> t()
+  # Note: A relatively small number of entries have lower taxonomic levels assigned, even though higher taxonomic levels aren't assigned
+  # e.g. `MJ030-2-barcode58-umi83452bins-ubs-6`, which is assigned s__Spirochaeta aurantia, but "o__;f__;g__" for order/family/genus designation
+  # These assignments will be dropped in accordance with `assignTaxonmy` expectations
+  tax.depth <- apply(is.unassigned, 1, function(isu) { min(which(isu)-1L, 7L) })
+  tax.ids <- sapply(seq_along(taxes), function(i) {
+    td <- tax.depth[[i]]
+    if(!include.species) { td <- min(td, 6L) }
+    id.str <- paste(taxes[[i]][1:td], collapse=";")
+    id.str <- paste0(id.str, ";") # Add terminal semicolon
+    id.str
+  })
+  names(tax.ids) <- names(taxes)
+  # Write out the training fasta file
+  sq.out <- sq
+  names(sq.out) <- tax.ids
+  writeFasta(sq.out, fout, width=20000L, compress=compress)
+  ## Add some verbose output describing what happened.
+  cat(length(sq.out), "reference sequences were output.\n")
 }
 
 ## This uses the "ten_16s.100.fa" originally from Robert Edgar's taxonomy testing page: https://drive5.com/taxxi/doc/fasta_index.html
