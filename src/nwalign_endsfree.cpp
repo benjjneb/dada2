@@ -74,7 +74,7 @@ char **raw_align(Raw *raw1, Raw *raw2, int match, int mismatch, int gap_p, int h
 
 /* note: input sequence must end with string termination character, '\0' */
 char **nwalign_endsfree(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int band) {
-  static size_t nnw = 0;
+///  static size_t nnw = 0;
   int i, j;
   int l, r;
   int diag, left, up;
@@ -211,14 +211,14 @@ char **nwalign_endsfree(const char *s1, size_t len1, const char *s2, size_t len2
   free(al0);
   free(al1);
   
-  nnw++;
+///  nnw++;
   return al;
 }
 
 /* note: input sequence must end with string termination character, '\0' */
 /* 08-17-15: MJR homopolymer free gapping version of ends-free alignment */
 char **nwalign_endsfree_homo(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int homo_gap_p, int band) {
-  static size_t nnw = 0;
+///  static size_t nnw = 0;
   int i, j, k;
   int l, r;
   int diag, left, up;
@@ -391,7 +391,7 @@ char **nwalign_endsfree_homo(const char *s1, size_t len1, const char *s2, size_t
   free(al0);
   free(al1);
   
-  nnw++;
+///  nnw++;
   return al;
 }
 
@@ -401,7 +401,7 @@ char **nwalign_endsfree_homo(const char *s1, size_t len1, const char *s2, size_t
 // Separate function to avoid if statement within performance critical nwalign_endsfree
 /* note: input sequence must end with string termination character, '\0' */
 char **nwalign(const char *s1, size_t len1, const char *s2, size_t len2, int score[4][4], int gap_p, int band) {
-  static size_t nnw = 0;
+///  static size_t nnw = 0;
   int i, j;
   int l, r;
   int diag, left, up;
@@ -532,7 +532,7 @@ char **nwalign(const char *s1, size_t len1, const char *s2, size_t len2, int sco
   free(al0);
   free(al1);
   
-  nnw++;
+///  nnw++;
   return al;
 }
 

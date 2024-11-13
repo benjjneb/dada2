@@ -175,15 +175,13 @@ Rcpp::IntegerMatrix b_make_transition_by_quality_matrix(B *b, Sub **subs, bool h
 // Also finds the expected number of substitutions at each position, based on quality scores
 //    and the input error matrix
 Rcpp::DataFrame b_make_positional_substitution_df(B *b, Sub **subs, unsigned int seqlen, Rcpp::NumericMatrix errMat, bool use_quals) {
-  unsigned int i, pos, pos1, qind, j, r, s, nti0, ncol;
+  unsigned int i, pos, pos1, qind, j, r, s, nti0;
   Raw *raw;
   Sub *sub;
   Rcpp::IntegerVector nts_by_pos(seqlen);
   Rcpp::IntegerVector subs_by_pos(seqlen);
   Rcpp::NumericVector exp_by_pos(seqlen);
 
-  ncol = errMat.ncol();
-  
   for(i=0;i<b->nclust;i++) {
     // Iterate through raws
     for(r=0;r<b->bi[i]->nraw;r++) {

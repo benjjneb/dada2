@@ -142,7 +142,7 @@ struct AssignParallel : public RcppParallel::Worker
   // Rprintf("Classify the sequences.\n");
   void operator()(std::size_t begin, std::size_t end) {
     size_t i, seqlen;
-    unsigned int boot, booti, boot_match, arraylen, arraylen_rc;
+    unsigned int boot, booti, arraylen, arraylen_rc;
     int max_g, max_g_rc, boot_g;
     int karray[9999];
     int karray_rc[9999];
@@ -180,7 +180,6 @@ struct AssignParallel : public RcppParallel::Worker
         
         unifs = &C_unifs[j*max_arraylen];
         booti = 0;
-        boot_match = 0;
         for(boot=0;boot<NBOOT;boot++) {
           for(i=0;i<(arraylen/8);i++,booti++) {
             bootarray[i] = karray[(int) (arraylen*unifs[booti])];

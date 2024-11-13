@@ -72,7 +72,7 @@ char **nwalign_vectorized2(const char *s1, size_t len1, const char *s2, size_t l
   size_t row, col, ncol, nrow, foo;
   size_t i,j;
   int16_t d_free;
-  size_t start_col, end_col;
+  size_t start_col;
   size_t col_min, col_max, even;
   size_t i_max, j_min;
   int16_t *ptr_left, *ptr_diag, *ptr_up, *ptr_d, *ptr_p;
@@ -94,7 +94,6 @@ char **nwalign_vectorized2(const char *s1, size_t len1, const char *s2, size_t l
   
   // Allocate the DP matrices
   start_col = 1 + (1+(band<len1 ? band : len1))/2;
-  end_col = start_col + (len2-len1)/2;
   //  ncol = 3 + (len1+len2+1)/2; // 3 = left boundary + center + right boundary !!!
   ncol = 2 + start_col + ((len2-len1+band)<len2 ? (len2-len1+band) : len2)/2;
   nrow = len1 + len2 + 1;
