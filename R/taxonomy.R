@@ -174,6 +174,7 @@ mapHits <- function(x, refs, keep, sep="/") {
 # Handles Clostridium groups and split genera names
 matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
   if(is.na(gen.tax) || is.na(gen.binom)) { return(FALSE) }
+  if(nchar(gen.tax) == 0 || nchar(gen.binom) == 0) { return(FALSE) }
   if((gen.tax==gen.binom) || 
      grepl(paste0("^", gen.binom, "[ _", split.glyph, "]"), gen.tax) || 
      grepl(paste0(split.glyph, gen.binom, "$"), gen.tax)) {
@@ -357,15 +358,22 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=200
   taxtab
 }
 
-#' This function creates the dada2 assignTaxonomy training fasta from the RDP trainset .fa file
+#' This function creates the dada2 assignTaxonomy training fasta from the speciesrank RDP trainset .fa file
 #' The RDP trainset data was downloaded from: https://sourceforge.net/projects/rdp-classifier/
 #' 
 #' ## RDP Trainset 19
 #' path <- "~/tax/rdp/v19"
-#' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset19_072023.fa"), 
+#' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset19_072023_speciesrank.fa"), 
 #'                               file.path(path, "trainset19_db_taxid.txt"), 
-#'                               "~/Desktop/rdp_train_set_19.fa.gz", compress=TRUE)
-#' dada2:::tax.check("~/Desktop/rdp_train_set_19.fa.gz")
+#'                               "~/Desktop/rdp_19_toGenus_trainset.fa.gz", include.species=FALSE,
+#'                               compress=TRUE)
+#' dada2:::tax.check("~/Desktop/rdp_19_toGenus_trainset.fa.gz")
+#' 
+#' dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset19_072023_speciesrank.fa"), 
+#'                               file.path(path, "trainset19_db_taxid.txt"), 
+#'                               "~/Desktop/rdp_19_toSpecies_trainset.fa.gz", include.species=TRUE,
+#'                               compress=TRUE)
+#' dada2:::tax.check("~/Desktop/rdp_19_toSpecies_trainset.fa.gz")
 #' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
@@ -373,12 +381,13 @@ addSpecies <- function(taxtab, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=200
 #' @importFrom Biostrings BStringSet
 #' @importFrom utils read.table
 #' @keywords internal
-makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
+makeTaxonomyFasta_RDP <- function(fin, fdb, fout, include.species=FALSE, compress=TRUE) {
   # Read in the fasta and pull out the taxonomy entries
   sr <- readFasta(fin)
-  id <- as.character(gsub("\"", "", id(sr)))
-  tax <- sapply(strsplit(id, "\\t"), `[`, 2)
-  tax <- gsub("^Root;", "", tax)
+  id <- as.character(id(sr)) # ID has 3 fields separated by tabs: Accession -- Species binomial+ -- Taxonomy to genus level
+  tax <- sapply(strsplit(id, "\\t"), `[`, 3)
+  tax <- gsub("[a-z]{5,8}__", "", tax)
+  tax <- gsub("; ", ";", tax)
   tax <- strsplit(tax, ";")
   # Get the names of the standard 6 taxonomic levels
   db <- read.table(file=fdb, sep="*", stringsAsFactors=FALSE)
@@ -386,6 +395,24 @@ makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
   keep <- db$Name[db$Level %in% c("domain", "phylum", "class", "order", "family", "genus")]
   # Cut down to just the 6 level taxonomy
   tax <- sapply(tax, function(x) x[x %in% keep])
+  if(max(sapply(tax, length)) > 6) stop("Taxonomy with >6 levels detected.")
+  # Add handling of species binomial
+  if(include.species) {
+    binom <- sapply(strsplit(id, "\\t"), `[`, 2) # Format: Genus species additional info for strain and accession (space separators)
+    gen.binom <- sapply(strsplit(binom, "\\s"), `[`, 1)
+    spc.binom <- sapply(strsplit(binom, "\\s"), `[`, 2)
+    gen <- sapply(tax, `[`, 6) # Will be NA if absent
+    gen.match <- mapply(matchGenera, gen, gen.binom)
+    spc.binom[!gen.match] <- NA
+    # If not NA and tax has 6 levels, append the species
+    nspc <- 0
+    for(i in seq_along(tax)) {
+      if(!is.na(spc.binom[[i]]) && length(tax[[i]] == 6)) {
+        tax[[i]] <- c(tax[[i]], spc.binom[[i]])
+        nspc <- nspc+1
+      }
+    }
+  }
   tax <- lapply(tax, paste, collapse = ";")
   tax <- unlist(tax)
   # Final formatting
@@ -394,6 +421,7 @@ makeTaxonomyFasta_RDP <- function(fin, fdb, fout, compress=TRUE) {
   tax <- gsub(" ", "_", tax)
   ## Add some verbose output describing what happened.
   cat(length(tax), "reference sequences were output.\n")
+  if(include.species) cat(nspc, "had valid species names.\n")
   # Write to disk
   writeFasta(ShortRead(sread(sr), BStringSet(tax)), fout,
              width=20000L, compress=compress)
@@ -486,13 +514,13 @@ makeSpeciesFasta_RDP <- function(fin, fout, compress=TRUE) {
 #' path <- "~/tax/Silva/v138_2"
 #' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138.2_SSURef_NR99_tax_silva.fasta.gz"), 
 #'     file.path(path, "tax_slv_ssu_138.2.txt"), 
-#'     "~/Desktop/silva_nr99_v138.2_train_set.fa.gz")
-#' dada2:::tax.check("~/Desktop/silva_nr99_v138.2_train_set.fa.gz")
+#'     "~/Desktop/silva_nr99_v138.2_toGenus_trainset.fa.gz")
+#' dada2:::tax.check("~/Desktop/silva_nr99_v138.2_toGenus_trainset.fa.gz")
 #'     
 #' dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138.2_SSURef_NR99_tax_silva.fasta.gz"), 
 #'     file.path(path, "tax_slv_ssu_138.2.txt"), 
-#'     include.species=TRUE, "~/Desktop/silva_nr99_v138.2_wSpecies_train_set.fa.gz")
-#' dada2:::tax.check("~/Desktop/silva_nr99_v138.2_wSpecies_train_set.fa.gz")
+#'     include.species=TRUE, "~/silva_nr99_v138.2_toSpecies_trainset.fa.gz")
+#' dada2:::tax.check("~/Desktop/silva_nr99_v138.2_toSpecies_trainset.fa.gz")
 #' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
@@ -708,11 +736,11 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
 #' fn <- "5b42d9b6-2f24-4f01-b989-9b4dafca7d5e/data/dna-sequences.fasta"
 #' txfn <- "b7c3e691-ea51-4547-94dd-f79f49e41a36/data/taxonomy.tsv"
 #' 
-#' fn.out <- "~/Desktop/greengenes2_2024_09_trainset.fa.gz"
+#' fn.out <- "~/Desktop/gg2_2024_09_toGenus_trainset.fa.gz"
 #' dada2:::makeTaxonomyFasta_GG2(fn, txfn, fn.out, include.species=FALSE, compress=TRUE)
 #' dada2:::tax.check(fn.out)
 #' 
-#' fn.out.spc <- "~/Desktop/greengenes2_2024_09_wSpecies_trainset.fa.gz"
+#' fn.out.spc <- "~/Desktop/gg2_2024_09_toSpecies_trainset.fa.gz"
 #' dada2:::makeTaxonomyFasta_GG2(fn, txfn, fn.out.spc, include.species=TRUE, compress=TRUE)
 #' dada2:::tax.check(fn.out.spc)
 #' 
@@ -720,7 +748,7 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
 #' @importFrom ShortRead writeFasta
 #' @importFrom utils read.csv
 #' @keywords internal
-makeTaxonomyFasta_GG2 <- function(fn, txfn, fout, include.species=FALSE, compress=TRUE) {
+makeTaxonomyFasta_GG2 <- function(fn, txfn, fout, include.species=FALSE, output.binomials = FALSE, compress=TRUE) {
   # tx is 2 column, id and taxonomy, taxonomy is 7 level, domain -- species
   sq <- getSequences(fn)
   tdf <- read.csv(txfn, sep="\t", header=TRUE)
@@ -735,13 +763,36 @@ makeTaxonomyFasta_GG2 <- function(fn, txfn, fout, include.species=FALSE, compres
   table(tax.depth) 
   # All taxonomies are 7-level
   # Note: A significant number of unassigned taxonomic levels here, which are encoded as e.g. "g__"
-  # Note: Species has genus name duplicated, i.e. species level has genus [SPACE] species binomial, rather than just species
-  # Note: Leaving GG2 species binomials as is (other than replacing spaces with underscores).
-  #       There are some inconsistencies between the binomial genus and the assigned genus.
-  #       But given the multiple causes of this, going to skip fixing this in the interest of easing maintenance of future GG2 releases.
-  for(i in seq(length(taxes))) {
-    taxes[[i]][[7]] <- gsub(" ", "_", taxes[[i]][[7]])
+  # Note: Species has genus name duplicated, i.e. species level has genus [SPACE] species binomial, rather than just species.
+  # Note: Enforcing consistency between the binomial genus in order to keep the species assignment.
+  genus <- gsub("^g__", "", sapply(taxes, `[`, 6))
+  genus <- gsub("Escherichia", "Escherichia_Shigella", genus)
+  binom <- gsub("^s__", "", sapply(taxes, `[`, 7))
+  binom.depth <- sapply(strsplit(binom, " "), length)
+###  table(binom.depth) # All either 0 (s__) or 2
+  has.binom <- binom.depth==2
+  genus.binom <- sapply(strsplit(binom, "\\s"), `[`, 1)
+  spec.binom <- sapply(strsplit(binom, "\\s"), `[`, 2)
+  gen.match <- mapply(matchGenera, genus, genus.binom, split.glyph="_")
+  # Replace the species field with just the species name, but only for concordant binomials
+  for(i in seq_along(taxes)) {
+    if(has.binom[i]) {
+      if(gen.match[i]) { # Define the formatted species field
+        if(output.binomials) { # Keep the GG2 species binomials in the species rank (but replace spaces).
+          taxes[[i]][[7]] <- taxes[[i]][[7]] <- gsub(" ", "_", taxes[[i]][[7]])
+        } else { # DEFAULT, just the species name
+          taxes[[i]][[7]] <- paste0("s__", spec.binom[[i]]) 
+        }
+      } else { # !gen.match: scrub the species assignment
+        taxes[[i]][[7]] <- "s__"
+      }
+    }
   }
+  if(include.species) {
+    cat(sum(has.binom), "out of", length(taxes), "sequences had a binomial species name assigned.\n", 
+        sum(has.binom & !gen.match), "species assignments were removed as discordant with the genus assignment.")
+  }
+  
   # Identify unassigned taxonomic levels
   tax_pre <- c("d__", "p__", "c__", "o__", "f__", "g__", "s__")
   is.unassigned <- sapply(taxes, function(tx) {
