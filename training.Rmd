@@ -6,23 +6,23 @@ The `assignTaxonomy` and `assignSpecies` functions require appropriately formatt
 
 ## DADA2-formatted reference databases
 
-We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes. The dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be "contributed" and will be made available through this page if referencable by doi (eg. deposited at Zenodo or Figshare). 
+We maintain reference fastas for the three most common 16S databases: Silva, RDP and GreenGenes2. The dada2 package recognizes and parses the General Fasta releases of the UNITE project for ITS taxonomic assignment. Formatted versions of other databases can be "contributed" and will be made available through this page if referencable by doi (eg. deposited at Zenodo or Figshare). 
 
-*Please note that the files provided here are just derivative reformattings of these taxonomic databases. If using these files for taxonomic assignment, the source database should also be cited.*
+*Please note that the files provided here are just reformattings of these taxonomic databases. If using these files for taxonomic assignment, the source database should also be cited.*
 
 --------------------------
 
 **Maintained:**
 
-* **[Silva version 138.1 - UPDATED Mar 10, 2021](https://doi.org/10.5281/zenodo.4587954)**, [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958)
-  - NOTE: As of Silva version 138, the official DADA2-formatted reference fastas are optimized for classification of Bacteria and Archaea, and are not suitable for classifying Eukaryotes.
+* **[Silva version 138.2](https://zenodo.org/records/14169026)** ([version 138.1](https://doi.org/10.5281/zenodo.4587954), [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958))
+  - NOTE: As of Silva version 138 the official DADA2-formatted reference fastas are optimized for classification of Bacteria and Archaea, and are not suitable for classifying Eukaryotes.
 
 
-* **[RDP trainset 18](https://doi.org/10.5281/zenodo.4310150)**, [RDP trainset 16](https://doi.org/10.5281/zenodo.801827), [RDP trainset 14](http://dx.doi.org/10.5281/zenodo.158955)
+* **[RDP Trainset 19](https://zenodo.org/records/14168771)** ([trainset 18](https://doi.org/10.5281/zenodo.4310150), [trainset 16](https://doi.org/10.5281/zenodo.801827), [trainset 14](http://dx.doi.org/10.5281/zenodo.158955))
+
+* **[GreenGenes2 release 2024.09](https://zenodo.org/records/14169078)** ([version 13.8 - outdated](http://dx.doi.org/10.5281/zenodo.158955))
 
 * **[UNITE (use the General Fasta releases, "All eukaryotes")](https://unite.ut.ee/repository.php)**
-
-* *Deprecated: [GreenGenes version 13.8](http://dx.doi.org/10.5281/zenodo.158955) (the source GreenGenes database is no longer being maintained)*
 
 **Contributed**:
 
