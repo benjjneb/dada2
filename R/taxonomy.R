@@ -191,7 +191,7 @@ matchGenera <- function(gen.tax, gen.binom, split.glyph="/") {
 #' genus-species binomial classification of the input sequences.
 #' 
 #' @param seqs (Required). A character vector of the sequences to be assigned, or an object 
-#' coercible by \code{\link{getUniques}}.
+#' coercible by \code{\link{getUniques}}. Sequences must be A/C/G/T only.
 #'   
 #' @param refFasta (Required). The path to the reference fasta file, or an 
 #' R connection. Can be compressed.
@@ -251,6 +251,7 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
   refsr <- readFasta(refFasta)
   ids <- as(id(refsr), "character")
   # Crude format check
+  if(!all(C_isACGT(seqs))) stop("Non-ACGT characters present in the query sequences.")
   if(!length(unlist(strsplit(ids[[1]], "\\s"))) >= 3) {
     if(length(unlist(gregexpr(";", ids[[1]]))) >= 3) {
       stop("Incorrect reference file format for assignSpecies (this looks like a file formatted for assignTaxonomy).")
@@ -651,17 +652,13 @@ makeTaxonomyFasta_SilvaNR <- function(fin, ftax, fout, include.species=FALSE, co
 }
 
 #' This function creates the dada2 assignSpecies fasta file for Silva
-#' from the SILVA_[VERSION]_SSURef_tax_silva.fasta file
+#' from the SILVA_[VERSION]_SSURef_tax_silva.fasta file (NOT the NR99 file).
 #' 
-#' ## Silva release v128
-#' dada2:::makeSpeciesFasta_Silva("~/Desktop/Silva/SILVA_128_SSURef_tax_silva.fasta.gz", 
-#'     "~/tax/silva_species_assignment_v128.fa.gz")
+#' ## Silva release v138.2
+#' dada2:::makeSpeciesFasta_Silva("~/tax/silva/v138_2/SILVA_138.2_SSURef_tax_silva.fasta.gz", 
+#'     "~/Desktop/silva_v138.2_assignSpecies.fa.gz")
 #' 
-#' ## Silva release v132
-#' dada2:::makeSpeciesFasta_Silva("~/Desktop/Silva/SILVA_132_SSURef_tax_silva.fasta.gz", 
-#'     "~/tax/silva_species_assignment_v132.fa.gz")
-#' 
-#' Output: 313502 sequences with genus/species binomial annotation output.
+#' Output: 352047 sequences with genus/species binomial annotation output.
 #' 
 #' @importFrom ShortRead readFasta
 #' @importFrom ShortRead writeFasta
@@ -683,31 +680,39 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
   xset <- xset[is.complete]
   
   # Pull out binomial strings
-  binom <- strsplit(as.character(names(xset)), ";")
-  genus <- sapply(binom, `[`, 6)
-  binom <- sapply(binom, `[`, 7)
+  tax <- strsplit(as.character(names(xset)), ";") ###!
+  genus <- sapply(tax, `[`, 6) ###!
+  binom <- sapply(tax, `[`, 7) ###!
   
-  genus <- gsub("Candidatus ", "", genus)
-  binom <- gsub("Candidatus ", "", binom)
+  # Remove parens/brackets, which do not seem to be evenly used in the formal taxonomy and the binomial
+  # ...and that mess up the `matchGenera` regex
+  # Also fix the white-space issue with "Candidatus XXX" genus names
+  genus <- gsub("Candidatus ", "Candidatus_", genus)
+  binom <- gsub("Candidatus ", "Candidatus_", binom)
   genus <- gsub("\\[", "", genus)
   genus <- gsub("\\]", "", genus)
   binom <- gsub("\\[", "", binom)
   binom <- gsub("\\]", "", binom)
+  genus <- gsub("\\(", "", genus)
+  genus <- gsub("\\)", "", genus)
+  binom <- gsub("\\(", "", binom)
+  binom <- gsub("\\)", "", binom)
   
   # Subset down to those binomials which match the curated genus
   genus.binom <- sapply(strsplit(binom, "\\s"), `[`, 1)
   gen.match <- mapply(matchGenera, genus, genus.binom, split.glyph="-")
-  # Note that raw Silva files use Escherichia-Shigella, but this is changed to Escherichia/Shigella in dada2 version
+  # Note on split.glyph: raw Silva files use Escherichia-Shigella, but this is changed to Escherichia/Shigella in dada2 version
   xset <- xset[gen.match]
   binom <- binom[gen.match]
   genus <- genus[gen.match]
-
+  
   # Make matrix of genus/species
-  binom[sapply(strsplit(binom, "\\s"), length)==1] <- paste(binom[sapply(strsplit(binom, "\\s"), length)==1], "sp.")
+  only.genus.in.binom <- sapply(strsplit(binom, "\\s"), length)==1
+  binom[only.genus.in.binom] <- paste(binom[only.genus.in.binom], "sp.")
   binom2 <- cbind(sapply(strsplit(binom, "\\s"), `[`, 1),
                   sapply(strsplit(binom, "\\s"), `[`, 2))
   # Keep only those with a named species
-  has.spec <- !grepl("sp\\.", binom2[,2]) & !(binom2[,2]=="endosymbiont")
+  has.spec <- !grepl("sp\\.$", binom2[,2]) & !(binom2[,2]=="endosymbiont")
   binom2 <- binom2[has.spec,]
   xset <- xset[has.spec]
   binom <- binom[has.spec]
@@ -716,7 +721,7 @@ makeSpeciesFasta_Silva <- function(fin, fout, compress=TRUE) {
   
   # Write to disk
   ids <- sapply(strsplit(as.character(names(xset)), "\\s"), `[`, 1)
-  writeFasta(ShortRead(unname(xset), BStringSet(paste(ids, binom))), fout,
+  writeFasta(ShortRead(unname(xset), BStringSet(paste(ids, binom2[,1], binom2[,2]))), fout,
              width=20000L, compress=compress)
 }
 
@@ -828,7 +833,7 @@ tax.check <- function(fn.tax, fn.test=system.file("extdata", "ten_16s.100.fa.gz"
     rval <- cbind(unname(tax[,level]), sapply(strsplit(names(sq.test), ":"), `[`, level+1))
   } else if (mode=="species") {
     sq.acgt <- sq.test[dada2:::C_isACGT(sq.test)]
-    spc <- assignSpecies(sq.acgt, fn.spc)
+    spc <- assignSpecies(sq.acgt, fn.tax)
     rval <- cbind(unname(spc[,level-5]), sapply(strsplit(names(sq.acgt), ":"), `[`, level+1))
   } else { stop("Valid modes are taxonomy or species.") }
   colnames(rval) <- c("assigned", "reference")
