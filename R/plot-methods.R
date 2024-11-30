@@ -193,7 +193,7 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
     q75s <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) get_quant(foo$Score, foo$Count, 0.75), simplify=TRUE)
     cums <- by(plotdf.summary, plotdf.summary$Cycle, function(foo) sum(foo$Count), simplify=TRUE)
     statdf.summary <- data.frame(Cycle=as.integer(rownames(means)), Mean=means, Q25=as.vector(q25s), Q50=as.vector(q50s), Q75=as.vector(q75s), Cum=10*as.vector(cums)/sum(pmin(anndf$rc, n)))
-    p <- ggplot(data=plotdf.summary, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
+    p <- ggplot(data=plotdf.summary, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count), height=1) + 
 		  scale_fill_gradient(low="#F5F5F5", high="black") + 
 		  geom_line(data=statdf.summary, aes(y=Mean), color="#66C2A5") +
 		  geom_line(data=statdf.summary, aes(y=Q25), color="#FC8D62", linewidth=0.25, linetype="dashed") +
@@ -211,7 +211,7 @@ plotQualityProfile <- function(fl, n=500000, aggregate=FALSE) {
       p <- p + ylim(c(0,NA))
     }
   } else {
-  	p <- ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count)) + 
+  	p <- ggplot(data=plotdf, aes(x=Cycle, y=Score)) + geom_tile(aes(fill=Count), height=1) + 
 		  scale_fill_gradient(low="#F5F5F5", high="black") + 
 		  geom_line(data=statdf, aes(y=Mean), color="#66C2A5") +
 		  geom_line(data=statdf, aes(y=Q25), color="#FC8D62", linewidth=0.25, linetype="dashed") +
