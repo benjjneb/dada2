@@ -62,7 +62,7 @@ A character matrix of assigned taxonomies exceeding the minBoot level of
   and the bootstrap values (named "boot") will be returned.
 }
 \description{
-assignTaxonomy implements the RDP Naive Bayesian Classifier algorithm described in
+assignTaxonomy implements the Naive Bayesian Classifier algorithm described in
 Wang et al. Applied and Environmental Microbiology 2007, with kmer size 8 and 100 bootstrap
 replicates. Properly formatted reference files for several popular taxonomic databases
 are available \url{http://benjjneb.github.io/dada2/training.html}

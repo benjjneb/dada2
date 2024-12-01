@@ -4,7 +4,7 @@
 \alias{makeTaxonomyFasta_SilvaNR}
 \title{This function creates the dada2 assignTaxonomy training fasta for the official Silva NR99
 release files. If `include.species`=TRUE, a 7th taxonomic level (species) will be added based on the
-Genus species binomial in the Silva taxonomy string, if present and valid.}
+Genus species binomial in the Silva taxonomy string (if consistent with the genus assignment).}
 \usage{
 makeTaxonomyFasta_SilvaNR(
   fin,
@@ -15,13 +15,16 @@ makeTaxonomyFasta_SilvaNR(
 )
 }
 \description{
-## Silva release v138
-path <- "~/tax/Silva/v138"
-dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138_SSURef_NR99_tax_silva.fasta.gz"), 
-    file.path(path, "tax_slv_ssu_138.txt"), 
-    "~/Desktop/silva_nr99_v138_train_set.fa.gz")
-dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138_SSURef_NR99_tax_silva.fasta.gz"), 
-    file.path(path, "tax_slv_ssu_138.txt"), 
-    include.species=TRUE, "~/Desktop/silva_nr99_v138_wSpecies_train_set.fa.gz")
+## Silva release v138.2
+path <- "~/tax/Silva/v138_2"
+dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138.2_SSURef_NR99_tax_silva.fasta.gz"), 
+    file.path(path, "tax_slv_ssu_138.2.txt"), 
+    "~/Desktop/silva_nr99_v138.2_toGenus_trainset.fa.gz")
+dada2:::tax.check("~/Desktop/silva_nr99_v138.2_toGenus_trainset.fa.gz")
+    
+dada2:::makeTaxonomyFasta_SilvaNR(file.path(path, "SILVA_138.2_SSURef_NR99_tax_silva.fasta.gz"), 
+    file.path(path, "tax_slv_ssu_138.2.txt"), 
+    include.species=TRUE, "~/silva_nr99_v138.2_toSpecies_trainset.fa.gz")
+dada2:::tax.check("~/Desktop/silva_nr99_v138.2_toSpecies_trainset.fa.gz")
 }
 \keyword{internal}

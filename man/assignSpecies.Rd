@@ -15,7 +15,7 @@ assignSpecies(
 }
 \arguments{
 \item{seqs}{(Required). A character vector of the sequences to be assigned, or an object 
-coercible by \code{\link{getUniques}}.}
+coercible by \code{\link{getUniques}}. Sequences must be A/C/G/T only.}
 
 \item{refFasta}{(Required). The path to the reference fasta file, or an 
 R connection. Can be compressed.

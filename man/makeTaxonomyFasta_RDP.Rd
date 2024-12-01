@@ -2,24 +2,25 @@
 % Please edit documentation in R/taxonomy.R
 \name{makeTaxonomyFasta_RDP}
 \alias{makeTaxonomyFasta_RDP}
-\title{This function creates the dada2 assignTaxonomy training fasta for the RDP trainset .fa file
-The RDP trainset data was downloaded from: https://sourceforge.net/projects/rdp-classifier/files/RDP_Classifier_TrainingData/}
+\title{This function creates the dada2 assignTaxonomy training fasta from the speciesrank RDP trainset .fa file
+The RDP trainset data was downloaded from: https://sourceforge.net/projects/rdp-classifier/}
 \usage{
-makeTaxonomyFasta_RDP(fin, fdb, fout, compress = TRUE)
+makeTaxonomyFasta_RDP(fin, fdb, fout, include.species = FALSE, compress = TRUE)
 }
 \description{
-## RDP Trainset 18
-path <- "~/Desktop/RDP/RDPClassifier_16S_trainsetNo18_rawtrainingdata"
-dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset18_062020.fa"), 
-    file.path(path, "trainset18_db_taxid.txt"), 
-    "~/tax/rdp_train_set_18.fa.gz")
-dada2:::tax.check("~/tax/rdp_train_set_18.fa.gz", "~/Desktop/ten_16s.100.fa")
+## RDP Trainset 19
+path <- "~/tax/rdp/v19"
+dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset19_072023_speciesrank.fa"), 
+                              file.path(path, "trainset19_db_taxid.txt"), 
+                              "~/Desktop/rdp_19_toGenus_trainset.fa.gz", include.species=FALSE,
+                              compress=TRUE)
+dada2:::tax.check("~/Desktop/rdp_19_toGenus_trainset.fa.gz")
 }
 \details{
-## RDP Trainset 16
-path <- "~/Desktop/RDP/RDPClassifier_16S_trainsetNo16_rawtrainingdata"
-dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset16_022016.fa"), 
-    file.path(path, "trainset16_db_taxid.txt"), 
-    "~/tax/rdp_train_set_16.fa.gz")
+dada2:::makeTaxonomyFasta_RDP(file.path(path, "trainset19_072023_speciesrank.fa"), 
+                              file.path(path, "trainset19_db_taxid.txt"), 
+                              "~/Desktop/rdp_19_toSpecies_trainset.fa.gz", include.species=TRUE,
+                              compress=TRUE)
+dada2:::tax.check("~/Desktop/rdp_19_toSpecies_trainset.fa.gz")
 }
 \keyword{internal}

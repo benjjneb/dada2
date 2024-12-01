@@ -2,6 +2,7 @@
 % Please edit documentation in R/allPackage.R
 \docType{package}
 \name{dada2-package}
+\alias{dada2}
 \alias{dada2-package}
 \title{DADA2 package}
 \description{
@@ -24,6 +25,14 @@ facilities include:
  \item Merging of Paired Reads (\code{\link{mergePairs}})
  \item Taxonomic Classification (\code{\link{assignTaxonomy}}, \code{\link{assignSpecies}})
 }
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{http://benjjneb.github.io/dada2/}
+  \item Report bugs at \url{https://github.com/benjjneb/dada2/issues}
+}
+
 }
 \author{
 Benjamin Callahan \email{benjamin.j.callahan@gmail.com}

@@ -3,20 +3,16 @@
 \name{makeSpeciesFasta_Silva}
 \alias{makeSpeciesFasta_Silva}
 \title{This function creates the dada2 assignSpecies fasta file for Silva
-from the SILVA_[VERSION]_SSURef_tax_silva.fasta file}
+from the SILVA_[VERSION]_SSURef_tax_silva.fasta file (NOT the NR99 file).}
 \usage{
 makeSpeciesFasta_Silva(fin, fout, compress = TRUE)
 }
 \description{
-## Silva release v128
-dada2:::makeSpeciesFasta_Silva("~/Desktop/Silva/SILVA_128_SSURef_tax_silva.fasta.gz", 
-    "~/tax/silva_species_assignment_v128.fa.gz")
+## Silva release v138.2
+dada2:::makeSpeciesFasta_Silva("~/tax/silva/v138_2/SILVA_138.2_SSURef_tax_silva.fasta.gz", 
+    "~/Desktop/silva_v138.2_assignSpecies.fa.gz")
 }
 \details{
-## Silva release v132
-dada2:::makeSpeciesFasta_Silva("~/Desktop/Silva/SILVA_132_SSURef_tax_silva.fasta.gz", 
-    "~/tax/silva_species_assignment_v132.fa.gz")
-
-Output: 313502 sequences with genus/species binomial annotation output.
+Output: 352047 sequences with genus/species binomial annotation output.
 }
 \keyword{internal}

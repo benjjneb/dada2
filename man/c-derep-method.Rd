@@ -9,7 +9,9 @@
 \arguments{
 \item{x}{A derep-class object}
 
-\item{...}{objects to be concatenated.}
+\item{...}{objects to be concatenated.  All \code{\link[base]{NULL}} entries
+    are dropped before method dispatch unless at the very beginning of the
+    argument list.}
 
 \item{recursive}{logical.  If \code{recursive = TRUE}, the function
     recursively descends through lists (and pairlists) combining all

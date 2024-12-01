@@ -103,12 +103,22 @@ plotErrors <- function(dq, nti=c("A","C","G","T"), ntj=c("A","C","G","T"), obs=T
   transdf$Nominal <- (1/3)*10^-(transdf$Qual/10)
   transdf$Nominal[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")] <- 1 - 10^-(transdf$Qual[transdf$Transition %in% c("A2A", "C2C", "G2G", "T2T")]/10)
   
+  # Blank out the self-transition entries (A read as A, etc.)
+  is.self <- transdf$from == transdf$to
+  transdf[is.self, "count"] <- NA
+  transdf[is.self, "tot"] <- NA
+  transdf[is.self, "Observed"] <- NA
+  transdf[is.self, "Estimated"] <- NA
+  transdf[is.self, "Input"] <- NA
+  if(nominalQ) transdf[is.self, "Nominal"] <- NA
+  
   p <- ggplot(data=transdf[transdf$from %in% nti & transdf$to %in% ntj,], aes(x=Qual))
-  if(obs) p <- p + geom_point(aes(y=Observed), color="gray40", na.rm=TRUE)
+  if(obs) p <- p + geom_point(aes(y=Observed, size=count), color="gray40", na.rm=TRUE)
   if(err_in)   p <- p + geom_line(aes(y=Input), linetype="dashed")
   if(err_out)  p <- p + geom_line(aes(y=Estimated))
   if(nominalQ) p <- p + geom_line(aes(y=Nominal), color="red")
   p <- p + scale_y_log10()
+  p <- p + scale_size_area(max_size=4) + guides(size="none")
   p <- p + facet_wrap(~Transition, nrow=length(nti))
   p <- p + xlab("Consensus quality score") + ylab("Error frequency (log10)")
   p <- p + theme_bw()
