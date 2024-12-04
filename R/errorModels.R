@@ -66,92 +66,93 @@ loessErrfun <- function(trans) {
   return(err)
 }
 
-#' Use a piecewise linear fit to estimate error rates from transition counts with
-#' binned quality score data.
+#' Create a function that uses a piecewise linear fit to estimate error rates
+#' from transition counts derived from binned quality score data. The binned 
+#' quality scores are defined in the argument to this function call.
 #' 
-#' This function accepts a matrix of observed transitions, with each transition
-#' corresponding to a row (eg. row 2 = A->C) and each column to a quality score
-#' (eg. col 31 = Q30). It returns a matrix of estimated error
-#' rates of the same shape. Error rates are estimates by a \code{\link{loess}} fit
-#' of the observed rates of each transition as a function of the quality score.
-#' Self-transitions (i.e. A->A) are taken to be the left-over probability.
-#' 
-#' @param trans (Required). A matrix of the observed transition counts. Must be 16 rows,
-#' with the rows named "A2A", "A2C", ...
-#' 
-#' @param binnedQuals (Optional). Default value of c(2, 11, 25, 37) is taken from current 
+#' @param binnedQ (Optional). Default value of c(2, 11, 25, 37) is taken from current 
 #' Illumina binned quality scores on e.g. NovaSeq instruments. Must be changed if the
 #' data uses a different set of binned quality scores.
 #' 
-#' @return A numeric matrix with 16 rows and the same number of columns as trans.
-#'  The estimated error rates for each transition (row, eg. "A2C") and quality score
-#'  (column, eg. 31), as determined by \code{\link{loess}} smoothing over the quality
-#'  scores within each transition category.
+#' @return This function returns a function.
+#' The returned function accepts a matrix of observed transitions, 
+#' with each transition corresponding to a row (eg. row 2 = A->C) and each column to a 
+#' quality score (eg. col 31 = Q30). That function returns a matrix of estimated 
+#' error rates of the same shape. 
+#' 
+#' The returned function has as required input the trans matrix, and returns
+#' a numeric matrix with 16 rows and the same number of columns as trans.
+#' The estimated error rates for each transition (row, eg. "A2C") and quality score
+#' (column, eg. 31). See `loessErrfun` for a comparable function to the one that
+#' is returned here.
 #' 
 #' @export
 #' 
 #' @examples
 #' derep1 <- derepFastq(system.file("extdata", "sam1F.fastq.gz", package="dada2"))
 #' dada1 <- dada(derep1, err=tperr1)
-#' err.new <- binnedQualErrfun(dada1$trans, c(7, 17, 27, 38))
+#' novaBinnedErrfun <- makeBinnedQualErrfun(c(7, 17, 27, 40))
+#' err.new <- novaBinnedErrfun(dada1$trans)
 #' 
-binnedQualErrfun <- function(trans, binnedQuals=c(2, 11, 25, 37)) {
-  qq <- as.numeric(colnames(trans))
-  # Get min and max observed quality scores
-  qmax <- max(qq[colSums(trans)>0])
-  qmin <- min(qq[colSums(trans)>0])
-  # Check for data consistency with provided binned qualities
-  if(qmax > max(binnedQuals)) stop("Input data contains a higher quality score than the provided binned values.")
-  if(qmin < min(binnedQuals)) stop("Input data contains a lower quality score than the provided binned values.")
-  if(!qmax %in% binnedQuals) warning("Maximum observed quality score is not in the provided binned values.")
-  if(!qmin %in% binnedQuals) warning("Minimum observed quality score is not in the provided binned values.")
-  
-  est <- matrix(0, nrow=0, ncol=length(qq))
-  for(nti in c("A","C","G","T")) {
-    for(ntj in c("A","C","G","T")) {
-      if(nti != ntj) {
-        errs <- trans[paste0(nti,"2",ntj),]
-        tot <- colSums(trans[paste0(nti,"2",c("A","C","G","T")),])
-        p <- errs/tot
-        df <- data.frame(q=qq, errs=errs, tot=tot, p=p)
-        # Check and enforce that this q scores start at zero
-        if(!all(df$q == seq(nrow(df))-1)) stop("Unexpected Q score series.") ###!
-        pred <- rep(NA, nrow(df))
-        for(i in seq(length(binnedQuals)-1)) {
-          loQ <- binnedQuals[i]
-          hiQ <- binnedQuals[i+1]
-          loP <- df$p[loQ+1]
-          hiP <- df$p[hiQ+1]
-          # Linear interpolation between the binned Q scores observed in the data
-          if(!is.na(loP) && !is.na(hiP)) {
-            pred[(loQ+1):(hiQ+1)] <- seq(loP, hiP, length.out=(hiQ-loQ+1))
+makeBinnedQualErrfun <- function(binnedQ=c(2, 11, 25, 37)) {
+  function(trans, binnedQuals=binnedQ) {
+    qq <- as.numeric(colnames(trans))
+    # Get min and max observed quality scores
+    qmax <- max(qq[colSums(trans)>0])
+    qmin <- min(qq[colSums(trans)>0])
+    # Check for data consistency with provided binned qualities
+    if(qmax > max(binnedQuals)) stop("Input data contains a higher quality score than the provided binned values.")
+    if(qmin < min(binnedQuals)) stop("Input data contains a lower quality score than the provided binned values.")
+    if(!qmax %in% binnedQuals) warning("Maximum observed quality score is not in the provided binned values.")
+    if(!qmin %in% binnedQuals) warning("Minimum observed quality score is not in the provided binned values.")
+    
+    est <- matrix(0, nrow=0, ncol=length(qq))
+    for(nti in c("A","C","G","T")) {
+      for(ntj in c("A","C","G","T")) {
+        if(nti != ntj) {
+          errs <- trans[paste0(nti,"2",ntj),]
+          tot <- colSums(trans[paste0(nti,"2",c("A","C","G","T")),])
+          p <- errs/tot
+          df <- data.frame(q=qq, errs=errs, tot=tot, p=p)
+          # Check and enforce that this q scores start at zero
+          if(!all(df$q == seq(nrow(df))-1)) stop("Unexpected Q score series.") ###!
+          pred <- rep(NA, nrow(df))
+          for(i in seq(length(binnedQuals)-1)) {
+            loQ <- binnedQuals[i]
+            hiQ <- binnedQuals[i+1]
+            loP <- df$p[loQ+1]
+            hiP <- df$p[hiQ+1]
+            # Linear interpolation between the binned Q scores observed in the data
+            if(!is.na(loP) && !is.na(hiP)) {
+              pred[(loQ+1):(hiQ+1)] <- seq(loP, hiP, length.out=(hiQ-loQ+1))
+            }
           }
-        }
-        
-        maxrli <- max(which(!is.na(pred)))
-        minrli <- min(which(!is.na(pred)))
-        pred[seq_along(pred)>maxrli] <- pred[[maxrli]]
-        pred[seq_along(pred)<minrli] <- pred[[minrli]]
-        est <- rbind(est, pred)
-      } # if(nti != ntj)
-    } # for(ntj in c("A","C","G","T"))
-  } # for(nti in c("A","C","G","T"))
-  
-  # HACKY
-  MAX_ERROR_RATE <- 0.25
-  MIN_ERROR_RATE <- 1e-7
-  est[est>MAX_ERROR_RATE] <- MAX_ERROR_RATE
-  est[est<MIN_ERROR_RATE] <- MIN_ERROR_RATE
-  
-  # Expand the err matrix with the self-transition probs
-  err <- rbind(1-colSums(est[1:3,]), est[1:3,],
-               est[4,], 1-colSums(est[4:6,]), est[5:6,],
-               est[7:8,], 1-colSums(est[7:9,]), est[9,],
-               est[10:12,], 1-colSums(est[10:12,]))
-  rownames(err) <- paste0(rep(c("A","C","G","T"), each=4), "2", c("A","C","G","T"))
-  colnames(err) <- colnames(trans)
-  # Return
-  return(err)
+          
+          maxrli <- max(which(!is.na(pred)))
+          minrli <- min(which(!is.na(pred)))
+          pred[seq_along(pred)>maxrli] <- pred[[maxrli]]
+          pred[seq_along(pred)<minrli] <- pred[[minrli]]
+          est <- rbind(est, pred)
+        } # if(nti != ntj)
+      } # for(ntj in c("A","C","G","T"))
+    } # for(nti in c("A","C","G","T"))
+    
+    # HACKY
+    MAX_ERROR_RATE <- 0.25
+    MIN_ERROR_RATE <- 1e-7
+    est[est>MAX_ERROR_RATE] <- MAX_ERROR_RATE
+    est[est<MIN_ERROR_RATE] <- MIN_ERROR_RATE
+    
+    # Expand the err matrix with the self-transition probs
+    err <- rbind(1-colSums(est[1:3,]), est[1:3,],
+                 est[4,], 1-colSums(est[4:6,]), est[5:6,],
+                 est[7:8,], 1-colSums(est[7:9,]), est[9,],
+                 est[10:12,], 1-colSums(est[10:12,]))
+    rownames(err) <- paste0(rep(c("A","C","G","T"), each=4), "2", c("A","C","G","T"))
+    colnames(err) <- colnames(trans)
+    # Return
+    return(err)
+  }
 }
 
 #' Estimate error rates from transition counts in PacBio CCS data.
