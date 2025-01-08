@@ -1097,15 +1097,15 @@ fastqPairedFilter <- function(fn, fout, maxN = c(0,0), truncQ = c(2,2), truncLen
     }
     
     # Remove low complexity
-    if(rm.lowcomplex[[1]] > 0 && rm.lowcomplex[[2]] > 0) {
+    if(rm.lowcomplex[[1]] && rm.lowcomplex[[2]]) {
       is.lowc <- (seqComplexity(sread(fqF), ...) < rm.lowcomplex[[1]])
-      is.lowc <- is.lowc | (seqComplexity(sread(fqF), ...) < rm.lowcomplex[[2]])
+      is.lowc <- is.lowc | (seqComplexity(sread(fqR), ...) < rm.lowcomplex[[2]])
     } else if(rm.lowcomplex[[1]] && !rm.lowcomplex[[2]]) {
       is.lowc <- (seqComplexity(sread(fqF), ...) < rm.lowcomplex[[1]])
     } else if(!rm.lowcomplex[[1]] && rm.lowcomplex[[2]]) {
       is.lowc <- (seqComplexity(sread(fqR), ...) < rm.lowcomplex[[2]])
     }
-    if(rm.lowcomplex[[1]] > 0 && rm.lowcomplex[[2]] > 0) {
+    if(rm.lowcomplex[[1]] || rm.lowcomplex[[2]]) {
       fqF <- fqF[!is.lowc]
       fqR <- fqR[!is.lowc]
     }
