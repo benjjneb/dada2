@@ -70,9 +70,8 @@ loessErrfun <- function(trans) {
 #' from transition counts derived from binned quality score data. The binned 
 #' quality scores are defined in the argument to this function call.
 #' 
-#' @param binnedQ (Optional). Default value of c(2, 11, 25, 37) is taken from current 
-#' Illumina binned quality scores on e.g. NovaSeq instruments. Must be changed if the
-#' data uses a different set of binned quality scores.
+#' @param binnedQ (Required). A vector of the binned quality scores that are
+#' present in your sequencing data.
 #' 
 #' @return This function returns a function.
 #' The returned function accepts a matrix of observed transitions, 
@@ -94,8 +93,9 @@ loessErrfun <- function(trans) {
 #' novaBinnedErrfun <- makeBinnedQualErrfun(c(7, 17, 27, 40))
 #' err.new <- novaBinnedErrfun(dada1$trans)
 #' 
-makeBinnedQualErrfun <- function(binnedQ=c(2, 11, 25, 37)) {
-  function(trans, binnedQuals=binnedQ) {
+makeBinnedQualErrfun <- function(binnedQ) {
+  if(is.null(binnedQ)) { stop("The quality scores used in your data must be provided.") } 
+  function(trans, binnedQ) {
     qq <- as.numeric(colnames(trans))
     # Get min and max observed quality scores
     qmax <- max(qq[colSums(trans)>0])
