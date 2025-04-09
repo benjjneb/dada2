@@ -14,9 +14,8 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 **Maintained:**
 
-* **[Silva version 138.2](https://zenodo.org/records/14169026)** ([version 138.1](https://doi.org/10.5281/zenodo.4587954), [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958))
-  - NOTE: As of Silva version 138 the official DADA2-formatted reference fastas are optimized for classification of Bacteria and Archaea, and are not suitable for classifying Eukaryotes.
-
+* **[Silva version 138.2](https://zenodo.org/records/14169026)** ([version 138.1](https://doi.org/10.5281/zenodo.4587954), [version 132](https://doi.org/10.5281/zenodo.1172782), [version 128](https://doi.org/10.5281/zenodo.801831),  [version 123](http://dx.doi.org/10.5281/zenodo.158958))  
+NOTE: As of Silva version 138 the official DADA2-formatted reference fastas are optimized for classification of Bacteria and Archaea, and are not suitable for classifying Eukaryotes. Formatted versions of Silva suitable for Fungi are in the Contributed section below.
 
 * **[RDP Trainset 19](https://zenodo.org/records/14168771)** ([trainset 18](https://doi.org/10.5281/zenodo.4310151), [trainset 16](https://doi.org/10.5281/zenodo.801827), [trainset 14](http://dx.doi.org/10.5281/zenodo.158955))
 
@@ -26,8 +25,13 @@ We maintain reference fastas for the three most common 16S databases: Silva, RDP
 
 **Contributed**:
 
-* **[GTDB Version 202: Genome Taxonomy Database](https://zenodo.org/record/4735821)** ([More info on GTDB](http://gtdb.ecogenomic.org/)) 
-    + Version 86 for [`assignTaxonomy`](https://zenodo.org/record/2541239) and [`assignSpecies`](https://zenodo.org/record/2658728#.XM7qtBNKhYh)
+* **[GTDB Version 202: Genome Taxonomy Database](https://zenodo.org/record/4735821)** (Version 86 for [`assignTaxonomy`](https://zenodo.org/record/2541239) and [`assignSpecies`](https://zenodo.org/record/2658728#.XM7qtBNKhYh))
+
+* **[SILVA v138.2 18S reference for Fungi](https://doi.org/10.5281/zenodo.15044433)**  
+NOTE: Use this instead of the Maintained version of the Silva reference if working with fungi.
+
+* **[SILVA v138.2 26S reference for Fungi](https://doi.org/10.5281/zenodo.15044500)**  
+NOTE: Use this instead of the Maintained version of the Silva reference if working with fungi. 
 
 * RefSeq + RDP (NCBI RefSeq 16S rRNA database supplemented by RDP)
     + [Reference files formatted for `assignTaxonomy`](https://zenodo.org/record/2541239)
