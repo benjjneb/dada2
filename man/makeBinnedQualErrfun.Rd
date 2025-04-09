@@ -6,12 +6,11 @@
 from transition counts derived from binned quality score data. The binned 
 quality scores are defined in the argument to this function call.}
 \usage{
-makeBinnedQualErrfun(binnedQ = c(2, 11, 25, 37))
+makeBinnedQualErrfun(binnedQ)
 }
 \arguments{
-\item{binnedQ}{(Optional). Default value of c(2, 11, 25, 37) is taken from current 
-Illumina binned quality scores on e.g. NovaSeq instruments. Must be changed if the
-data uses a different set of binned quality scores.}
+\item{binnedQ}{(Required). A vector of the binned quality scores that are
+present in your sequencing data.}
 }
 \value{
 This function returns a function.

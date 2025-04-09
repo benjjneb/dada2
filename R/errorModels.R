@@ -95,7 +95,7 @@ loessErrfun <- function(trans) {
 #' 
 makeBinnedQualErrfun <- function(binnedQ) {
   if(is.null(binnedQ)) { stop("The quality scores used in your data must be provided.") } 
-  function(trans, binnedQ) {
+  function(trans, binnedQuals=binnedQ) {
     qq <- as.numeric(colnames(trans))
     # Get min and max observed quality scores
     qmax <- max(qq[colSums(trans)>0])

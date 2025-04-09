@@ -26,6 +26,5 @@
 #' @author Michael Rosen \email{eigenrosen@@gmail.com}
 #' @author Susan Holmes \email{susan@@stat.stanford.edu}
 #' 
-#' @docType package
 #' @keywords package
-NA
+"_PACKAGE"
