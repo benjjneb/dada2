@@ -64,7 +64,7 @@
 #' 
 assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootstraps=FALSE,
                            taxLevels=c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                           multithread=FALSE, verbose=FALSE) {
+                           multithread=FALSE, verbose=FALSE, nboot=100) {
   MIN_REF_LEN <- 20 # Enforced minimum length of reference seqs. Must be bigger than the kmer-size used (8).
   MIN_TAX_LEN <- 50 # Minimum length of input sequences to get a taxonomic assignment
   # Get character vector of sequences
@@ -132,7 +132,7 @@ assignTaxonomy <- function(seqs, refFasta, minBoot=50, tryRC=FALSE, outputBootst
     RcppParallel::setThreadOptions(numThreads = 1)
   }
   # Run C assignemnt code
-  assignment <- C_assign_taxonomy2(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose)
+  assignment <- C_assign_taxonomy2(seqs, rc(seqs), refs, ref.to.genus, tax.mat.int, tryRC, verbose, nboot)
   # Parse results and return tax consistent with minBoot
   bestHit <- genus.unq[assignment$tax]
   boots <- assignment$boot

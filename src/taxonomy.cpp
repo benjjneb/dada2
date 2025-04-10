@@ -3,7 +3,11 @@
 #include <RcppParallel.h>
 #include <random>
 #include <algorithm>
-#define NBOOT 100
+// #define NBOOT 100
+  
+extern int NBOOT;  
+  
+int NBOOT = 100;  
   
 using namespace Rcpp;
 
@@ -109,7 +113,6 @@ int get_best_genus(int *karray, float *out_logp, unsigned int arraylen, unsigned
   return max_g;
 }
 
-
 struct AssignParallel : public RcppParallel::Worker
 {
   // source data
@@ -130,7 +133,7 @@ struct AssignParallel : public RcppParallel::Worker
   size_t ngenus, nlevel;
   unsigned int max_arraylen;
   bool try_rc;
-  
+
   // initialize with source and destination
   AssignParallel(std::vector<std::string> seqs, std::vector<std::string> rcs, float *lgk_probability,
                  int *C_genusmat, double *C_unifs, int *C_rboot, int *C_rboot_tax, int *C_rval, 
@@ -203,7 +206,8 @@ struct AssignParallel : public RcppParallel::Worker
 // Assigns taxonomy to sequence based on provided ref seqs and corresponding taxonomies.
 //
 // [[Rcpp::export]]
-Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose) {
+Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose, int nboot) {
+  NBOOT = nboot;
   size_t i, j, g;
   int kmer;
   unsigned int k=8;
