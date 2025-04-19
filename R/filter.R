@@ -444,37 +444,64 @@ filterAndTrim <- function(fwd, filt, rev=NULL, filt.rev=NULL, compress=TRUE,
     if(any(c(filt,filt.rev) %in% c(fwd, rev))) stop("Output files must be distinct from the input files.")
   }
   # Parse multithreading
-  if(multithread && .Platform$OS.type=="unix") {
+  if(multithread){
     OMP <- FALSE
     ncores <- detectCores()
     if(is.numeric(multithread)) ncores <- multithread
     if(is.na(ncores)) ncores <- 1
     if(ncores>1) verbose <- FALSE
-  } else {
+  }else{
     ncores <- 1
-    if (multithread && .Platform$OS.type=="windows") {
-    	message("Multithreading has been DISABLED, as forking is not supported on .Platform$OS.type 'windows'")
+  }
+  
+  # Filter and Trim
+  # Switch between using mcmapply or clusterMap depending on availability of forking
+  if(PAIRED) {
+    if(!multithread | .Platform$OS.type == "unix"){
+      rval <- mcmapply(fastqPairedFilter,
+                       mapply(c, fwd, rev, SIMPLIFY=FALSE), mapply(c, filt, filt.rev, SIMPLIFY=FALSE),
+                       MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight,
+                                       maxLen=maxLen, minLen=minLen, maxN=maxN, minQ=minQ, maxEE=maxEE,
+                                       rm.phix=rm.phix, rm.lowcomplex=rm.lowcomplex, orient.fwd=orient.fwd,
+                                       matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP,
+                                       qualityType=qualityType, compress=compress, verbose=verbose),
+                       mc.cores=ncores, mc.silent=TRUE)
+    }else if(.Platform$OS.type == "windows"){
+      cl <- makeCluster(ncores, type = "PSOCK")
+      rval <- clusterMap(cl = cl,
+                         fun = fastqPairedFilter,
+                         mapply(c, fwd, rev, SIMPLIFY=FALSE), mapply(c, filt, filt.rev, SIMPLIFY=FALSE),
+                         MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight, 
+                                         maxLen=maxLen, minLen=minLen, maxN=maxN, minQ=minQ, maxEE=maxEE, 
+                                         rm.phix=rm.phix, rm.lowcomplex=rm.lowcomplex, orient.fwd=orient.fwd,
+                                         matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, 
+                                         qualityType=qualityType, compress=compress, verbose=verbose),
+                         .scheduling = "dynamic")
+      stopCluster(cl)
+    }
+  } else {
+    if(!multithread | .Platform$OS.type == "unix"){
+      rval <- mcmapply(fastqFilter, 
+                       fwd, filt, 
+                       MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight,
+                                       maxLen=maxLen, minLen=minLen, maxN=maxN, minQ=minQ, maxEE=maxEE, 
+                                       rm.phix=rm.phix, rm.lowcomplex=rm.lowcomplex, orient.fwd=orient.fwd,
+                                       n=n, OMP=OMP, qualityType=qualityType, compress=compress, verbose=verbose),
+                       mc.cores=ncores, mc.silent=TRUE)
+    }else if(.Platform$OS.type == "windows"){
+      cl <- makeCluster(ncores, type = "PSOCK")
+      rval <- clusterMap(cl = cl,
+                         fun = fastqFilter,
+                         fwd, filt,
+                         MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight,
+                                         maxLen=maxLen, minLen=minLen, maxN=maxN, minQ=minQ, maxEE=maxEE, 
+                                         rm.phix=rm.phix, rm.lowcomplex=rm.lowcomplex, orient.fwd=orient.fwd,
+                                         n=n, OMP=OMP, qualityType=qualityType, compress=compress, verbose=verbose),
+                         mc.cores=ncores, mc.silent=TRUE)
+      stopCluster(cl)
     }
   }
-  # Filter and Trim
-  if(PAIRED) {
-    rval <- mcmapply(fastqPairedFilter, 
-                     mapply(c, fwd, rev, SIMPLIFY=FALSE), mapply(c, filt, filt.rev, SIMPLIFY=FALSE), 
-                     MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight, 
-                                     maxLen=maxLen, minLen=minLen, maxN=maxN, minQ=minQ, maxEE=maxEE, 
-                                     rm.phix=rm.phix, rm.lowcomplex=rm.lowcomplex, orient.fwd=orient.fwd,
-                                     matchIDs=matchIDs, id.sep=id.sep, id.field=id.field, n=n, OMP=OMP, 
-                                     qualityType=qualityType, compress=compress, verbose=verbose),
-                     mc.cores=ncores, mc.silent=TRUE)
-  } else {
-    rval <- mcmapply(fastqFilter, 
-                     fwd, filt, 
-                     MoreArgs = list(truncQ=truncQ, truncLen=truncLen, trimLeft=trimLeft, trimRight=trimRight,
-                                     maxLen=maxLen, minLen=minLen, maxN=maxN, minQ=minQ, maxEE=maxEE, 
-                                     rm.phix=rm.phix, rm.lowcomplex=rm.lowcomplex, orient.fwd=orient.fwd,
-                                     n=n, OMP=OMP, qualityType=qualityType, compress=compress, verbose=verbose),
-                     mc.cores=ncores, mc.silent=TRUE)
-  }
+  
   # Check if expected matrix was returned, if not there are errors
   if(!is(rval, "matrix")) {
     if(is(rval, "list")) { # Mix of errors and not
