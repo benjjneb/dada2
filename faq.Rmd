@@ -11,7 +11,7 @@ The dada2 workflow assumes that you are starting with demultiplexed fastq files.
 
 There are multiple methods to demultiplex such data. We use [the idemp tool](https://github.com/yhwu/idemp). The [fastx-toolkit](http://hannonlab.cshl.edu/fastx_toolkit/) performs demultiplexing.
 
-You can also demultiplex using [QIIME1](http://qiime.org/) by running `split_libraries_fastq.py` followed by `split_sequence_file_on_sample_ids.py`. If using QIIME1 to demultiplex paired-end data, we recommend turning off filtering as the QIIME filtering causes the forward/reverse reads to be in mismatched order. You can do this by passing `split_libraries_fastq.py` the following arguments: `-r 999 -n 999 -q 0 -p 0.0001`. The [QIIME2 platform](https://docs.qiime2.org/) also supports demultiplexing for the EMP indexing format.
+You can also demultiplex using [QIIME1](http://qiime.org/) by running `split_libraries_fastq.py` followed by `split_sequence_file_on_sample_ids.py`. If using QIIME1 to demultiplex paired-end data, we recommend turning off filtering as the QIIME filtering causes the forward/reverse reads to be in mismatched order. You can do this by passing `split_libraries_fastq.py` the following arguments: `-r 999 -n 999 -q 0 -p 0.0001`. The [QIIME2 platform](https://amplicon-docs.qiime2.org/en/latest/) also supports demultiplexing for the EMP indexing format.
 
 &nbsp;
 
@@ -19,7 +19,7 @@ You can also demultiplex using [QIIME1](http://qiime.org/) by running `split_lib
 
 If primers are at the start of your reads and are a constant length (a common scenario) you can use the `trimLeft = c(FWD_PRIMER_LEN, REV_PRIMER_LEN)` argument of dada2's filtering functions to remove the primers.
 
-For more complex situations (e.g. heterogenity spacers, variable length amplicons such as the ITS region) we recommend the [cutadapt tool](http://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic). You can see a worked example, including verification of primer removal, in the [ITS-specific version of the DADA2 workflow](ITS_workflow.html).
+For more complex situations (e.g. heterogenity spacers, variable length amplicons such as the ITS region) we recommend the [cutadapt tool](https://cutadapt.readthedocs.io/en/stable/index.html) or the [trimmomatic tool](http://www.usadellab.org/cms/?page=trimmomatic). You can see a worked example, including verification of primer removal, in the [ITS-specific version of the DADA2 workflow](ITS_workflow.html).
 
 **Please double-check that your primers have been removed!** The ambiguous nucleotides in unremoved primers **will** interfere with the dada2 pipeline.
 
@@ -83,7 +83,7 @@ Another possibility is that you have bad data. One quick way to test this is to 
 
 ## Why are so many of my reads being removed as chimeras?
 
-It is common for chimeric sequences to be a majority (even large majority) of the total number of unique sequence variants inferred by the `dada(...)` algorithm, but they should not be a majority of the sequencing reads. That is, there may be many chimeras, but they are relatively low abundance. 
+It is common for chimeric sequences to be a majority (even large majority) of the total number of unique sequence variants inferred by the `dada(...)` algorithm, but they should not be a majority of the sequencing reads. That is, there may be many chimeras, but they are relatively low abundance.
 
 The most common reason that far too many reads are flagged as chimeric is that primer sequences were not removed prior to starting the dada2 workflow. The ambiguous nucleotides in universal primer sequences will be interpreted as real variation by the dada2 pipeline, and this interferes with the chimera algorithm. In most cases, if you see over `25%` of your sequencing reads being flagged chimeric, remove the primers from your reads and restart the workflow with the clean data.
 
