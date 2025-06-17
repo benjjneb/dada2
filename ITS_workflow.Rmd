@@ -7,34 +7,34 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 ```
 
-This workflow is an ITS-specific variation of [version 1.8 of the DADA2 tutorial workflow](tutorial_1_8.html). The starting point is a set of Illumina-sequenced paired-end fastq files that have been split ("demultiplexed") by sample and from which the barcodes have already been removed. The end product is an amplicon sequence variant (ASV) table, a higher-resolution analogue of the traditional OTU table, providing records of the number of times each exact [amplicon sequence variant](https://www.nature.com/articles/ismej2017119) was observed in each sample. We also assign taxanomy to the output ITS sequence variants using the UNITE database. **The key addition to this workflow compared to the tutorial is the identification and removal of primers from the reads, and the verification of primer orientation and removal.**
+This workflow is an ITS-specific variation of [version 1.8 of the DADA2 tutorial workflow](tutorial_1_8.html) but has been tested to be compatible with DADA2 version 1.27.1. The starting point is a set of Illumina-sequenced paired-end fastq files that have been split ("demultiplexed") by sample and from which the barcodes have already been removed. The end product is an amplicon sequence variant (ASV) table, a higher-resolution analogue of the traditional OTU table, providing records of the number of times each exact [amplicon sequence variant](https://www.nature.com/articles/ismej2017119) was observed in each sample. We also assign taxanomy to the output ITS sequence variants using the UNITE database. **The key addition to this workflow compared to the tutorial is the identification and removal of primers from the reads, and the verification of primer orientation and removal.**
 
 -----------------------
 
 # Preamble
 
-Unlike the 16S rRNA gene, the ITS region is highly variable in length. The commonly amplified ITS1 and ITS2 regions range from 200 - 600 bp in length. This length variation is biological, not technical, and arises from the high rates of insertions and deletions in the evolution of this less conserved gene region. 
+Unlike the 16S rRNA gene, the ITS region is highly variable in length. The commonly amplified ITS1 and ITS2 regions range from 200 - 600 bp in length. This length variation is biological, not technical, and arises from the high rates of insertions and deletions in the evolution of this less conserved gene region.
 
 The length variation of the ITS region has significant consequences for the filtering and trimming steps of the standard DADA2 workflow. First, truncation to a fixed length is no longer appropriate, as that approach remove real ITS variants with lengths shorter than the truncation length. Second, primer removal is complicated by the possibility of some, but not all, reads extending into the opposite primer when the amplified ITS region is shorter than the read length.
 
-![**a)** The amplified ITS region is longer than the read lengths, the forward and reverse reads overlap to capture the full amplified ITS region, but do not read into the opposite primer. **b)** The amplified ITS region is shorter than the read lengths, and the forward and reverse reads extend into the opposite primers which will appear in their reverse complement form towards the ends of those reads.](ITS_region_schema.png) 
+![**a)** The amplified ITS region is longer than the read lengths, the forward and reverse reads overlap to capture the full amplified ITS region, but do not read into the opposite primer. **b)** The amplified ITS region is shorter than the read lengths, and the forward and reverse reads extend into the opposite primers which will appear in their reverse complement form towards the ends of those reads.](ITS_region_schema.png)
 
-Because both scenarios pictured above typically occur within the same ITS dataset, a critical addition to ITS worfklows is the removal of primers on the forward and reverse reads, in a way that accounts for the possibility of read-through into the opposite primer. This is true even if the amplicon sequencing strategy doesn't include the primers, as read-through into the opposite primer can still occur. 
+Because both scenarios pictured above typically occur within the same ITS dataset, a critical addition to ITS worfklows is the removal of primers on the forward and reverse reads, in a way that accounts for the possibility of read-through into the opposite primer. This is true even if the amplicon sequencing strategy doesn't include the primers, as read-through into the opposite primer can still occur.
 
 In the standard 16S workflow, it is generally possible to remove primers (when included on the reads) via the `trimLeft` parameter (`filterAndTrim(..., trimLeft=(FWD_PRIMER_LEN, REV_PRIMER_LEN))`) as they only appear at the start of the reads and have a fixed length. However, the more complex read-through scenarios that are encountered when sequencing the highly-length-variable ITS region require the use of external tools. Here we present the [cutadapt](http://cutadapt.readthedocs.io/en/stable/index.html) tool for removal of primers from the ITS amplicon sequencing data.
 
 # Starting point
 
-This workflow assumes that your sequencing data meets certain criteria: 
+This workflow assumes that your sequencing data meets certain criteria:
 
-+ Samples have been demultiplexed, i.e., split into individual per-sample fastq files. 
-+ If paired-end sequencing data, the forward and reverse fastq files contain reads in matched order. 
++ Samples have been demultiplexed, i.e., split into individual per-sample fastq files.
++ If paired-end sequencing data, the forward and reverse fastq files contain reads in matched order.
 
 You can also refer to the [FAQ](https://benjjneb.github.io/dada2/faq.html) for recommendations for some common issues.
 
 # Getting ready
 
-Along with the `dada2` library, we also load the `ShortRead` and the `Biostrings` package (R Bioconductor packages; can be installed from the following locations, [dada2](https://benjjneb.github.io/dada2/dada-installation.html), [ShortRead](https://bioconductor.org/packages/release/bioc/html/ShortRead.html) and [Biostrings](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)) which will help in identification and count of the primers present on the raw FASTQ sequence files.  
+Along with the `dada2` library, we also load the `ShortRead` and the `Biostrings` package (R Bioconductor packages; can be installed from the following locations, [dada2](https://benjjneb.github.io/dada2/dada-installation.html), [ShortRead](https://bioconductor.org/packages/release/bioc/html/ShortRead.html) and [Biostrings](https://bioconductor.org/packages/release/bioc/html/Biostrings.html)) which will help in identification and count of the primers present on the raw FASTQ sequence files.
 
 ```{r dada2 Library, warning=FALSE, message=FALSE, tidy=TRUE, results='hold',comment= ""}
 library(dada2);
@@ -45,9 +45,9 @@ library(Biostrings);
 packageVersion("Biostrings")
 ```
 
-The [dataset](https://www.ebi.ac.uk/ena/data/view/PRJNA377530) used here is the Amplicon sequencing library #1, an ITS Mock community constructed by selecting 19 known fungal cultures from the microbial culture collection at the USDA Agricultural Research Service (CFMR) culture collection and sequenced on an Illumina MiSeq using a version 3 (600 cycle) reagent kit.
+The [dataset](https://www.ebi.ac.uk/ena/browser/view/PRJNA377530) used here is the Amplicon sequencing library #1, an ITS Mock community constructed by selecting 19 known fungal cultures from the microbial culture collection at the USDA Agricultural Research Service (CFMR) culture collection and sequenced on an Illumina MiSeq using a version 3 (600 cycle) reagent kit.
 
-To follow along, download the forward and reverse fastq files from the 31 samples listed [in the ENA Project](https://www.ebi.ac.uk/ena/data/view/PRJNA377530). Define the following path variable so that it points to the directory containing those files on **your** machine:
+To follow along, download the forward and reverse fastq files from the 31 samples listed [in the ENA Project](https://www.ebi.ac.uk/ena/browser/view/PRJNA377530). Define the following path variable so that it points to the directory containing those files on **your** machine:
 
 ```{r N removal, warning=FALSE, message=FALSE, tidy=TRUE,comment= ""}
 path <- "~/test/ITS_tutorial" ## CHANGE ME to the directory containing the fastq files.
@@ -78,9 +78,9 @@ In theory if you understand your amplicon sequencing setup, this is sufficient t
 allOrients <- function(primer){ # Create all orientations of the input sequence
   require(Biostrings)
   dna <- DNAString(primer) # The Biostrings works w/ DNAString objects rather than character vectors
-  orients <- c(Forward=dna, 
-               Complement=Biostrings::complement(dna), 
-               Reverse=Biostrings::reverse(dna), 
+  orients <- c(Forward=dna,
+               Complement=Biostrings::complement(dna),
+               Reverse=Biostrings::reverse(dna),
                RevComp=Biostrings::reverseComplement(dna))
   return(sapply(orients, toString)) # Convert back to character vector
 }
@@ -116,7 +116,7 @@ As expected, the FWD primer is found in the forward reads in its forward orienta
 
 # Remove Primers
 
-These primers can be now removed using a specialized primer/adapter removal tool. Here, we use [cutadapt](http://cutadapt.readthedocs.io/en/stable/index.html) for this purpose. Download, installation and usage instructions are available online: http://cutadapt.readthedocs.io/en/stable/index.html
+These primers can be now removed using a specialized primer/adapter removal tool. Here, we use [cutadapt](https://cutadapt.readthedocs.io/en/stable/) for this purpose. Download, installation and usage instructions are available online: https://cutadapt.readthedocs.io/en/stable/
 
 Install cutadapat if you don't have it already. After installing cutadapt, we need to tell R the path to the cutadapt command.
 
@@ -138,9 +138,9 @@ fnRs.cut <- file.path(path.cut, basename(fnRs))
 FWD.RC <- dada2:::rc(FWD)
 REV.RC <- dada2:::rc(REV)
 # Trim FWD and the reverse-complement of REV off of R1 (forward reads)
-R1.flags <- paste("-g", FWD, "-a", REV.RC) 
+R1.flags <- paste("-g", FWD, "-a", REV.RC)
 # Trim REV and the reverse-complement of FWD off of R2 (reverse reads)
-R2.flags <- paste("-G", REV, "-A", FWD.RC) 
+R2.flags <- paste("-G", REV, "-A", FWD.RC)
 # Run Cutadapt
 for(i in seq_along(fnFs)) {
   system2(cutadapt, args = c(R1.flags, R2.flags, "-n", 2, # -n 2 required to remove FWD and REV from reads
@@ -158,16 +158,16 @@ rbind(FWD.ForwardReads = sapply(FWD.orients, primerHits, fn=fnFs.cut[[1]]),
       REV.ReverseReads = sapply(REV.orients, primerHits, fn=fnRs.cut[[1]]))
 ```
 
-Success! Primers are no longer detected in the cutadapted reads. 
+Success! Primers are no longer detected in the cutadapted reads.
 
 The primer-free sequence files are now ready to be analyzed through the DADA2 pipeline. Similar to the earlier steps of reading in FASTQ files, we read in the names of the cutadapt-ed FASTQ files and applying some string manipulation to get the matched lists of forward and reverse fastq files.
 
 ```{r Import files, warning=FALSE, message=FALSE, tidy=TRUE,comment= ""}
-#Forward and reverse fastq filenames have the format: 
+#Forward and reverse fastq filenames have the format:
 cutFs <- sort(list.files(path.cut, pattern = "_1.fastq.gz", full.names = TRUE))
 cutRs <- sort(list.files(path.cut, pattern = "_2.fastq.gz", full.names = TRUE))
 
-# Extract sample names, assuming filenames have format: 
+# Extract sample names, assuming filenames have format:
 get.sample.name <- function(fname) strsplit(basename(fname), "_")[[1]][1]
 sample.names <- unname(sapply(cutFs, get.sample.name))
 head(sample.names)
@@ -183,7 +183,7 @@ plotQualityProfile(cutFs[1:2])
 
 The quality profile plot is a gray-scale heatmap of the frequency of each quality score at each base position. The median quality score at each position is shown by the green line, and the quartiles of the quality score distribution by the orange lines. The red line shows the scaled proportion of reads that extend to at least that position.
 
-The forward reads are of good quality. The red line shows that a significant chunk of reads were cutadapt-ed to about 150nts in length, likely reflecting the length of the amplified ITS region in one of the taxa present in these samples. Note that, unlike in the 16S Tutorial Workflow, we will not be truncating the reads to a fixed length, as the ITS region has significant biological length variation that is lost by such an appraoch. 
+The forward reads are of good quality. The red line shows that a significant chunk of reads were cutadapt-ed to about 150nts in length, likely reflecting the length of the amplified ITS region in one of the taxa present in these samples. Note that, unlike in the 16S Tutorial Workflow, we will not be truncating the reads to a fixed length, as the ITS region has significant biological length variation that is lost by such an appraoch.
 
 Now we visualize the quality profile of the reverse reads:
 
@@ -191,22 +191,22 @@ Now we visualize the quality profile of the reverse reads:
 plotQualityProfile(cutRs[1:2])
 ```
 
-These reverse reads are of decent, but less good, quality. Note that we see the same length peak at around ~150nts, and in the same proportions, as we did in the forward reads. A good sign of consistency! 
+These reverse reads are of decent, but less good, quality. Note that we see the same length peak at around ~150nts, and in the same proportions, as we did in the forward reads. A good sign of consistency!
 
 ##Filter and trim
 
-Assigning the filenames for the output of the filtered reads to be stored as fastq.gz files. 
+Assigning the filenames for the output of the filtered reads to be stored as fastq.gz files.
 
 ```{r filt_output, warning=FALSE, message=FALSE, tidy=TRUE}
 filtFs <- file.path(path.cut, "filtered", basename(cutFs))
 filtRs <- file.path(path.cut, "filtered", basename(cutRs))
 ```
 
-For this dataset, we will use standard filtering paraments: `maxN=0` (DADA2 requires sequences contain no Ns), `truncQ = 2`, `rm.phix = TRUE` and `maxEE=2`. The `maxEE` parameter sets the maximum number of "expected errors" allowed in a read, which is a [better filter than simply averaging quality scores](http://www.drive5.com/usearch/manual/expected_errors.html). **Note:** We enforce a `minLen` here, to get rid of spurious very low-length sequences. This was not needed in the 16S Tutorial Workflow because `truncLen` already served that purpose.
+For this dataset, we will use standard filtering paraments: `maxN=0` (DADA2 requires sequences contain no Ns), `truncQ = 2`, `rm.phix = TRUE` and `maxEE=2`. The `maxEE` parameter sets the maximum number of "expected errors" allowed in a read, which is a [better filter than simply averaging quality scores](https://www.drive5.com/usearch/manual/exp_errs.html). **Note:** We enforce a `minLen` here, to get rid of spurious very low-length sequences. This was not needed in the 16S Tutorial Workflow because `truncLen` already served that purpose.
 
 ```{r Filter and Trim, warning=FALSE, message=FALSE, tidy=TRUE,comment= ""}
-out <- filterAndTrim(cutFs, filtFs, cutRs, filtRs, 
-                     maxN = 0, maxEE = c(2,2), truncQ = 2, minLen = 50, rm.phix = TRUE, 
+out <- filterAndTrim(cutFs, filtFs, cutRs, filtRs,
+                     maxN = 0, maxEE = c(2,2), truncQ = 2, minLen = 50, rm.phix = TRUE,
                      compress = TRUE, multithread = TRUE) # on windows, set multithread = FALSE
 head(out)
 ```
@@ -237,7 +237,7 @@ Everything looks reasonable and we proceed with confidence.
 
 ## Sample Inference
 
-At this step, [the core sample inference algorithm](https://www.nature.com/articles/nmeth.3869#methods) is applied to the dereplicated data. 
+At this step, [the core sample inference algorithm](https://www.nature.com/articles/nmeth.3869#methods) is applied to the dereplicated data.
 
 ```{r dada2, warning=FALSE, message=FALSE, tidy=TRUE, results = "hide", comment= ""}
 dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
@@ -293,7 +293,7 @@ Looks good! We kept the majority of our raw reads, and there is no over-large dr
 
 ## Assign taxonomy
 
-DADA2 supports fungal taxonmic assignment using the UNITE database! The DADA2 package provides a native implementation of the [naive Bayesian classifier method](https://www.ncbi.nlm.nih.gov/pubmed/17586664) for taxonomic assignment. The `assignTaxonomy` function takes as input a set of sequences to ba classified, and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least minBoot bootstrap confidence. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be downloaded and used as the reference. 
+DADA2 supports fungal taxonmic assignment using the UNITE database! The DADA2 package provides a native implementation of the [naive Bayesian classifier method](https://www.ncbi.nlm.nih.gov/pubmed/17586664) for taxonomic assignment. The `assignTaxonomy` function takes as input a set of sequences to ba classified, and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least minBoot bootstrap confidence. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be downloaded and used as the reference.
 
 *We also maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database](https://benjjneb.github.io/dada2/training.html) for 16S, and additional trainings fastas suitable for protists and certain specific environments have been contributed.*
 

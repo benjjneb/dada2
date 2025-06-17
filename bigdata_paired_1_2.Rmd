@@ -5,7 +5,7 @@ output: html_document
 
 --------------------------
 
-**<span style="color:red">More discussion of the computational strategy of the big data workflow is available in [the single-read version](bigdata_1_2.html).**
+**<span style="color:red">A version of this workflow [for versions 1.4 and later](bigdata.html) is also available. More discussion of the computational strategy of the big data workflow is available in [the single-read version](bigdata_1_2.html).**
 
 ## Starting point
 
@@ -43,7 +43,7 @@ for(i in seq_along(fastqFs)) {
 
 ## Sample inference
 
-The `NSAM.LEARN` parameter below should be large enough that the total number of reads across `NSAM.LEARN` samples exceeds 1M. 
+The `NSAM.LEARN` parameter below should be large enough that the total number of reads across `NSAM.LEARN` samples exceeds 1M.
 
 **Sample inference script:**
 ```{r inference, eval=FALSE}
