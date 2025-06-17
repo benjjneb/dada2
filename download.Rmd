@@ -9,13 +9,13 @@ Binaries of the dada2 R package are available through [Bioconductor](https://www
 ```S
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("dada2", version = "3.9")
+BiocManager::install("dada2", version = "3.21")
 ```
 
 See the [Bioconductor install instructions](https://www.bioconductor.org/install/) if issues arise. In particular, to get the newest release of the dada2 R package through Bioconductor you will need to have the current version of R installed.
 
 ## Source
 
-The dada2 R package source code is maintained at GitHub: https://github.com/benjjneb/dada2 
+The dada2 R package source code is maintained at GitHub: https://github.com/benjjneb/dada2
 
-All dada2 R package releases are available through the GitHub Releases page: https://github.com/benjjneb/dada2/releases
+All dada2 R package releases are available through their respective BioConductor releases: https://www.bioconductor.org/about/release-announcements/

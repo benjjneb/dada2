@@ -1,0 +1,32 @@
+DADA2 1.28 RELEASE NOTES
+-----------------------
+
+#### COMMITS
+
+Date:   Tue Apr 25 10:44:36 2023 -0400
+
+    bump x.y.z version to even y prior to creation of RELEASE_3_17 branch
+
+Date:   Sun Apr 9 14:41:11 2023 -0400
+
+    Bump version
+
+Date:   Fri Feb 24 12:50:45 2023 -0500
+
+    Merge branch 'master' of github.com:benjjneb/dada2
+
+Date:   Fri Jan 20 10:49:38 2023 -0500
+
+    Merge pull request #1673 from fconstancias/master
+
+    Update plot-method.R for ggplot2 compatibility
+
+Date:   Fri Jan 20 12:06:52 2023 +0100
+
+    Update plot-method.R for ggplot2 compatibility
+
+    `size` ->  `linewidth`
+    guides(fill=FALSE) -> guides(fill="none")
+
+
+`git log 0e1cf873201f6cb01411af98092d01a7a43888c3..91f0208598cad0b7bb48adaa24a2c6404d634593`
