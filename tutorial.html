@@ -13,12 +13,22 @@
 
 <title>DADA2 Pipeline Tutorial (1.16)</title>
 
-<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.18.1/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
@@ -26,12 +36,16 @@
 <link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 <link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
 
-<style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
-  pre:not([class]) {
-    background-color: white;
-  }
-</style>
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
 <script type="text/javascript">
 if (window.hljs) {
   hljs.configure({languages: []});
@@ -44,32 +58,8 @@ if (window.hljs) {
 
 
 
-<style type="text/css">
-h1 {
-  font-size: 34px;
-}
-h1.title {
-  font-size: 38px;
-}
-h2 {
-  font-size: 30px;
-}
-h3 {
-  font-size: 24px;
-}
-h4 {
-  font-size: 18px;
-}
-h5 {
-  font-size: 16px;
-}
-h6 {
-  font-size: 12px;
-}
-.table th:not([align]) {
-  text-align: left;
-}
-</style>
+
+
 
 
 
@@ -79,10 +69,6 @@ h6 {
   max-width: 940px;
   margin-left: auto;
   margin-right: auto;
-}
-code {
-  color: inherit;
-  background-color: rgba(0, 0, 0, 0.04);
 }
 img {
   max-width:100%;
@@ -99,40 +85,16 @@ button.code-folding-btn:focus {
 summary {
   display: list-item;
 }
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
 </style>
 
 
 <style type="text/css">
-/* padding for bootstrap navbar */
-body {
-  padding-top: 60px;
-  padding-bottom: 40px;
-}
-/* offset scroll position for anchor links (for fixed navbar)  */
-.section h1 {
-  padding-top: 65px;
-  margin-top: -65px;
-}
-.section h2 {
-  padding-top: 65px;
-  margin-top: -65px;
-}
-.section h3 {
-  padding-top: 65px;
-  margin-top: -65px;
-}
-.section h4 {
-  padding-top: 65px;
-  margin-top: -65px;
-}
-.section h5 {
-  padding-top: 65px;
-  margin-top: -65px;
-}
-.section h6 {
-  padding-top: 65px;
-  margin-top: -65px;
-}
 .dropdown-submenu {
   position: relative;
 }
@@ -160,7 +122,7 @@ body {
   margin-right: -10px;
 }
 .dropdown-submenu:hover>a:after {
-  border-left-color: #ffffff;
+  border-left-color: #adb5bd;
 }
 .dropdown-submenu.pull-left {
   float: none;
@@ -172,7 +134,7 @@ body {
 }
 </style>
 
-<script>
+<script type="text/javascript">
 // manage active state of menu based on current page
 $(document).ready(function () {
   // active menu anchor
@@ -182,11 +144,28 @@ $(document).ready(function () {
     href = "index.html";
   var menuAnchor = $('a[href="' + href + '"]');
 
-  // mark it active
-  menuAnchor.parent().addClass('active');
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
 
-  // if it's got a parent navbar menu mark it active as well
-  menuAnchor.closest('li.dropdown').addClass('active');
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
 });
 </script>
 
@@ -198,13 +177,12 @@ $(document).ready(function () {
   max-height: 500px;
   min-height: 44px;
   overflow-y: auto;
-  background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
 
-.tabset-dropdown > .nav-tabs > li.active:before {
-  content: "";
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
   font-family: 'Glyphicons Halflings';
   display: inline-block;
   padding: 10px;
@@ -212,16 +190,9 @@ $(document).ready(function () {
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
-  content: "&#xe258;";
-  border: none;
-}
-
-.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
-  content: "";
+  content: "\e258";
   font-family: 'Glyphicons Halflings';
-  display: inline-block;
-  padding: 10px;
-  border-right: 1px solid #ddd;
+  border: none;
 }
 
 .tabset-dropdown > .nav-tabs > li.active {
@@ -265,7 +236,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -284,7 +255,7 @@ $(document).ready(function () {
   <a href="bigdata.html">Big Data</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     <span class="fa fa-gear"></span>
      
     Documentation
@@ -310,7 +281,7 @@ $(document).ready(function () {
   </ul>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     <span class="fa fa-gear"></span>
      
     Evaluation
@@ -360,7 +331,7 @@ $(document).ready(function () {
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-<div class="fluid-row" id="header">
+<div id="header">
 
 
 
@@ -385,7 +356,7 @@ $(document).ready(function () {
 <h1>Getting ready</h1>
 <p>First we load the <code>dada2</code> package. If you don’t already have it, see the <a href="dada-installation.html">dada2 installation instructions</a>.</p>
 <pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
-<pre><code>## [1] &#39;1.16.0&#39;</code></pre>
+<pre><code>## [1] &#39;1.25.2&#39;</code></pre>
 <p><em>Older versions of this workflow associated with previous release versions of the dada2 R package are also available: <a href="tutorial_1_6.html">1.6</a>, <a href="tutorial_1_8.html">1.8</a>, <a href="tutorial_1_12.html">1.12</a>, .</em></p>
 <p>The data we will work with are the same as those used in the <a href="https://mothur.org/wiki/miseq_sop/">mothur MiSeq SOP</a>. To follow along, download the <a href="https://mothur.s3.us-east-2.amazonaws.com/wiki/miseqsopdata.zip">example data</a> and unzip. These fastq files were generated by 2x250 Illumina Miseq amplicon sequencing of the V4 region of the 16S rRNA gene from gut samples collected longitudinally from a mouse post-weaning. For now just consider them paired-end fastq files to be processed. Define the following path variable so that it points to the extracted directory on <strong>your</strong> machine:</p>
 <pre class="r"><code>path &lt;- &quot;~/MiSeq_SOP&quot; # CHANGE ME to the directory containing the fastq files after unzipping.
@@ -409,11 +380,10 @@ list.files(path)</code></pre>
 ## [33] &quot;F3D7_S195_L001_R1_001.fastq&quot;   &quot;F3D7_S195_L001_R2_001.fastq&quot;  
 ## [35] &quot;F3D8_S196_L001_R1_001.fastq&quot;   &quot;F3D8_S196_L001_R2_001.fastq&quot;  
 ## [37] &quot;F3D9_S197_L001_R1_001.fastq&quot;   &quot;F3D9_S197_L001_R2_001.fastq&quot;  
-## [39] &quot;filtered&quot;                      &quot;FWD&quot;                          
-## [41] &quot;HMP_MOCK.v35.fasta&quot;            &quot;Mock_S280_L001_R1_001.fastq&quot;  
-## [43] &quot;Mock_S280_L001_R2_001.fastq&quot;   &quot;mouse.dpw.metadata&quot;           
-## [45] &quot;mouse.time.design&quot;             &quot;REV&quot;                          
-## [47] &quot;stability.batch&quot;               &quot;stability.files&quot;</code></pre>
+## [39] &quot;filtered&quot;                      &quot;HMP_MOCK.v35.fasta&quot;           
+## [41] &quot;Mock_S280_L001_R1_001.fastq&quot;   &quot;Mock_S280_L001_R2_001.fastq&quot;  
+## [43] &quot;mouse.dpw.metadata&quot;            &quot;mouse.time.design&quot;            
+## [45] &quot;stability.batch&quot;               &quot;stability.files&quot;</code></pre>
 <p>If the package successfully loaded and your listed files match those here, you are ready to go through the DADA2 pipeline.</p>
 <p>Now we read in the names of the fastq files, and perform some string manipulation to get matched lists of the forward and reverse fastq files.</p>
 <pre class="r"><code># Forward and reverse fastq filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq
@@ -537,12 +507,12 @@ head(out)</code></pre>
 <pre><code>## dada-class: object describing DADA2 denoising results
 ## 128 sequence variants were inferred from 1979 input unique sequences.
 ## Key parameters: OMEGA_A = 1e-40, OMEGA_C = 1e-40, BAND_SIZE = 16</code></pre>
-<p>The DADA2 algorithm inferred 128 true sequence variants from the 1979 unique sequences in the first sample. There is much more to the <code>dada-class</code> return object than this (see <code>help(&quot;dada-class&quot;)</code> for some info), including multiple diagnostics about the quality of each denoised sequence variant, but that is beyond the scope of an introductory tutorial.</p>
+<p>The DADA2 algorithm inferred 128 true sequence variants from the 1979 unique sequences in the first sample. There is much more to the <code>dada-class</code> return object than this (see <code>help("dada-class")</code> for some info), including multiple diagnostics about the quality of each denoised sequence variant, but that is beyond the scope of an introductory tutorial.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;margin-top: 15px;">
 <strong><span style="color:red">Considerations for your own data:</span></strong> DADA2 also supports 454 and Ion Torrent data, but <a href="faq.html#can-i-use-dada2-with-my-454-or-ion-torrent-data">we recommend some minor parameter changes</a> for those pyrosequencing technologies. The adventurous can explore <code>?setDadaOpt</code> for other adjustable algorithm parameters.
 </div>
 <div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;;margin-top: 15px;">
-<span style="color:blue"><strong>Extensions:</strong></span> By default, the <code>dada</code> function processes each sample independently. However, pooling information across samples can increase sensitivity to sequence variants that may be present at very low frequencies in multiple samples. The dada2 package offers two types of pooling. <code>dada(..., pool=TRUE)</code> performs <a href="pool.html">standard pooled processing, in which all samples are pooled together for sample inference</a>. <code>dada(..., pool=&quot;pseudo&quot;)</code> performs pseudo-pooling, in which <a href="pseudo.html#Pseudo-pooling">samples are processed independently after sharing information between samples, approximating pooled sample inference in linear time</a>.
+<span style="color:blue"><strong>Extensions:</strong></span> By default, the <code>dada</code> function processes each sample independently. However, pooling information across samples can increase sensitivity to sequence variants that may be present at very low frequencies in multiple samples. The dada2 package offers two types of pooling. <code>dada(..., pool=TRUE)</code> performs <a href="pool.html">standard pooled processing, in which all samples are pooled together for sample inference</a>. <code>dada(..., pool="pseudo")</code> performs pseudo-pooling, in which <a href="pseudo.html#Pseudo-pooling">samples are processed independently after sharing information between samples, approximating pooled sample inference in linear time</a>.
 </div>
 <p> </p>
 </div>
@@ -599,7 +569,7 @@ table(nchar(getSequences(seqtab)))</code></pre>
 dim(seqtab.nochim)</code></pre>
 <pre><code>## [1]  20 232</code></pre>
 <pre class="r"><code>sum(seqtab.nochim)/sum(seqtab)</code></pre>
-<pre><code>## [1] 0.964263</code></pre>
+<pre><code>## [1] 0.9640374</code></pre>
 <p>The frequency of chimeric sequences varies substantially from dataset to dataset, and depends on on factors including experimental procedures and sample complexity. Here chimeras make up about 21% of the merged sequence variants, but when we account for the abundances of those variants we see they account for only about 4% of the merged sequence reads.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
 <strong><span style="color:red">Considerations for your own data:</span></strong> Most of your <strong>reads</strong> should remain after chimera removal (it is not uncommon for a majority of <strong>sequence variants</strong> to be removed though). If most of your reads were removed as chimeric, upstream processing may need to be revisited. In almost all cases this is caused by primer sequences with ambiguous nucleotides that were not removed prior to beginning the DADA2 pipeline.
@@ -616,12 +586,12 @@ colnames(track) &lt;- c(&quot;input&quot;, &quot;filtered&quot;, &quot;denoisedF
 rownames(track) &lt;- sample.names
 head(track)</code></pre>
 <pre><code>##        input filtered denoisedF denoisedR merged nonchim
-## F3D0    7793     7113      6996      6978   6551    6539
-## F3D1    5869     5299      5227      5239   5025    5014
-## F3D141  5958     5463      5339      5351   4973    4850
-## F3D142  3183     2914      2799      2833   2595    2521
+## F3D0    7793     7113      6976      6979   6540    6528
+## F3D1    5869     5299      5227      5239   5028    5017
+## F3D141  5958     5463      5331      5357   4986    4863
+## F3D142  3183     2914      2799      2830   2595    2521
 ## F3D143  3178     2941      2822      2868   2553    2519
-## F3D144  4827     4312      4146      4224   3622    3483</code></pre>
+## F3D144  4827     4312      4151      4228   3646    3507</code></pre>
 <p>Looks good! We kept the majority of our raw reads, and there is no over-large drop associated with any single step.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
 <strong><span style="color:red">Considerations for your own data:</span></strong> This is a great place to do a last <strong>sanity check</strong>. Outside of filtering, there should no step in which a majority of reads are lost. If a majority of reads failed to merge, you may need to revisit the <code>truncLen</code> parameter used in the filtering step and make sure that the truncated reads span your amplicon. If a majority of reads were removed as chimeric, you may need to revisit the removal of primers, as the ambiguous nucleotides in unremoved primers interfere with chimera identification.
@@ -631,23 +601,23 @@ head(track)</code></pre>
 <div id="assign-taxonomy" class="section level1">
 <h1>Assign taxonomy</h1>
 <p>It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to assign taxonomy to the sequence variants. The DADA2 package provides a native implementation of the <a href="http://www.ncbi.nlm.nih.gov/pubmed/17586664">naive Bayesian classifier method</a> for this purpose. The <code>assignTaxonomy</code> function takes as input a set of sequences to be classified and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least <code>minBoot</code> bootstrap confidence.</p>
-<p>We maintain <a href="training.html">formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database</a>, and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the <a href="https://unite.ut.ee/repository.php">UNITE ITS database</a> can be used as is. To follow along, download the <code>silva_nr_v132_train_set.fa.gz</code> file, and place it in the directory with the fastq files.</p>
-<pre class="r"><code>taxa &lt;- assignTaxonomy(seqtab.nochim, &quot;~/tax/silva_nr_v132_train_set.fa.gz&quot;, multithread=TRUE)</code></pre>
+<p>We maintain <a href="training.html">formatted training fastas for the RDP training set, GreenGenes clustered at 97% identity, and the Silva reference database</a>, and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the <a href="https://unite.ut.ee/repository.php">UNITE ITS database</a> can be used as is. To follow along, download the <code>silva_nr99_v138.1_train_set.fa.gz</code> file, and place it in the directory with the fastq files.</p>
+<pre class="r"><code>taxa &lt;- assignTaxonomy(seqtab.nochim, &quot;~/tax/silva_nr99_v138.1_train_set.fa.gz&quot;, multithread=TRUE)</code></pre>
 <div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-top:30px;margin-bottom: 15px;">
-<p><span style="color:blue"><strong>Extensions:</strong></span> The dada2 package also implements a method to make <a href="assign.html#species-assignment">species level assignments based on <strong>exact matching</strong></a> between ASVs and sequenced reference strains. Recent analysis suggests that <a href="https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809">exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments</a>. Currently, <a href="training.html">species-assignment training fastas are available for the Silva and RDP 16S databases</a>. To follow the optional species addition step, download the <code>silva_species_assignment_v132.fa.gz</code> file, and place it in the directory with the fastq files.</p>
-<pre class="r"><code>taxa &lt;- addSpecies(taxa, &quot;~/tax/silva_species_assignment_v132.fa.gz&quot;)</code></pre>
+<p><span style="color:blue"><strong>Extensions:</strong></span> The dada2 package also implements a method to make <a href="assign.html#species-assignment">species level assignments based on <strong>exact matching</strong></a> between ASVs and sequenced reference strains. Recent analysis suggests that <a href="https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809">exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments</a>. Currently, <a href="training.html">species-assignment training fastas are available for the Silva and RDP 16S databases</a>. To follow the optional species addition step, download the <code>silva_species_assignment_v138.1.fa.gz</code> file, and place it in the directory with the fastq files.</p>
+<pre class="r"><code>taxa &lt;- addSpecies(taxa, &quot;~/tax/silva_species_assignment_v138.1.fa.gz&quot;)</code></pre>
 </div>
 <p>Let’s inspect the taxonomic assignments:</p>
 <pre class="r"><code>taxa.print &lt;- taxa # Removing sequence rownames for display only
 rownames(taxa.print) &lt;- NULL
 head(taxa.print)</code></pre>
-<pre><code>##      Kingdom    Phylum          Class         Order           Family          
-## [1,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
-## [2,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
-## [3,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
-## [4,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
-## [5,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Bacteroidaceae&quot;
-## [6,] &quot;Bacteria&quot; &quot;Bacteroidetes&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
+<pre><code>##      Kingdom    Phylum         Class         Order           Family          
+## [1,] &quot;Bacteria&quot; &quot;Bacteroidota&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
+## [2,] &quot;Bacteria&quot; &quot;Bacteroidota&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
+## [3,] &quot;Bacteria&quot; &quot;Bacteroidota&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
+## [4,] &quot;Bacteria&quot; &quot;Bacteroidota&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
+## [5,] &quot;Bacteria&quot; &quot;Bacteroidota&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Bacteroidaceae&quot;
+## [6,] &quot;Bacteria&quot; &quot;Bacteroidota&quot; &quot;Bacteroidia&quot; &quot;Bacteroidales&quot; &quot;Muribaculaceae&quot;
 ##      Genus         Species
 ## [1,] NA            NA     
 ## [2,] NA            NA     
@@ -657,14 +627,14 @@ head(taxa.print)</code></pre>
 ## [6,] NA            NA</code></pre>
 <p>Unsurprisingly, the Bacteroidetes are well represented among the most abundant taxa in these fecal samples. Few species assignments were made, both because it is often not possible to make unambiguous species assignments from subsegments of the 16S gene, and because there is surprisingly little coverage of the indigenous mouse gut microbiota in reference databases.</p>
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
-<strong><span style="color:red">Considerations for your own data:</span></strong> If your reads do not seem to be appropriately assigned, for example lots of your bacterial 16S sequences are being assigned as <code>Eukaryota NA NA NA NA NA</code>, your reads may be in the opposite orientation as the reference database. Tell dada2 to try the reverse-complement orientation with <code>assignTaxonomy(..., tryRC=TRUE)</code> and see if this fixes the assignments. If using DECIPHER for taxonomy, try <code>IdTaxa (..., strand=&quot;both&quot;)</code>.
+<strong><span style="color:red">Considerations for your own data:</span></strong> If your reads do not seem to be appropriately assigned, for example lots of your bacterial 16S sequences are being assigned as <code>Eukaryota NA NA NA NA NA</code>, your reads may be in the opposite orientation as the reference database. Tell dada2 to try the reverse-complement orientation with <code>assignTaxonomy(..., tryRC=TRUE)</code> and see if this fixes the assignments. If using DECIPHER for taxonomy, try <code>IdTaxa (..., strand="both")</code>.
 </div>
 <div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;">
 <p><span style="color:green"><strong>Alternatives:</strong></span> The recently developed <code>IdTaxa</code> taxonomic classification method is also available via <a href="https://bioconductor.org/packages/release/bioc/html/DECIPHER.html">the DECIPHER Bioconductor package</a>. The paper introducing the IDTAXA algorithm <a href="https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5">reports classification performance that is better than the long-time standard set by the naive Bayesian classifier</a>. Here we include a code block that allows you to use <code>IdTaxa</code> as a drop-in replacement for <code>assignTaxonomy</code> (and it’s faster as well!). Trained classifiers are available from <a href="http://DECIPHER.codes/Downloads.html" class="uri">http://DECIPHER.codes/Downloads.html</a>. Download the SILVA SSU r132 (modified) file to follow along.</p>
 <pre class="r"><code>library(DECIPHER); packageVersion(&quot;DECIPHER&quot;)</code></pre>
-<pre><code>## [1] &#39;2.14.0&#39;</code></pre>
+<pre><code>## [1] &#39;2.26.0&#39;</code></pre>
 <pre class="r"><code>dna &lt;- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
-load(&quot;~/tax/IDTaxa/SILVA_SSU_r132_March2018.RData&quot;) # CHANGE TO THE PATH OF YOUR TRAINING SET
+load(&quot;~/tax/IDTaxa/SILVA_SSU_r138_2019.RData&quot;) # CHANGE TO THE PATH OF YOUR TRAINING SET
 ids &lt;- IdTaxa(dna, trainingSet, strand=&quot;top&quot;, processors=NULL, verbose=FALSE) # use all processors
 ranks &lt;- c(&quot;domain&quot;, &quot;phylum&quot;, &quot;class&quot;, &quot;order&quot;, &quot;family&quot;, &quot;genus&quot;, &quot;species&quot;) # ranks of interest
 # Convert the output object of class &quot;Taxa&quot; to a matrix analogous to the output from assignTaxonomy
@@ -700,11 +670,11 @@ cat(&quot;Of those,&quot;, sum(match.ref), &quot;were exact matches to the expec
 <p>The <a href="https://joey711.github.io/phyloseq/">phyloseq R package is a powerful framework for further analysis of microbiome data</a>. We now demonstrate how to straightforwardly import the tables produced by the DADA2 pipeline into phyloseq. We’ll also add the small amount of metadata we have – the samples are named by the gender (G), mouse subject number (X) and the day post-weaning (Y) it was sampled (eg. GXDY).</p>
 <p><strong>Import into phyloseq</strong>:</p>
 <pre class="r"><code>library(phyloseq); packageVersion(&quot;phyloseq&quot;)</code></pre>
-<pre><code>## [1] &#39;1.30.0&#39;</code></pre>
+<pre><code>## [1] &#39;1.42.0&#39;</code></pre>
 <pre class="r"><code>library(Biostrings); packageVersion(&quot;Biostrings&quot;)</code></pre>
-<pre><code>## [1] &#39;2.54.0&#39;</code></pre>
+<pre><code>## [1] &#39;2.66.0&#39;</code></pre>
 <pre class="r"><code>library(ggplot2); packageVersion(&quot;ggplot2&quot;)</code></pre>
-<pre><code>## [1] &#39;3.3.0&#39;</code></pre>
+<pre><code>## [1] &#39;3.4.0&#39;</code></pre>
 <pre class="r"><code>theme_set(theme_bw())</code></pre>
 <p>We can construct a simple sample <code>data.frame</code> from the information encoded in the filenames. Usually this step would instead involve reading the sample data in from a file.</p>
 <pre class="r"><code>samples.out &lt;- rownames(seqtab.nochim)
@@ -741,40 +711,41 @@ ps</code></pre>
 <pre class="r"><code># Transform data to proportions as appropriate for Bray-Curtis distances
 ps.prop &lt;- transform_sample_counts(ps, function(otu) otu/sum(otu))
 ord.nmds.bray &lt;- ordinate(ps.prop, method=&quot;NMDS&quot;, distance=&quot;bray&quot;)</code></pre>
-<pre><code>## Run 0 stress 0.08574537 
-## Run 1 stress 0.1264727 
-## Run 2 stress 0.08942897 
-## Run 3 stress 0.1216671 
-## Run 4 stress 0.08002299 
+<pre><code>## Run 0 stress 0.08043117 
+## Run 1 stress 0.08076339 
+## ... Procrustes: rmse 0.01051237  max resid 0.03235558 
+## Run 2 stress 0.09477219 
+## Run 3 stress 0.1228545 
+## Run 4 stress 0.08043116 
 ## ... New best solution
-## ... Procrustes: rmse 0.04283316  max resid 0.1433318 
-## Run 5 stress 0.1233096 
-## Run 6 stress 0.3653255 
-## Run 7 stress 0.1319352 
-## Run 8 stress 0.08002299 
-## ... New best solution
-## ... Procrustes: rmse 1.709956e-05  max resid 4.666619e-05 
+## ... Procrustes: rmse 1.699413e-06  max resid 4.492512e-06 
 ## ... Similar to previous best
-## Run 9 stress 0.08002299 
-## ... New best solution
-## ... Procrustes: rmse 3.684983e-06  max resid 7.075999e-06 
+## Run 5 stress 0.1010631 
+## Run 6 stress 0.08076339 
+## ... Procrustes: rmse 0.01054992  max resid 0.0324765 
+## Run 7 stress 0.08076339 
+## ... Procrustes: rmse 0.01050059  max resid 0.03231325 
+## Run 8 stress 0.1212044 
+## Run 9 stress 0.08043116 
+## ... Procrustes: rmse 8.180652e-07  max resid 1.741666e-06 
 ## ... Similar to previous best
-## Run 10 stress 0.08002299 
-## ... Procrustes: rmse 4.418113e-06  max resid 7.719035e-06 
+## Run 10 stress 0.08076338 
+## ... Procrustes: rmse 0.01053605  max resid 0.03243126 
+## Run 11 stress 0.08616061 
+## Run 12 stress 0.0807634 
+## ... Procrustes: rmse 0.0105699  max resid 0.03254154 
+## Run 13 stress 0.1212044 
+## Run 14 stress 0.08616061 
+## Run 15 stress 0.1256441 
+## Run 16 stress 0.1336964 
+## Run 17 stress 0.0947719 
+## Run 18 stress 0.08043117 
+## ... Procrustes: rmse 3.134295e-06  max resid 9.546557e-06 
 ## ... Similar to previous best
-## Run 11 stress 0.08942878 
-## Run 12 stress 0.08574537 
-## Run 13 stress 0.08942866 
-## Run 14 stress 0.08942935 
-## Run 15 stress 0.08942887 
-## Run 16 stress 0.3744255 
-## Run 17 stress 0.08002299 
-## ... Procrustes: rmse 9.790044e-07  max resid 1.953481e-06 
-## ... Similar to previous best
-## Run 18 stress 0.1233096 
-## Run 19 stress 0.08574537 
-## Run 20 stress 0.08942877 
-## *** Solution reached</code></pre>
+## Run 19 stress 0.09477214 
+## Run 20 stress 0.08076337 
+## ... Procrustes: rmse 0.0105016  max resid 0.03231875 
+## *** Best solution repeated 3 times</code></pre>
 <pre class="r"><code>plot_ordination(ps.prop, ord.nmds.bray, color=&quot;When&quot;, title=&quot;Bray NMDS&quot;)</code></pre>
 <p><img src="tutorial_files/figure-html/ordinate-1.png" width="672" /></p>
 <p>Ordination picks out a clear separation between the early and late samples.</p>
@@ -785,7 +756,68 @@ ps.top20 &lt;- prune_taxa(top20, ps.top20)
 plot_bar(ps.top20, x=&quot;Day&quot;, fill=&quot;Family&quot;) + facet_wrap(~When, scales=&quot;free_x&quot;)</code></pre>
 <p><img src="tutorial_files/figure-html/bar-plot-1.png" width="672" /></p>
 <p>Nothing glaringly obvious jumps out from the taxonomic distribution of the top 20 sequences to explain the early-late differentiation.</p>
-<p>These were minimal examples of what can be done with phyloseq, as our purpose here was just to show how the results of DADA2 can be easily imported into phyloseq and interrogated further. For examples of the many analyses possible with phyloseq, see <a href="https://joey711.github.io/phyloseq/">the phyloseq web site</a>!</p>
+</div>
+<div id="using-external-packages" class="section level1">
+<h1>Using external packages</h1>
+<p>A variety of other packages are available, extending phyloseq. Dr. Sudarshan Shetty maintains a comprehensive <a href="https://microsud.github.io/Tools-Microbiome-Analysis/">list of R tools for microbiome data science</a>. One widely used package is the <a href="https://bioconductor.org/packages/devel/bioc/html/microbiome.html">microbiome R/Bioconductor package</a>, which has a more extensive <a href="https://microbiome.github.io/tutorials/">tutorial</a> of its own. The package provides tools for microbiome data manipulation, transformations, and visualization.</p>
+<p>Let us first load the package, and transform the original count data into relative abundances. Other common transformations are also available, including e.g. clr, hellinger, and log10p.</p>
+<pre class="r"><code>library(microbiome)
+
+# Transform into compositional data (relative abundances)
+ps.rel &lt;- microbiome::transform(ps, &quot;compositional&quot;)</code></pre>
+<p>Let us then calculate prevalence of the taxa (i.e. relative population frequencies), using 0.1% compositional abundance as a detection threshold:</p>
+<pre class="r"><code># Sorted from the most prevalent to the least prevalent
+head(prevalence(ps.rel, detection = 0.1/100, sort = TRUE), 20)</code></pre>
+<pre><code>##     ASV18     ASV15     ASV14     ASV13     ASV11     ASV10      ASV9      ASV8 
+## 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 
+##      ASV7      ASV5      ASV4      ASV3      ASV2      ASV1     ASV54     ASV40 
+## 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 0.9473684 0.9473684 
+##     ASV28     ASV25     ASV21     ASV55 
+## 0.9473684 0.9473684 0.9473684 0.8947368</code></pre>
+<p>We can also subset the phyloseq object to the prevalent taxa (detected in 50% of the population at higher than 0.1% relative abundance):</p>
+<pre class="r"><code># Subset to prevalent (core) taxa
+ps.core &lt;- core(ps.rel, detection = 0.1/100, prevalence = 50/100)
+
+# Compare the objects before and after subsetting to the core:
+print(ps.rel)</code></pre>
+<pre><code>## phyloseq-class experiment-level object
+## otu_table()   OTU Table:         [ 232 taxa and 19 samples ]
+## sample_data() Sample Data:       [ 19 samples by 4 sample variables ]
+## tax_table()   Taxonomy Table:    [ 232 taxa by 7 taxonomic ranks ]
+## refseq()      DNAStringSet:      [ 232 reference sequences ]</code></pre>
+<pre class="r"><code>print(ps.core)</code></pre>
+<pre><code>## phyloseq-class experiment-level object
+## otu_table()   OTU Table:         [ 57 taxa and 19 samples ]
+## sample_data() Sample Data:       [ 19 samples by 4 sample variables ]
+## tax_table()   Taxonomy Table:    [ 57 taxa by 7 taxonomic ranks ]
+## refseq()      DNAStringSet:      [ 57 reference sequences ]</code></pre>
+<p>We can also aggregate data to Genus level, and collapse rare taxa into an “Other” category.</p>
+<pre class="r"><code>ps.core2 &lt;- aggregate_rare(ps.rel, &quot;Genus&quot;, detection = 0.1/100, prevalence = 50/100)
+print(ps.core2)</code></pre>
+<pre><code>## phyloseq-class experiment-level object
+## otu_table()   OTU Table:         [ 25 taxa and 19 samples ]
+## sample_data() Sample Data:       [ 19 samples by 4 sample variables ]
+## tax_table()   Taxonomy Table:    [ 25 taxa by 2 taxonomic ranks ]</code></pre>
+<p>Finally, the microbiome package provides complementary visualization methods. One example is a heatmap that can be used to visualize relations between the size of the core microbiota at various detection and prevalence thresholds (<a href="https://academic.oup.com/femsre/article/doi/10.1093/femsre/fuw045/2979411/Intestinal-microbiome-landscaping-insight-in#58802539">Shetty et al. FEMS Microbiology Reviews fuw045, 2017</a>).</p>
+<pre class="r"><code># Core with absolute counts and horizontal view:
+# and minimum population prevalence (given as percentage)
+# In the end we add some ggplot formatting for the figure
+library(RColorBrewer)
+prevalences &lt;- seq(.05, 1, .05)
+detections &lt;- seq(from = 0, to = round(max(abundances(ps.rel))/10, 2), by = 0.002)
+p &lt;- plot_core(ps.rel, plot.type = &quot;heatmap&quot;,
+               prevalences = prevalences,
+               detections = detections,
+               colours = rev(brewer.pal(5, &quot;Spectral&quot;)),
+               min.prevalence = .2, horizontal = TRUE) +
+  theme(axis.text.x= element_text(size=8, face=&quot;italic&quot;, hjust=1),
+        axis.text.y= element_text(size=8),
+        axis.title = element_text(size=10),
+        legend.text = element_text(size=8),
+        legend.title = element_text(size=10))
+print(p)</code></pre>
+<p><img src="tutorial_files/figure-html/microbiomecoreheatmap-1.png" width="1440" /></p>
+<p>These were some minimal examples of what can be done with phyloseq, as our purpose here was just to show how the results of DADA2 can be easily imported into phyloseq and interrogated further. For examples of the many analyses possible with phyloseq, see <a href="https://joey711.github.io/phyloseq/">the phyloseq web site</a>!</p>
 </div>
 
 <div class="container" style="width: 100%;color:grey;text-align:right">
@@ -802,7 +834,7 @@ plot_bar(ps.top20, x=&quot;Day&quot;, fill=&quot;Family&quot;) + facet_wrap(~Whe
 
 // add bootstrap table styles to pandoc tables
 function bootstrapStylePandocTables() {
-  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
 }
 $(document).ready(function () {
   bootstrapStylePandocTables();
@@ -820,7 +852,7 @@ $(document).ready(function () {
 
 $(document).ready(function () {
   $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
+    $(this).parent().toggleClass('nav-tabs-open');
   });
 });
 </script>
