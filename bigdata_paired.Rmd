@@ -37,7 +37,7 @@ filterAndTrim(fwd=file.path(pathF, fastqFs), filt=file.path(filtpathF, fastqFs),
 
 ## Infer Sequence Variants
 
-This portion of the workflow should be performed on a run-by-run basis, as error rates can differ between runs. 
+This portion of the workflow should be performed on a run-by-run basis, as error rates can differ between runs.
 
 **Sample inference script:**
 ```{r inference, eval=FALSE}
@@ -92,7 +92,7 @@ st.all <- mergeSequenceTables(st1, st2, st3)
 # Remove chimeras
 seqtab <- removeBimeraDenovo(st.all, method="consensus", multithread=TRUE)
 # Assign taxonomy
-tax <- assignTaxonomy(seqtab, "path/to/silva_nr_v128_train_set.fa.gz", multithread=TRUE)
+tax <- assignTaxonomy(seqtab, "path/to/silva_nr_v138_train_set.fa.gz", multithread=TRUE)
 # Write to disk
 saveRDS(seqtab, "path/to/study/seqtab_final.rds") # CHANGE ME to where you want sequence table saved
 saveRDS(tax, "path/to/study/tax_final.rds") # CHANGE ME ...

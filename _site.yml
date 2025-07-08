@@ -26,18 +26,18 @@ navbar:
     icon: fa-gear
     menu:
     - text: DADA2 Manuscript
-      href: http://dx.doi.org/10.1038/nmeth.3869
+      href: https://doi.org/10.1038/nmeth.3869
     - text: Exact Sequence Variants
-      href: http://dx.doi.org/10.1038/ismej.2017.119
+      href: https://doi.org/10.1038/ismej.2017.119
     - text: PacBio Long Reads
-      href: https://doi.org/10.1101/392332
+      href: https://doi.org/10.1093/nar/gkz569
     - text: Symposium Slides
       href: SMBS_DADA2.pdf
     - text: Benchmarking
       href: SotA.html
   right:
   - icon: ion-social-twitter
-    href: https://www.twitter.com/bejcal
+    href: https://x.com/bejcal
   - icon: fa-question fa-lg
     href: https://github.com/benjjneb/dada2/issues
   - icon: fa-github fa-lg
@@ -50,4 +50,3 @@ output:
       after_body: footer.html
     lib_dir: site_libs
     self_contained: no
-

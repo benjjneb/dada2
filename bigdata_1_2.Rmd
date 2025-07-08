@@ -11,6 +11,8 @@ The DADA2 pipeline capably handles data at this scale with relatively modest tim
 
 --------------------------
 
+**<span style="color:red">A version of this workflow [for versions 1.4 and later](bigdata.html) is also available.**
+
 ## A preamble on our big data strategy
 
 If solely interested in the recipe, feel free to jump ahead to the next section, but we'll start by outlining the basic strategy being used here to reduce the computational costs of the DADA2 pipeline, and how the unique features of DADA2 are being leveraged to implement that strategy.
@@ -25,7 +27,7 @@ Separable sample processing allows DADA2's running time to scale linearly in the
 
 The workflow below expects demultiplexed, per-sample, gzipped fastq files for the primer-free forward reads of a Hiseq run to be in the directory `path` (defined below). The string parsing below expects filenames of the following format: `samplename_XXX.fastq.gz`, but other formats simply require modification to the filename parsing portions of these scripts.
 
-**<span style="color:red">A version of this workflow [for paired end data](bigdata_paired_1_2.html) is also available.**
+**<span style="color:red">Versions of this workflow for paired end data are also available: one for [versions 1.2 and earlier](bigdata_paired_1_2.html), and another for [versions 1.4 and later](bigdata_paired.html).**
 
 ## Filtering
 
@@ -115,7 +117,7 @@ There are too many factors that influence running time to give an answer that wi
 
 **Dataset:** Relatively good quality Hiseq lanes of ~150M reads each, split amongst ~750 samples from a varying mix of oral, fecal and vaginal communities.
 
-**Hardware:** A [general compute node](http://sherlock.stanford.edu/mediawiki/index.php/Main_Page) with 16 cores and 64GB of memory.
+**Hardware:** A [general compute node](https://www.sherlock.stanford.edu/docs/) with 16 cores and 64GB of memory.
 
 **Running times:** Filtering takes 2-3 hours (and is run on 2 cores and 16GB of memory). The sample inference workflow (16 cores, 64GB) takes from 2-16 hours, with running times increasing with lower run quality and higher diversity samples. Paired-end sequencing takes twice as long, as sample inference is run independently on the forward and reverse reads before merging (see [tutorial](tutorial.html) and the [paired-end version of the big data workflow](bigdata_paired.html)).
 

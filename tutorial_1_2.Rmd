@@ -57,7 +57,7 @@ fnRs <- file.path(path, fnRs)
 
 ## Examine quality profiles of forward and reverse reads
 
-It is important to look at your data. We start by visualizing the quality profiles along the sequencing reads. 
+It is important to look at your data. We start by visualizing the quality profiles along the sequencing reads.
 
 **Visualize the quality profile of the forward reads**:
 ```{r see-quality-F}
@@ -79,7 +79,7 @@ The reverse reads are of significantly worse quality, especially at the end, whi
 
 ## Perform filtering and trimming
 
-We'll use standard filtering parameters: `maxN=0` (DADA2 requires no Ns), `truncQ=2` and `maxEE=2`. The `maxEE` parameter sets the maximum number of "expected errors" allowed in a read, which is [a better filter than simply averaging quality scores](http://www.drive5.com/usearch/manual/expected_errors.html). We use the `fastqPairedFilter` function to jointly filter the forward and reverse reads.
+We'll use standard filtering parameters: `maxN=0` (DADA2 requires no Ns), `truncQ=2` and `maxEE=2`. The `maxEE` parameter sets the maximum number of "expected errors" allowed in a read, which is [a better filter than simply averaging quality scores](https://www.drive5.com/usearch/manual/exp_errs.html). We use the `fastqPairedFilter` function to jointly filter the forward and reverse reads.
 
 **Filter the forward and reverse reads**:
 ```{r filter, message=FALSE, warning=FALSE}
@@ -91,7 +91,7 @@ filtRs <- file.path(filt_path, paste0(sample.names, "_R_filt.fastq.gz"))
 # Filter
 for(i in seq_along(fnFs)) {
   fastqPairedFilter(c(fnFs[i], fnRs[i]), c(filtFs[i], filtRs[i]),
-                    truncLen=c(240,160), 
+                    truncLen=c(240,160),
                     maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
                     compress=TRUE, verbose=TRUE)
 }
@@ -126,7 +126,7 @@ names(derepRs) <- sample.names
 
 The DADA2 algorithm depends on a parametric error model (`err`) and amplicon dataset will have different error rates. DADA2 learns its error model from the data itself by alternating estimation of the error rates and the composition of the sample until they converge on a jointly consistent solution (this is similar to the E-M algorithm).
 
-To perform this joint inference we run `dada` with `selfConsist=TRUE`. As in many optimization problems, the algorithm must begin with an initial guess, for which we provide the maximum possible error rates in this data (the error rates if only the most abundant sequence is correct and all the rest are errors) by setting `err=NULL`. 
+To perform this joint inference we run `dada` with `selfConsist=TRUE`. As in many optimization problems, the algorithm must begin with an initial guess, for which we provide the maximum possible error rates in this data (the error rates if only the most abundant sequence is correct and all the rest are errors) by setting `err=NULL`.
 
 *The following runs in about 4 minutes on a 2013 Macbook Pro:*
 
@@ -150,7 +150,7 @@ The error rates for each possible transition (eg. A->C, A->G, ...) are shown. Po
 
 # Sample Inference
 
-We are now ready to apply the core sequence-variant inference algorithm to the dereplicated data. 
+We are now ready to apply the core sequence-variant inference algorithm to the dereplicated data.
 
 **Infer the sequence variants in each sample**:
 ```{r dada}
@@ -200,7 +200,7 @@ dim(seqtab)
 table(nchar(getSequences(seqtab)))
 ```
 
-The sequence table is a `matrix` with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. Our merged sequences all fall in the expected range for these V4 amplicon. 
+The sequence table is a `matrix` with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. Our merged sequences all fall in the expected range for these V4 amplicon.
 
 **<span style="color:red">If using this workflow on your own data:</span>** Sequences that are much longer or shorter than expected may be the result of non-specific priming, and may be worth removing (eg. `seqtab2 <- seqtab[,nchar(colnames(seqtab)) %in% seq(250,256)]`). This is analogous to "cutting a band" in-silico to get amplicons of the targeted length.
 
@@ -225,7 +225,7 @@ The fraction of chimeras varies based on factors including experimental procedur
 
 # Assign taxonomy
 
-It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to classify sequence variants taxonomically. The DADA2 package provides a native implementation of [the RDP's naive Bayesian classifier](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes a set of sequences and a training set of taxonomically classified sequences, and outputs the taxonomic assignments with at least `minBoot` bootstrap confidence. 
+It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to classify sequence variants taxonomically. The DADA2 package provides a native implementation of [the RDP's naive Bayesian classifier](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes a set of sequences and a training set of taxonomically classified sequences, and outputs the taxonomic assignments with at least `minBoot` bootstrap confidence.
 
 Appropriately formatted training fastas for the [RDP training set 14](http://dx.doi.org/10.5281/zenodo.158955), the [GreenGenes 13.8 release clustered at 97\% identity](http://dx.doi.org/10.5281/zenodo.158955), the [Silva reference database v123](http://dx.doi.org/10.5281/zenodo.158958) ([Silva dual license](http://dx.doi.org/10.5281/zenodo.158958)), and the [UNITE ITS database](https://unite.ut.ee/repository.php) (use the General Fasta release files) are available. To follow along, download the `rdp_train_set_14.fa.gz` file, and place it in the directory with the fastq files.
 
@@ -257,7 +257,7 @@ cat("Of those,", sum(match.ref), "were exact matches to the expected reference s
 
 This mock community dataset contained **20** bacterial strains. DADA2 found **20** unique sequences all of which **exactly** match the reference genomes of the expected community members. The residual error rate after the DADA2 pipeline for this sample is **0\%**.
 
-In comparison, [the mothur pipeline finds 34 OTUs in this Mock community sample](http://www.mothur.org/wiki/MiSeq_SOP#Assessing_error_rates). DADA2 infers sequence variants exactly instead of fuzzy 97\% OTUs, and outputs fewer false positives than the OTU methods!
+In comparison, [the mothur pipeline finds 34 OTUs in this Mock community sample](https://mothur.org/wiki/miseq_sop/#assessing-error-rates). DADA2 infers sequence variants exactly instead of fuzzy 97\% OTUs, and outputs fewer false positives than the OTU methods!
 
 **Here ends the DADA2 portion of the tutorial**.
 
@@ -284,8 +284,8 @@ samdf$When[samdf$Day>100] <- "Late"
 rownames(samdf) <- samples.out
 
 # Construct phyloseq object (straightforward from dada2 outputs)
-ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
-               sample_data(samdf), 
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE),
+               sample_data(samdf),
                tax_table(taxa))
 ps
 ```

@@ -58,9 +58,9 @@ At this more stringent threshold, sequence 5 and 7 are not classified at the gen
 
 ## Species assignment
 
-Fast and appropriate species-level assignment from 16S data is provided by the `assignSpecies` method. `assignSpecies` uses exact string matching against a reference database to assign *Genus species* binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if it is unambiguous. [Recent results](https://www.biorxiv.org/content/early/2017/09/21/192211) indicate that exact matching (or 100% identity) with amplicon sequence variants (ASVs) is the only appropriate method for species-level assignment to high-throughput 16S amplicon data.
+Fast and appropriate species-level assignment from 16S data is provided by the `assignSpecies` method. `assignSpecies` uses exact string matching against a reference database to assign *Genus species* binomials. In short, query sequence are compared against all reference sequences that had binomial genus-species nomenclature assigned, and the genus-species of all exact matches are recorded and returned if it is unambiguous. [Results](https://doi.org/10.1093/bioinformatics/bty113) indicate that exact matching (or 100% identity) with amplicon sequence variants (ASVs) is the only appropriate method for species-level assignment to high-throughput 16S amplicon data.
 
-We now run the `assignSpecies` function against the RDP species-level training set. *To run the following on your local machine, modify the filename in the second argument to point to where the `rdp_species_assignment_14.fa.gz` file sits on your computer.*
+We now run the `assignSpecies` function against the RDP species-level training set. *To run the following on your local machine, modify the filename in the second argument to point to where the `rdp_species_assignment_16.fa.gz` file sits on your computer.*
 
 **<span style="color:red">As of version 1.5.2, assignSpecies has been reimplemented to be much faster, and it now easily scales to handle even very large sets of sequences.</span>**
 

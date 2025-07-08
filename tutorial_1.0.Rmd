@@ -55,7 +55,7 @@ fnRs <- file.path(path, fnRs)
 
 ## Examine quality profiles of forward and reverse reads
 
-It is important to look at your data. We start by visualizing the quality profiles along the sequencing reads. 
+It is important to look at your data. We start by visualizing the quality profiles along the sequencing reads.
 
 **Visualize the quality profile of the forward reads**:
 ```{r see-quality-F}
@@ -77,7 +77,7 @@ The reverse reads have significantly worse quality, especially towards the end o
 
 ## Perform filtering and trimming
 
-We'll use standard filtering parameters: `maxN=0` (DADA2 requires no Ns), `truncQ=2` (quality score 2 in Illumina means "stop using this read") and `maxEE=2`. The `maxEE` parameter sets the maximum number of "expected errors" allowed in a read, which is [a better filter than simply averaging quality scores](http://www.drive5.com/usearch/manual/expected_errors.html). We use the `fastqPairedFilter` function to jointly filter the forward and reverse reads.
+We'll use standard filtering parameters: `maxN=0` (DADA2 requires no Ns), `truncQ=2` (quality score 2 in Illumina means "stop using this read") and `maxEE=2`. The `maxEE` parameter sets the maximum number of "expected errors" allowed in a read, which is [a better filter than simply averaging quality scores](https://www.drive5.com/usearch/manual/exp_errs.html). We use the `fastqPairedFilter` function to jointly filter the forward and reverse reads.
 
 **Filter the forward and reverse reads**:
 ```{r filter, message=FALSE, warning=FALSE}
@@ -89,8 +89,8 @@ filtRs <- file.path(filt_path, paste0(sample.names, "_R_filt.fastq.gz"))
 # Filter
 for(i in seq_along(fnFs)) {
   fastqPairedFilter(c(fnFs[i], fnRs[i]), c(filtFs[i], filtRs[i]),
-                    trimLeft=c(10, 10), truncLen=c(240,160), 
-                    maxN=0, maxEE=2, truncQ=2, 
+                    trimLeft=c(10, 10), truncLen=c(240,160),
+                    maxN=0, maxEE=2, truncQ=2,
                     compress=TRUE, verbose=TRUE)
 }
 ```
@@ -125,7 +125,7 @@ Dereplicated sequences are stored in the `$uniques` integer vector, which is nam
 
 # Sample Inference
 
-We are now ready to apply the core sequence-variant inference algorithm to the dereplicated data. 
+We are now ready to apply the core sequence-variant inference algorithm to the dereplicated data.
 
 First a key consideration: the DADA2 algorithm depends on a parametric error model, and we do not know the error rates for this dataset. Fortunately, DADA2 can jointly infer the error-rate parameters and the composition of the sample, at the cost of additional computation time. This is done by implementing an EM-like algorithm in which the error rates and the sample are alternately estimated until convergence.
 
@@ -186,7 +186,7 @@ dim(seqtab)
 table(nchar(colnames(seqtab)))
 ```
 
-The sequence table is a matrix with rows corresponding (and named by) the samples and columns corresponding to (and named by) the sequence variants. It is worth checking on the distribution of sequence lengths after merging. Here we see a narrow range of sequence lengths, as we expect. 
+The sequence table is a matrix with rows corresponding (and named by) the samples and columns corresponding to (and named by) the sequence variants. It is worth checking on the distribution of sequence lengths after merging. Here we see a narrow range of sequence lengths, as we expect.
 
 If some sequences are much longer or shorter than expected, it may be worth removing those sequences as they may be the result of non-specific priming (eg. `seqtab2 <- seqtab[,nchar(colnames(seqtab)) %in% seq(230,236)]). This is akin to "cutting a band" in-silico to get amplicons of the targeted length.
 
@@ -211,7 +211,7 @@ This is the final product of the core DADA2 pipeline: a sequence table that cont
 
 # Assign taxonomy
 
-It is common at this point, especially in 16S or 18S amplicon sequencing, to classify sequence variants taxonomically. The DADA2 package provides a native implementation of [the RDP's naive Bayesian classifier](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes a set of sequences and a training set of taxonomically classified sequences, and outputs the taxonomic assignments with at least `minBoot` bootstrap confidence. 
+It is common at this point, especially in 16S or 18S amplicon sequencing, to classify sequence variants taxonomically. The DADA2 package provides a native implementation of [the RDP's naive Bayesian classifier](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes a set of sequences and a training set of taxonomically classified sequences, and outputs the taxonomic assignments with at least `minBoot` bootstrap confidence.
 
 Appropriately formatted training fastas for the RDP training set 14, the GreenGenes 13.8 release clustered at 97\% identity, and the Silva reference database are [available for download here](https://www.dropbox.com/sh/mfcivbudmc21cqt/AAB1l-AUM5uKvjrR33ct-cTXa?dl=0). Download the `rdp_train_set_14.fa.gz` file, and place it in the directory with the fastq files.
 
@@ -244,7 +244,7 @@ cat("Of those,", sum(match.ref), "were exact matches to the expected reference s
 
 This mock community dataset contained **20** bacterial strains. DADA2 found **20** unique sequences all of which **exactly** match the reference genomes of the expected community members. The residual error rate after the DADA2 pipeline for this sample is **0\%**.
 
-In comparison, when the Mothur pipeline is run on this same dataset, [it finds 35 OTUs in this Mock community sample](http://www.mothur.org/wiki/MiSeq_SOP#Assessing_error_rates). Not only is DADA2 inferring exact sequences (SVs) instead of fuzzy 97\% OTUs, it is making fewer false positive inferences than the OTU construction methods!
+In comparison, when the Mothur pipeline is run on this same dataset, [it finds 35 OTUs in this Mock community sample](https://mothur.org/wiki/miseq_sop/#assessing-error-rates). Not only is DADA2 inferring exact sequences (SVs) instead of fuzzy 97\% OTUs, it is making fewer false positive inferences than the OTU construction methods!
 
 **Here ends the DADA2 portion of the tutorial**.
 
@@ -271,8 +271,8 @@ samdf$When[samdf$Day>100] <- "Late"
 rownames(samdf) <- samples.out
 
 # Construct phyloseq object (straightforward from dada2 outputs)
-ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE), 
-               sample_data(samdf), 
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows=FALSE),
+               sample_data(samdf),
                tax_table(taxa))
 ps
 ```
