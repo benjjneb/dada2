@@ -84,7 +84,7 @@ We'll use standard filtering parameters: `maxN=0` (DADA2 requires no Ns), `trunc
 ```{r filter, message=FALSE, warning=FALSE}
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(240,160),
               maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
-              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE (only needed for filterAndTrim)
 head(out)
 ```
 
@@ -212,16 +212,16 @@ Looks good! We kept the majority of our raw reads, and there is no over-large dr
 
 It is common at this point, especially in 16S/18S/ITS amplicon sequencing, to assign taxonomy to the sequence variants. The DADA2 package provides a native implementation of the [naive Bayesian classifier method](http://www.ncbi.nlm.nih.gov/pubmed/17586664) for this purpose. The `assignTaxonomy` function takes as input a set of sequences to be classified and a training set of reference sequences with known taxonomy, and outputs taxonomic assignments with at least `minBoot` bootstrap confidence.
 
-We maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97\% identity, and the Silva reference database](training.html), and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be used as is. To follow along, download the `silva_nr_v132_train_set.fa.gz` file, and place it in the directory with the fastq files.
+We maintain [formatted training fastas for the RDP training set, GreenGenes clustered at 97\% identity, and the Silva reference database](training.html), and additional trainings fastas suitable for protists and certain specific environments have been contributed. For fungal taxonomy, the General Fasta release files from the [UNITE ITS database](https://unite.ut.ee/repository.php) can be used as is. To follow along, download the `silva_nr99_v138.2_toGenus_trainset.fa.gz` file, and place it in the directory with the fastq files.
 
 ```{r taxify}
-taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr_v132_train_set.fa.gz", multithread=TRUE)
+taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr99_v138.2_toGenus_trainset.fa.gz", multithread=TRUE)
 ```
 
-<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-top:30px;margin-bottom: 15px;"><span style="color:blue">**Extensions:**</span> The dada2 package also implements a method to make [species level assignments based on **exact matching**](assign.html#species-assignment) between ASVs and sequenced reference strains. Recent analysis suggests that [exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments](https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809). Currently, [species-assignment training fastas are available for the Silva and RDP 16S databases](training.html). To follow the optional species addition step, download the `silva_species_assignment_v132.fa.gz` file, and place it in the directory with the fastq files.
+<div style="border: 1px solid blue;padding: 5px;background-color: #f0f0ff;margin-top:30px;margin-bottom: 15px;"><span style="color:blue">**Extensions:**</span> The dada2 package also implements a method to make [species level assignments based on **exact matching**](assign.html#species-assignment) between ASVs and sequenced reference strains. Recent analysis suggests that [exact matching (or 100% identity) is the only appropriate way to assign species to 16S gene fragments](https://academic.oup.com/bioinformatics/advance-article-abstract/doi/10.1093/bioinformatics/bty113/4913809). Currently, [species-assignment training fastas are available for the Silva and RDP 16S databases](training.html). To follow the optional species addition step, download the `silva_v138.2_assignSpecies.fa.gz` file, and place it in the directory with the fastq files.
 
 ```{r species}
-taxa <- addSpecies(taxa, "~/tax/silva_species_assignment_v132.fa.gz")
+taxa <- addSpecies(taxa, "~/tax/silva_v138.2_assignSpecies.fa.gz")
 ```
 
 </div>
@@ -237,12 +237,12 @@ Unsurprisingly, the Bacteroidetes are well represented among the most abundant t
 
 <div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** If your reads do not seem to be appropriately assigned, for example lots of your bacterial 16S sequences are being assigned as `Eukaryota NA NA NA NA NA`, your reads may be in the opposite orientation as the reference database. Tell dada2 to try the reverse-complement orientation with `assignTaxonomy(..., tryRC=TRUE)` and see if this fixes the assignments. If using DECIPHER for taxonomy, try `IdTaxa (..., strand="both")`.</div>
 
-<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;"><span style="color:green">**Alternatives:**</span> The recently developed `IdTaxa` taxonomic classification method is also available via [the DECIPHER Bioconductor package](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html). The paper introducing the IDTAXA algorithm [reports classification performance that is better than the long-time standard set by the naive Bayesian classifier](https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5). Here we include a code block that allows you to use `IdTaxa` as a drop-in replacement for `assignTaxonomy` (and it's faster as well!). Trained classifiers are available from http://DECIPHER.codes/Downloads.html. Download the SILVA SSU r132 (modified) file to follow along.
+<div style="border: 1px solid green;padding: 5px;background-color: #f0fff0;margin-top:30px;margin-bottom: 15px;"><span style="color:green">**Alternatives:**</span> The recently developed `IdTaxa` taxonomic classification method is also available via [the DECIPHER Bioconductor package](https://bioconductor.org/packages/release/bioc/html/DECIPHER.html). The paper introducing the IDTAXA algorithm [reports classification performance that is better than the long-time standard set by the naive Bayesian classifier](https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-018-0521-5). Here we include a code block that allows you to use `IdTaxa` as a drop-in replacement for `assignTaxonomy` (and it's faster as well!). Trained classifiers are available from http://DECIPHER.codes/Downloads.html. Download the SILVA SSU r138.2 (modified) file to follow along.
 
 ```{r decipher, message=FALSE, warning=FALSE}
 library(DECIPHER); packageVersion("DECIPHER")
 dna <- DNAStringSet(getSequences(seqtab.nochim)) # Create a DNAStringSet from the ASVs
-load("~/tax/IDTaxa/SILVA_SSU_r132_March2018.RData") # CHANGE TO THE PATH OF YOUR TRAINING SET
+load("~/tax/IDTaxa/SILVA_SSU_r138_2_2024.RData") # CHANGE TO THE PATH OF YOUR TRAINING SET
 ids <- IdTaxa(dna, trainingSet, strand="top", processors=NULL, verbose=FALSE) # use all processors
 ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species") # ranks of interest
 # Convert the output object of class "Taxa" to a matrix analogous to the output from assignTaxonomy
