@@ -17,12 +17,12 @@
 #'  Binning scheme to be used. Options include ("novaseqc1.3","novaseqc1.2")
 #'   
 #' @param bins (Optional). Numeric vector. 
-#'  If bins and binlabs given this overrides
+#'  If bins and binlabs is given this overrides
 #'  any scheme given. If 0 is not included as the bottom of the first bin, it will be
 #'  added.
 #' 
 #' @param binlabs (Optional) Character vector. If bins and binlabs given this
-#'  overrides any scheme given. Must be n-1 of bins (including the 0 minimum)
+#'  overrides any scheme given. Must be n-1 of bins with zero or n bins without zero.
 #' 
 #' 
 #' @return new_fastq ShortReadQ object .
@@ -73,7 +73,7 @@ binqualscores<- function(infastq,outfastq,scheme="novaseqc1.3",bins=NULL,binlabs
     }
   } else {
     if(!exists(scheme,binschemes)){
-      stop("Premade Binning scheme does not exist. Please choose from: novaseqc1.3,
+      stop("Premade Binning scheme does not exist. Please choose from: novaseqc1.3, novaseqc1.2,
              or enter manual bin and binning label information")
     }
     else {
