@@ -6,17 +6,18 @@
 #' scheme
 #' 
 #' 
-#' @param infastq (Required). Character vector(path?).
-#'  The raw FASTQ file with unbinned quality scores
+#' @param infastq (Required). Character vector.
+#'  Path to the raw FASTQ file with unbinned quality scores
 #' 
 #' @param outfastq (Required). Character vector.
-#'  A vector of possible "parent" sequence that could form the left and right
-#'  sides of the bimera.
+#'  Path for the output binned FASTQ file
 #'   
-#' @param scheme (Optional). Character vector. Default is "novaseqc1.3".
+#' @param scheme (Optional). Character vector. 
+#'  Default is "novaseqc1.3".
 #'  Binning scheme to be used. Options include ("novaseqc1.3","novaseqc1.2")
 #'   
-#' @param bins (Optional). Numeric vector. If bins and binlabs given this overrides
+#' @param bins (Optional). Numeric vector. 
+#'  If bins and binlabs given this overrides
 #'  any scheme given. If 0 is not included as the bottom of the first bin, it will be
 #'  added.
 #' 
@@ -28,10 +29,6 @@
 #'  ShortRead object. Contains original sreads, new binned quality scores, and
 #'  original ids.
 #'
-#' @seealso 
-#'  \code{\link{binschemes}}
-#'  
-#' @export
 #' 
 #' @examples
 #' input="pathtoinput"
@@ -127,6 +124,8 @@ binqualscores<- function(infastq,outfastq,scheme="novaseqc1.3",bins=NULL,binlabs
 }
 
 ################################################################################
+
+#Binning Schemes
 
 binschemes<-list("novaseqc1.3"=
                       list("bins"=c(0,2,17,29,100),
