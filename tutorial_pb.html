@@ -1,0 +1,3616 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>DADA2 Pipeline Tutorial for PacBio Long Reads (1.38)</title>
+
+<script src="site_libs/header-attrs-2.30/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-6.5.2/css/all.min.css" rel="stylesheet" />
+<link href="site_libs/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet" />
+<link href="site_libs/ionicons-2.0.1/css/ionicons.min.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark the anchor link active (and if it's in a dropdown, also mark that active)
+  var dropdown = menuAnchor.closest('li.dropdown');
+  if (window.bootstrap) { // Bootstrap 4+
+    menuAnchor.addClass('active');
+    dropdown.find('> .dropdown-toggle').addClass('active');
+  } else { // Bootstrap 3
+    menuAnchor.parent().addClass('active');
+    dropdown.addClass('active');
+  }
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">dada2</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="dada-installation.html">Install</a>
+</li>
+<li>
+  <a href="tutorial.html">Tutorial</a>
+</li>
+<li>
+  <a href="bigdata.html">Big Data</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Documentation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://www.bioconductor.org/packages/release/bioc/manuals/dada2/man/dada2.pdf">Manual</a>
+    </li>
+    <li>
+      <a href="assign.html">Taxonomy</a>
+    </li>
+    <li>
+      <a href="training.html">Taxonomic References</a>
+    </li>
+    <li>
+      <a href="pool.html">Pooling</a>
+    </li>
+    <li>
+      <a href="faq.html">FAQ</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <span class="fa fa-gear"></span>
+     
+    Evaluation
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="https://doi.org/10.1038/nmeth.3869">DADA2 Manuscript</a>
+    </li>
+    <li>
+      <a href="https://doi.org/10.1038/ismej.2017.119">Exact Sequence Variants</a>
+    </li>
+    <li>
+      <a href="https://doi.org/10.1093/nar/gkz569">PacBio Long Reads</a>
+    </li>
+    <li>
+      <a href="SMBS_DADA2.pdf">Symposium Slides</a>
+    </li>
+    <li>
+      <a href="SotA.html">Benchmarking</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://x.com/bejcal">
+    <span class="ion ion-social-twitter"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2/issues">
+    <span class="fa fa-question fa-lg"></span>
+     
+  </a>
+</li>
+<li>
+  <a href="https://github.com/benjjneb/dada2">
+    <span class="fa fa-github fa-lg"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">DADA2 Pipeline Tutorial for PacBio Long
+Reads (1.38)</h1>
+
+</div>
+
+
+<p>High-throughput amplicon sequencing of the 16S rRNA gene is widely
+used to profile microbial communities. While traditional short-read
+sequencing captures only a portion of the 16S gene (e.g., V3–V4), PacBio
+long-read sequencing allows the recovery of full-length 16S rRNA genes
+(~1.5 kb). Full-length sequences improve taxonomic resolution, enabling
+more accurate identification at the species level. However, the workflow
+in analyzing PacBio data is a bit different than analyzing Illumina
+short-read data in DADA2. Here, we walk through version 1.38 of the
+DADA2 pipeline on a small multi-sample dataset. Our starting point is a
+set of PacBio-sequenced single-end CCS/HiFi fastq files that have been
+split (or “demultiplexed”) by sample.</p>
+<div id="pacbio-amplicon-data-general-characteristics"
+class="section level1">
+<h1>PacBio Amplicon Data: General Characteristics</h1>
+<ul>
+<li>Single-end CCS/HiFi reads (no need for merging).</li>
+<li>PacBio HiFi reads can cover the entire ~1500 bp 16S rRNA gene,
+improving taxonomic resolution.</li>
+<li>Mixed orientation, reorientation required before ASV inference.</li>
+<li>Illumina quality scores range from 0–40, sometimes binned to reduce
+file size. PacBio Sequel data produces quality scores range from 0-93,
+while Revio data often uses binned quality scores range from 0-40.</li>
+</ul>
+<div id="pacbio-v.s.-illumina" class="section level2">
+<h2>Pacbio v.s. Illumina</h2>
+<p>Below are major differences between the Illumina short-read and
+PacBio long-read data:</p>
+<div id="brguzmnucz" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#brguzmnucz table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#brguzmnucz thead, #brguzmnucz tbody, #brguzmnucz tfoot, #brguzmnucz tr, #brguzmnucz td, #brguzmnucz th {
+  border-style: none;
+}
+
+#brguzmnucz p {
+  margin: 0;
+  padding: 0;
+}
+
+#brguzmnucz .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#brguzmnucz .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#brguzmnucz .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#brguzmnucz .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#brguzmnucz .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#brguzmnucz .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#brguzmnucz .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#brguzmnucz .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#brguzmnucz .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#brguzmnucz .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#brguzmnucz .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#brguzmnucz .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#brguzmnucz .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#brguzmnucz .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#brguzmnucz .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#brguzmnucz .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#brguzmnucz .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#brguzmnucz .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#brguzmnucz .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#brguzmnucz .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#brguzmnucz .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#brguzmnucz .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#brguzmnucz .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#brguzmnucz .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#brguzmnucz .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#brguzmnucz .gt_left {
+  text-align: left;
+}
+
+#brguzmnucz .gt_center {
+  text-align: center;
+}
+
+#brguzmnucz .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#brguzmnucz .gt_font_normal {
+  font-weight: normal;
+}
+
+#brguzmnucz .gt_font_bold {
+  font-weight: bold;
+}
+
+#brguzmnucz .gt_font_italic {
+  font-style: italic;
+}
+
+#brguzmnucz .gt_super {
+  font-size: 65%;
+}
+
+#brguzmnucz .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#brguzmnucz .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#brguzmnucz .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#brguzmnucz .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#brguzmnucz .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#brguzmnucz .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#brguzmnucz .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#brguzmnucz .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#brguzmnucz div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Technology">Technology</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Illumina">Illumina</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="PacBio">PacBio</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="Technology" class="gt_row gt_left">Pairing</td>
+<td headers="Illumina" class="gt_row gt_left">Paired-end or single-end</td>
+<td headers="PacBio" class="gt_row gt_left">Single-end</td></tr>
+    <tr><td headers="Technology" class="gt_row gt_left">Length</td>
+<td headers="Illumina" class="gt_row gt_left">50-300bp</td>
+<td headers="PacBio" class="gt_row gt_left">~1500bp (full-length 16S rRNA)</td></tr>
+    <tr><td headers="Technology" class="gt_row gt_left">Orientation</td>
+<td headers="Illumina" class="gt_row gt_left">Consistent</td>
+<td headers="PacBio" class="gt_row gt_left">Mixed (requires reorientation)</td></tr>
+    <tr><td headers="Technology" class="gt_row gt_left">Quality Score</td>
+<td headers="Illumina" class="gt_row gt_left">Phred 0–40 (sometimes binned)</td>
+<td headers="PacBio" class="gt_row gt_left">Phred 0–93 (Sequel) / Phred 0–40 (binned, Revio)</td></tr>
+  </tbody>
+  
+</table>
+</div>
+</div>
+<div id="kinnex-library-construction-overview" class="section level2">
+<h2>Kinnex Library Construction Overview</h2>
+<p>The data we mainly used in this tutorial was generated using the
+<strong>PacBio Kinnex 16S Library Prep Kit</strong>. Kinnex enables
+high-throughput, full-length 16S rRNA sequencing with barcoded primers,
+allowing multiple samples to be pooled and sequenced in a single SMRT
+cell.</p>
+<p><strong>Workflow summary:</strong></p>
+<ul>
+<li>PCR amplification: Using PacBio barcoded primer sets targeting near
+full-length 16S (~1.5 kb).</li>
+<li>Barcode &amp; adapter ligation: Barcodes and SMRTbell adapters are
+attached.</li>
+<li>Size selection: Short/non-specific fragments are removed, keeping
+full-length amplicons.</li>
+<li>SMRTbell construction &amp; sequencing: Circularized molecules are
+sequenced on the PacBio Revio platform, producing CCS/HiFi reads.</li>
+</ul>
+<div id="additional-considerations-for-kinnex-on-revio"
+class="section level3">
+<h3>Additional Considerations for Kinnex on Revio</h3>
+<ul>
+<li><strong>Binned quality scores</strong> which will lead to flat error
+model. Need to use <code>makeBinnedQualErrfun()</code>.</li>
+<li><strong>Tight length distribution</strong> due to Kinnex size
+selection.</li>
+<li><strong>Higher throughput</strong> allows more samples per run but
+increases depth variability.</li>
+</ul>
+</div>
+<div id="kinnex-vs.-sequel-amplicon-library" class="section level3">
+<h3>Kinnex vs. Sequel Amplicon Library</h3>
+<div id="leenrxvmll" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#leenrxvmll table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#leenrxvmll thead, #leenrxvmll tbody, #leenrxvmll tfoot, #leenrxvmll tr, #leenrxvmll td, #leenrxvmll th {
+  border-style: none;
+}
+
+#leenrxvmll p {
+  margin: 0;
+  padding: 0;
+}
+
+#leenrxvmll .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#leenrxvmll .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#leenrxvmll .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#leenrxvmll .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#leenrxvmll .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#leenrxvmll .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#leenrxvmll .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#leenrxvmll .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#leenrxvmll .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#leenrxvmll .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#leenrxvmll .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#leenrxvmll .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#leenrxvmll .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#leenrxvmll .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#leenrxvmll .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#leenrxvmll .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#leenrxvmll .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#leenrxvmll .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#leenrxvmll .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#leenrxvmll .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#leenrxvmll .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#leenrxvmll .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#leenrxvmll .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#leenrxvmll .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#leenrxvmll .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#leenrxvmll .gt_left {
+  text-align: left;
+}
+
+#leenrxvmll .gt_center {
+  text-align: center;
+}
+
+#leenrxvmll .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#leenrxvmll .gt_font_normal {
+  font-weight: normal;
+}
+
+#leenrxvmll .gt_font_bold {
+  font-weight: bold;
+}
+
+#leenrxvmll .gt_font_italic {
+  font-style: italic;
+}
+
+#leenrxvmll .gt_super {
+  font-size: 65%;
+}
+
+#leenrxvmll .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#leenrxvmll .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#leenrxvmll .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#leenrxvmll .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#leenrxvmll .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#leenrxvmll .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#leenrxvmll .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#leenrxvmll .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#leenrxvmll div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Feature">Feature</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Kinnex_Revio">Kinnex_Revio</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Sequel">Sequel</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="Feature" class="gt_row gt_left">Platform</td>
+<td headers="Kinnex_Revio" class="gt_row gt_left">PacBio Revio</td>
+<td headers="Sequel" class="gt_row gt_left">PacBio Sequel / Sequel II</td></tr>
+    <tr><td headers="Feature" class="gt_row gt_left">Library prep</td>
+<td headers="Kinnex_Revio" class="gt_row gt_left">Kinnex kit with PacBio barcoded primers target near full-length 16S (~1.5 kb), enabling multiplexed, pooled sequencing</td>
+<td headers="Sequel" class="gt_row gt_left">Custom primers or legacy amplicon kits</td></tr>
+    <tr><td headers="Feature" class="gt_row gt_left">Read type</td>
+<td headers="Kinnex_Revio" class="gt_row gt_left">CCS/HiFi, single-end</td>
+<td headers="Sequel" class="gt_row gt_left">CCS/HiFi, single-end</td></tr>
+    <tr><td headers="Feature" class="gt_row gt_left">Quality score</td>
+<td headers="Kinnex_Revio" class="gt_row gt_left">Binned Q-scores (3, 10, 17, 22, 27, 35, 40)</td>
+<td headers="Sequel" class="gt_row gt_left">Continuous Q-scores (0–93)</td></tr>
+    <tr><td headers="Feature" class="gt_row gt_left">Orientation</td>
+<td headers="Kinnex_Revio" class="gt_row gt_left">Often mixed (forward/reverse complement)</td>
+<td headers="Sequel" class="gt_row gt_left">Often more consistent, but may still need reorientation</td></tr>
+    <tr><td headers="Feature" class="gt_row gt_left">Throughput</td>
+<td headers="Kinnex_Revio" class="gt_row gt_left">High</td>
+<td headers="Sequel" class="gt_row gt_left">Lower</td></tr>
+    <tr><td headers="Feature" class="gt_row gt_left">DADA2 error function</td>
+<td headers="Kinnex_Revio" class="gt_row gt_left">`makeBinnedQualErrfun()`</td>
+<td headers="Sequel" class="gt_row gt_left">`loessErrfun()` (default)</td></tr>
+  </tbody>
+  
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="getting-ready" class="section level1">
+<h1>Getting ready</h1>
+<p>First, we load the <code>dada2</code> package.</p>
+<pre class="r"><code>library(dada2); packageVersion(&quot;dada2&quot;)</code></pre>
+<pre><code>## [1] &#39;1.38.0&#39;</code></pre>
+<pre class="r"><code>library(ShortRead)
+get.table &lt;- function(tb, rowname = TRUE) {gt::gt(data.frame(tb), rownames_to_stub = rowname)}
+rc &lt;- dada2:::rc # reverse compliment.</code></pre>
+<p>The original dataset consists of environmental microbial samples
+collected daily from two distinct bathroom sink P-traps (Sink A and Sink
+B) over a two-month period. To reduce computational time for this
+tutorial, we only picked five samples, and the raw
+<code>.fastq.gz</code> files were randomly downsampled to 10% of their
+original sequencing depth using <code>seqkit</code>. The downsampled
+dataset used in this workflow is publicly available and can be
+downloaded from Zenodo <a href="https://doi.org/10.5281/zenodo.18749206"
+class="uri">https://doi.org/10.5281/zenodo.18749206</a>.</p>
+<pre class="r"><code>path &lt;- &quot;~/tutorial_pb_data/revio_pacbio_10&quot; # CHANGE ME to the directory containing the fastq files.
+files &lt;- list.files(path, pattern = &#39;.gz$&#39;, full.names = TRUE)
+basename(files)</code></pre>
+<pre><code>## [1] &quot;Kinnex16S_Rev_21.hifi_reads.fastq.gz&quot;
+## [2] &quot;Kinnex16S_Rev_22.hifi_reads.fastq.gz&quot;
+## [3] &quot;Kinnex16S_Rev_23.hifi_reads.fastq.gz&quot;
+## [4] &quot;Kinnex16S_Rev_24.hifi_reads.fastq.gz&quot;
+## [5] &quot;Kinnex16S_Rev_25.hifi_reads.fastq.gz&quot;</code></pre>
+<div id="remove-primer-and-orient-reads" class="section level2">
+<h2>Remove Primer and Orient Reads</h2>
+<p>First, we need to set up the forward and reverse primer sequences in
+the data. Make sure you are using the correct primer sequences in your
+data.</p>
+<pre class="r"><code>F27 &lt;- &quot;AGRGTTYGATYMTGGCTCAG&quot;
+R1492 &lt;- &quot;RGYTACCTTGTTACGACTT&quot;</code></pre>
+<p>Reads in Pacbio CCS data are in a mixed orientations. Here, we sort
+each read into consistent orientation based on forward and reverse
+primer sequences, and then remove the primer sequences. Reads that do
+not contain the primers are discarded. <code>primer.rev</code> should be
+provided in the orientation that would appear in a DNA sequence starting
+at the forward primer and being read towards the reverse primer, hence
+we use the reverse compliment of the primer sequence.</p>
+<p><em>Note: the <code>removePrimers</code> function is designed for
+PacBio CCS data, not for short-read data.</em></p>
+<pre class="r"><code># Place primers removed files in noprimers/ subdirectory
+np.path &lt;- file.path(path, &quot;noprimers&quot;, basename(files))
+np.out &lt;- removePrimers(files, # original file path
+                        np.path, # target directory stores primer removed data
+                        primer.fwd=F27,
+                        primer.rev=rc(R1492), # reverse compliment of R1492
+                        orient=TRUE)
+get.table(np.out)</code></pre>
+<div id="xoaboewnyn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#xoaboewnyn table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#xoaboewnyn thead, #xoaboewnyn tbody, #xoaboewnyn tfoot, #xoaboewnyn tr, #xoaboewnyn td, #xoaboewnyn th {
+  border-style: none;
+}
+
+#xoaboewnyn p {
+  margin: 0;
+  padding: 0;
+}
+
+#xoaboewnyn .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#xoaboewnyn .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#xoaboewnyn .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#xoaboewnyn .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#xoaboewnyn .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#xoaboewnyn .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#xoaboewnyn .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#xoaboewnyn .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#xoaboewnyn .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#xoaboewnyn .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#xoaboewnyn .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xoaboewnyn .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#xoaboewnyn .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#xoaboewnyn .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#xoaboewnyn .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xoaboewnyn .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#xoaboewnyn .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#xoaboewnyn .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#xoaboewnyn .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xoaboewnyn .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#xoaboewnyn .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xoaboewnyn .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#xoaboewnyn .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xoaboewnyn .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xoaboewnyn .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xoaboewnyn .gt_left {
+  text-align: left;
+}
+
+#xoaboewnyn .gt_center {
+  text-align: center;
+}
+
+#xoaboewnyn .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#xoaboewnyn .gt_font_normal {
+  font-weight: normal;
+}
+
+#xoaboewnyn .gt_font_bold {
+  font-weight: bold;
+}
+
+#xoaboewnyn .gt_font_italic {
+  font-style: italic;
+}
+
+#xoaboewnyn .gt_super {
+  font-size: 65%;
+}
+
+#xoaboewnyn .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#xoaboewnyn .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#xoaboewnyn .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#xoaboewnyn .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#xoaboewnyn .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#xoaboewnyn .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#xoaboewnyn .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#xoaboewnyn .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#xoaboewnyn div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="a::stub"></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="reads.in">reads.in</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="reads.out">reads.out</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><th id="stub_1_1" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_21.hifi_reads.fastq.gz</th>
+<td headers="stub_1_1 reads.in" class="gt_row gt_right">83372</td>
+<td headers="stub_1_1 reads.out" class="gt_row gt_right">80799</td></tr>
+    <tr><th id="stub_1_2" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_22.hifi_reads.fastq.gz</th>
+<td headers="stub_1_2 reads.in" class="gt_row gt_right">54957</td>
+<td headers="stub_1_2 reads.out" class="gt_row gt_right">53154</td></tr>
+    <tr><th id="stub_1_3" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_23.hifi_reads.fastq.gz</th>
+<td headers="stub_1_3 reads.in" class="gt_row gt_right">53510</td>
+<td headers="stub_1_3 reads.out" class="gt_row gt_right">51650</td></tr>
+    <tr><th id="stub_1_4" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_24.hifi_reads.fastq.gz</th>
+<td headers="stub_1_4 reads.in" class="gt_row gt_right">1127</td>
+<td headers="stub_1_4 reads.out" class="gt_row gt_right">1020</td></tr>
+    <tr><th id="stub_1_5" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_25.hifi_reads.fastq.gz</th>
+<td headers="stub_1_5 reads.in" class="gt_row gt_right">48332</td>
+<td headers="stub_1_5 reads.out" class="gt_row gt_right">46717</td></tr>
+  </tbody>
+  
+</table>
+</div>
+<p>Most reads are retained, meaning the primers sequences are valid.</p>
+</div>
+</div>
+<div id="filter-and-trim" class="section level1">
+<h1>Filter and trim</h1>
+<p>Check the quality of our data.</p>
+<pre class="r"><code>plotQualityProfile(np.path)</code></pre>
+<p><img src="tutorial_pb_files/figure-html/unnamed-chunk-5-1.png" alt="" width="672" /></p>
+<p>The quality score looks good overall. Some reads have longer tails,
+so we need to set a length window.</p>
+<p>Here, we use the option <code>maxEE=2</code>, which is recommended,
+and only keep the read with length between 1000 to 1600 bp. Different to
+the Illumina data tutorial, for long-read data, we want to keep the 16S
+full-length gene (primer to primer). Therefore, we <strong>do
+not</strong> truncate the length of each read.</p>
+<p>We set <code>rm.phix=FALSE</code> since Pacbio sequencing does not
+use Phi-genomes.</p>
+<pre class="r"><code># Place filtered files in filtered/ subdirectory
+filt.path &lt;- file.path(path, &quot;filtered&quot;, basename(files))
+filt.out &lt;- filterAndTrim(np.path, # directory path to files without primers
+                          filt.path, # target directory stores filtered data
+                          minLen=1000, 
+                          maxLen=1600,
+                          rm.phix=FALSE, # won&#39;t use Phi-genomes
+                          maxEE=2, 
+                          multithread=TRUE)
+get.table(filt.out)</code></pre>
+<div id="xzuhgjelif" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#xzuhgjelif table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#xzuhgjelif thead, #xzuhgjelif tbody, #xzuhgjelif tfoot, #xzuhgjelif tr, #xzuhgjelif td, #xzuhgjelif th {
+  border-style: none;
+}
+
+#xzuhgjelif p {
+  margin: 0;
+  padding: 0;
+}
+
+#xzuhgjelif .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#xzuhgjelif .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#xzuhgjelif .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#xzuhgjelif .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#xzuhgjelif .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#xzuhgjelif .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#xzuhgjelif .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#xzuhgjelif .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#xzuhgjelif .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#xzuhgjelif .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#xzuhgjelif .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#xzuhgjelif .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#xzuhgjelif .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#xzuhgjelif .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#xzuhgjelif .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xzuhgjelif .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#xzuhgjelif .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#xzuhgjelif .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#xzuhgjelif .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xzuhgjelif .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#xzuhgjelif .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xzuhgjelif .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#xzuhgjelif .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xzuhgjelif .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#xzuhgjelif .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#xzuhgjelif .gt_left {
+  text-align: left;
+}
+
+#xzuhgjelif .gt_center {
+  text-align: center;
+}
+
+#xzuhgjelif .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#xzuhgjelif .gt_font_normal {
+  font-weight: normal;
+}
+
+#xzuhgjelif .gt_font_bold {
+  font-weight: bold;
+}
+
+#xzuhgjelif .gt_font_italic {
+  font-style: italic;
+}
+
+#xzuhgjelif .gt_super {
+  font-size: 65%;
+}
+
+#xzuhgjelif .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#xzuhgjelif .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#xzuhgjelif .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#xzuhgjelif .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#xzuhgjelif .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#xzuhgjelif .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#xzuhgjelif .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#xzuhgjelif .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#xzuhgjelif div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="a::stub"></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="reads.in">reads.in</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="reads.out">reads.out</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><th id="stub_1_1" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_21.hifi_reads.fastq.gz</th>
+<td headers="stub_1_1 reads.in" class="gt_row gt_right">80799</td>
+<td headers="stub_1_1 reads.out" class="gt_row gt_right">41815</td></tr>
+    <tr><th id="stub_1_2" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_22.hifi_reads.fastq.gz</th>
+<td headers="stub_1_2 reads.in" class="gt_row gt_right">53154</td>
+<td headers="stub_1_2 reads.out" class="gt_row gt_right">28059</td></tr>
+    <tr><th id="stub_1_3" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_23.hifi_reads.fastq.gz</th>
+<td headers="stub_1_3 reads.in" class="gt_row gt_right">51650</td>
+<td headers="stub_1_3 reads.out" class="gt_row gt_right">27107</td></tr>
+    <tr><th id="stub_1_4" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_24.hifi_reads.fastq.gz</th>
+<td headers="stub_1_4 reads.in" class="gt_row gt_right">1020</td>
+<td headers="stub_1_4 reads.out" class="gt_row gt_right">453</td></tr>
+    <tr><th id="stub_1_5" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_25.hifi_reads.fastq.gz</th>
+<td headers="stub_1_5 reads.in" class="gt_row gt_right">46717</td>
+<td headers="stub_1_5 reads.out" class="gt_row gt_right">24738</td></tr>
+  </tbody>
+  
+</table>
+</div>
+<p>Data quality looks good after filtering (Store the
+<code>plotQualityProfile</code> object, we will use it later).</p>
+<pre class="r"><code>qp &lt;- plotQualityProfile(filt.path)
+qp</code></pre>
+<p><img src="tutorial_pb_files/figure-html/unnamed-chunk-7-1.png" alt="" width="672" /></p>
+<p><code>derepFastq</code> collapses identical sequencing reads into
+unique sequences. In the PacBio pipeline, this step serves as a critical
+<strong>sanity check</strong> for sequencing quality and replication
+depth.</p>
+<p><strong>Why this is different from Short-reads:</strong> PacBio
+full-length 16S sequences (~1.5 kb) are more prone to accumulating
+random errors than short reads. This increases the risk of lacking
+sufficient replication (repeated observations of the same sequence),
+which is a fundamental requirement for the DADA2 algorithm to perform
+sample inference.</p>
+<p><strong>The Sanity Check:</strong> Compare the number of
+<strong>unique sequences</strong> to <strong>total reads</strong> in the
+output below. * <strong>Good:</strong> Unique sequences are
+significantly fewer than total reads (high replication). *
+<strong>Bad:</strong> Unique sequences <span
+class="math inline">\(\approx\)</span> Total reads (mostly singletons).
+* <em>Implication:</em> The sample lacks the repeated observations
+required by the DADA2 algorithm to statistically differentiate true
+biological variants from sequencing noise. The inferred ASVs for this
+specific sample will be unreliable, and the sample should likely be
+excluded.</p>
+<pre class="r"><code>derepFastq(filt.path, qualityType=&quot;FastqQuality&quot;, verbose = TRUE)</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: ~/tutorial_pb_data/revio_pacbio_10/filtered/Kinnex16S_Rev_21.hifi_reads.fastq.gz</code></pre>
+<pre><code>## Encountered 22622 unique sequences from 41815 total sequences read.</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: ~/tutorial_pb_data/revio_pacbio_10/filtered/Kinnex16S_Rev_22.hifi_reads.fastq.gz</code></pre>
+<pre><code>## Encountered 12444 unique sequences from 28059 total sequences read.</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: ~/tutorial_pb_data/revio_pacbio_10/filtered/Kinnex16S_Rev_23.hifi_reads.fastq.gz</code></pre>
+<pre><code>## Encountered 15695 unique sequences from 27107 total sequences read.</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: ~/tutorial_pb_data/revio_pacbio_10/filtered/Kinnex16S_Rev_24.hifi_reads.fastq.gz</code></pre>
+<pre><code>## Encountered 414 unique sequences from 453 total sequences read.</code></pre>
+<pre><code>## Dereplicating sequence entries in Fastq file: ~/tutorial_pb_data/revio_pacbio_10/filtered/Kinnex16S_Rev_25.hifi_reads.fastq.gz</code></pre>
+<pre><code>## Encountered 11999 unique sequences from 24738 total sequences read.</code></pre>
+<pre><code>## $Kinnex16S_Rev_21.hifi_reads.fastq.gz
+## derep-class: R object describing dereplicated sequencing reads
+## $uniques: 41815 reads in 22622 unique sequences
+##   Sequence lengths: min=1318, median=1446, max=1600
+## $quals: Quality matrix dimension:  22622 1600
+##   Consensus quality scores: min=3, median=40, max=40
+## $map: Map from reads to unique sequences:  2374 2392 3920 1475 15967 ...
+## 
+## $Kinnex16S_Rev_22.hifi_reads.fastq.gz
+## derep-class: R object describing dereplicated sequencing reads
+## $uniques: 28059 reads in 12444 unique sequences
+##   Sequence lengths: min=1383, median=1462, max=1600
+## $quals: Quality matrix dimension:  12444 1600
+##   Consensus quality scores: min=3, median=40, max=40
+## $map: Map from reads to unique sequences:  948 410 4 5 3 ...
+## 
+## $Kinnex16S_Rev_23.hifi_reads.fastq.gz
+## derep-class: R object describing dereplicated sequencing reads
+## $uniques: 27107 reads in 15695 unique sequences
+##   Sequence lengths: min=1334, median=1462, max=1600
+## $quals: Quality matrix dimension:  15695 1600
+##   Consensus quality scores: min=3, median=40, max=40
+## $map: Map from reads to unique sequences:  1445 609 4838 13878 3 ...
+## 
+## $Kinnex16S_Rev_24.hifi_reads.fastq.gz
+## derep-class: R object describing dereplicated sequencing reads
+## $uniques: 453 reads in 414 unique sequences
+##   Sequence lengths: min=1389, median=1462, max=1600
+## $quals: Quality matrix dimension:  414 1600
+##   Consensus quality scores: min=3, median=40, max=40
+## $map: Map from reads to unique sequences:  205 400 30 33 337 ...
+## 
+## $Kinnex16S_Rev_25.hifi_reads.fastq.gz
+## derep-class: R object describing dereplicated sequencing reads
+## $uniques: 24738 reads in 11999 unique sequences
+##   Sequence lengths: min=1213, median=1462, max=1600
+## $quals: Quality matrix dimension:  11999 1600
+##   Consensus quality scores: min=3, median=40, max=40
+## $map: Map from reads to unique sequences:  58 2 1707 7 10528 ...</code></pre>
+<div
+style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">
+<strong><span style="color:red">Considerations for your own
+data:</span></strong> For instance, Sample 4 in our dataset outputs a
+unique sequence count nearly equal to its total read count, failing this
+sanity check. Because almost all reads are distinct singletons, the
+DADA2 sample inference step lacks the required repeated observations to
+statistically differentiate true biological variants from sequencing
+noise for this specific sample. Consequently, its inferred ASVs will be
+unreliable, and it may need to be excluded or re-sequenced.
+</div>
+<p> </p>
+</div>
+<div id="learn-error-rate" class="section level1">
+<h1>Learn Error Rate</h1>
+<p>The PacBio Revio Kinnex uses binned quality score.</p>
+<pre class="r"><code>binnedQ &lt;- sort(unique(qp$data$Score)) # use quality plot object we previously stored
+binnedQ # check bin quality score</code></pre>
+<pre><code>## [1]  3 10 17 22 27 35 40</code></pre>
+<p>For data that using binned quality score, we use the error function
+<code>makeBinnedQualErrfun</code> and provide the quality scores.</p>
+<pre class="r"><code>err &lt;- learnErrors(filt.path, 
+                   errorEstimationFunction=makeBinnedQualErrfun(binnedQ), # use this function if the quality score in your data is binned
+                   qualityType=&quot;FastqQuality&quot;,
+                   multithread=TRUE)</code></pre>
+<pre><code>## 102018561 total bases in 69874 reads from 2 samples will be used for learning the error rates.</code></pre>
+<p>We see a flat error model in Kinnex data.</p>
+<pre class="r"><code>plotErrors(err, nominalQ = TRUE)</code></pre>
+<p><img src="tutorial_pb_files/figure-html/unnamed-chunk-11-1.png" alt="" width="672" /></p>
+<p><strong>for data with unbinned quality score</strong></p>
+<p>For Pcabio Sequel data, the quality scores are not binned (Range:
+0-93). In this case, use the default error function
+<code>loessErrfun</code>.</p>
+<pre class="r"><code>err &lt;- learnErrors(filt.path, 
+                   errorEstimationFunction = loessErrfun,
+                   qualityType=&quot;FastqQuality&quot;, 
+                   multithread=TRUE) # this chunk won&#39;t run.</code></pre>
+</div>
+<div id="sample-inference" class="section level1">
+<h1>Sample Inference</h1>
+<p>We are now ready to apply the denoising algorithm to the filtered and
+trimmed sequence data.</p>
+<pre class="r"><code>dd &lt;- dada(filt.path, err=err, 
+           errorEstimationFunction=makeBinnedQualErrfun(binnedQ), # use this function if the quality score in your data is binned
+           multithread=TRUE)</code></pre>
+<pre><code>## Sample 1 - 41815 reads in 22622 unique sequences.
+## Sample 2 - 28059 reads in 12444 unique sequences.
+## Sample 3 - 27107 reads in 15695 unique sequences.
+## Sample 4 - 453 reads in 414 unique sequences.
+## Sample 5 - 24738 reads in 11999 unique sequences.</code></pre>
+</div>
+<div id="construct-sequence-table" class="section level1">
+<h1>Construct sequence table</h1>
+<p>We can now construct the ASV table. Note that PacBio sequencing reads
+are single-paired, so here we skipped the “pair merging” step.</p>
+<pre class="r"><code>seqtab &lt;- makeSequenceTable(dd)
+dim(seqtab)</code></pre>
+<pre><code>## [1]    5 1341</code></pre>
+<pre class="r"><code>`Read Length` &lt;- nchar(getSequences(seqtab))
+hist(`Read Length`)</code></pre>
+<p><img src="tutorial_pb_files/figure-html/unnamed-chunk-14-1.png" alt="" width="672" /></p>
+</div>
+<div id="remove-chimeras" class="section level1">
+<h1>Remove chimeras</h1>
+<p>With the full-study sequence table, now we identify and remove
+chimeras. We see chimeras only account for a small amount of
+abundance.</p>
+<pre class="r"><code>seqtab.nochim &lt;- removeBimeraDenovo(seqtab, method=&quot;consensus&quot;, multithread=TRUE, verbose=TRUE)</code></pre>
+<pre><code>## Identified 525 bimeras out of 1341 input sequences.</code></pre>
+<pre class="r"><code>dim(seqtab.nochim)</code></pre>
+<pre><code>## [1]   5 816</code></pre>
+<pre class="r"><code>sum(seqtab.nochim)/sum(seqtab)</code></pre>
+<pre><code>## [1] 0.8966348</code></pre>
+</div>
+<div id="track-reads-through-the-pipeline" class="section level1">
+<h1>Track reads through the pipeline</h1>
+<pre class="r"><code>getN &lt;- function(x) sum(getUniques(x))
+track &lt;- cbind(np.out, filt.out[,&#39;reads.out&#39;], sapply(dd, getN), rowSums(seqtab.nochim))
+colnames(track) &lt;- c(&quot;input&quot;, &quot;primer.removed&quot;, &quot;filtered&quot;, &quot;denoised&quot;, &quot;nonchim&quot;)
+get.table(head(track))</code></pre>
+<div id="savnjdqzvw" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#savnjdqzvw table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#savnjdqzvw thead, #savnjdqzvw tbody, #savnjdqzvw tfoot, #savnjdqzvw tr, #savnjdqzvw td, #savnjdqzvw th {
+  border-style: none;
+}
+
+#savnjdqzvw p {
+  margin: 0;
+  padding: 0;
+}
+
+#savnjdqzvw .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#savnjdqzvw .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#savnjdqzvw .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#savnjdqzvw .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#savnjdqzvw .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#savnjdqzvw .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#savnjdqzvw .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#savnjdqzvw .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#savnjdqzvw .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#savnjdqzvw .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#savnjdqzvw .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#savnjdqzvw .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#savnjdqzvw .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#savnjdqzvw .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#savnjdqzvw .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#savnjdqzvw .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#savnjdqzvw .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#savnjdqzvw .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#savnjdqzvw .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#savnjdqzvw .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#savnjdqzvw .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#savnjdqzvw .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#savnjdqzvw .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#savnjdqzvw .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#savnjdqzvw .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#savnjdqzvw .gt_left {
+  text-align: left;
+}
+
+#savnjdqzvw .gt_center {
+  text-align: center;
+}
+
+#savnjdqzvw .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#savnjdqzvw .gt_font_normal {
+  font-weight: normal;
+}
+
+#savnjdqzvw .gt_font_bold {
+  font-weight: bold;
+}
+
+#savnjdqzvw .gt_font_italic {
+  font-style: italic;
+}
+
+#savnjdqzvw .gt_super {
+  font-size: 65%;
+}
+
+#savnjdqzvw .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#savnjdqzvw .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#savnjdqzvw .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#savnjdqzvw .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#savnjdqzvw .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#savnjdqzvw .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#savnjdqzvw .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#savnjdqzvw .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#savnjdqzvw div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="a::stub"></th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="input">input</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="primer.removed">primer.removed</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="filtered">filtered</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="denoised">denoised</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="nonchim">nonchim</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><th id="stub_1_1" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_21.hifi_reads.fastq.gz</th>
+<td headers="stub_1_1 input" class="gt_row gt_right">83372</td>
+<td headers="stub_1_1 primer.removed" class="gt_row gt_right">80799</td>
+<td headers="stub_1_1 filtered" class="gt_row gt_right">41815</td>
+<td headers="stub_1_1 denoised" class="gt_row gt_right">31882</td>
+<td headers="stub_1_1 nonchim" class="gt_row gt_right">30679</td></tr>
+    <tr><th id="stub_1_2" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_22.hifi_reads.fastq.gz</th>
+<td headers="stub_1_2 input" class="gt_row gt_right">54957</td>
+<td headers="stub_1_2 primer.removed" class="gt_row gt_right">53154</td>
+<td headers="stub_1_2 filtered" class="gt_row gt_right">28059</td>
+<td headers="stub_1_2 denoised" class="gt_row gt_right">24271</td>
+<td headers="stub_1_2 nonchim" class="gt_row gt_right">21746</td></tr>
+    <tr><th id="stub_1_3" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_23.hifi_reads.fastq.gz</th>
+<td headers="stub_1_3 input" class="gt_row gt_right">53510</td>
+<td headers="stub_1_3 primer.removed" class="gt_row gt_right">51650</td>
+<td headers="stub_1_3 filtered" class="gt_row gt_right">27107</td>
+<td headers="stub_1_3 denoised" class="gt_row gt_right">21168</td>
+<td headers="stub_1_3 nonchim" class="gt_row gt_right">15956</td></tr>
+    <tr><th id="stub_1_4" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_24.hifi_reads.fastq.gz</th>
+<td headers="stub_1_4 input" class="gt_row gt_right">1127</td>
+<td headers="stub_1_4 primer.removed" class="gt_row gt_right">1020</td>
+<td headers="stub_1_4 filtered" class="gt_row gt_right">453</td>
+<td headers="stub_1_4 denoised" class="gt_row gt_right">146</td>
+<td headers="stub_1_4 nonchim" class="gt_row gt_right">146</td></tr>
+    <tr><th id="stub_1_5" scope="row" class="gt_row gt_left gt_stub">Kinnex16S_Rev_25.hifi_reads.fastq.gz</th>
+<td headers="stub_1_5 input" class="gt_row gt_right">48332</td>
+<td headers="stub_1_5 primer.removed" class="gt_row gt_right">46717</td>
+<td headers="stub_1_5 filtered" class="gt_row gt_right">24738</td>
+<td headers="stub_1_5 denoised" class="gt_row gt_right">21280</td>
+<td headers="stub_1_5 nonchim" class="gt_row gt_right">20013</td></tr>
+  </tbody>
+  
+</table>
+</div>
+<div id="assign-taxonomy" class="section level2">
+<h2>Assign taxonomy</h2>
+<p>Different to the traditional short-read pipeline, when assigning
+taxonomy to the PacBio long-read ASV, the species-level Silva dataset
+performs good enough, and there’s no need to conduct the
+<code>addSpecies</code> step.</p>
+<pre class="r"><code>taxa &lt;- assignTaxonomy(seqtab.nochim, &quot;~/tax/silva_nr99_v138.2_toSpecies_trainset.fa.gz&quot;, multithread=TRUE)</code></pre>
+<p>A small part of the taxonomy assignment:</p>
+<pre class="r"><code>get.table(head(taxa), rowname = FALSE)</code></pre>
+<div id="qlnewisyoq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#qlnewisyoq table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#qlnewisyoq thead, #qlnewisyoq tbody, #qlnewisyoq tfoot, #qlnewisyoq tr, #qlnewisyoq td, #qlnewisyoq th {
+  border-style: none;
+}
+
+#qlnewisyoq p {
+  margin: 0;
+  padding: 0;
+}
+
+#qlnewisyoq .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#qlnewisyoq .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#qlnewisyoq .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#qlnewisyoq .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#qlnewisyoq .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#qlnewisyoq .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#qlnewisyoq .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#qlnewisyoq .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#qlnewisyoq .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#qlnewisyoq .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#qlnewisyoq .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#qlnewisyoq .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#qlnewisyoq .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#qlnewisyoq .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#qlnewisyoq .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qlnewisyoq .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#qlnewisyoq .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#qlnewisyoq .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#qlnewisyoq .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qlnewisyoq .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#qlnewisyoq .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qlnewisyoq .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#qlnewisyoq .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qlnewisyoq .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#qlnewisyoq .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qlnewisyoq .gt_left {
+  text-align: left;
+}
+
+#qlnewisyoq .gt_center {
+  text-align: center;
+}
+
+#qlnewisyoq .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#qlnewisyoq .gt_font_normal {
+  font-weight: normal;
+}
+
+#qlnewisyoq .gt_font_bold {
+  font-weight: bold;
+}
+
+#qlnewisyoq .gt_font_italic {
+  font-style: italic;
+}
+
+#qlnewisyoq .gt_super {
+  font-size: 65%;
+}
+
+#qlnewisyoq .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#qlnewisyoq .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#qlnewisyoq .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#qlnewisyoq .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#qlnewisyoq .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#qlnewisyoq .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#qlnewisyoq .gt_indent_5 {
+  text-indent: 25px;
+}
+
+#qlnewisyoq .katex-display {
+  display: inline-flex !important;
+  margin-bottom: 0.75em !important;
+}
+
+#qlnewisyoq div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+  height: 0px !important;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Kingdom">Kingdom</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Phylum">Phylum</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Class">Class</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Order">Order</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Family">Family</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Genus">Genus</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Species">Species</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="Kingdom" class="gt_row gt_left">Bacteria</td>
+<td headers="Phylum" class="gt_row gt_left">Pseudomonadota</td>
+<td headers="Class" class="gt_row gt_left">Gammaproteobacteria</td>
+<td headers="Order" class="gt_row gt_left">Pseudomonadales</td>
+<td headers="Family" class="gt_row gt_left">Pseudomonadaceae</td>
+<td headers="Genus" class="gt_row gt_left">Pseudomonas</td>
+<td headers="Species" class="gt_row gt_left">veronii</td></tr>
+    <tr><td headers="Kingdom" class="gt_row gt_left">Bacteria</td>
+<td headers="Phylum" class="gt_row gt_left">Pseudomonadota</td>
+<td headers="Class" class="gt_row gt_left">Gammaproteobacteria</td>
+<td headers="Order" class="gt_row gt_left">Pseudomonadales</td>
+<td headers="Family" class="gt_row gt_left">Pseudomonadaceae</td>
+<td headers="Genus" class="gt_row gt_left">Pseudomonas</td>
+<td headers="Species" class="gt_row gt_left">veronii</td></tr>
+    <tr><td headers="Kingdom" class="gt_row gt_left">Bacteria</td>
+<td headers="Phylum" class="gt_row gt_left">Bacillota</td>
+<td headers="Class" class="gt_row gt_left">Negativicutes</td>
+<td headers="Order" class="gt_row gt_left">Veillonellales-Selenomonadales</td>
+<td headers="Family" class="gt_row gt_left">Sporomusaceae</td>
+<td headers="Genus" class="gt_row gt_left">Propionispora</td>
+<td headers="Species" class="gt_row gt_left">NA</td></tr>
+    <tr><td headers="Kingdom" class="gt_row gt_left">Bacteria</td>
+<td headers="Phylum" class="gt_row gt_left">Pseudomonadota</td>
+<td headers="Class" class="gt_row gt_left">Gammaproteobacteria</td>
+<td headers="Order" class="gt_row gt_left">Pseudomonadales</td>
+<td headers="Family" class="gt_row gt_left">Pseudomonadaceae</td>
+<td headers="Genus" class="gt_row gt_left">Pseudomonas</td>
+<td headers="Species" class="gt_row gt_left">veronii</td></tr>
+    <tr><td headers="Kingdom" class="gt_row gt_left">Bacteria</td>
+<td headers="Phylum" class="gt_row gt_left">Pseudomonadota</td>
+<td headers="Class" class="gt_row gt_left">Gammaproteobacteria</td>
+<td headers="Order" class="gt_row gt_left">Pseudomonadales</td>
+<td headers="Family" class="gt_row gt_left">Pseudomonadaceae</td>
+<td headers="Genus" class="gt_row gt_left">Pseudomonas</td>
+<td headers="Species" class="gt_row gt_left">veronii</td></tr>
+    <tr><td headers="Kingdom" class="gt_row gt_left">Bacteria</td>
+<td headers="Phylum" class="gt_row gt_left">Bacteroidota</td>
+<td headers="Class" class="gt_row gt_left">Bacteroidia</td>
+<td headers="Order" class="gt_row gt_left">Bacteroidales</td>
+<td headers="Family" class="gt_row gt_left">Dysgonomonadaceae</td>
+<td headers="Genus" class="gt_row gt_left">Dysgonomonas</td>
+<td headers="Species" class="gt_row gt_left">mossii</td></tr>
+  </tbody>
+  
+</table>
+</div>
+</div>
+</div>
+
+<div class="container" style="width: 100%;color:grey;text-align:right">
+  <hr>
+  Maintained by Benjamin Callahan (benjamin DOT j DOT callahan AT gmail DOT com)
+  <br> Documentation License: <a href="https://creativecommons.org/licenses/by/4.0">CC-BY 4.0</a>
+</div>
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

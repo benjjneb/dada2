@@ -1,0 +1,266 @@
+---
+title: "DADA2 Pipeline Tutorial for PacBio Long Reads (1.38)"
+---
+
+High-throughput amplicon sequencing of the 16S rRNA gene is widely used to profile microbial communities. While traditional short-read sequencing captures only a portion of the 16S gene (e.g., V3–V4), PacBio long-read sequencing allows the recovery of full-length 16S rRNA genes (~1.5 kb). Full-length sequences improve taxonomic resolution, enabling more accurate identification at the species level. However, the workflow in analyzing PacBio data is a bit different than analyzing Illumina short-read data in DADA2. Here, we walk through version 1.38 of the DADA2 pipeline on a small multi-sample dataset. Our starting point is a set of PacBio-sequenced single-end CCS/HiFi fastq files that have been split (or "demultiplexed") by sample.
+
+# PacBio Amplicon Data: General Characteristics
+- Single-end CCS/HiFi reads (no need for merging).
+- PacBio HiFi reads can cover the entire ~1500 bp 16S rRNA gene, improving taxonomic resolution.
+- Mixed orientation, reorientation required before ASV inference.
+- Illumina quality scores range from 0–40, sometimes binned to reduce file size. PacBio Sequel data produces quality scores range from 0-93, while Revio data often uses binned quality scores range from 0-40.
+
+## Pacbio v.s. Illumina
+
+Below are major differences between the Illumina short-read and PacBio long-read data:
+
+```{r echo=FALSE}
+data.frame(
+  Technology = c("Pairing", "Length", "Orientation", "Quality Score"),
+  Illumina   = c("Paired-end or single-end",
+                 "50-300bp",
+                 "Consistent",
+                 "Phred 0–40 (sometimes binned)"),
+  PacBio     = c("Single-end",
+                 "~1500bp (full-length 16S rRNA)",
+                 "Mixed (requires reorientation)",
+                 "Phred 0–93 (Sequel) / Phred 0–40 (binned, Revio)")
+) |> gt::gt()
+```
+
+
+## Kinnex Library Construction Overview
+
+The data we mainly used in this tutorial was generated using the **PacBio Kinnex 16S Library Prep Kit**.
+Kinnex enables high-throughput, full-length 16S rRNA sequencing with barcoded primers,
+allowing multiple samples to be pooled and sequenced in a single SMRT cell.
+
+**Workflow summary:**
+
+- PCR amplification: Using PacBio barcoded primer sets targeting near full-length 16S (~1.5 kb).
+- Barcode & adapter ligation: Barcodes and SMRTbell adapters are attached.
+- Size selection: Short/non-specific fragments are removed, keeping full-length amplicons.
+- SMRTbell construction & sequencing: Circularized molecules are sequenced on the PacBio Revio platform, producing CCS/HiFi reads.
+
+### Additional Considerations for Kinnex on Revio
+- **Binned quality scores** which will lead to flat error model. Need to use `makeBinnedQualErrfun()`.
+- **Tight length distribution** due to Kinnex size selection.
+- **Higher throughput** allows more samples per run but increases depth variability.
+
+### Kinnex vs. Sequel Amplicon Library
+
+```{r echo=FALSE}
+data.frame(
+  Feature = c("Platform",
+              "Library prep",
+              "Read type",
+              "Quality score",
+              "Orientation",
+              "Throughput",
+              "DADA2 error function"),
+  Kinnex_Revio = c("PacBio Revio",
+                   "Kinnex kit with PacBio barcoded primers target near full-length 16S (~1.5 kb), enabling multiplexed, pooled sequencing",
+                   "CCS/HiFi, single-end",
+                   "Binned Q-scores (3, 10, 17, 22, 27, 35, 40)",
+                   "Often mixed (forward/reverse complement)",
+                   "High",
+                   "`makeBinnedQualErrfun()`"),
+  Sequel = c("PacBio Sequel / Sequel II",
+             "Custom primers or legacy amplicon kits",
+             "CCS/HiFi, single-end",
+             "Continuous Q-scores (0–93)",
+             "Often more consistent, but may still need reorientation",
+             "Lower",
+             "`loessErrfun()` (default)")
+) |> gt::gt()
+```
+
+# Getting ready
+
+First, we load the `dada2` package. 
+
+```{r libraries, message=FALSE, warning=FALSE}
+library(dada2); packageVersion("dada2")
+library(ShortRead)
+get.table <- function(tb, rowname = TRUE) {gt::gt(data.frame(tb), rownames_to_stub = rowname)}
+rc <- dada2:::rc # reverse compliment.
+```
+
+The original dataset consists of environmental microbial samples collected daily from two distinct bathroom sink P-traps (Sink A and Sink B) over a two-month period. To reduce computational time for this tutorial, we only picked five samples, and the raw `.fastq.gz` files were randomly downsampled to 10% of their original sequencing depth using `seqkit`. The downsampled dataset used in this workflow is publicly available and can be downloaded from Zenodo https://doi.org/10.5281/zenodo.18749206.
+
+```{r path}
+path <- "~/tutorial_pb_data/revio_pacbio_10" # CHANGE ME to the directory containing the fastq files.
+files <- list.files(path, pattern = '.gz$', full.names = TRUE)
+basename(files)
+```
+
+## Remove Primer and Orient Reads
+
+First, we need to set up the forward and reverse primer sequences in the data. Make sure you are using the correct primer sequences in your data.
+
+```{r}
+F27 <- "AGRGTTYGATYMTGGCTCAG"
+R1492 <- "RGYTACCTTGTTACGACTT"
+```
+
+Reads in Pacbio CCS data are in a mixed orientations. Here, we sort each read into consistent orientation based on forward and reverse primer sequences, and then remove the primer sequences. Reads that do not contain the primers are discarded. `primer.rev` should be provided in the orientation that would appear in a DNA sequence starting at the forward primer and being read towards the reverse primer, hence we use the reverse compliment of the primer sequence.
+
+*Note: the `removePrimers` function is designed for PacBio CCS data, not for short-read data.*
+
+```{r}
+# Place primers removed files in noprimers/ subdirectory
+np.path <- file.path(path, "noprimers", basename(files))
+np.out <- removePrimers(files, # original file path
+                        np.path, # target directory stores primer removed data
+                        primer.fwd=F27,
+                        primer.rev=rc(R1492), # reverse compliment of R1492
+                        orient=TRUE)
+get.table(np.out)
+```
+
+Most reads are retained, meaning the primers sequences are valid.
+
+# Filter and trim
+
+Check the quality of our data.
+
+```{r}
+plotQualityProfile(np.path)
+```
+
+The quality score looks good overall. Some reads have longer tails, so we need to set a length window.
+
+Here, we use the option `maxEE=2`, which is recommended, and only keep the read with length between 1000 to 1600 bp. Different to the Illumina data tutorial, for long-read data, we want to keep the 16S full-length gene (primer to primer). Therefore, we **do not** truncate the length of each read. 
+
+We set `rm.phix=FALSE` since Pacbio sequencing does not use Phi-genomes. 
+
+
+```{r}
+# Place filtered files in filtered/ subdirectory
+filt.path <- file.path(path, "filtered", basename(files))
+filt.out <- filterAndTrim(np.path, # directory path to files without primers
+                          filt.path, # target directory stores filtered data
+                          minLen=1000, 
+                          maxLen=1600,
+                          rm.phix=FALSE, # won't use Phi-genomes
+                          maxEE=2, 
+                          multithread=TRUE)
+get.table(filt.out)
+```
+
+Data quality looks good after filtering (Store the `plotQualityProfile` object, we will use it later).
+
+```{r}
+qp <- plotQualityProfile(filt.path)
+qp
+```
+
+`derepFastq` collapses identical sequencing reads into unique sequences. In the PacBio pipeline, this step serves as a critical **sanity check** for sequencing quality and replication depth.
+
+**Why this is different from Short-reads:**
+PacBio full-length 16S sequences (~1.5 kb) are more prone to accumulating random errors than short reads. This increases the risk of lacking sufficient replication (repeated observations of the same sequence), which is a fundamental requirement for the DADA2 algorithm to perform sample inference.
+
+**The Sanity Check:**
+Compare the number of **unique sequences** to **total reads** in the output below.
+* **Good:** Unique sequences are significantly fewer than total reads (high replication).
+* **Bad:** Unique sequences $\approx$ Total reads (mostly singletons).
+    * *Implication:* The sample lacks the repeated observations required by the DADA2 algorithm to statistically differentiate true biological variants from sequencing noise. The inferred ASVs for this specific sample will be unreliable, and the sample should likely be excluded.
+
+```{r}
+derepFastq(filt.path, qualityType="FastqQuality", verbose = TRUE)
+```
+
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** For instance, Sample 4 in our dataset outputs a unique sequence count nearly equal to its total read count, failing this sanity check. Because almost all reads are distinct singletons, the DADA2 sample inference step lacks the required repeated observations to statistically differentiate true biological variants from sequencing noise for this specific sample. Consequently, its inferred ASVs will be unreliable, and it may need to be excluded or re-sequenced.</div>
+
+&nbsp;
+
+# Learn Error Rate
+
+The PacBio Revio Kinnex uses binned quality score. 
+
+```{r}
+binnedQ <- sort(unique(qp$data$Score)) # use quality plot object we previously stored
+binnedQ # check bin quality score
+```
+
+For data that using binned quality score, we use the error function `makeBinnedQualErrfun` and provide the quality scores.
+
+```{r}
+err <- learnErrors(filt.path, 
+                   errorEstimationFunction=makeBinnedQualErrfun(binnedQ), # use this function if the quality score in your data is binned
+                   qualityType="FastqQuality",
+                   multithread=TRUE)
+```
+
+We see a flat error model in Kinnex data. 
+
+```{r warning=FALSE}
+plotErrors(err, nominalQ = TRUE)
+```
+
+**for data with unbinned quality score** 
+
+For Pcabio Sequel data, the quality scores are not binned (Range: 0-93). In this case, use the default error function `loessErrfun`.
+
+```{r eval=FALSE}
+err <- learnErrors(filt.path, 
+                   errorEstimationFunction = loessErrfun,
+                   qualityType="FastqQuality", 
+                   multithread=TRUE) # this chunk won't run.
+```
+
+
+# Sample Inference
+
+We are now ready to apply the denoising algorithm to the filtered and trimmed sequence data. 
+
+```{r}
+dd <- dada(filt.path, err=err, 
+           errorEstimationFunction=makeBinnedQualErrfun(binnedQ), # use this function if the quality score in your data is binned
+           multithread=TRUE)
+```
+
+# Construct sequence table
+
+We can now construct the ASV table. Note that PacBio sequencing reads are single-paired, so here we skipped the "pair merging" step.
+
+```{r}
+seqtab <- makeSequenceTable(dd)
+dim(seqtab)
+`Read Length` <- nchar(getSequences(seqtab))
+hist(`Read Length`)
+```
+
+# Remove chimeras
+
+With the full-study sequence table, now we identify and remove chimeras. We see chimeras only account for a small amount of abundance.
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+dim(seqtab.nochim)
+sum(seqtab.nochim)/sum(seqtab)
+```
+
+# Track reads through the pipeline
+
+```{r}
+getN <- function(x) sum(getUniques(x))
+track <- cbind(np.out, filt.out[,'reads.out'], sapply(dd, getN), rowSums(seqtab.nochim))
+colnames(track) <- c("input", "primer.removed", "filtered", "denoised", "nonchim")
+get.table(head(track))
+```
+
+
+## Assign taxonomy
+
+Different to the traditional short-read pipeline, when assigning taxonomy to the PacBio long-read ASV, the species-level Silva dataset performs good enough, and there's no need to conduct the `addSpecies` step.
+
+```{r}
+taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr99_v138.2_toSpecies_trainset.fa.gz", multithread=TRUE)
+```
+
+A small part of the taxonomy assignment:
+
+```{r}
+get.table(head(taxa), rowname = FALSE)
+```
