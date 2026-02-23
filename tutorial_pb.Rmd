@@ -86,7 +86,7 @@ get.table <- function(tb, rowname = TRUE) {gt::gt(data.frame(tb), rownames_to_st
 rc <- dada2:::rc # reverse compliment.
 ```
 
-[data availability and description]
+The original dataset consists of environmental microbial samples collected daily from two distinct bathroom sink P-traps (Sink A and Sink B) over a two-month period. To reduce computational time for this tutorial, we only picked five samples, and the raw `.fastq.gz` files were randomly downsampled to 10% of their original sequencing depth using `seqkit`. The downsampled dataset used in this workflow is publicly available and can be downloaded from Zenodo https://doi.org/10.5281/zenodo.18749206.
 
 ```{r path}
 path <- "~/tutorial_pb_data/revio_pacbio_10" # CHANGE ME to the directory containing the fastq files.
@@ -155,15 +155,24 @@ qp <- plotQualityProfile(filt.path)
 qp
 ```
 
-# Dereplicate Filtered Data
+`derepFastq` collapses identical sequencing reads into unique sequences. In the PacBio pipeline, this step serves as a critical **sanity check** for sequencing quality and replication depth.
 
-`derepFastq` collapses identical reads into unique sequences while recording their abundances and quality scores. This step can help us to check if the data has sufficient replication and save computational resources.
+**Why this is different from Short-reads:**
+PacBio full-length 16S sequences (~1.5 kb) are more prone to accumulating random errors than short reads. This increases the risk of lacking sufficient replication (repeated observations of the same sequence), which is a fundamental requirement for the DADA2 algorithm to perform sample inference.
+
+**The Sanity Check:**
+Compare the number of **unique sequences** to **total reads** in the output below.
+* **Good:** Unique sequences are significantly fewer than total reads (high replication).
+* **Bad:** Unique sequences $\approx$ Total reads (mostly singletons).
+    * *Implication:* The sample lacks the repeated observations required by the DADA2 algorithm to statistically differentiate true biological variants from sequencing noise. The inferred ASVs for this specific sample will be unreliable, and the sample should likely be excluded.
 
 ```{r}
-derep <- derepFastq(filt.path, qualityType="FastqQuality", verbose = TRUE)
+derepFastq(filt.path, qualityType="FastqQuality", verbose = TRUE)
 ```
 
-Sample 4 has too few replications, almost all the reads are distinct. As DADA2 relies on repeated observations of real sequences to discriminate ASVs from noise, this sample will not perform well with the DADA2 algorithm.
+<div style="border: 1px solid red;padding: 5px;background-color: #fff6f6;">**<span style="color:red">Considerations for your own data:</span>** For instance, Sample 4 in our dataset outputs a unique sequence count nearly equal to its total read count, failing this sanity check. Because almost all reads are distinct singletons, the DADA2 sample inference step lacks the required repeated observations to statistically differentiate true biological variants from sequencing noise for this specific sample. Consequently, its inferred ASVs will be unreliable, and it may need to be excluded or re-sequenced.</div>
+
+&nbsp;
 
 # Learn Error Rate
 
@@ -177,7 +186,7 @@ binnedQ # check bin quality score
 For data that using binned quality score, we use the error function `makeBinnedQualErrfun` and provide the quality scores.
 
 ```{r}
-err <- learnErrors(derep, 
+err <- learnErrors(filt.path, 
                    errorEstimationFunction=makeBinnedQualErrfun(binnedQ), # use this function if the quality score in your data is binned
                    qualityType="FastqQuality",
                    multithread=TRUE)
@@ -194,7 +203,7 @@ plotErrors(err, nominalQ = TRUE)
 For Pcabio Sequel data, the quality scores are not binned (Range: 0-93). In this case, use the default error function `loessErrfun`.
 
 ```{r eval=FALSE}
-err <- learnErrors(derep, 
+err <- learnErrors(filt.path, 
                    errorEstimationFunction = loessErrfun,
                    qualityType="FastqQuality", 
                    multithread=TRUE) # this chunk won't run.
@@ -206,7 +215,7 @@ err <- learnErrors(derep,
 We are now ready to apply the denoising algorithm to the filtered and trimmed sequence data. 
 
 ```{r}
-dd <- dada(derep, err=err, 
+dd <- dada(filt.path, err=err, 
            errorEstimationFunction=makeBinnedQualErrfun(binnedQ), # use this function if the quality score in your data is binned
            multithread=TRUE)
 ```
@@ -244,7 +253,7 @@ get.table(head(track))
 
 ## Assign taxonomy
 
-Different to the traditional short-read pipeline, when assigning taxonomy to the PacBio long-read ASV, the species-level Silva dataset proforms good enough, and there's no need to conduct the `addSpecies` step.
+Different to the traditional short-read pipeline, when assigning taxonomy to the PacBio long-read ASV, the species-level Silva dataset performs good enough, and there's no need to conduct the `addSpecies` step.
 
 ```{r}
 taxa <- assignTaxonomy(seqtab.nochim, "~/tax/silva_nr99_v138.2_toSpecies_trainset.fa.gz", multithread=TRUE)
