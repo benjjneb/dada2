@@ -656,11 +656,11 @@ binqualscores<- function(infastq,outfastq,scheme="novaseqc1.3",bins=NULL,binlabs
   }
   #Warn if user does not specify binning scheme
   if (missing(scheme) & (missing(bins)&missing(binlabs))){
-    warning("No binning scheme specified. Assuming NovaSeq Control v 1.3")
+    message("No binning scheme specified. Assuming NovaSeq Control v 1.3")
   }
   #Warn user about override
   if (!missing(scheme) & (!missing(bins)&!missing(binlabs)) ) {
-    warning("Custom Binning overrides preset binning schemes.")
+    message("Custom Binning overrides preset binning schemes.")
   }
   
   # Set bins and bin labels
@@ -685,42 +685,30 @@ binqualscores<- function(infastq,outfastq,scheme="novaseqc1.3",bins=NULL,binlabs
   } else {
     if(!exists(scheme,binschemes)){
       stop("Premade Binning scheme does not exist. Please choose from: novaseqc1.3, novaseqc1.2,
-             or enter manual bin and binning label information")
+           pacbio, or enter manual bin and binning label information")
     }
     else {
       bins<-binschemes[[scheme]]$bins
       binlabs<-binschemes[[scheme]]$binlabs
     }
   }
-  
-  #Read in input FASTQ file
   og_fastq<- readFastq(infastq)
-  
-  #Pull quality scores into a data frame
-  Quality = (quality(og_fastq))
-  quality_scores<-as(Quality,"matrix")
-  quality_scores<-as.data.frame(quality_scores)
-  
-  #Bins to match binning scheme for quality scores
-  df_binned<-as.data.frame(lapply(quality_scores,FUN= function(x){as.numeric(as.character(cut(x,breaks = bins,labels = binlabs)))}))
-  
-  #Back to matrix
-  temp<-unname(as.matrix(df_binned))
- 
-  #Convert to string for recreating quality score object
-  qual_strings <- apply(temp, 1, FUN=function(x){paste0(intToUtf8(x+33,multiple=TRUE),collapse="")})
-  
-  #Create Quality Score Object
-  temp_qual <- Biostrings::PhredQuality(qual_strings)
-  
-  #ShortRead object
+  Qual<-quality(og_fastq)
+  qual_char <- as.character(as(Qual,"PhredQuality"))
+  qual_num <- lapply(qual_char, function(q) utf8ToInt(q) - 33)
+  qual_binned_num <- lapply(qual_num, function(x){cut(x, breaks=bins,labels=binlabs) |> 
+      as.character() |> as.integer()})
+  qual_binned_char <- vapply(
+    qual_binned_num,
+    function(q) intToUtf8(q + 33),
+    character(1)
+  )
+  newqual<-PhredQuality(qual_binned_char)
   new_fastq <- ShortReadQ(
     sread   = sread(og_fastq),
-    quality = temp_qual,
+    quality = newqual,
     id      = id(og_fastq)
   )
-  
-  #Write out for later use
   writeFastq(new_fastq, outfastq)
   
   return(new_fastq)
@@ -738,6 +726,9 @@ binschemes<-list("novaseqc1.3"=
                         "binlabs"=c("2","9","24","40")),
                  "novaseqc1.2"=
                    list("bins"=c(0,2,17,29,100),
-                        "binlabs"=c("2","12","24","40")
-                   ))
+                        "binlabs"=c("2","12","24","40")),
+                 "pacbio"=
+                   list("bins"=c(0,6,13,19,24,29,39,100),
+                        "binlabs"=c("3","10","17","22","27","35","40"))
+                )
 
