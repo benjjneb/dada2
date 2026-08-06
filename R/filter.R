@@ -179,6 +179,7 @@ removePrimers <- function(fn, fout,
     # If orient, replace non-matches with rc matches where they exist
     if(orient) {
       flip <- !hits.fwd & hits.fwd.rc
+      if(has.rev && require.rev) flip <- flip | (!hits.rev & hits.rev.rc)
       if(any(flip) && verbose) cat(sum(flip), "sequences out of", length(flip), "are being reverse-complemented.\n")
       fq[flip] <- fq.rc[flip]
       match.fwd[flip] <- match.fwd.rc[flip]
