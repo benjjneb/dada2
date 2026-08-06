@@ -603,3 +603,145 @@ NULL
 #'  
 #' @name errBalancedR
 NULL
+
+
+################################################################################
+#' Bin quality scores from a non-binned FASTQ file.
+#' 
+#' This Function takes a raw FASTQ file with unbinned quality scores and outputs
+#' a new FASTQ file with binned quality scores based on the selected binning
+#' scheme
+#' 
+#' 
+#' @param infastq (Required). Character vector.
+#'  Path to the raw FASTQ file with unbinned quality scores
+#' 
+#' @param outfastq (Required). Character vector.
+#'  Path for the output binned FASTQ file
+#'   
+#' @param scheme (Optional). Character vector. 
+#'  Default is "novaseqc1.3".
+#'  Binning scheme to be used. Options include ("novaseqc1.3","novaseqc1.2")
+#'   
+#' @param bins (Optional). Numeric vector. 
+#'  If bins and binlabs is given this overrides
+#'  any scheme given. If 0 is not included as the bottom of the first bin, it will be
+#'  added. Also, final bin should be greater than or equal to your the highest quality 
+#'  score. 
+#' 
+#' @param binlabs (Optional) Character vector. 
+#' If bins and binlabs given this overrides any scheme given. 
+#' Must be n-1 of bins with zero or n bins without zero.
+#' 
+#' 
+#' @return new_fastq ShortReadQ object .
+#'  ShortRead object. Contains original sreads, new binned quality scores, and
+#'  original ids.
+#'
+#' @importFrom ShortRead readFastq ShortReadQ writeFastq id 
+#' @importFrom methods as
+#' @importFrom Biostrings PhredQuality
+#' 
+#' @examples
+#' # Binning with no specified scheme; uses the default novaseqc1.3
+#' input=system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' output=tempfile(fileext=".fastq.gz")
+#' binQuals(input,output)
+#' 
+#' # Binning with a custom binning scheme
+#' input=system.file("extdata", "sam1F.fastq.gz", package="dada2")
+#' output=tempfile(fileext=".fastq.gz")
+#' binQuals(input,output,bins=c(4,10,15,30,45),binlabs=c("1","5","10","15","20"))
+#' 
+#' @keywords internal
+
+
+binQuals<- function(infastq,outfastq,scheme="novaseqc1.3",bins=NULL,binlabs=NULL){
+  #Check input file exists
+  if (!file.exists(infastq)){
+    stop("Cannot find input FASTQ. Ensure correct path and file name")
+  }
+  #Warn if user does not specify binning scheme
+  if (missing(scheme) & (missing(bins)&missing(binlabs))){
+    message("No binning scheme specified. Assuming NovaSeq Control v 1.3")
+  }
+  #Warn user about override
+  if (!missing(scheme) & (!missing(bins)&!missing(binlabs)) ) {
+    message("Custom Binning overrides preset binning schemes.")
+  }
+  
+  # Set bins and bin labels
+  
+  #Check for manual binnning (overrides scheme)
+  if (!missing(bins)&!missing(binlabs)){
+    #Set binning scheme to custom
+    scheme="CUSTOM"
+    
+    #check for 0 as proper starting point of bins
+    if(!(0 %in% bins)){
+      bins<-append(bins,0)
+    }
+    
+    #Ensure bins are sorted smallest to largest
+    bins<-sort(bins)
+    
+    #check number of bins against bin labels
+    if(length(binlabs)!=length(bins)-1){
+      stop("Incorrect amount of bin labels for given bins.")
+    }
+  } else {
+    if(!exists(scheme,binSchemes)){
+      stop("Premade Binning scheme does not exist. Please choose from: novaseqc1.3, novaseqc1.2,
+           pacbio, or enter manual bin and binning label information")
+    }
+    else {
+      bins<-binSchemes[[scheme]]$bins
+      binlabs<-binSchemes[[scheme]]$binlabs
+    }
+  }
+  og_fastq<- readFastq(infastq)
+  Qual<-quality(og_fastq)
+  qual_char <- as.character(as(Qual,"PhredQuality"))
+  qual_num <- lapply(qual_char, function(q) utf8ToInt(q) - 33)
+  qual_binned_num <- lapply(qual_num, function(x){cut(x, breaks=bins,labels=binlabs) |> 
+      as.character() |> as.integer()})
+  qual_binned_char <- vapply(
+    qual_binned_num,
+    function(q) intToUtf8(q + 33),
+    character(1)
+  )
+  newqual<-PhredQuality(qual_binned_char)
+  new_fastq <- ShortReadQ(
+    sread   = sread(og_fastq),
+    quality = newqual,
+    id      = id(og_fastq)
+  )
+  writeFastq(new_fastq, outfastq)
+  
+  return(new_fastq)
+}
+
+#' Binning Schemes
+#' 
+#' Pre-set Binning schemes.
+#' 
+#' @format List containing bins and and bin ranges for common sequencing machines
+#' 
+#' 
+#' @keywords internal
+
+
+
+binSchemes<-list("novaseqc1.3"=
+                   list("bins"=c(0,2,17,29,100),
+                        "binlabs"=c("2","9","24","40")),
+                 "novaseqc1.2"=
+                   list("bins"=c(0,2,17,29,100),
+                        "binlabs"=c("2","12","24","40")), 
+                 #Novaseq bins from: https://bit.ly/4spYhEJ
+                 "pacbio"=
+                   list("bins"=c(0,6,13,19,24,29,39,100),
+                        "binlabs"=c("3","10","17","22","27","35","40")) 
+                 #Pacbio bins from: https://www.youtube.com/watch?v=Z3zMkyOxXZ4
+                )
+
