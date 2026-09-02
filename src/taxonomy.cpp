@@ -3,7 +3,9 @@
 #include <RcppParallel.h>
 #include <random>
 #include <algorithm>
-#define NBOOT 100
+//#define NBOOT 100
+extern int NBOOT;
+int NBOOT = 100;
   
 using namespace Rcpp;
 
@@ -203,7 +205,8 @@ struct AssignParallel : public RcppParallel::Worker
 // Assigns taxonomy to sequence based on provided ref seqs and corresponding taxonomies.
 //
 // [[Rcpp::export]]
-Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose) {
+Rcpp::List C_assign_taxonomy2(std::vector<std::string> seqs, std::vector<std::string> rcs, std::vector<std::string> refs, std::vector<int> ref_to_genus, Rcpp::IntegerMatrix genusmat, bool try_rc, bool verbose, int nboot) {
+  NBOOT = nboot;
   size_t i, j, g;
   int kmer;
   unsigned int k=8;
