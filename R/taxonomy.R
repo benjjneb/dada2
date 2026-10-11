@@ -261,8 +261,10 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
   }
   genus <- sapply(strsplit(ids, "\\s"), `[`, 2)
   species <- sapply(strsplit(ids, "\\s"), `[`, 3)
-  # Identify the exact hits
-  hits <- vector("list", length(seqs))
+  # Identify the exact hits, reducing each batch to genus/species strings so that
+  # memory use does not grow with the number of query sequences
+  genus.hit <- rep(NA_character_, length(seqs))
+  species.hit <- rep(NA_character_, length(seqs))
   lens <- nchar(seqs)
   for(len in unique(lens)) { # Requires all same length sequences
     i.len <- which(lens==len); n.len <- length(i.len)
@@ -272,15 +274,15 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
       seqdict <- PDict(seqs[i.loop])
       vhit <- (vcountPDict(seqdict, sread(refsr))>0)
       if(tryRC) vhit <- vhit | (vcountPDict(seqdict, reverseComplement(sread(refsr)))>0)
-      hits[i.loop] <- lapply(seq(nrow(vhit)), function(x) vhit[x,])
+      genus.hit[i.loop] <- vapply(seq_len(nrow(vhit)), function(x) mapHits(vhit[x,], refs=genus, keep=1), character(1))
+      species.hit[i.loop] <- vapply(seq_len(nrow(vhit)), function(x) mapHits(vhit[x,], refs=species, keep=keep), character(1))
       j.lo <- j.lo + n; j.hi <- min(j.hi+n, n.len)
-      rm(seqdict)
+      rm(seqdict, vhit)
       gc()
     }
   }
   # Get genus species return strings
-  rval <- cbind(unlist(sapply(hits, mapHits, refs=genus, keep=1)),
-                unlist(sapply(hits, mapHits, refs=species, keep=keep)))
+  rval <- cbind(genus.hit, species.hit)
   colnames(rval) <- c("Genus", "Species")
   rownames(rval) <- seqs
   gc()
