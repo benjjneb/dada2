@@ -261,8 +261,10 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
   }
   genus <- sapply(strsplit(ids, "\\s"), `[`, 2)
   species <- sapply(strsplit(ids, "\\s"), `[`, 3)
-  # Identify the exact hits
-  hits <- vector("list", length(seqs))
+  # Identify the exact hits, reducing each batch to genus/species strings so that
+  # memory use does not grow with the number of query sequences
+  genus.hit <- rep(NA_character_, length(seqs))
+  species.hit <- rep(NA_character_, length(seqs))
   lens <- nchar(seqs)
   for(len in unique(lens)) { # Requires all same length sequences
     i.len <- which(lens==len); n.len <- length(i.len)
@@ -272,15 +274,15 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
       seqdict <- PDict(seqs[i.loop])
       vhit <- (vcountPDict(seqdict, sread(refsr))>0)
       if(tryRC) vhit <- vhit | (vcountPDict(seqdict, reverseComplement(sread(refsr)))>0)
-      hits[i.loop] <- lapply(seq(nrow(vhit)), function(x) vhit[x,])
+      genus.hit[i.loop] <- vapply(seq_len(nrow(vhit)), function(x) mapHits(vhit[x,], refs=genus, keep=1), character(1))
+      species.hit[i.loop] <- vapply(seq_len(nrow(vhit)), function(x) mapHits(vhit[x,], refs=species, keep=keep), character(1))
       j.lo <- j.lo + n; j.hi <- min(j.hi+n, n.len)
-      rm(seqdict)
+      rm(seqdict, vhit)
       gc()
     }
   }
   # Get genus species return strings
-  rval <- cbind(unlist(sapply(hits, mapHits, refs=genus, keep=1)),
-                unlist(sapply(hits, mapHits, refs=species, keep=keep)))
+  rval <- cbind(genus.hit, species.hit)
   colnames(rval) <- c("Genus", "Species")
   rownames(rval) <- seqs
   gc()
@@ -318,10 +320,9 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
 #' If TRUE, the reverse-complement of each sequences will be used for classification if it is a better match to the reference
 #' sequences than the forward sequence.
 #'   
-#' @param n (Optional). Default \code{1e5}.
-#' The number of records (reads) to read in and filter at any one time. 
-#' This controls the peak memory requirement so that very large fastq files are supported. 
-#' See \code{\link{FastqStreamer}} for details.
+#' @param n (Optional). Default \code{2000}.
+#' The number of sequences to perform assignment on at one time. 
+#' This controls the peak memory requirement so that large numbers of sequences are supported. 
 #'
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
