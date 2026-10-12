@@ -320,10 +320,9 @@ assignSpecies <- function(seqs, refFasta, allowMultiple=FALSE, tryRC=FALSE, n=20
 #' If TRUE, the reverse-complement of each sequences will be used for classification if it is a better match to the reference
 #' sequences than the forward sequence.
 #'   
-#' @param n (Optional). Default \code{1e5}.
-#' The number of records (reads) to read in and filter at any one time. 
-#' This controls the peak memory requirement so that very large fastq files are supported. 
-#' See \code{\link{FastqStreamer}} for details.
+#' @param n (Optional). Default \code{2000}.
+#' The number of sequences to perform assignment on at one time. 
+#' This controls the peak memory requirement so that large numbers of sequences are supported. 
 #'
 #' @param verbose (Optional). Default FALSE.
 #'  If TRUE, print status to standard output.
