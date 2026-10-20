@@ -82,7 +82,7 @@ int get_best_genus(int *karray, float *out_logp, unsigned int arraylen, unsigned
   std::uniform_real_distribution<> cunif(0.0, 1.0);
   
   for(g=0;g<ngenus;g++) {
-    lgk_v = &lgk_probability[g*n_kmers];
+    lgk_v = &lgk_probability[(size_t)g * n_kmers];
     logp = 0.0;
 
     // Take the product of the probabilitys -> sum of logs
