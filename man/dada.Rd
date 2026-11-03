@@ -80,12 +80,13 @@ If an integer is provided, the number of threads to use is set by passing the ar
  \item{2: Detailed text output, mostly intended for debugging. }
 }}
 
-\item{qualityType}{(Optional). \code{character(1)}.
-The quality encoding of the fastq file(s). "Auto" (the default) means to
-attempt to auto-detect the encoding. This may fail for PacBio files with
-uniformly high quality scores, in which case use "FastqQuality". This
-parameter is passed on to \code{\link{derepFastq}} when \code{derep} is a
-vector of file paths, and is ignored if \code{derep} is already a
+\item{qualityType}{(Optional). \code{character(1)}. The quality encoding of
+the fastq file(s). "Auto" (the default) means to attempt to auto-detect
+the encoding. This may fail for PacBio files with mostly high quality
+scores mixed with some low quality calls; in which case
+use "FastqQuality". This parameter is passed on
+to \code{\link{derepFastq}} when \code{derep} is a vector of file paths,
+and is ignored if \code{derep} is already a
 \code{\link{derep-class}} object or list of such objects.}
 
 \item{...}{(Optional). All dada_opts can be passed in as arguments to the dada() function.
