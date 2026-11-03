@@ -97,6 +97,15 @@ assign("PSEUDO_ABUNDANCE", Inf, envir=dada_opts)
 #'  \item{2: Detailed text output, mostly intended for debugging. }
 #' }
 #'  
+#' @param qualityType (Optional). \code{character(1)}. The quality encoding of
+#'  the fastq file(s). "Auto" (the default) means to attempt to auto-detect
+#'  the encoding. This may fail for PacBio files with mostly high quality
+#'  scores mixed with some low quality calls; in which case
+#'  use "FastqQuality". This parameter is passed on
+#'  to \code{\link{derepFastq}} when \code{derep} is a vector of file paths,
+#'  and is ignored if \code{derep} is already a
+#'  \code{\link{derep-class}} object or list of such objects.
+#'
 #' @param ... (Optional). All dada_opts can be passed in as arguments to the dada() function.
 #'  See \code{\link{setDadaOpt}} for a full list and description of these options. 
 #'
@@ -148,7 +157,8 @@ dada <- function(derep,
                  pool = FALSE,
                  priors = character(0),
                  multithread = FALSE, 
-                 verbose=TRUE, ...) {
+                 verbose=TRUE,
+                 qualityType = "Auto", ...) {
   
   call <- sys.call(1)
   # Read in default opts and then replace with any that were passed in to the function
@@ -187,7 +197,7 @@ dada <- function(derep,
   if(length(derep) <= 1) { pool <- FALSE }
   if(is.logical(pool)) {
     if(pool) { # Make derep a length 1 list of pooled derep object
-      derep.in <- getDerep(derep)
+      derep.in <- getDerep(derep, qualityType = qualityType)
       derep <- list(combineDereps2(derep.in))
     }
   } else if(is.character(pool) && pool == "pseudo") {
@@ -264,7 +274,7 @@ dada <- function(derep,
     if(nconsist > 0) errs[[nconsist]] <- err
 
     for(i in seq_along(derep)) {
-      drpi <- getDerep(derep[[i]])
+      drpi <- getDerep(derep[[i]], qualityType = qualityType)
       # Validate dereplicated sequences
       if(!all(C_isACGT(names(drpi$uniques)))) {
         stop("Invalid derep$uniques vector. Sequences must be made up only of A/C/G/T.")
