@@ -4,7 +4,7 @@
 \alias{derepFastq}
 \title{Read in and dereplicate a fastq file.}
 \usage{
-derepFastq(fls, n = 1e+06, verbose = FALSE, qualityType = "Auto")
+derepFastq(fls, n = 1e+06, verbose = FALSE, qualityType = "Auto", nbases = Inf)
 }
 \arguments{
 \item{fls}{(Required). \code{character}.
@@ -29,6 +29,12 @@ attempt to auto-detect the encoding. This may fail for PacBio files with
 uniformly high quality scores, in which case use "FastqQuality". This
 parameter is passed on to \code{\link[ShortRead]{readFastq}}; see
 information there for details.}
+
+\item{nbases}{(Optional). \code{numeric(1)}. Default \code{Inf}.
+The maximum total number of bases to read, summed across all files in \code{fls}.
+Reading stops as soon as this number is reached, even in the middle of a file
+or a chunk of \code{n} reads, files after this point are not read.
+At least one read is always taken from each file that is started.}
 }
 \value{
 A \code{\link{derep-class}} object or list of such objects.

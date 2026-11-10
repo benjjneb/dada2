@@ -25,9 +25,10 @@ Compressed file formats such as .fastq.gz and .fastq.bz2 are supported.
 A list of \code{\link{derep-class}} ojects can also be provided.}
 
 \item{nbases}{(Optional). Default 1e8.
-The minimum number of total bases to use for error rate learning. Samples are read into memory
-until at least this number of total bases has been reached, or all provided samples have been
-read in.}
+The number of total bases to use for error rate learning. Samples are read into memory
+until this number of total bases has been reached, or all provided samples have been
+read in. Reading stops at exactly this number of bases, even in the middle of a file.
+Pre-dereplicated input (\code{\link{derep-class}} objects) is used as provided and is not truncated.}
 
 \item{nreads}{(Optional). Default NULL. DEPRECATED.
 Please update your code to use the nbases parameter.}

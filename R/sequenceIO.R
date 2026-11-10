@@ -28,6 +28,12 @@
 #'  If TRUE, throw standard R \code{\link{message}}s 
 #'  on the intermittent and final status of the dereplication.
 #'
+#' @param nbases (Optional). \code{numeric(1)}. Default \code{Inf}.
+#'  The maximum total number of bases to read, summed across all files in \code{fls}.
+#'  Reading stops as soon as this number is reached, even in the middle of a file
+#'  or a chunk of \code{n} reads, files after this point are not read.
+#'  At least one read is always taken from each file that is started.
+#'
 #' @return A \code{\link{derep-class}} object or list of such objects. 
 #'
 #' @export
@@ -42,26 +48,41 @@
 #' derep1.35 = derepFastq(testFastq, n = 35, verbose = TRUE)
 #' all.equal(getUniques(derep1), getUniques(derep1.35)[names(getUniques(derep1))])
 #' 
-derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto") {
+derepFastq <- function(fls, n = 1e6, verbose = FALSE, qualityType = "Auto", nbases = Inf) {
   if(!is.character(fls)) { stop("File paths must be provided in character format.") }
   if(length(fls)==1 && dir.exists(fls)) { fls <- parseFastqDirectory(fls) }
   if(!all(file.exists(fls))) { stop("Not all provided files exist.") }
+  basesLeft <- nbases
   rval <- list()
   for(i in seq_along(fls)) {
+    if (basesLeft <= 0) {
+      fls <- fls[seq_len(i - 1)]
+      break
+    }
     fl <- fls[[i]]
     if(verbose){
       message("Dereplicating sequence entries in Fastq file: ", fl, appendLF = TRUE)
     }
     
     f <- FastqStreamer(fl, n = n)
-    suppressWarnings(fq <- yield(f, qualityType = qualityType))
+    # Trim the next chunk to the remaining allowed bases (but at least one read)
+    nextChunk <- function() {
+      if(basesLeft <= 0) return(NULL)
+      fq <- suppressWarnings(yield(f, qualityType = qualityType))
+      if(!length(fq)) return(NULL)
+      cs <- cumsum(as.numeric(width(fq)))
+      k <- max(1L, sum(cs <= basesLeft))
+      basesLeft <<- basesLeft - cs[k]
+      fq[seq_len(k)]
+    }
+    fq <- nextChunk()
     
     out <- qtables2(fq) ###ITS
     
     derepCounts <- out$uniques
     derepQuals <- out$cum_quals
     derepMap <- out$map
-    while( length(suppressWarnings(fq <- yield(f, qualityType = qualityType))) ){
+    while( length(fq <- nextChunk()) ) {
       # A little loop protection
       newniques = alreadySeen = NULL
       # Dot represents one turn inside the chunking loop.
