@@ -261,9 +261,10 @@ noqualErrfun <- function(trans, pseudocount=1) {
 #'  A list of \code{\link{derep-class}} ojects can also be provided.
 #'  
 #' @param nbases (Optional). Default 1e8.
-#'  The minimum number of total bases to use for error rate learning. Samples are read into memory
-#'  until at least this number of total bases has been reached, or all provided samples have been
-#'  read in.
+#'  The number of total bases to use for error rate learning. Samples are read into memory
+#'  until this number of total bases has been reached, or all provided samples have been
+#'  read in. Reading stops at exactly this number of bases, even in the middle of a file.
+#'  Pre-dereplicated input (\code{\link{derep-class}} objects) is used as provided and is not truncated.
 #'    
 #' @param nreads (Optional). Default NULL. DEPRECATED.
 #'  Please update your code to use the nbases parameter.
@@ -345,11 +346,11 @@ learnErrors <- function(fls, nbases=1e8, nreads=NULL, errorEstimationFunction = 
     if (is.list.of(fls, "derep")){
         drps[[i]] <- fls[[i]]
     } else {
-        drps[[i]] <- derepFastq(fls[[i]], qualityType = qualityType)
+        drps[[i]] <- derepFastq(fls[[i]], qualityType = qualityType, nbases = if(is.null(nreads)) nbases - NBASES else Inf)
     }
     NREADS <- NREADS + sum(as.numeric(drps[[i]]$uniques))
     NBASES <- NBASES + sum(as.numeric(drps[[i]]$uniques) * as.numeric(nchar(names(drps[[i]]$uniques))))
-    if(is.null(nreads) && NBASES > nbases) { break }
+    if(is.null(nreads) && NBASES >= nbases) { break }
     if(!is.null(nreads) && NREADS > nreads) { break }
   }
   drps <- drps[1:i]
